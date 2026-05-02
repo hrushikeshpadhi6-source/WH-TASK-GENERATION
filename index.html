@@ -1738,18 +1738,17 @@ async function exportYSMLabels(el) {
   const CW = 820;
   const CH = 420;
 
-  // Quiet zone margins — white space around barcode for scanner
-  const ML = 50;   // left quiet zone
-  const MR = 50;   // right quiet zone
-  const MT = 20;   // top margin
-  const MB = 20;   // bottom margin
+  const ML = 8;    // tiny left margin
+  const MR = 8;    // tiny right margin
+  const MT = 8;    // tiny top margin
+  const MB = 8;    // tiny bottom margin
 
-  const BAR_W  = CW - ML - MR;   // 720px — inside quiet zones
-  const BAR_H  = 300;             // tall barcode
+  const BAR_W  = CW - ML - MR;   // 804px — nearly full width
+  const BAR_H  = 320;             // TALL barcode — dominant
   const BAR_X  = ML;
   const BAR_Y  = MT;
 
-  const ASIN_Y = BAR_Y + BAR_H + 30;
+  const ASIN_Y = BAR_Y + BAR_H + 28;
   const NAME_Y = ASIN_Y + 22;
 
   function drawWrappedText(ctx, text, x, y, maxW, lineH) {
