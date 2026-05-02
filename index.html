@@ -1735,17 +1735,9 @@ async function exportYSMLabels(el) {
 
   // ── Canvas layout ──
   // Canvas = 820×420px with proper margins all sides
+  // Canvas size
   const CW = 800;
-  const CH = 420;
-
-  // All measurements in px
-  const QUIET = 40;   // white quiet zone each side
-  const MT    = 16;   // top white space above barcode
-  const BAR_H = 290;  // barcode bar height
-  const BAR_W = CW - QUIET * 2;   // 720px — barcode print area
-
-  const ASIN_Y = MT + BAR_H + 32;
-  const NAME_Y = ASIN_Y + 22;
+  const CH = 400;
 
   function drawWrappedText(ctx, text, x, y, maxW, lineH) {
     const words = text.split(' ');
@@ -1767,59 +1759,47 @@ async function exportYSMLabels(el) {
     const itemName = (lbl.dataset.itemName || '').trim();  // full name, no limit
     const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
+    // ── Draw on canvas ──
     const oc  = document.createElement('canvas');
     oc.width  = CW;
     oc.height = CH;
     const ctx = oc.getContext('2d');
 
+    // White background entire canvas
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, CW, CH);
 
-    // ── 1. Generate barcode SVG with built-in quiet zone margins ──
+    // Layout zones
+    const PAD_L   = 60;   // white quiet zone left
+    const PAD_R   = 60;   // white quiet zone right
+    const PAD_T   = 20;   // white space top
+    const BAR_AREA_W = CW - PAD_L - PAD_R;  // 680px
+    const BAR_H   = 230;  // barcode bar height only
+
+    // ── 1. Generate barcode into a temp SVG (no margins — we control placement) ──
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     let barcodeOk = false;
-    const bcOptions = {
-      format: 'CODE128',
-      width: 2,           // bar width — keep at 2 so total fits
-      height: BAR_H,
-      displayValue: false,
-      background: '#ffffff',
-      lineColor: '#000000',
-      margin: QUIET,       // ← bake quiet zone INTO the SVG itself
-      marginTop: MT,
-      marginBottom: 10,
-      marginLeft: QUIET,
-      marginRight: QUIET
+    const bcOpts = {
+      format: 'CODE128', width: 2, height: BAR_H,
+      displayValue: false, background: '#ffffff',
+      lineColor: '#000000', margin: 0
     };
-
-    try {
-      JsBarcode(svgEl, asin || asinClean, bcOptions);
-      barcodeOk = true;
-    } catch(e) {}
-
+    try { JsBarcode(svgEl, asin || asinClean, bcOpts); barcodeOk = true; } catch(e) {}
     if (!barcodeOk) {
-      try {
-        JsBarcode(svgEl, asinClean, bcOptions);
-        barcodeOk = true;
-      } catch(e2) { continue; }
+      try { JsBarcode(svgEl, asinClean, bcOpts); barcodeOk = true; } catch(e2) { continue; }
     }
 
-    // ── 2. Draw barcode at natural SVG size, centered, NO stretching ──
+    // ── 2. Render SVG → draw into the barcode zone with proper padding ──
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        // Get natural SVG dimensions
-        const natW = img.naturalWidth  || img.width  || BAR_W;
-        const natH = img.naturalHeight || img.height || (BAR_H + MT + 10);
-        // Scale to fit canvas width exactly — preserves aspect ratio
-        const scale = CW / natW;
-        const drawH = natH * scale;
-        // Draw top-left at 0,0 — fills full width with margin already inside
-        ctx.drawImage(img, 0, 0, CW, drawH);
+        // Draw barcode stretched to fill the padded area exactly
+        // PAD_L from left, PAD_T from top, width=BAR_AREA_W, height=BAR_H
+        ctx.drawImage(img, PAD_L, PAD_T, BAR_AREA_W, BAR_H);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1827,21 +1807,23 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    // ── 3. ASIN — bold monospace, centered ──
+    // ── 3. ASIN text — bold, centered, below barcode ──
+    const ASIN_Y = PAD_T + BAR_H + 30;
     ctx.fillStyle = '#000000';
-    ctx.font      = 'bold 20px "Courier New", Courier, monospace';
+    ctx.font      = 'bold 22px "Courier New", Courier, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — full, single line or wrap ──
+    // ── 4. Item name — full, below ASIN ──
     if (itemName) {
-      ctx.fillStyle = '#333333';
-      ctx.font      = '14px Arial, sans-serif';
+      const NAME_Y = ASIN_Y + 26;
+      ctx.fillStyle = '#444444';
+      ctx.font      = '15px Arial, sans-serif';
       ctx.textAlign = 'center';
-      if (ctx.measureText(itemName).width <= BAR_W) {
+      if (ctx.measureText(itemName).width <= BAR_AREA_W) {
         ctx.fillText(itemName, CW / 2, NAME_Y);
       } else {
-        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
+        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_AREA_W, 18);
       }
     }
 
