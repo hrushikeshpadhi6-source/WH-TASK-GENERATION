@@ -1833,10 +1833,17 @@ async function exportAuditAsinPDF(title) {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
-  const margin = 6;
-  const footerH = 8;
+  const margin = 5;
+  const footerH = 7;
   const usableW = pageW - margin * 2;
   const usableH = pageH - margin * 2 - footerH;
+
+  // 4 cols × 8 rows = 32 cards (we have 30, so perfect)
+  const COLS = 4;
+  const CARD_W = 200;
+  const CARD_H = 220;
+  const GAP = 6;
+  const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
 
   const pageIds = ['audit-asin-grid-p1', 'audit-asin-grid-p2'];
 
@@ -1845,112 +1852,29 @@ async function exportAuditAsinPDF(title) {
     if (!gridEl || !gridEl.children.length) continue;
     if (p > 0) pdf.addPage();
 
-    // Build offscreen fixed-width container: 3 cols × 10 rows = 30 cards
-    const CONTAINER_W = 900; // px — fixed width, no responsive weirdness
-    const CARD_W = 280;
-    const CARD_H = 340;
-    const COLS = 3;
-
     const wrap = document.createElement('div');
     wrap.style.cssText = `
       position:fixed; left:-9999px; top:0;
       width:${CONTAINER_W}px;
       display:grid;
       grid-template-columns:repeat(${COLS},${CARD_W}px);
-      gap:10px;
-      padding:10px;
+      gap:${GAP}px;
+      padding:8px;
       background:#fff;
       box-sizing:border-box;
     `;
 
-    // Clone cards into fixed container
     Array.from(gridEl.children).forEach(card => {
       const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center;`;
+      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:8px;text-align:center;`;
+      // Make QR smaller inside card
+      const qrDiv = clone.querySelector('[id^="qr-a-"]');
+      if (qrDiv) { qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.75);transform-origin:top center;margin-bottom:-10px'; }
       wrap.appendChild(clone);
     });
 
     document.body.appendChild(wrap);
-    // Wait for QR images inside clones to be visible
-    await new Promise(r => setTimeout(r, 200));
-
-    const canvas = await html2canvas(wrap, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: CONTAINER_W,
-      height: wrap.scrollHeight
-    });
-    document.body.removeChild(wrap);
-
-    const imgH = (canvas.height * usableW) / canvas.width;
-
-    if (imgH <= usableH) {
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW, imgH);
-    } else {
-      // Scale down to fit
-      const scale = usableH / imgH;
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
-    }
-
-    // Footer
-    pdf.setFontSize(7); pdf.setTextColor(130);
-    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 3, {align:'center'});
-    pdf.text(`${title} · Page ${p+1} of 2`, margin, pageH - 3);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 3, {align:'right'});
-  }
-
-  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast('✅ PDF — 2 pages × 30 QR codes!');
-}
-
-// Consolidation PDF: 30 QR per page — fixed layout
-async function exportConsolidationPDF(title) {
-  showToast('📄 Building consolidation PDF...');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const margin = 6;
-  const footerH = 8;
-  const usableW = pageW - margin * 2;
-  const usableH = pageH - margin * 2 - footerH;
-
-  const grid = document.getElementById('consolidation-qr-grid');
-  if (!grid || !grid.children.length) { showToast('⚠️ Nothing to export'); return; }
-
-  const allCards = Array.from(grid.children);
-  const PAGE_SIZE = 30;
-  const CONTAINER_W = 900;
-  const CARD_W = 280;
-  const CARD_H = 310;
-  const COLS = 3;
-
-  const totalPages = Math.ceil(allCards.length / PAGE_SIZE);
-
-  for (let p = 0; p < totalPages; p++) {
-    if (p > 0) pdf.addPage();
-
-    const chunk = allCards.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
-    const wrap = document.createElement('div');
-    wrap.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:${CONTAINER_W}px;
-      display:grid;
-      grid-template-columns:repeat(${COLS},${CARD_W}px);
-      gap:10px; padding:10px;
-      background:#fff; box-sizing:border-box;
-    `;
-
-    chunk.forEach(card => {
-      const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;text-align:center;`;
-      wrap.appendChild(clone);
-    });
-
-    document.body.appendChild(wrap);
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 300));
 
     const canvas = await html2canvas(wrap, {
       scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
@@ -1966,14 +1890,87 @@ async function exportConsolidationPDF(title) {
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
     }
 
-    pdf.setFontSize(7); pdf.setTextColor(130);
-    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 3, {align:'center'});
-    pdf.text(`${title} · Page ${p+1} of ${totalPages}`, margin, pageH - 3);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 3, {align:'right'});
+    pdf.setFontSize(6); pdf.setTextColor(130);
+    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
+    pdf.text(`${title} · Page ${p+1} of 2`, margin, pageH - 2.5);
+    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
   }
 
   pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ Consolidation PDF — ${totalPages} page(s) × 30 QR each!`);
+  showToast('✅ PDF — 2 pages × 30 QR codes!');
+}
+
+// Consolidation PDF: 30 QR per page — fixed layout
+async function exportConsolidationPDF(title) {
+  showToast('📄 Building consolidation PDF...');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 5;
+  const footerH = 7;
+  const usableW = pageW - margin * 2;
+  const usableH = pageH - margin * 2 - footerH;
+
+  const grid = document.getElementById('consolidation-qr-grid');
+  if (!grid || !grid.children.length) { showToast('⚠️ Nothing to export'); return; }
+
+  const allCards = Array.from(grid.children);
+  const PAGE_SIZE = 30;
+  const COLS = 4;
+  const CARD_W = 200;
+  const CARD_H = 210;
+  const GAP = 6;
+  const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
+  const totalPages = Math.ceil(allCards.length / PAGE_SIZE);
+
+  for (let p = 0; p < totalPages; p++) {
+    if (p > 0) pdf.addPage();
+    const chunk = allCards.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = `
+      position:fixed; left:-9999px; top:0;
+      width:${CONTAINER_W}px;
+      display:grid;
+      grid-template-columns:repeat(${COLS},${CARD_W}px);
+      gap:${GAP}px; padding:8px;
+      background:#fff; box-sizing:border-box;
+    `;
+
+    chunk.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:8px;text-align:center;`;
+      const qrDiv = clone.querySelector('[id^="qr-c-"]');
+      if (qrDiv) { qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.75);transform-origin:top center;margin-bottom:-10px'; }
+      wrap.appendChild(clone);
+    });
+
+    document.body.appendChild(wrap);
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(wrap, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      width: CONTAINER_W, height: wrap.scrollHeight
+    });
+    document.body.removeChild(wrap);
+
+    const imgH = (canvas.height * usableW) / canvas.width;
+    if (imgH <= usableH) {
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW, imgH);
+    } else {
+      const scale = usableH / imgH;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
+    }
+
+    pdf.setFontSize(6); pdf.setTextColor(130);
+    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
+    pdf.text(`${title} · Page ${p+1} of ${totalPages}`, margin, pageH - 2.5);
+    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
+  }
+
+  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast(`✅ PDF — ${totalPages} page(s) × 30 QR each!`);
 }
 
 // YSM Labels: pure canvas barcode rendering, one label per page, Zebra 4"×2"
