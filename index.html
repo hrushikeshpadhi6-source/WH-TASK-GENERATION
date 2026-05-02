@@ -1515,7 +1515,7 @@ function generateYSM() {
       wrapper.innerHTML = `
         <svg id="${svgId}" style="width:100%;display:block"></svg>
         <div style="font-family:'Courier New',monospace;font-weight:bold;font-size:15px;margin-top:8px;letter-spacing:1.5px;color:#000">${lbl.asin}</div>
-        ${lbl.itemName ? `<div style="font-family:Arial,sans-serif;font-size:11px;color:#444;margin-top:3px;text-align:center">${lbl.itemName}</div>` : ''}
+        ${lbl.itemName ? `<div style="font-family:Arial,sans-serif;font-size:11px;color:#444;margin-top:3px;text-align:center"><b style="color:#c43d04">Reduced Shelf Life</b> — ${lbl.itemName}</div>` : ''}
       `;
       stack.appendChild(wrapper);
 
@@ -1563,7 +1563,7 @@ function printYSMLabels() {
     div.innerHTML = `
       <svg id="${svgId}"></svg>
       <div class="lp-asin">${lbl.asin}</div>
-      ${lbl.itemName ? `<div class="lp-name">${lbl.itemName}</div>` : ''}
+      ${lbl.itemName ? `<div class="lp-name"><b style="color:#c43d04">Reduced Shelf Life</b> — ${lbl.itemName}</div>` : ''}
     `;
     printArea.appendChild(div);
   });
@@ -1589,80 +1589,82 @@ function printYSMLabels() {
 
 async function exportYSMPDF() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  showToast(`⏳ Building ${ysmLabels.length} labels — please wait...`);
+  showToast(`⏳ Generating PDF...`);
 
-  const W_mm = 101.6;  // 4 inches
-  const H_mm =  50.8;  // 2 inches
+  const W_mm = 101.6;
+  const H_mm =  50.8;
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [H_mm, W_mm] });
 
-  // Render each label as a real DOM element, capture with html2canvas
-  for (let i = 0; i < ysmLabels.length; i++) {
-    if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
+  // Build ALL labels in one hidden container — render once, slice per label
+  const LABEL_W = 800;
+  const LABEL_H = 400;
 
+  const container = document.createElement('div');
+  container.style.cssText = `
+    position:fixed; left:-9999px; top:0;
+    width:${LABEL_W}px;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  `;
+  document.body.appendChild(container);
+
+  // Build each label block as real DOM, render barcode
+  for (let i = 0; i < ysmLabels.length; i++) {
     const lbl      = ysmLabels[i];
     const asin     = lbl.asin.trim();
     const itemName = lbl.itemName.trim();
     const clean    = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
-    // Create a real DOM label at fixed pixel size matching label ratio
-    // 4":2" = 2:1  →  800×400px
-    const el = document.createElement('div');
-    el.style.cssText = `
-      position: fixed;
-      left: -9999px;
-      top: 0;
-      width: 800px;
-      height: 400px;
-      background: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 12px 16px 8px 16px;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
+    const block = document.createElement('div');
+    block.style.cssText = `
+      width:${LABEL_W}px;
+      height:${LABEL_H}px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:10px 14px 8px 14px;
+      box-sizing:border-box;
+      border-bottom:1px solid #eee;
+      flex-shrink:0;
     `;
 
-    // SVG barcode element inside the DOM label
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svgEl.style.cssText = 'width:768px;height:260px;display:block;flex-shrink:0';
-    el.appendChild(svgEl);
+    svgEl.style.cssText = `width:${LABEL_W - 28}px;height:260px;display:block;`;
+    block.appendChild(svgEl);
 
-    // ASIN text
     const asinDiv = document.createElement('div');
-    asinDiv.style.cssText = 'font-family:"Courier New",monospace;font-weight:bold;font-size:28px;letter-spacing:2px;color:#000;margin-top:10px;text-align:center;width:100%';
+    asinDiv.style.cssText = 'font-family:"Courier New",monospace;font-weight:bold;font-size:26px;letter-spacing:2px;color:#000;margin-top:8px;text-align:center;width:100%';
     asinDiv.textContent = asin;
-    el.appendChild(asinDiv);
+    block.appendChild(asinDiv);
 
-    // Item name text
     if (itemName) {
       const nameDiv = document.createElement('div');
-      nameDiv.style.cssText = 'font-family:Arial,sans-serif;font-size:16px;color:#333;margin-top:4px;text-align:center;width:100%;word-break:break-word;line-height:1.3';
-      nameDiv.textContent = itemName;
-      el.appendChild(nameDiv);
+      nameDiv.style.cssText = 'font-family:Arial,sans-serif;font-size:15px;color:#333;margin-top:4px;text-align:center;width:100%;word-break:break-word;line-height:1.3';
+      const rsl = document.createElement('b');
+      rsl.style.cssText = 'color:#c43d04;font-size:15px';
+      rsl.textContent = 'Reduced Shelf Life';
+      const dash = document.createTextNode(' — ' + itemName);
+      nameDiv.appendChild(rsl);
+      nameDiv.appendChild(dash);
+      block.appendChild(nameDiv);
     }
 
-    document.body.appendChild(el);
+    container.appendChild(block);
 
-    // Render barcode into the SVG element
-    let barcodeOk = false;
+    // Render barcode immediately into SVG
     try {
       JsBarcode(svgEl, asin || clean, {
-        format: 'CODE128',
-        width: 3,
-        height: 240,
-        displayValue: false,
-        background: '#ffffff',
-        lineColor: '#000000',
-        margin: 0,
-        marginTop: 0,
-        marginBottom: 0,
-        marginLeft: 10,
-        marginRight: 10
+        format:'CODE128', width:3, height:240,
+        displayValue:false, background:'#ffffff',
+        lineColor:'#000000', margin:0,
+        marginLeft:10, marginRight:10, marginTop:0, marginBottom:0
       });
-      barcodeOk = true;
     } catch(e) {
       try {
         JsBarcode(svgEl, clean, {
@@ -1670,27 +1672,47 @@ async function exportYSMPDF() {
           displayValue:false, background:'#ffffff', lineColor:'#000000',
           margin:0, marginLeft:10, marginRight:10
         });
-        barcodeOk = true;
       } catch(e2) {}
     }
+  }
 
-    // Wait for render
-    await new Promise(r => setTimeout(r, 150));
+  // Short wait for all SVGs to render
+  await new Promise(r => setTimeout(r, 300));
 
-    // Capture with html2canvas
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: 800,
-      height: 400
-    });
+  // Capture entire container in ONE html2canvas call
+  const totalCanvas = await html2canvas(container, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    width: LABEL_W,
+    height: ysmLabels.length * LABEL_H
+  });
 
-    document.body.removeChild(el);
+  document.body.removeChild(container);
 
-    // Add to PDF
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
+  // Slice canvas into individual label pages
+  const scaledLabelH = LABEL_H * 2; // scale:2
+
+  for (let i = 0; i < ysmLabels.length; i++) {
+    if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
+
+    // Crop this label's slice from the big canvas
+    const slice = document.createElement('canvas');
+    slice.width  = totalCanvas.width;
+    slice.height = scaledLabelH;
+    const sctx = slice.getContext('2d');
+    sctx.fillStyle = '#fff';
+    sctx.fillRect(0, 0, slice.width, slice.height);
+    sctx.drawImage(
+      totalCanvas,
+      0, i * scaledLabelH,          // source x, y
+      totalCanvas.width, scaledLabelH, // source w, h
+      0, 0,                          // dest x, y
+      slice.width, scaledLabelH      // dest w, h
+    );
+
+    pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, W_mm, H_mm);
   }
 
   pdf.save(`YSM_Zebra_${new Date().toISOString().split('T')[0]}.pdf`);
