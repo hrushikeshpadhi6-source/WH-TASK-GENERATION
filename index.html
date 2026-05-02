@@ -856,9 +856,11 @@ footer span { color: var(--accent); }
 
         <!-- Bay / Path Filter -->
         <div id="con-bay-wrap">
-          <div class="ctrl-label">Bay / Path Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional, e.g. A101, F125)</span></div>
-          <input class="input-field" id="con-bay-input" type="text" placeholder="e.g. A101 or HAZ or F125" style="width:100%">
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Matches any location containing this text (case-insensitive)</div>
+          <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(built from your file)</span></div>
+          <select class="select-field" id="con-bay-input" style="width:100%">
+            <option value="">— All Bays —</option>
+          </select>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Bays auto-detected from your inventory locations</div>
         </div>
 
         <!-- Bay disabled notice (only shows for 11+) -->
@@ -1221,6 +1223,7 @@ function handleUpload(input, task) {
       if (ctrl) ctrl.style.display = 'flex';
 
       // Task-specific post-load
+      if (task === 'consolidation') buildConsolidationBays();
       if (task === 'slow-moving') buildSlowMovingCols();
       if (task === 'ysm') buildYSMMapper();
 
@@ -1280,6 +1283,57 @@ function findCol(headers, patterns) {
 
 // ════ TASK 1: CONSOLIDATION ════
 
+// Extract unique bay prefix from a location string
+// e.g. "Bin:P-1-A110" → "P-1-A"  |  "Bin:HAZ-A106A110" → "HAZ"  |  "P-1-F-001" → "P-1-F"
+function extractBayPrefix(loc) {
+  // Strip common prefixes like "Bin:" or "TransferTote:"
+  let s = loc.replace(/^(Bin:|TransferTote:|Tote:|Rack:)/i, '').trim();
+  // Match zone prefixes: P-1-F, P-1-C, P-1-A, P-1-D, P-1-H, P-1-X, P-1-T, P-1-V, P-1-R
+  const zoneMatch = s.match(/^(P-\d+-[A-Z]+)/i);
+  if (zoneMatch) {
+    // Return the zone + first 3 chars of the bin code to form a bay group
+    // e.g. P-1-A110 → P-1-A1  (group by first digit of bin)
+    const zone = zoneMatch[1].toUpperCase();
+    const rest = s.slice(zone.length).replace(/^[-_]?/, '');
+    const bayDigit = rest.match(/^(\d{1,3})/);
+    // Group into bays of ~10: e.g. 100-109 = bay 1xx, 110-119 = bay 11x
+    if (bayDigit) {
+      const num = bayDigit[1];
+      // Use first 2 digits as bay identifier (e.g. A10, A11, A12)
+      const bayId = num.length >= 3 ? num.slice(0, 2) : num.slice(0, 1);
+      return zone + bayId;
+    }
+    return zone;
+  }
+  // HAZ locations: HAZ-A106 → group by "HAZ-A1"
+  const hazMatch = s.match(/^(HAZ-[A-Z]\d)/i);
+  if (hazMatch) return hazMatch[1].toUpperCase();
+  // HRV
+  const hrvMatch = s.match(/^(HRV)/i);
+  if (hrvMatch) return 'HRV';
+  // Fallback: first 5 chars
+  return s.slice(0, 5).toUpperCase();
+}
+
+// Build bay dropdown from uploaded file
+function buildConsolidationBays() {
+  const d = state.consolidation.data;
+  const h = state.consolidation.headers;
+  const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
+  if (!locCol) return;
+
+  const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(l =>
+    // Exclude TransferTote locations
+    !/transfertote|tote:/i.test(l) && l !== ''
+  ))];
+
+  const bays = [...new Set(allLocs.map(extractBayPrefix))].sort();
+
+  const sel = document.getElementById('con-bay-input');
+  sel.innerHTML = '<option value="">— All Bays —</option>' +
+    bays.map(b => `<option value="${b}">${b}</option>`).join('');
+}
+
 // Toggle bay filter visibility based on dropdown selection
 function onConCountChange() {
   const val = document.getElementById('con-count-filter').value;
@@ -1293,10 +1347,9 @@ function generateConsolidation() {
   const d = state.consolidation.data;
   if (!d.length) { showToast('⚠️ Upload a file first'); return; }
 
-  const countFilter = document.getElementById('con-count-filter').value;   // "2".."10" or "11+"
+  const countFilter = document.getElementById('con-count-filter').value;
   const isMoreThan10 = countFilter === '11+';
   const bayRaw = isMoreThan10 ? '' : (document.getElementById('con-bay-input').value || '').trim();
-  const bayFilter = bayRaw.toLowerCase();
 
   showLoading('consolidation', true);
   document.getElementById('out-consolidation').innerHTML = '';
@@ -1310,35 +1363,33 @@ function generateConsolidation() {
     if (!asinCol) { showLoading('consolidation',false); showToast('⚠️ Could not find ASIN column'); return; }
     if (!locCol)  { showLoading('consolidation',false); showToast('⚠️ Could not find Location column'); return; }
 
-    // ── Step 1: Group by ASIN → Set of unique locations ──
+    // Step 1: Group by ASIN → Set of unique locations (exclude TransferTotes)
     const map = {};
     d.forEach(row => {
       const asin = String(row[asinCol] || '').trim();
       const loc  = String(row[locCol]  || '').trim();
       if (!asin) return;
       if (!map[asin]) map[asin] = new Set();
-      if (loc) map[asin].add(loc);
+      // Exclude TransferTote from location grouping
+      if (loc && !/transfertote/i.test(loc)) map[asin].add(loc);
     });
 
-    // ── Step 2: Build result list with location count ──
+    // Step 2: Build results
     let results = Object.entries(map).map(([asin, locs]) => ({
-      asin,
-      count: locs.size,
-      locs   // keep set for bay filtering
+      asin, count: locs.size, locs
     }));
 
-    // ── Step 3: Apply location COUNT filter ──
+    // Step 3: Apply COUNT filter
     if (isMoreThan10) {
-      // IMPORTANT: only count filter, NO bay filter
       results = results.filter(r => r.count > 10);
     } else {
       const exact = parseInt(countFilter, 10);
       results = results.filter(r => r.count === exact);
 
-      // ── Step 4: Apply bay/path filter (AND logic, only for 2–10) ──
-      if (bayFilter) {
+      // Step 4: Bay filter — match by bay prefix (AND logic)
+      if (bayRaw) {
         results = results.filter(r =>
-          [...r.locs].some(l => l.toLowerCase().includes(bayFilter))
+          [...r.locs].some(l => extractBayPrefix(l) === bayRaw)
         );
       }
     }
@@ -1349,19 +1400,18 @@ function generateConsolidation() {
     if (!results.length) {
       const msg = isMoreThan10
         ? 'No ASINs found with more than 10 unique locations.'
-        : bayFilter
-          ? `No ASINs with exactly ${countFilter} locations containing "<strong>${bayRaw}</strong>".`
+        : bayRaw
+          ? `No ASINs with exactly ${countFilter} locations in bay <strong>${bayRaw}</strong>.`
           : `No ASINs with exactly ${countFilter} unique locations.`;
       document.getElementById('out-consolidation').innerHTML =
         `<div class="alert alert-warn">⚠️ ${msg}</div>`;
       return;
     }
 
-    // ── Build label string for results header ──
     const filterLabel = isMoreThan10
       ? 'More than 10 locations'
-      : bayFilter
-        ? `Exactly ${countFilter} locations · Bay contains "${bayRaw}"`
+      : bayRaw
+        ? `Exactly ${countFilter} locations · Bay: ${bayRaw}`
         : `Exactly ${countFilter} locations`;
 
     const panel = document.createElement('div');
@@ -1375,40 +1425,41 @@ function generateConsolidation() {
         <div class="stats-row">
           <div class="stat-card"><div class="sv">${results.length}</div><div class="sl">Matched ASINs</div></div>
           <div class="stat-card"><div class="sv">${isMoreThan10 ? '11+' : countFilter}</div><div class="sl">Location Count</div></div>
-          ${bayFilter ? `<div class="stat-card"><div class="sv" style="font-size:16px">"${bayRaw}"</div><div class="sl">Bay Filter</div></div>` : ''}
+          ${bayRaw ? `<div class="stat-card"><div class="sv" style="font-size:15px">${bayRaw}</div><div class="sl">Bay</div></div>` : ''}
         </div>
-        ${isMoreThan10 ? '<div class="alert alert-warn" style="margin-bottom:16px">⚠️ Bay/Path filter was not applied — disabled for "More than 10" selection.</div>' : ''}
+        ${isMoreThan10 ? '<div class="alert alert-warn" style="margin-bottom:16px">⚠️ Bay filter disabled for "More than 10" selection.</div>' : ''}
         <div class="label-grid" id="consolidation-qr-grid"></div>
       </div>`;
 
     document.getElementById('out-consolidation').appendChild(panel);
 
+    // Show up to 30 QR cards
     const grid = panel.querySelector('#consolidation-qr-grid');
-    results.forEach((item, idx) => {
+    const toShow = results.slice(0, 30);
+    if (results.length > 30) {
+      panel.querySelector('.results-body').insertAdjacentHTML('beforeend',
+        `<div class="alert alert-info" style="margin-top:12px">ℹ️ Showing top 30 of ${results.length} ASINs. Export PDF to see all.</div>`);
+    }
+
+    toShow.forEach((item, idx) => {
       const card = document.createElement('div');
       card.className = 'label-card';
-
-      // Priority colouring: for 11+ always HIGH, otherwise by count
       let priority, pColor;
-      if (isMoreThan10) {
-        priority = 'HIGH'; pColor = '#e8500a';
-      } else {
+      if (isMoreThan10) { priority = 'HIGH'; pColor = '#e8500a'; }
+      else {
         const n = item.count;
         priority = n >= 8 ? 'HIGH' : n >= 5 ? 'MEDIUM' : 'LOW';
         pColor   = n >= 8 ? '#e8500a' : n >= 5 ? '#c9a227' : '#1a7a4a';
       }
-
       card.innerHTML = `
         <div style="display:inline-block;padding:3px 10px;border-radius:4px;background:${pColor};color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:8px">${priority}</div>
         <div id="qr-c-${idx}" style="display:flex;justify-content:center;margin-bottom:8px"></div>
         <div class="asin-txt">${item.asin}</div>
         <div style="font-family:'DM Mono',monospace;font-size:12px;color:#555;margin-top:6px;font-weight:600">📍 ${item.count} Location${item.count > 1 ? 's' : ''}</div>`;
       grid.appendChild(card);
-
       try {
         new QRCode(document.getElementById(`qr-c-${idx}`), {
-          text: item.asin,
-          width: 130, height: 130,
+          text: item.asin, width: 130, height: 130,
           colorDark: '#111110', colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
@@ -1431,30 +1482,28 @@ function generateAuditLoc() {
     let locations = [];
 
     if (d.length) {
-      // Use real locations from file
       const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
       if (locCol) {
-        const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(Boolean))];
+        // Exclude TransferTotes completely
+        const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(l =>
+          l && !/transfertote|tote:/i.test(l)
+        ))];
 
-        // Try to categorize by zone patterns
-        const frozen = allLocs.filter(l => /P-?1-?F|FROZ|FREEZE/i.test(l));
-        const chiller = allLocs.filter(l => /P-?1-?C|CHILL|COLD/i.test(l));
-        const hazmat = allLocs.filter(l => /HAZ/i.test(l));
-        const hrv = allLocs.filter(l => /HRV/i.test(l));
-        const ambient = allLocs.filter(l => /P-?1-?A|AMBIENT|AMB/i.test(l));
-        const mixed = allLocs.filter(l => /^[XHRTD]/i.test(l));
-        const others = allLocs.filter(l =>
-          !frozen.includes(l) && !chiller.includes(l) && !hazmat.includes(l) &&
-          !hrv.includes(l) && !ambient.includes(l) && !mixed.includes(l)
-        );
+        const frozen  = allLocs.filter(l => /P-1-F/i.test(l));
+        const chiller = allLocs.filter(l => /P-1-C/i.test(l));
+        const hazmat  = allLocs.filter(l => /HAZ/i.test(l));
+        const hrv     = allLocs.filter(l => /HRV/i.test(l));
+        const ambient = allLocs.filter(l => /P-1-A/i.test(l));
+        // Mixed: ONLY P-1-D, P-1-H, P-1-X, P-1-T, P-1-V, P-1-R
+        const mixed   = allLocs.filter(l => /P-1-[DHXTVR]/i.test(l));
 
         locations = [
-          ...pickRandom(frozen.length ? frozen : generateFrozen(), 10).map(l=>({loc:l,zone:'Frozen'})),
+          ...pickRandom(frozen.length  ? frozen  : generateFrozen(),  10).map(l=>({loc:l,zone:'Frozen'})),
           ...pickRandom(chiller.length ? chiller : generateChiller(), 10).map(l=>({loc:l,zone:'Chiller'})),
-          ...pickRandom(hazmat.length ? hazmat : generateHazmat(), 10).map(l=>({loc:l,zone:'Hazmat'})),
+          ...pickRandom(hazmat.length  ? hazmat  : generateHazmat(),  10).map(l=>({loc:l,zone:'Hazmat'})),
           ...pickRandom(ambient.length ? ambient : generateAmbient(), 18).map(l=>({loc:l,zone:'Ambient'})),
-          ...pickRandom(hrv.length ? hrv : generateHRV(), 10).map(l=>({loc:l,zone:'HRV'})),
-          ...pickRandom(mixed.length ? mixed : [...others,...generateMixed()], 12).map(l=>({loc:l,zone:'Mixed'})),
+          ...pickRandom(hrv.length     ? hrv     : generateHRV(),     10).map(l=>({loc:l,zone:'HRV'})),
+          ...pickRandom(mixed.length   ? mixed   : generateMixed(),   12).map(l=>({loc:l,zone:'Mixed'})),
         ];
       } else {
         locations = buildDefaultLocations();
@@ -1464,30 +1513,30 @@ function generateAuditLoc() {
     }
 
     locations = shuffle(locations);
-
     showLoading('audit-loc', false);
     renderAuditLocResults(locations);
   }, 400);
 }
 
-function generateFrozen(n=20) { return Array.from({length:n},(_,i)=>`P-1-F-${String(i+1).padStart(3,'0')}`); }
+function generateFrozen(n=20)  { return Array.from({length:n},(_,i)=>`P-1-F-${String(i+1).padStart(3,'0')}`); }
 function generateChiller(n=20) { return Array.from({length:n},(_,i)=>`P-1-C-${String(i+1).padStart(3,'0')}`); }
-function generateHazmat(n=30) { return Array.from({length:n},(_,i)=>`HAZ-A${Math.floor(Math.random()*5)+1}${String(i+1).padStart(2,'0')}`); }
+function generateHazmat(n=30)  { return Array.from({length:n},(_,i)=>`HAZ-A${Math.floor(Math.random()*5)+1}${String(i+1).padStart(2,'0')}`); }
 function generateAmbient(n=40) { return Array.from({length:n},(_,i)=>`P-1-A-${String(i+1).padStart(3,'0')}`); }
-function generateHRV(n=20) { return Array.from({length:n},(_,i)=>`HRV-${String(i+1).padStart(3,'0')}`); }
+function generateHRV(n=20)     { return Array.from({length:n},(_,i)=>`HRV-${String(i+1).padStart(3,'0')}`); }
 function generateMixed(n=24) {
-  const pfx = ['X','H','R','T','D'];
-  return Array.from({length:n},(_,i)=>`${pfx[i%pfx.length]}-${String(i+1).padStart(3,'0')}`);
+  // Default mixed uses correct zone codes
+  const zones = ['P-1-D','P-1-H','P-1-X','P-1-T','P-1-V','P-1-R'];
+  return Array.from({length:n},(_,i)=>`${zones[i%zones.length]}-${String(i+1).padStart(3,'0')}`);
 }
 
 function buildDefaultLocations() {
   return [
-    ...pickRandom(generateFrozen(20),10).map(l=>({loc:l,zone:'Frozen'})),
+    ...pickRandom(generateFrozen(20), 10).map(l=>({loc:l,zone:'Frozen'})),
     ...pickRandom(generateChiller(20),10).map(l=>({loc:l,zone:'Chiller'})),
-    ...pickRandom(generateHazmat(30),10).map(l=>({loc:l,zone:'Hazmat'})),
+    ...pickRandom(generateHazmat(30), 10).map(l=>({loc:l,zone:'Hazmat'})),
     ...pickRandom(generateAmbient(40),18).map(l=>({loc:l,zone:'Ambient'})),
-    ...pickRandom(generateHRV(20),10).map(l=>({loc:l,zone:'HRV'})),
-    ...pickRandom(generateMixed(24),12).map(l=>({loc:l,zone:'Mixed'})),
+    ...pickRandom(generateHRV(20),    10).map(l=>({loc:l,zone:'HRV'})),
+    ...pickRandom(generateMixed(24),  12).map(l=>({loc:l,zone:'Mixed'})),
   ];
 }
 
@@ -1503,7 +1552,7 @@ function renderAuditLocResults(locations) {
     return `<div class="stat-card"><div class="sv" style="color:${zoneColors[z]||'var(--accent)'}">${cnt}</div><div class="sl">${z}</div></div>`;
   }).join('');
 
-  const rowsHTML = locations.map((item, i) => `
+  const rowsHTML = locations.map((item,i) => `
     <tr>
       <td style="font-weight:700;font-family:'DM Mono',monospace">${String(i+1).padStart(2,'0')}</td>
       <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${zoneColors[item.zone]||'#888'}22;color:${zoneColors[item.zone]||'#888'};font-size:10px;font-weight:700;letter-spacing:1px">${item.zone}</span></td>
@@ -1512,7 +1561,6 @@ function renderAuditLocResults(locations) {
     </tr>`).join('');
 
   const date = new Date().toLocaleDateString('en-GB');
-
   document.getElementById('out-audit-loc').innerHTML = `
     <div class="results-panel" id="audit-loc-print">
       <div class="results-header">
@@ -1529,7 +1577,6 @@ function renderAuditLocResults(locations) {
         </div>
       </div>
     </div>`;
-
   document.getElementById('export-audit-loc').style.display = 'flex';
 }
 
@@ -1562,7 +1609,7 @@ function generateAuditAsin() {
           <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')}</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:20px">📋 Scan each QR code or verify ASIN physically. Fill in the remark after checking.</div>
+          <div class="alert alert-info" style="margin-bottom:20px">📋 Showing 30 QR cards on screen. All ${picked.length} ASINs included in PDF export.</div>
           <div class="label-grid" id="audit-asin-grid"></div>
         </div>
       </div>`;
@@ -1570,7 +1617,8 @@ function generateAuditAsin() {
     document.getElementById('out-audit-asin').appendChild(grid);
 
     const g = grid.querySelector('#audit-asin-grid');
-    picked.forEach((asin, idx) => {
+    // Show 30 on screen, all 80 in PDF
+    picked.slice(0, 30).forEach((asin, idx) => {
       const card = document.createElement('div');
       card.className = 'label-card';
       // Find extra info
@@ -1783,59 +1831,108 @@ async function exportPDF(containerId, title) {
   const el = document.getElementById(containerId);
   if (!el || !el.innerHTML.trim()) { showToast('⚠️ Nothing to export'); return; }
 
+  const isYSM = containerId === 'out-ysm';
+
   try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#f5f4f0',
-      logging: false
-    });
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const footerH = 10;
-    const contentH = pageH - margin * 2 - footerH;
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
-    const imgW = pageW - margin * 2;
-    const imgH = (canvas.height * imgW) / canvas.width;
-
-    let y = margin;
-    let remaining = imgH;
-    let srcY = 0;
-
-    while (remaining > 0) {
-      const sliceH = Math.min(contentH, remaining);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = (sliceH / imgW) * canvas.width;
-      const ctx = sliceCanvas.getContext('2d');
-      ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-
-      if (srcY > 0) pdf.addPage();
-      pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
-
-      // Footer
-      pdf.setFontSize(8);
-      pdf.setTextColor(150);
-      pdf.text('Powered by HP World', pageW / 2, pageH - 4, { align: 'center' });
-      pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH - 4);
-      pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 4, { align: 'right' });
-
-      srcY += sliceH;
-      remaining -= sliceH;
+    if (isYSM) {
+      // ── YSM: 4" × 2" label per barcode ──
+      await exportYSMLabels(el, title);
+    } else {
+      // ── All other tasks: A4 ──
+      await exportA4PDF(el, title);
     }
-
-    pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-    showToast('✅ PDF downloaded!');
   } catch(err) {
     showToast('❌ PDF export failed. Try Print instead.');
     console.error(err);
   }
+}
+
+async function exportA4PDF(el, title) {
+  const canvas = await html2canvas(el, {
+    scale: 2, useCORS: true,
+    backgroundColor: '#f5f4f0', logging: false
+  });
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 10;
+  const contentH = pageH - margin * 2 - 10;
+  const imgW = pageW - margin * 2;
+
+  let srcY = 0;
+  let remaining = (canvas.height * imgW) / canvas.width;
+
+  while (remaining > 0) {
+    const sliceH = Math.min(contentH, remaining);
+    const sliceCanvas = document.createElement('canvas');
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = (sliceH / imgW) * canvas.width;
+    const ctx = sliceCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+
+    if (srcY > 0) pdf.addPage();
+    pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(150);
+    pdf.text('Powered by HP World', pageW / 2, pageH - 4, { align: 'center' });
+    pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH - 4);
+    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 4, { align: 'right' });
+
+    srcY += sliceH;
+    remaining -= sliceH;
+  }
+
+  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast('✅ PDF downloaded!');
+}
+
+async function exportYSMLabels(el, title) {
+  // 4 inches × 2 inches label size (Zebra standard)
+  const labelW_in = 4;
+  const labelH_in = 2;
+  const dpi = 96;
+
+  const { jsPDF } = window.jspdf;
+  // jsPDF unit: mm. 1 inch = 25.4mm
+  const labelW_mm = labelW_in * 25.4;  // 101.6mm
+  const labelH_mm = labelH_in * 25.4;  //  50.8mm
+
+  const pdf = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: [labelH_mm, labelW_mm]   // jsPDF: [height, width] when landscape
+  });
+
+  const labels = el.querySelectorAll('.barcode-label');
+  if (!labels.length) { showToast('⚠️ No labels found'); return; }
+
+  for (let i = 0; i < labels.length; i++) {
+    if (i > 0) pdf.addPage([labelH_mm, labelW_mm], 'landscape');
+
+    const canvas = await html2canvas(labels[i], {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: labelW_in * dpi,
+      height: labelH_in * dpi
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    pdf.addImage(imgData, 'PNG', 0, 0, labelW_mm, labelH_mm);
+
+    // Footer text
+    pdf.setFontSize(5);
+    pdf.setTextColor(180);
+    pdf.text('Powered by HP World', labelW_mm / 2, labelH_mm - 1, { align: 'center' });
+  }
+
+  pdf.save(`YSM_Labels_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast(`✅ ${labels.length} labels exported as 4"×2" PDF!`);
 }
 
 // ════ FEEDBACK ════
