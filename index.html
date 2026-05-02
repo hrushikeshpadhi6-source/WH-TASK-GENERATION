@@ -1436,7 +1436,7 @@ function generateYSM() {
           <span class="results-count">${labels.length} labels · ${[...new Set(labels.map(l=>l.asin))].length} ASINs</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 · 4"×2" · One label per page · ASIN + Item Name (max 15 chars) · Export PDF to print.</div>
+          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 · 4"×2" · One label per page · Full item name shown · Export PDF to print.</div>
           <div class="barcode-labels-wrap" id="ysm-labels-grid"></div>
         </div>
       </div>`;
@@ -1828,12 +1828,18 @@ async function exportYSMLabels(el) {
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — full text, wrapped, small font ──
+    // ── 4. Item name — full name, single line if fits, wraps if too long ──
     if (itemName) {
       ctx.fillStyle = '#333333';
       ctx.font      = '14px Arial, sans-serif';
       ctx.textAlign = 'center';
-      drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
+      // Try single line first
+      if (ctx.measureText(itemName).width <= BAR_W) {
+        ctx.fillText(itemName, CW / 2, NAME_Y);
+      } else {
+        // Wrap only if absolutely necessary
+        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
+      }
     }
 
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
