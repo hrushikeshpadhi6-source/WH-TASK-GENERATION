@@ -1735,20 +1735,39 @@ async function exportYSMLabels(el) {
 
   // ── Canvas layout ──
   // Canvas = 820×420px with proper margins all sides
-  // Canvas size
-  const CW = 800;
-  const CH = 400;
+  const CW = 820;
+  const CH = 420;
+
+  // Quiet zone margins — white space around barcode for scanner
+  const ML = 50;   // left quiet zone
+  const MR = 50;   // right quiet zone
+  const MT = 20;   // top margin
+  const MB = 20;   // bottom margin
+
+  const BAR_W  = CW - ML - MR;   // 720px — inside quiet zones
+  const BAR_H  = 300;             // tall barcode
+  const BAR_X  = ML;
+  const BAR_Y  = MT;
+
+  const ASIN_Y = BAR_Y + BAR_H + 30;
+  const NAME_Y = ASIN_Y + 22;
 
   function drawWrappedText(ctx, text, x, y, maxW, lineH) {
     const words = text.split(' ');
-    let line = '', curY = y;
+    let line = '';
+    let curY  = y;
     for (const word of words) {
       const test = line ? line + ' ' + word : word;
       if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, x, curY); line = word; curY += lineH;
-      } else { line = test; }
+        ctx.fillText(line, x, curY);
+        line = word;
+        curY += lineH;
+      } else {
+        line = test;
+      }
     }
     if (line) ctx.fillText(line, x, curY);
+    return curY;
   }
 
   for (let i = 0; i < labels.length; i++) {
@@ -1759,47 +1778,44 @@ async function exportYSMLabels(el) {
     const itemName = (lbl.dataset.itemName || '').trim();  // full name, no limit
     const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
-    // ── Draw on canvas ──
     const oc  = document.createElement('canvas');
     oc.width  = CW;
     oc.height = CH;
     const ctx = oc.getContext('2d');
 
-    // White background entire canvas
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, CW, CH);
 
-    // Layout zones
-    const PAD_L   = 60;   // white quiet zone left
-    const PAD_R   = 60;   // white quiet zone right
-    const PAD_T   = 20;   // white space top
-    const BAR_AREA_W = CW - PAD_L - PAD_R;  // 680px
-    const BAR_H   = 230;  // barcode bar height only
-
-    // ── 1. Generate barcode into a temp SVG (no margins — we control placement) ──
+    // ── 1. Generate barcode SVG ──
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     let barcodeOk = false;
-    const bcOpts = {
-      format: 'CODE128', width: 2, height: BAR_H,
-      displayValue: false, background: '#ffffff',
-      lineColor: '#000000', margin: 0
-    };
-    try { JsBarcode(svgEl, asin || asinClean, bcOpts); barcodeOk = true; } catch(e) {}
+    try {
+      JsBarcode(svgEl, asin || asinClean, {
+        format: 'CODE128', width: 3, height: BAR_H,
+        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+      });
+      barcodeOk = true;
+    } catch(e) {}
+
     if (!barcodeOk) {
-      try { JsBarcode(svgEl, asinClean, bcOpts); barcodeOk = true; } catch(e2) { continue; }
+      try {
+        JsBarcode(svgEl, asinClean, {
+          format: 'CODE128', width: 3, height: BAR_H,
+          displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+        });
+        barcodeOk = true;
+      } catch(e2) { continue; }
     }
 
-    // ── 2. Render SVG → draw into the barcode zone with proper padding ──
+    // ── 2. Stretch barcode to full available width ──
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        // Draw barcode stretched to fill the padded area exactly
-        // PAD_L from left, PAD_T from top, width=BAR_AREA_W, height=BAR_H
-        ctx.drawImage(img, PAD_L, PAD_T, BAR_AREA_W, BAR_H);
+        ctx.drawImage(img, BAR_X, BAR_Y, BAR_W, BAR_H);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1807,23 +1823,23 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    // ── 3. ASIN text — bold, centered, below barcode ──
-    const ASIN_Y = PAD_T + BAR_H + 30;
+    // ── 3. ASIN — bold monospace, centered ──
     ctx.fillStyle = '#000000';
-    ctx.font      = 'bold 22px "Courier New", Courier, monospace';
+    ctx.font      = 'bold 20px "Courier New", Courier, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — full, below ASIN ──
+    // ── 4. Item name — full name, single line if fits, wraps if too long ──
     if (itemName) {
-      const NAME_Y = ASIN_Y + 26;
-      ctx.fillStyle = '#444444';
-      ctx.font      = '15px Arial, sans-serif';
+      ctx.fillStyle = '#333333';
+      ctx.font      = '14px Arial, sans-serif';
       ctx.textAlign = 'center';
-      if (ctx.measureText(itemName).width <= BAR_AREA_W) {
+      // Try single line first
+      if (ctx.measureText(itemName).width <= BAR_W) {
         ctx.fillText(itemName, CW / 2, NAME_Y);
       } else {
-        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_AREA_W, 18);
+        // Wrap only if absolutely necessary
+        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
       }
     }
 
