@@ -1710,111 +1710,73 @@ async function exportYSMLabels(el) {
   if (!labels.length) { showToast('⚠️ No labels found'); return; }
   showToast(`⏳ Exporting ${labels.length} Zebra labels...`);
 
-  // Zebra 220 label: 4" wide × 2" tall
-  const W_mm  = 4  * 25.4;  // 101.6mm
-  const H_mm  = 2  * 25.4;  //  50.8mm
-  // Margins (inches → mm)
-  const mL = 0.9 * 25.4;   // 22.86mm
-  const mR = 0.7 * 25.4;   // 17.78mm
-  const mT = 0.8 * 25.4;   // 20.32mm
-  const mB = 0.8 * 25.4;   // 20.32mm
+  // Label: 4" wide × 2" tall in mm
+  const W_mm = 101.6;
+  const H_mm = 50.8;
 
   const { jsPDF } = window.jspdf;
-  // Each page = one label size, landscape
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [H_mm, W_mm] });
 
-  const DPI      = 203;              // Zebra 220 native DPI
-  const PX_W     = Math.round(W_mm / 25.4 * DPI);   // 812px
-  const PX_H     = Math.round(H_mm / 25.4 * DPI);   // 406px
-  const px_mL    = Math.round(mL / 25.4 * DPI);
-  const px_mT    = Math.round(mT / 25.4 * DPI);
-  const px_mB    = Math.round(mB / 25.4 * DPI);
-  const px_mR    = Math.round(mR / 25.4 * DPI);
-  const px_printW = PX_W - px_mL - px_mR;
-  const px_printH = PX_H - px_mT - px_mB;
+  // Canvas at exact 4:2 ratio = 1016×508px (1px = 0.1mm)
+  const CW = 1016;
+  const CH = 508;
 
-  // ── Canvas layout ──
-  // Canvas = 820×420px with proper margins all sides
-  const CW = 820;
-  const CH = 420;
+  // Minimal side padding — quiet zones
+  const PAD_L = 20;
+  const PAD_R = 20;
+  const PAD_T = 20;
 
-  const ML = 8;    // tiny left margin
-  const MR = 8;    // tiny right margin
-  const MT = 8;    // tiny top margin
-  const MB = 8;    // tiny bottom margin
-
-  const BAR_W  = CW - ML - MR;   // 804px — nearly full width
-  const BAR_H  = 320;             // TALL barcode — dominant
-  const BAR_X  = ML;
-  const BAR_Y  = MT;
-
-  const ASIN_Y = BAR_Y + BAR_H + 28;
-  const NAME_Y = ASIN_Y + 22;
+  const BAR_AREA_W = CW - PAD_L - PAD_R;  // 976px — nearly full width
+  const TEXT_H     = 120;                  // px reserved for ASIN + name
+  const BAR_H      = CH - PAD_T - TEXT_H - 10;  // remaining height for barcode
 
   function drawWrappedText(ctx, text, x, y, maxW, lineH) {
     const words = text.split(' ');
-    let line = '';
-    let curY  = y;
+    let line = '', curY = y;
     for (const word of words) {
       const test = line ? line + ' ' + word : word;
       if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, x, curY);
-        line = word;
-        curY += lineH;
-      } else {
-        line = test;
-      }
+        ctx.fillText(line, x, curY); line = word; curY += lineH;
+      } else { line = test; }
     }
     if (line) ctx.fillText(line, x, curY);
-    return curY;
   }
 
   for (let i = 0; i < labels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
-    const lbl      = labels[i];
-    const asin     = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
-    const itemName = (lbl.dataset.itemName || '').trim();  // full name, no limit
-    const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
+    const lbl       = labels[i];
+    const asin      = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
+    const itemName  = (lbl.dataset.itemName || '').trim();
+    const asinClean = asin.replace(/[^A-Z0-9\-\.\  ]/gi, '');
 
     const oc  = document.createElement('canvas');
     oc.width  = CW;
     oc.height = CH;
     const ctx = oc.getContext('2d');
 
+    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, CW, CH);
 
-    // ── 1. Generate barcode SVG ──
+    // Generate barcode SVG
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     let barcodeOk = false;
-    try {
-      JsBarcode(svgEl, asin || asinClean, {
-        format: 'CODE128', width: 3, height: BAR_H,
-        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
-      });
-      barcodeOk = true;
-    } catch(e) {}
-
+    const bcOpts = { format: 'CODE128', width: 3, height: BAR_H, displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0 };
+    try { JsBarcode(svgEl, asin || asinClean, bcOpts); barcodeOk = true; } catch(e) {}
     if (!barcodeOk) {
-      try {
-        JsBarcode(svgEl, asinClean, {
-          format: 'CODE128', width: 3, height: BAR_H,
-          displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
-        });
-        barcodeOk = true;
-      } catch(e2) { continue; }
+      try { JsBarcode(svgEl, asinClean, bcOpts); barcodeOk = true; } catch(e2) { continue; }
     }
 
-    // ── 2. Stretch barcode to full available width ──
+    // Render SVG and stretch barcode to fill full width
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, BAR_X, BAR_Y, BAR_W, BAR_H);
+        ctx.drawImage(img, PAD_L, PAD_T, BAR_AREA_W, BAR_H);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1822,33 +1784,33 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    // ── 3. ASIN — bold monospace, centered ──
+    // ASIN text below barcode
+    const ASIN_Y = PAD_T + BAR_H + 44;
     ctx.fillStyle = '#000000';
-    ctx.font      = 'bold 20px "Courier New", Courier, monospace';
+    ctx.font      = 'bold 32px "Courier New", Courier, monospace';
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — full name, single line if fits, wraps if too long ──
+    // Item name below ASIN
     if (itemName) {
+      const NAME_Y = ASIN_Y + 40;
       ctx.fillStyle = '#333333';
-      ctx.font      = '14px Arial, sans-serif';
+      ctx.font      = '24px Arial, sans-serif';
       ctx.textAlign = 'center';
-      // Try single line first
-      if (ctx.measureText(itemName).width <= BAR_W) {
+      if (ctx.measureText(itemName).width <= BAR_AREA_W) {
         ctx.fillText(itemName, CW / 2, NAME_Y);
       } else {
-        // Wrap only if absolutely necessary
-        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
+        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_AREA_W, 28);
       }
     }
 
+    // Add canvas to PDF — fills entire label perfectly
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
   }
 
   pdf.save(`YSM_Zebra220_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${labels.length} Zebra labels exported — one per page!`);
+  showToast(`✅ ${labels.length} Zebra labels exported!`);
 }
-
 // ════ FEEDBACK ════
 function sendFeedback() {
   const name = document.getElementById('fb-name').value.trim();
