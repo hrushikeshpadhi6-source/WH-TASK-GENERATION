@@ -119,6 +119,142 @@ body::before {
 .card-arrow { position:absolute; top:28px; right:28px; font-size:20px; opacity:0; transform:translateX(-10px); transition:all 0.22s; color:var(--card-color,var(--accent)); }
 .task-card:hover .card-arrow { opacity:1; transform:translateX(0); }
 .task-page { max-width:1000px; margin:0 auto; padding:40px 24px 80px; position:relative; z-index:1; }
+
+/* ── LIGHT THEME FOR TASK PAGES ── */
+#page-consolidation, #page-audit-loc, #page-audit-asin,
+#page-slow-moving, #page-ysm, #page-feedback, #page-contact {
+  background: #f8f7ff;
+  min-height: 100vh;
+}
+
+#page-consolidation .task-page, #page-audit-loc .task-page,
+#page-audit-asin .task-page, #page-slow-moving .task-page,
+#page-ysm .task-page, #page-feedback .task-page, #page-contact .task-page {
+  --bg: #f8f7ff;
+  --surface: #ffffff;
+  --surface2: #f0effe;
+  --surface3: #e8e6fd;
+  --border: #d5d2f0;
+  --text: #1a1830;
+  --text2: #3d3a6b;
+  --muted: #7b78a8;
+  --dark: #1a1830;
+  --accent: #ff6b35;
+  --accent2: #4361ee;
+  --green: #1a7a4a;
+  --gold: #b5860d;
+  --cyan: #0077aa;
+  color: #1a1830;
+}
+
+/* Task page specific overrides */
+#page-consolidation .back-btn, #page-audit-loc .back-btn,
+#page-audit-asin .back-btn, #page-slow-moving .back-btn,
+#page-ysm .back-btn, #page-feedback .back-btn, #page-contact .back-btn {
+  background: #fff; border-color: #d5d2f0; color: #3d3a6b;
+}
+
+#page-consolidation .back-btn:hover, #page-audit-loc .back-btn:hover,
+#page-audit-asin .back-btn:hover, #page-slow-moving .back-btn:hover,
+#page-ysm .back-btn:hover, #page-feedback .back-btn:hover, #page-contact .back-btn:hover {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+
+#page-consolidation .task-header h2, #page-audit-loc .task-header h2,
+#page-audit-asin .task-header h2, #page-slow-moving .task-header h2,
+#page-ysm .task-header h2, #page-feedback .task-header h2, #page-contact .task-header h2 {
+  background: linear-gradient(135deg, #1a1830, #4361ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+#page-consolidation .task-header, #page-audit-loc .task-header,
+#page-audit-asin .task-header, #page-slow-moving .task-header,
+#page-ysm .task-header, #page-feedback .task-header, #page-contact .task-header {
+  border-bottom-color: #d5d2f0;
+}
+
+#page-consolidation .upload-zone, #page-audit-loc .upload-zone,
+#page-audit-asin .upload-zone, #page-slow-moving .upload-zone,
+#page-ysm .upload-zone, #page-feedback .upload-zone {
+  background: #fff; border-color: #d5d2f0;
+}
+
+#page-consolidation .upload-zone h3, #page-audit-loc .upload-zone h3,
+#page-audit-asin .upload-zone h3, #page-slow-moving .upload-zone h3,
+#page-ysm .upload-zone h3, #page-feedback .upload-zone h3 {
+  color: #1a1830;
+}
+
+#page-consolidation .results-panel, #page-audit-loc .results-panel,
+#page-audit-asin .results-panel, #page-slow-moving .results-panel,
+#page-ysm .results-panel, #page-feedback .results-panel {
+  background: #fff; border-color: #d5d2f0;
+}
+
+#page-consolidation .results-header, #page-audit-loc .results-header,
+#page-audit-asin .results-header, #page-slow-moving .results-header,
+#page-ysm .results-header, #page-feedback .results-header {
+  background: linear-gradient(135deg, #1a1830, #2d2b5e);
+}
+
+#page-consolidation .label-card, #page-audit-loc .label-card,
+#page-audit-asin .label-card, #page-slow-moving .label-card,
+#page-ysm .label-card {
+  background: #fff; border-color: #d5d2f0;
+}
+
+#page-consolidation .label-card .asin-txt, #page-audit-asin .label-card .asin-txt {
+  color: #1a1830;
+}
+
+#page-consolidation .stat-card, #page-audit-loc .stat-card,
+#page-audit-asin .stat-card, #page-slow-moving .stat-card {
+  background: #fff; border-color: #d5d2f0;
+}
+
+#page-consolidation .select-field, #page-consolidation .input-field,
+#page-slow-moving .select-field, #page-slow-moving .input-field,
+#page-ysm .select-field, #page-ysm .input-field {
+  background: #fff; border-color: #d5d2f0; color: #1a1830;
+}
+
+#page-consolidation table td, #page-audit-loc table td,
+#page-audit-asin table td, #page-slow-moving table td {
+  color: #3d3a6b;
+}
+
+#page-consolidation table thead, #page-audit-loc table thead,
+#page-audit-asin table thead, #page-slow-moving table thead {
+  background: #f0effe;
+}
+
+#page-feedback .form-box, #page-contact .contact-card {
+  background: #fff; border-color: #d5d2f0;
+}
+
+#page-feedback .form-group input, #page-feedback .form-group textarea {
+  background: #f8f7ff; border-color: #d5d2f0; color: #1a1830;
+}
+
+#page-consolidation .mapper-box, #page-ysm .mapper-box {
+  background: #f0effe; border-color: #d5d2f0;
+}
+
+#page-consolidation .alert-info, #page-audit-loc .alert-info,
+#page-audit-asin .alert-info, #page-slow-moving .alert-info,
+#page-ysm .alert-info {
+  background: rgba(67,97,238,0.06); color: #2244aa;
+}
+
+#page-consolidation .alert-warn, #page-slow-moving .alert-warn,
+#page-ysm .alert-warn { background: rgba(180,120,0,0.07); color: #8a5a00; }
+
+#page-slow-moving table tr:hover td { background: rgba(67,97,238,0.04); }
+
+.audit-remark { background: #f8f7ff; border-color: #d5d2f0; color: #1a1830; }
+
+#page-audit-loc .label-card .remark-box,
+#page-audit-asin .label-card .remark-box { background: #f0effe; color: #1a1830; border-color: #d5d2f0; }
 .back-btn {
   display:inline-flex; align-items:center; gap:8px;
   background:var(--surface); border:1px solid var(--border);
@@ -703,7 +839,7 @@ footer span { color:var(--accent); }
 
 <!-- ══ FOOTER ══ -->
 <footer>
-  Powered by <span>HP World</span> &nbsp;·&nbsp; Hrushikesh Padhi [HP World] &nbsp;·&nbsp; All data processed locally in your browser
+  Copyright © 2026 <span>HP WORLD</span> &nbsp;·&nbsp; Hrushikesh Padhi &nbsp;·&nbsp; <span>ENWPP9081D/2019</span>
 </footer>
 
 <!-- ══ TOAST ══ -->
@@ -1319,8 +1455,7 @@ function generateYSM() {
       div.innerHTML = `
         <svg id="bc-${idx}" style="display:block;width:100%;"></svg>
         <div class="bl-asin" style="margin-top:5px;letter-spacing:1.5px">${lbl.asin}</div>
-        ${lbl.itemName ? `<div class="bl-num" style="font-size:9px;color:#444;margin-top:2px;letter-spacing:0.5px">${lbl.itemName}</div>` : ''}
-        <div class="bl-num">Unit ${lbl.unit} of ${lbl.total}</div>`;
+        ${lbl.itemName ? `<div class="bl-num" style="font-size:9px;color:#444;margin-top:2px;letter-spacing:0.5px">${lbl.itemName}</div>` : ''}`;
       grid.appendChild(div);
 
       try {
@@ -1598,62 +1733,75 @@ async function exportYSMLabels(el) {
   const px_printW = PX_W - px_mL - px_mR;
   const px_printH = PX_H - px_mT - px_mB;
 
-  // Row heights within print area
-  const px_barH     = Math.round(px_printH * 0.58);  // barcode = 58%
-  const px_asinSize = Math.round(11 / 25.4 * DPI);   // ASIN text font size
-  const px_nameSize = Math.round(9  / 25.4 * DPI);   // item name font size
-  const px_unitSize = Math.round(7  / 25.4 * DPI);   // unit counter font size
+  // ── Layout: use a simple fixed pixel canvas, no DPI complexity ──
+  // Canvas = 800×400px (roughly 4"×2" at screen res, jsPDF scales to label size)
+  const CW = 800;   // canvas width  px
+  const CH = 400;   // canvas height px
+
+  // Zones (px):
+  const BAR_TOP  = 20;           // barcode starts here
+  const BAR_H    = 270;          // barcode height — TALL and dominant
+  const BAR_L    = 20;           // left margin
+  const BAR_R    = 20;           // right margin
+  const BAR_W    = CW - BAR_L - BAR_R;  // barcode full width = 760px
+
+  const ASIN_Y   = BAR_TOP + BAR_H + 38;  // ASIN text Y
+  const NAME_Y   = ASIN_Y + 36;           // item name Y
 
   for (let i = 0; i < labels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
-    // Read data from DOM dataset (set during generation)
     const lbl      = labels[i];
     const asin     = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
     const itemName = (lbl.dataset.itemName || '').slice(0, 15);
-    const unit     = lbl.dataset.unit  || '';
-    const total    = lbl.dataset.total || '';
+    const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
-    // ── Draw on offscreen canvas at 203 DPI ──
+    // Draw on canvas
     const oc  = document.createElement('canvas');
-    oc.width  = PX_W;
-    oc.height = PX_H;
+    oc.width  = CW;
+    oc.height = CH;
     const ctx = oc.getContext('2d');
 
     // White background
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, PX_W, PX_H);
+    ctx.fillRect(0, 0, CW, CH);
 
-    // ── 1. Barcode ──
+    // ── 1. Generate barcode SVG ──
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
+    let barcodeOk = false;
     try {
-      JsBarcode(svgEl, asin, {
-        format: 'CODE128', width: 3, height: px_barH,
-        displayValue: false, background: '#ffffff',
-        lineColor: '#000000', margin: 0
+      JsBarcode(svgEl, asin || asinClean, {
+        format: 'CODE128',
+        width: 3,
+        height: BAR_H,
+        displayValue: false,
+        background: '#ffffff',
+        lineColor: '#000000',
+        margin: 0
       });
-    } catch(e) {
+      barcodeOk = true;
+    } catch(e) {}
+
+    if (!barcodeOk) {
       try {
         JsBarcode(svgEl, asinClean, {
-          format: 'CODE128', width: 3, height: px_barH,
+          format: 'CODE128', width: 3, height: BAR_H,
           displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
         });
+        barcodeOk = true;
       } catch(e2) { continue; }
     }
 
-    // Render SVG barcode to canvas
+    // ── 2. Draw barcode stretched to full width ──
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        // Center barcode horizontally in print area
-        const bcW = Math.min(img.width, px_printW);
-        const bcX = px_mL + (px_printW - bcW) / 2;
-        ctx.drawImage(img, bcX, px_mT, bcW, px_barH);
+        // STRETCH barcode to fill full available width — this is the key fix
+        ctx.drawImage(img, BAR_L, BAR_TOP, BAR_W, BAR_H);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1661,31 +1809,20 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    const centerX = px_mL + px_printW / 2;
-    let textY = px_mT + px_barH + Math.round(5 / 25.4 * DPI);
-
-    // ── 2. ASIN text ──
+    // ── 3. ASIN text — bold, large, centered ──
     ctx.fillStyle  = '#000000';
-    ctx.font       = `bold ${px_asinSize}px "Courier New", monospace`;
+    ctx.font       = 'bold 30px "Courier New", Courier, monospace';
     ctx.textAlign  = 'center';
-    ctx.letterSpacing = '2px';
-    ctx.fillText(asin, centerX, textY);
-    textY += Math.round(10 / 25.4 * DPI);
+    ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 3. Item name (max 15 chars) ──
+    // ── 4. Item name — smaller, grey, max 15 chars ──
     if (itemName) {
-      ctx.fillStyle = '#333333';
-      ctx.font      = `${px_nameSize}px "Arial", sans-serif`;
-      ctx.fillText(itemName, centerX, textY);
-      textY += Math.round(9 / 25.4 * DPI);
+      ctx.fillStyle = '#444444';
+      ctx.font      = '22px Arial, sans-serif';
+      ctx.fillText(itemName, CW / 2, NAME_Y);
     }
 
-    // ── 4. Unit counter ──
-    ctx.fillStyle = '#666666';
-    ctx.font      = `${px_unitSize}px monospace`;
-    ctx.fillText(`Unit ${unit} of ${total}`, centerX, textY);
-
-    // Add canvas image to PDF page (fills entire label)
+    // Add to PDF — stretch canvas to fill the full 4"×2" label
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
   }
 
