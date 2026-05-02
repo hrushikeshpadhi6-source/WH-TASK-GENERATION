@@ -835,7 +835,7 @@ footer span { color: var(--accent); }
   <!-- FILTER CONTROLS -->
   <div id="ctrl-consolidation" style="display:none">
     <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;align-items:end">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;align-items:end">
 
         <!-- Location Count Dropdown -->
         <div>
@@ -854,20 +854,11 @@ footer span { color: var(--accent); }
           </select>
         </div>
 
-        <!-- Bay / Path Filter -->
+        <!-- Bay Manual Text Input -->
         <div id="con-bay-wrap">
-          <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(built from your file)</span></div>
-          <select class="select-field" id="con-bay-input" style="width:100%">
-            <option value="">— All Bays —</option>
-          </select>
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Bays auto-detected from your inventory locations</div>
-        </div>
-
-        <!-- Bay disabled notice (only shows for 11+) -->
-        <div id="con-bay-disabled" style="display:none">
-          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e">
-            ⚠️ Bay/Path filter is <strong>disabled</strong> when "More than 10" is selected. Only location count filter applies.
-          </div>
+          <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional)</span></div>
+          <input class="input-field" type="text" id="con-bay-input" placeholder="e.g. A103, C205, HAZ" style="width:100%">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Type bay to filter · leave empty = show all</div>
         </div>
 
         <!-- Apply Button -->
@@ -897,8 +888,8 @@ footer span { color: var(--accent); }
   <div class="task-header">
     <span class="task-header-icon">📍</span>
     <div>
-      <h2>Inventory Audit by Location</h2>
-      <p>Generates 80 random locations across all zone types. Upload your inventory to pick real locations from your data, or use the default generator.</p>
+      <h2>Generate 70 Random Locations</h2>
+      <p>Generates 70 random locations across all zone types. Upload your inventory to pick real locations from your data, or use the default generator.</p>
     </div>
   </div>
 
@@ -922,7 +913,7 @@ footer span { color: var(--accent); }
   </div>
 
   <div class="btn-row">
-    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 80 Locations</button>
+    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 70 Locations</button>
   </div>
 
   <div class="loading" id="load-audit-loc"><div class="spinner"></div><div>Selecting locations...</div></div>
@@ -944,7 +935,7 @@ footer span { color: var(--accent); }
     <span class="task-header-icon">🔎</span>
     <div>
       <h2>Inventory Audit by ASIN</h2>
-      <p>Picks 80 random ASINs from your inventory with QR code and remark space for physical verification.</p>
+      <p>Picks 60 random ASINs from your inventory with QR code and remark space for physical verification.</p>
     </div>
   </div>
 
@@ -966,7 +957,7 @@ footer span { color: var(--accent); }
   </div>
 
   <div class="ctrl-row" id="ctrl-audit-asin" style="display:none">
-    <button class="btn btn-primary" onclick="generateAuditAsin()">⚡ Pick 80 Random ASINs</button>
+    <button class="btn btn-primary" onclick="generateAuditAsin()">⚡ Pick 60 Random ASINs</button>
   </div>
 
   <div class="loading" id="load-audit-asin"><div class="spinner"></div><div>Selecting ASINs...</div></div>
@@ -1017,6 +1008,10 @@ footer span { color: var(--accent); }
     <div>
       <div class="ctrl-label">Threshold (days)</div>
       <input class="input-field" type="number" id="slow-threshold" value="90" min="1" style="width:100px">
+    </div>
+    <div>
+      <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional)</span></div>
+      <input class="input-field" type="text" id="slow-bay-input" placeholder="e.g. A103, HAZ" style="width:140px">
     </div>
     <button class="btn btn-primary" onclick="generateSlowMoving()">⚡ Generate Task</button>
   </div>
@@ -1156,7 +1151,7 @@ footer span { color: var(--accent); }
 
 <!-- ══ FOOTER ══ -->
 <footer>
-  Powered by <span>HP World</span> &nbsp;·&nbsp; Warehouse Task Generation System &nbsp;·&nbsp; All data processed locally in your browser
+  Powered by <span>HP World</span> &nbsp;·&nbsp; Hrushikesh Padhi [HP World] &nbsp;·&nbsp; All data processed locally in your browser
 </footer>
 
 <!-- ══ TOAST ══ -->
@@ -1223,7 +1218,6 @@ function handleUpload(input, task) {
       if (ctrl) ctrl.style.display = 'flex';
 
       // Task-specific post-load
-      if (task === 'consolidation') buildConsolidationBays();
       if (task === 'slow-moving') buildSlowMovingCols();
       if (task === 'ysm') buildYSMMapper();
 
@@ -1283,63 +1277,20 @@ function findCol(headers, patterns) {
 
 // ════ TASK 1: CONSOLIDATION ════
 
-// Extract unique bay prefix from a location string
-// e.g. "Bin:P-1-A110" → "P-1-A"  |  "Bin:HAZ-A106A110" → "HAZ"  |  "P-1-F-001" → "P-1-F"
-function extractBayPrefix(loc) {
-  // Strip common prefixes like "Bin:" or "TransferTote:"
+// Extract bay from location per spec:
+// BIN:HAZ-106 → HAZ  |  P-1-A103F151 → A103  |  P-1-C205 → C205
+function extractBay(loc) {
   let s = loc.replace(/^(Bin:|TransferTote:|Tote:|Rack:)/i, '').trim();
-  // Match zone prefixes: P-1-F, P-1-C, P-1-A, P-1-D, P-1-H, P-1-X, P-1-T, P-1-V, P-1-R
-  const zoneMatch = s.match(/^(P-\d+-[A-Z]+)/i);
-  if (zoneMatch) {
-    // Return the zone + first 3 chars of the bin code to form a bay group
-    // e.g. P-1-A110 → P-1-A1  (group by first digit of bin)
-    const zone = zoneMatch[1].toUpperCase();
-    const rest = s.slice(zone.length).replace(/^[-_]?/, '');
-    const bayDigit = rest.match(/^(\d{1,3})/);
-    // Group into bays of ~10: e.g. 100-109 = bay 1xx, 110-119 = bay 11x
-    if (bayDigit) {
-      const num = bayDigit[1];
-      // Use first 2 digits as bay identifier (e.g. A10, A11, A12)
-      const bayId = num.length >= 3 ? num.slice(0, 2) : num.slice(0, 1);
-      return zone + bayId;
-    }
-    return zone;
-  }
-  // HAZ locations: HAZ-A106 → group by "HAZ-A1"
-  const hazMatch = s.match(/^(HAZ-[A-Z]\d)/i);
-  if (hazMatch) return hazMatch[1].toUpperCase();
-  // HRV
-  const hrvMatch = s.match(/^(HRV)/i);
-  if (hrvMatch) return 'HRV';
-  // Fallback: first 5 chars
+  if (/^HAZ/i.test(s)) return 'HAZ';
+  if (/^HRV/i.test(s)) return 'HRV';
+  const m = s.match(/^P-\d+-([A-Z]\d+)/i);
+  if (m) return m[1].toUpperCase();
   return s.slice(0, 5).toUpperCase();
 }
 
-// Build bay dropdown from uploaded file
-function buildConsolidationBays() {
-  const d = state.consolidation.data;
-  const h = state.consolidation.headers;
-  const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
-  if (!locCol) return;
-
-  const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(l =>
-    // Exclude TransferTote locations
-    !/transfertote|tote:/i.test(l) && l !== ''
-  ))];
-
-  const bays = [...new Set(allLocs.map(extractBayPrefix))].sort();
-
-  const sel = document.getElementById('con-bay-input');
-  sel.innerHTML = '<option value="">— All Bays —</option>' +
-    bays.map(b => `<option value="${b}">${b}</option>`).join('');
-}
-
-// Toggle bay filter visibility based on dropdown selection
 function onConCountChange() {
-  const val = document.getElementById('con-count-filter').value;
-  const isMoreThan10 = val === '11+';
+  const isMoreThan10 = document.getElementById('con-count-filter').value === '11+';
   document.getElementById('con-bay-wrap').style.display = isMoreThan10 ? 'none' : 'block';
-  document.getElementById('con-bay-disabled').style.display = isMoreThan10 ? 'block' : 'none';
   if (isMoreThan10) document.getElementById('con-bay-input').value = '';
 }
 
@@ -1349,7 +1300,7 @@ function generateConsolidation() {
 
   const countFilter = document.getElementById('con-count-filter').value;
   const isMoreThan10 = countFilter === '11+';
-  const bayRaw = isMoreThan10 ? '' : (document.getElementById('con-bay-input').value || '').trim();
+  const bayRaw = isMoreThan10 ? '' : (document.getElementById('con-bay-input').value || '').trim().toUpperCase();
 
   showLoading('consolidation', true);
   document.getElementById('out-consolidation').innerHTML = '';
@@ -1360,37 +1311,27 @@ function generateConsolidation() {
     const asinCol = findCol(h, ['asin','product.?id','item.?id','fcsku','sku']);
     const locCol  = findCol(h, ['location','bin','shelf','slot','locationid']);
 
-    if (!asinCol) { showLoading('consolidation',false); showToast('⚠️ Could not find ASIN column'); return; }
-    if (!locCol)  { showLoading('consolidation',false); showToast('⚠️ Could not find Location column'); return; }
+    if (!asinCol) { showLoading('consolidation',false); showToast('⚠️ ASIN column not found'); return; }
+    if (!locCol)  { showLoading('consolidation',false); showToast('⚠️ Location column not found'); return; }
 
-    // Step 1: Group by ASIN → Set of unique locations (exclude TransferTotes)
     const map = {};
     d.forEach(row => {
       const asin = String(row[asinCol] || '').trim();
       const loc  = String(row[locCol]  || '').trim();
       if (!asin) return;
       if (!map[asin]) map[asin] = new Set();
-      // Exclude TransferTote from location grouping
       if (loc && !/transfertote/i.test(loc)) map[asin].add(loc);
     });
 
-    // Step 2: Build results
-    let results = Object.entries(map).map(([asin, locs]) => ({
-      asin, count: locs.size, locs
-    }));
+    let results = Object.entries(map).map(([asin, locs]) => ({ asin, count: locs.size, locs }));
 
-    // Step 3: Apply COUNT filter
     if (isMoreThan10) {
       results = results.filter(r => r.count > 10);
     } else {
       const exact = parseInt(countFilter, 10);
       results = results.filter(r => r.count === exact);
-
-      // Step 4: Bay filter — match by bay prefix (AND logic)
       if (bayRaw) {
-        results = results.filter(r =>
-          [...r.locs].some(l => extractBayPrefix(l) === bayRaw)
-        );
+        results = results.filter(r => [...r.locs].some(l => extractBay(l) === bayRaw));
       }
     }
 
@@ -1398,21 +1339,14 @@ function generateConsolidation() {
     showLoading('consolidation', false);
 
     if (!results.length) {
-      const msg = isMoreThan10
-        ? 'No ASINs found with more than 10 unique locations.'
-        : bayRaw
-          ? `No ASINs with exactly ${countFilter} locations in bay <strong>${bayRaw}</strong>.`
-          : `No ASINs with exactly ${countFilter} unique locations.`;
       document.getElementById('out-consolidation').innerHTML =
-        `<div class="alert alert-warn">⚠️ ${msg}</div>`;
+        `<div class="alert alert-warn">⚠️ No ASINs matched. ${bayRaw?`Bay "${bayRaw}" not found or no items with ${countFilter} locations there.`:`No items with ${isMoreThan10?'more than 10':countFilter} locations.`}</div>`;
       return;
     }
 
-    const filterLabel = isMoreThan10
-      ? 'More than 10 locations'
-      : bayRaw
-        ? `Exactly ${countFilter} locations · Bay: ${bayRaw}`
-        : `Exactly ${countFilter} locations`;
+    const filterLabel = isMoreThan10 ? 'More than 10 locations'
+      : bayRaw ? `Exactly ${countFilter} locations · Bay: ${bayRaw}`
+      : `Exactly ${countFilter} locations`;
 
     const panel = document.createElement('div');
     panel.className = 'results-panel';
@@ -1424,48 +1358,34 @@ function generateConsolidation() {
       <div class="results-body">
         <div class="stats-row">
           <div class="stat-card"><div class="sv">${results.length}</div><div class="sl">Matched ASINs</div></div>
-          <div class="stat-card"><div class="sv">${isMoreThan10 ? '11+' : countFilter}</div><div class="sl">Location Count</div></div>
-          ${bayRaw ? `<div class="stat-card"><div class="sv" style="font-size:15px">${bayRaw}</div><div class="sl">Bay</div></div>` : ''}
+          <div class="stat-card"><div class="sv">${isMoreThan10?'11+':countFilter}</div><div class="sl">Location Count</div></div>
+          ${bayRaw?`<div class="stat-card"><div class="sv" style="font-size:15px">${bayRaw}</div><div class="sl">Bay</div></div>`:''}
         </div>
-        ${isMoreThan10 ? '<div class="alert alert-warn" style="margin-bottom:16px">⚠️ Bay filter disabled for "More than 10" selection.</div>' : ''}
         <div class="label-grid" id="consolidation-qr-grid"></div>
+        ${results.length>30?`<div class="alert alert-info" style="margin-top:16px">ℹ️ Showing top 30 on screen. All ${results.length} in PDF export.</div>`:''}
       </div>`;
-
     document.getElementById('out-consolidation').appendChild(panel);
 
-    // Show up to 30 QR cards
     const grid = panel.querySelector('#consolidation-qr-grid');
-    const toShow = results.slice(0, 30);
-    if (results.length > 30) {
-      panel.querySelector('.results-body').insertAdjacentHTML('beforeend',
-        `<div class="alert alert-info" style="margin-top:12px">ℹ️ Showing top 30 of ${results.length} ASINs. Export PDF to see all.</div>`);
-    }
-
-    toShow.forEach((item, idx) => {
+    results.slice(0, 30).forEach((item, idx) => {
       const card = document.createElement('div');
       card.className = 'label-card';
-      let priority, pColor;
-      if (isMoreThan10) { priority = 'HIGH'; pColor = '#e8500a'; }
-      else {
-        const n = item.count;
-        priority = n >= 8 ? 'HIGH' : n >= 5 ? 'MEDIUM' : 'LOW';
-        pColor   = n >= 8 ? '#e8500a' : n >= 5 ? '#c9a227' : '#1a7a4a';
-      }
+      const n = item.count;
+      const priority = (isMoreThan10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
+      const pColor = priority==='HIGH'?'#e8500a':priority==='MEDIUM'?'#c9a227':'#1a7a4a';
       card.innerHTML = `
         <div style="display:inline-block;padding:3px 10px;border-radius:4px;background:${pColor};color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:8px">${priority}</div>
         <div id="qr-c-${idx}" style="display:flex;justify-content:center;margin-bottom:8px"></div>
         <div class="asin-txt">${item.asin}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:#555;margin-top:6px;font-weight:600">📍 ${item.count} Location${item.count > 1 ? 's' : ''}</div>`;
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:#555;margin-top:6px;font-weight:600">📍 ${item.count} Location${item.count>1?'s':''}</div>`;
       grid.appendChild(card);
       try {
         new QRCode(document.getElementById(`qr-c-${idx}`), {
           text: item.asin, width: 130, height: 130,
-          colorDark: '#111110', colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
+          colorDark: '#111110', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
         });
       } catch(e) {}
     });
-
     document.getElementById('export-consolidation').style.display = 'flex';
     showToast(`✅ ${results.length} ASINs matched`);
   }, 350);
@@ -1597,7 +1517,7 @@ function generateAuditAsin() {
     if (!asinCol) { showLoading('audit-asin',false); showToast('⚠️ ASIN column not found'); return; }
 
     const allASINs = [...new Set(d.map(r => String(r[asinCol]||'').trim()).filter(Boolean))];
-    const picked = pickRandom(allASINs, 80);
+    const picked = pickRandom(allASINs, 60);
 
     showLoading('audit-asin', false);
 
@@ -1617,7 +1537,7 @@ function generateAuditAsin() {
     document.getElementById('out-audit-asin').appendChild(grid);
 
     const g = grid.querySelector('#audit-asin-grid');
-    // Show 30 on screen, all 80 in PDF
+    // Show 30 on screen, all 60 in PDF
     picked.slice(0, 30).forEach((asin, idx) => {
       const card = document.createElement('div');
       card.className = 'label-card';
@@ -1661,6 +1581,7 @@ function generateSlowMoving() {
 
   const ageCol = document.getElementById('col-age-slow').value;
   const threshold = parseFloat(document.getElementById('slow-threshold').value) || 90;
+  const bayRaw = (document.getElementById('slow-bay-input').value || '').trim().toUpperCase();
   const h = state['slow-moving'].headers;
   const asinCol = findCol(h, ['asin','product.?id','item.?id']);
   const locCol = findCol(h, ['location','bin','shelf','locationid']);
@@ -1671,21 +1592,30 @@ function generateSlowMoving() {
   document.getElementById('out-slow-moving').innerHTML = '';
 
   setTimeout(() => {
-    slowMovingRows = d.filter(r => parseFloat(r[ageCol]) > threshold)
-      .map(r => ({
-        ASIN: asinCol ? r[asinCol] : '—',
-        Title: titleCol ? String(r[titleCol]||'').slice(0,50) : '—',
-        Location: locCol ? r[locCol] : '—',
-        Quantity: qtyCol ? r[qtyCol] : '—',
-        'Age Days': parseFloat(r[ageCol]).toFixed(1)
-      }))
-      .sort((a,b) => parseFloat(b['Age Days']) - parseFloat(a['Age Days']));
+    let filtered = d.filter(r => parseFloat(r[ageCol]) > threshold);
+
+    // Bay filter
+    if (bayRaw && locCol) {
+      filtered = filtered.filter(r => {
+        const loc = String(r[locCol] || '').trim();
+        return extractBay(loc) === bayRaw;
+      });
+    }
+
+    slowMovingRows = filtered.map(r => ({
+      ASIN: asinCol ? r[asinCol] : '—',
+      Title: titleCol ? String(r[titleCol]||'').slice(0,50) : '—',
+      Location: locCol ? r[locCol] : '—',
+      Bay: locCol ? extractBay(String(r[locCol]||'').trim()) : '—',
+      Quantity: qtyCol ? r[qtyCol] : '—',
+      'Age Days': parseFloat(r[ageCol]).toFixed(1)
+    })).sort((a,b) => parseFloat(b['Age Days']) - parseFloat(a['Age Days']));
 
     showLoading('slow-moving', false);
 
     if (!slowMovingRows.length) {
       document.getElementById('out-slow-moving').innerHTML =
-        `<div class="alert alert-info">ℹ️ No items found with Age Days > ${threshold}.</div>`;
+        `<div class="alert alert-info">ℹ️ No items found with Age Days > ${threshold}${bayRaw?` in bay "${bayRaw}"`:''}.  </div>`;
       return;
     }
 
@@ -1705,13 +1635,14 @@ function generateSlowMoving() {
       <div class="results-panel">
         <div class="results-header">
           <h3>🐢 Slow Moving Items</h3>
-          <span class="results-count">${slowMovingRows.length} items · Age > ${threshold} days</span>
+          <span class="results-count">${slowMovingRows.length} items · Age > ${threshold} days${bayRaw?` · Bay: ${bayRaw}`:''}</span>
         </div>
         <div class="results-body">
           <div class="stats-row">
             <div class="stat-card"><div class="sv">${slowMovingRows.length}</div><div class="sl">Total Items</div></div>
             <div class="stat-card"><div class="sv" style="color:#dc2626">${slowMovingRows.filter(r=>parseFloat(r['Age Days'])>150).length}</div><div class="sl">Over 150 Days</div></div>
             <div class="stat-card"><div class="sv">${Math.max(...slowMovingRows.map(r=>parseFloat(r['Age Days']))).toFixed(0)}</div><div class="sl">Max Age (Days)</div></div>
+            ${bayRaw?`<div class="stat-card"><div class="sv" style="font-size:15px">${bayRaw}</div><div class="sl">Bay Filter</div></div>`:''}
           </div>
           <div class="tbl-wrap">
             <table>
@@ -1756,15 +1687,12 @@ function generateYSM() {
   document.getElementById('out-ysm').innerHTML = '';
 
   setTimeout(() => {
-    // Build labels: one per unit
     const labels = [];
     d.forEach(row => {
       const asin = String(row[asinCol] || '').trim();
       const qty = parseInt(row[qtyCol]) || 0;
       if (!asin || qty <= 0) return;
-      for (let i = 1; i <= qty; i++) {
-        labels.push({ asin, unit: i, total: qty });
-      }
+      for (let i = 1; i <= qty; i++) labels.push({ asin, unit: i, total: qty });
     });
 
     showLoading('ysm', false);
@@ -1783,38 +1711,35 @@ function generateYSM() {
           <span class="results-count">${labels.length} labels · ${[...new Set(labels.map(l=>l.asin))].length} ASINs</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Each block below is one Zebra label. Export PDF or use Print button for clean printing.</div>
+          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 ready · 4"×2" label per unit · Export PDF for clean printing.</div>
           <div class="barcode-labels-wrap" id="ysm-labels-grid"></div>
         </div>
       </div>`;
-
     document.getElementById('out-ysm').appendChild(wrap);
 
     const grid = wrap.querySelector('#ysm-labels-grid');
     labels.forEach((lbl, idx) => {
       const div = document.createElement('div');
       div.className = 'barcode-label';
+      // Apply Zebra 220 margins: top:0.8 left:0.9 bottom:0.8 right:0.7 (in units matching label)
+      div.style.cssText = 'padding: 7px 6px 7px 8px; box-sizing:border-box;';
       div.innerHTML = `
-        <svg id="bc-${idx}"></svg>
-        <div class="bl-asin">${lbl.asin}</div>
+        <svg id="bc-${idx}" style="display:block;width:100%;"></svg>
+        <div class="bl-asin" style="margin-top:5px;letter-spacing:1.5px">${lbl.asin}</div>
         <div class="bl-num">Unit ${lbl.unit} of ${lbl.total}</div>`;
       grid.appendChild(div);
 
       try {
         JsBarcode(`#bc-${idx}`, lbl.asin, {
-          format: 'CODE128',
-          width: 2,
-          height: 60,
-          displayValue: false,
-          background: '#ffffff',
-          lineColor: '#000000',
-          margin: 4
+          format: 'CODE128', width: 2.2, height: 65,
+          displayValue: false, background: '#ffffff',
+          lineColor: '#000000', margin: 0, marginTop: 0, marginBottom: 0
         });
       } catch(e) {
-        // fallback for non-standard chars
         try {
           JsBarcode(`#bc-${idx}`, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
-            format: 'CODE128', width:2, height:60, displayValue:false
+            format: 'CODE128', width: 2.2, height: 65,
+            displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
           });
         } catch(e2) {}
       }
@@ -1831,14 +1756,10 @@ async function exportPDF(containerId, title) {
   const el = document.getElementById(containerId);
   if (!el || !el.innerHTML.trim()) { showToast('⚠️ Nothing to export'); return; }
 
-  const isYSM = containerId === 'out-ysm';
-
   try {
-    if (isYSM) {
-      // ── YSM: 4" × 2" label per barcode ──
-      await exportYSMLabels(el, title);
+    if (containerId === 'out-ysm') {
+      await exportYSMLabels(el);
     } else {
-      // ── All other tasks: A4 ──
       await exportA4PDF(el, title);
     }
   } catch(err) {
@@ -1849,13 +1770,11 @@ async function exportPDF(containerId, title) {
 
 async function exportA4PDF(el, title) {
   const canvas = await html2canvas(el, {
-    scale: 2, useCORS: true,
-    backgroundColor: '#f5f4f0', logging: false
+    scale: 2, useCORS: true, backgroundColor: '#f5f4f0', logging: false
   });
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const margin = 10;
@@ -1867,72 +1786,52 @@ async function exportA4PDF(el, title) {
 
   while (remaining > 0) {
     const sliceH = Math.min(contentH, remaining);
-    const sliceCanvas = document.createElement('canvas');
-    sliceCanvas.width = canvas.width;
-    sliceCanvas.height = (sliceH / imgW) * canvas.width;
-    const ctx = sliceCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-
+    const sc = document.createElement('canvas');
+    sc.width = canvas.width;
+    sc.height = (sliceH / imgW) * canvas.width;
+    sc.getContext('2d').drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sc.height, 0, 0, canvas.width, sc.height);
     if (srcY > 0) pdf.addPage();
-    pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
-
-    pdf.setFontSize(8);
-    pdf.setTextColor(150);
-    pdf.text('Powered by HP World', pageW / 2, pageH - 4, { align: 'center' });
-    pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH - 4);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 4, { align: 'right' });
-
-    srcY += sliceH;
-    remaining -= sliceH;
+    pdf.addImage(sc.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
+    pdf.setFontSize(7); pdf.setTextColor(140);
+    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH-4, {align:'center'});
+    pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH-4);
+    pdf.text(new Date().toLocaleDateString('en-GB'), pageW-margin, pageH-4, {align:'right'});
+    srcY += sliceH; remaining -= sliceH;
   }
-
   pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
   showToast('✅ PDF downloaded!');
 }
 
-async function exportYSMLabels(el, title) {
-  // 4 inches × 2 inches label size (Zebra standard)
-  const labelW_in = 4;
-  const labelH_in = 2;
-  const dpi = 96;
+async function exportYSMLabels(el) {
+  // Zebra 220 compatible: 4" × 2" label
+  // Margins: top 0.8, left 0.9, bottom 0.8, right 0.7 (inches → mm)
+  const W_mm = 4 * 25.4;    // 101.6mm
+  const H_mm = 2 * 25.4;    //  50.8mm
+  const mTop   = 0.8 * 25.4;  // 20.32mm
+  const mLeft  = 0.9 * 25.4;  // 22.86mm
+  const mBot   = 0.8 * 25.4;
+  const mRight = 0.7 * 25.4;
 
   const { jsPDF } = window.jspdf;
-  // jsPDF unit: mm. 1 inch = 25.4mm
-  const labelW_mm = labelW_in * 25.4;  // 101.6mm
-  const labelH_mm = labelH_in * 25.4;  //  50.8mm
-
-  const pdf = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: [labelH_mm, labelW_mm]   // jsPDF: [height, width] when landscape
-  });
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[H_mm, W_mm] });
 
   const labels = el.querySelectorAll('.barcode-label');
   if (!labels.length) { showToast('⚠️ No labels found'); return; }
 
   for (let i = 0; i < labels.length; i++) {
-    if (i > 0) pdf.addPage([labelH_mm, labelW_mm], 'landscape');
-
+    if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
     const canvas = await html2canvas(labels[i], {
-      scale: 3,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: labelW_in * dpi,
-      height: labelH_in * dpi
+      scale: 4, useCORS: true, backgroundColor: '#ffffff', logging: false
     });
-
-    const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', 0, 0, labelW_mm, labelH_mm);
-
-    // Footer text
-    pdf.setFontSize(5);
-    pdf.setTextColor(180);
-    pdf.text('Powered by HP World', labelW_mm / 2, labelH_mm - 1, { align: 'center' });
+    const printW = W_mm - mLeft - mRight;
+    const printH = H_mm - mTop  - mBot;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', mLeft, mTop, printW, printH);
+    pdf.setFontSize(4); pdf.setTextColor(180);
+    pdf.text('Powered by HP World · Hrushikesh Padhi [HP World]', W_mm/2, H_mm-1, {align:'center'});
   }
 
-  pdf.save(`YSM_Labels_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${labels.length} labels exported as 4"×2" PDF!`);
+  pdf.save(`YSM_Zebra220_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast(`✅ ${labels.length} Zebra 220 labels exported!`);
 }
 
 // ════ FEEDBACK ════
