@@ -16,703 +16,254 @@
 
 <style>
 :root {
-  --bg: #f5f4f0;
-  --surface: #ffffff;
-  --surface2: #eeecea;
-  --dark: #111110;
-  --dark2: #2a2927;
-  --accent: #e8500a;
-  --accent2: #1a5cff;
-  --gold: #c9a227;
-  --green: #1a7a4a;
-  --border: #d8d6d1;
-  --muted: #888580;
-  --shadow: 0 2px 16px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
-  --radius: 12px;
+  --bg: #0f0e17;
+  --bg2: #13121f;
+  --surface: #1a1928;
+  --surface2: #222136;
+  --surface3: #2a2840;
+  --dark: #0a0914;
+  --accent: #ff6b35;
+  --accent2: #4361ee;
+  --accent3: #7209b7;
+  --gold: #ffd60a;
+  --green: #06d6a0;
+  --pink: #f72585;
+  --cyan: #4cc9f0;
+  --border: #2e2c45;
+  --muted: #8b8aad;
+  --text: #e8e6ff;
+  --text2: #b8b6d9;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.6);
+  --radius: 14px;
   --radius-lg: 20px;
 }
-
 * { margin:0; padding:0; box-sizing:border-box; }
-
 body {
   font-family: 'Syne', sans-serif;
   background: var(--bg);
-  color: var(--dark);
+  color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
-
-/* ── HEADER ── */
-.header {
-  background: var(--dark);
-  color: #fff;
-  padding: 0 40px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 200;
-}
-
-.header-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-.header-logo .dot { color: var(--accent); }
-
-.header-badge {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  background: rgba(255,255,255,0.1);
-  padding: 4px 10px;
-  border-radius: 20px;
-  color: rgba(255,255,255,0.6);
-  letter-spacing: 1px;
-}
-
-/* ── PAGE SYSTEM ── */
-.page { display: none; }
-.page.active { display: block; }
-
-/* ── DASHBOARD ── */
-.dashboard {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 60px 24px 80px;
-}
-
-.dash-hero {
-  text-align: center;
-  margin-bottom: 60px;
-}
-
-.dash-hero h1 {
-  font-size: clamp(36px, 5vw, 64px);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -2px;
-  margin-bottom: 16px;
-}
-
-.dash-hero h1 em {
-  font-style: normal;
-  color: var(--accent);
-}
-
-.dash-hero p {
-  font-size: 17px;
-  color: var(--muted);
-  font-weight: 400;
-  max-width: 480px;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-.task-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.task-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
-  position: relative;
-  overflow: hidden;
-}
-
-.task-card::before {
+body::before {
   content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--card-color, var(--accent));
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.22s ease;
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(67,97,238,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(114,9,183,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 60% 10%, rgba(255,107,53,0.05) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
 }
-
-.task-card:hover {
-  border-color: var(--card-color, var(--accent));
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.task-card:hover::before { transform: scaleY(1); }
-
-.card-num {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.card-icon {
-  font-size: 36px;
-  margin-bottom: 14px;
-  display: block;
-}
-
-.task-card h3 {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: -0.3px;
-}
-
-.task-card p {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.5;
-  font-weight: 400;
-}
-
-.card-arrow {
-  position: absolute;
-  top: 28px; right: 28px;
-  font-size: 18px;
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: all 0.2s;
-}
-
-.task-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
-
-/* ── TASK PAGE ── */
-.task-page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: 1.5px solid var(--border);
-  padding: 8px 18px;
-  border-radius: 40px;
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--dark);
-  transition: all 0.2s;
-  margin-bottom: 32px;
-  text-decoration: none;
-}
-
-.back-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
-
-.task-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 36px;
-  padding-bottom: 28px;
+.header {
+  background: rgba(10,9,20,0.9);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
+  padding: 0 40px; height: 68px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
 }
-
-.task-header-icon {
-  font-size: 48px;
-  line-height: 1;
-  flex-shrink: 0;
+.header-logo { display:flex; align-items:center; gap:10px; font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#fff; }
+.header-logo .dot { color: var(--accent); }
+.header-badge {
+  font-family: 'DM Mono', monospace; font-size:11px;
+  background: linear-gradient(135deg,rgba(255,107,53,0.2),rgba(67,97,238,0.2));
+  border: 1px solid rgba(255,107,53,0.3);
+  padding: 5px 12px; border-radius: 20px; color: var(--accent); letter-spacing:1px;
 }
-
+.page { display: none; position: relative; z-index: 1; }
+.page.active { display: block; }
+.dashboard { max-width: 1200px; margin: 0 auto; padding: 60px 24px 100px; }
+.dash-hero { text-align: center; margin-bottom: 70px; }
+.dash-hero .hero-tag {
+  display:inline-flex; align-items:center; gap:6px;
+  background: linear-gradient(135deg,rgba(255,107,53,0.15),rgba(67,97,238,0.15));
+  border: 1px solid rgba(255,107,53,0.3);
+  padding: 6px 16px; border-radius:20px;
+  font-family: 'DM Mono',monospace; font-size:11px; color:var(--accent);
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:24px;
+}
+.dash-hero h1 {
+  font-size: clamp(40px,5vw,72px); font-weight:800;
+  line-height:1.0; letter-spacing:-3px; margin-bottom:20px;
+  background: linear-gradient(135deg,#fff 0%,#b8b6ff 50%,var(--accent) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.dash-hero p { font-size:17px; color:var(--muted); max-width:500px; margin:0 auto; line-height:1.7; }
+.task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:18px; }
+.task-card {
+  background: var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:28px; cursor:pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  position:relative; overflow:hidden;
+}
+.task-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background: linear-gradient(90deg,var(--card-color,var(--accent)),transparent);
+}
+.task-card::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(135deg,var(--card-color,var(--accent)),transparent 60%);
+  opacity:0; transition:opacity 0.25s; pointer-events:none;
+}
+.task-card:hover {
+  border-color:var(--card-color,var(--accent));
+  transform:translateY(-6px) scale(1.01);
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.task-card:hover::after { opacity:0.06; }
+.card-num { font-family:'DM Mono',monospace; font-size:10px; color:var(--card-color,var(--muted)); letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; opacity:0.8; }
+.card-icon { font-size:38px; margin-bottom:14px; display:block; }
+.task-card h3 { font-size:20px; font-weight:700; margin-bottom:8px; letter-spacing:-0.3px; color:#fff; }
+.task-card p { font-size:13px; color:var(--text2); line-height:1.6; }
+.card-arrow { position:absolute; top:28px; right:28px; font-size:20px; opacity:0; transform:translateX(-10px); transition:all 0.22s; color:var(--card-color,var(--accent)); }
+.task-card:hover .card-arrow { opacity:1; transform:translateX(0); }
+.task-page { max-width:1000px; margin:0 auto; padding:40px 24px 80px; position:relative; z-index:1; }
+.back-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--surface); border:1px solid var(--border);
+  padding:9px 20px; border-radius:40px; font-family:'Syne',sans-serif;
+  font-size:13px; font-weight:600; cursor:pointer; color:var(--text2);
+  transition:all 0.2s; margin-bottom:32px; text-decoration:none;
+}
+.back-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.task-header { display:flex; align-items:flex-start; gap:18px; margin-bottom:36px; padding-bottom:28px; border-bottom:1px solid var(--border); }
+.task-header-icon { font-size:52px; line-height:1; flex-shrink:0; }
 .task-header h2 {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  margin-bottom: 6px;
+  font-size:34px; font-weight:800; letter-spacing:-1px; margin-bottom:6px;
+  background:linear-gradient(135deg,#fff,var(--text2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
-
-.task-header p { color: var(--muted); font-size: 15px; font-weight: 400; line-height: 1.5; }
-
-/* ── UPLOAD ZONE ── */
+.task-header p { color:var(--muted); font-size:14px; line-height:1.6; }
 .upload-zone {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-lg);
-  padding: 52px 32px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--surface);
-  margin-bottom: 24px;
+  border:2px dashed var(--border); border-radius:var(--radius-lg);
+  padding:52px 32px; text-align:center; cursor:pointer;
+  transition:all 0.25s; background:var(--surface); margin-bottom:24px;
 }
-
-.upload-zone:hover, .upload-zone.drag {
-  border-color: var(--accent);
-  background: rgba(232,80,10,0.03);
-}
-
-.upload-zone input { display: none; }
-.upload-zone .u-icon { font-size: 44px; margin-bottom: 12px; }
-.upload-zone h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-.upload-zone p { color: var(--muted); font-size: 13px; }
-.upload-zone .fmts { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
-
+.upload-zone:hover,.upload-zone.drag { border-color:var(--accent); background:rgba(255,107,53,0.04); }
+.upload-zone input { display:none; }
+.upload-zone .u-icon { font-size:48px; margin-bottom:14px; display:block; }
+.upload-zone h3 { font-size:18px; font-weight:700; margin-bottom:6px; color:#fff; }
+.upload-zone p { color:var(--muted); font-size:13px; }
+.upload-zone .fmts { display:flex; gap:8px; justify-content:center; margin-top:14px; }
 .fmt-tag {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--accent);
-  letter-spacing: 1px;
+  background:rgba(255,107,53,0.1); border:1px solid rgba(255,107,53,0.3);
+  padding:4px 10px; border-radius:4px; font-family:'DM Mono',monospace;
+  font-size:11px; color:var(--accent); letter-spacing:1px;
 }
-
 .file-ok {
-  display: none;
-  background: #f0fdf6;
-  border: 1.5px solid #86efac;
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  display:none; background:rgba(6,214,160,0.08); border:1px solid rgba(6,214,160,0.3);
+  border-radius:var(--radius); padding:14px 18px; align-items:center;
+  gap:12px; margin-bottom:20px; font-size:14px; font-weight:600; color:var(--green);
 }
-
-.file-ok.show { display: flex; }
-.file-ok .fi-info { flex: 1; }
-.file-ok .fi-info span { display: block; font-weight: 400; color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
-
-/* ── CONTROLS ── */
-.ctrl-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
-  align-items: center;
+.file-ok.show { display:flex; }
+.file-ok .fi-info { flex:1; color:var(--text); }
+.file-ok .fi-info span { display:block; font-weight:400; color:var(--muted); font-size:12px; font-family:'DM Mono',monospace; }
+.ctrl-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; align-items:center; }
+.ctrl-label { font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.select-field,.input-field {
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  padding:10px 14px; font-family:'Syne',sans-serif; font-size:14px;
+  color:var(--text); outline:none; cursor:pointer; transition:border-color 0.2s,box-shadow 0.2s;
 }
-
-.ctrl-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-.select-field, .input-field {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  color: var(--dark);
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.select-field:focus, .input-field:focus { border-color: var(--accent); }
-
-/* ── BUTTONS ── */
+.select-field:focus,.input-field:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,0.15); }
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
+  display:inline-flex; align-items:center; gap:8px; padding:12px 26px;
+  border-radius:10px; font-family:'Syne',sans-serif; font-size:13px;
+  font-weight:700; letter-spacing:0.5px; border:none; cursor:pointer;
+  transition:all 0.2s; text-transform:uppercase;
 }
-
-.btn-primary { background: var(--dark); color: #fff; }
-.btn-primary:hover { background: var(--accent); transform: translateY(-1px); }
-.btn-accent { background: var(--accent); color: #fff; }
-.btn-accent:hover { background: #c43d04; transform: translateY(-1px); }
-.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--dark); }
-.btn-outline:hover { border-color: var(--dark); background: var(--dark); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-green:hover { background: #145c38; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
-
-.btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
-
-/* ── RESULTS ── */
-.results-panel {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-top: 28px;
-}
-
-.results-header {
-  background: var(--dark);
-  color: #fff;
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.results-header h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-.results-count { font-family: 'DM Mono', monospace; font-size: 12px; opacity: 0.6; }
-
-.results-body { padding: 24px; }
-
-/* ── TABLE ── */
-.tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead { background: var(--surface2); }
-th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--border); }
-td { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.05); font-family: 'DM Mono', monospace; font-size: 12px; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: rgba(232,80,10,0.03); }
-
-/* ── CARD GRID for QR/Barcode outputs ── */
-.label-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-}
-
+.btn-primary { background:linear-gradient(135deg,var(--accent2),#2f4bd4); color:#fff; box-shadow:0 4px 20px rgba(67,97,238,0.4); }
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(67,97,238,0.5); }
+.btn-accent { background:linear-gradient(135deg,var(--accent),#c43d04); color:#fff; box-shadow:0 4px 20px rgba(255,107,53,0.4); }
+.btn-accent:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(255,107,53,0.5); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text2); }
+.btn-outline:hover { border-color:var(--accent); color:var(--accent); background:rgba(255,107,53,0.08); }
+.btn-green { background:linear-gradient(135deg,var(--green),#04a07a); color:#000; box-shadow:0 4px 20px rgba(6,214,160,0.3); }
+.btn-green:hover { transform:translateY(-2px); }
+.btn:disabled { opacity:0.35; cursor:not-allowed; transform:none !important; }
+.btn-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; }
+.results-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-top:28px; }
+.results-header { background:linear-gradient(135deg,var(--surface2),var(--surface3)); border-bottom:1px solid var(--border); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; }
+.results-header h3 { font-size:15px; font-weight:700; color:#fff; }
+.results-count { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted); }
+.results-body { padding:24px; }
+.tbl-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead { background:var(--surface2); }
+th { padding:11px 14px; text-align:left; font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); white-space:nowrap; border-bottom:1px solid var(--border); }
+td { padding:10px 14px; border-bottom:1px solid rgba(46,44,69,0.5); font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,107,53,0.04); }
+.label-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
 .label-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  text-align: center;
-  transition: box-shadow 0.2s;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:12px 8px; text-align:center;
+  transition:all 0.2s; position:relative; overflow:hidden;
 }
-
-.label-card:hover { box-shadow: var(--shadow); }
-
-.label-card .asin-txt {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  margin-top: 10px;
-  color: var(--dark);
-  word-break: break-all;
-}
-
-.label-card .remark-box {
-  width: 100%;
-  margin-top: 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  background: var(--surface2);
-  min-height: 40px;
-  resize: none;
-  color: var(--dark);
-}
-
-/* ── AUDIT TABLE special ── */
-.audit-remark {
-  min-width: 160px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  background: var(--surface2);
-}
-
-/* ── BARCODE LABELS PRINT ── */
-.barcode-labels-wrap {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.barcode-label {
-  background: #fff;
-  border: 2px solid #222;
-  border-radius: 6px;
-  padding: 14px 12px;
-  text-align: center;
-  page-break-inside: avoid;
-}
-
-.barcode-label svg { max-width: 100%; }
-
-.barcode-label .bl-asin {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 6px;
-  letter-spacing: 1px;
-}
-
-.barcode-label .bl-num {
-  font-size: 10px;
-  color: #888;
-  margin-top: 2px;
-  font-family: 'DM Mono', monospace;
-}
-
-/* ── YSM COLUMN MAPPER ── */
-.mapper-box {
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 20px;
-}
-
-.mapper-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
-
-.mapper-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.mapper-row label {
-  font-size: 13px;
-  font-weight: 600;
-  min-width: 140px;
-  color: var(--dark2);
-}
-
-/* ── FEEDBACK / CONTACT ── */
-.form-box {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 36px;
-  max-width: 560px;
-}
-
-.form-group { margin-bottom: 20px; }
-
-.form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.form-group input, .form-group textarea {
-  width: 100%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  color: var(--dark);
-  outline: none;
-  transition: border-color 0.2s;
-  resize: vertical;
-}
-
-.form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
-
-.form-group textarea { min-height: 120px; }
-
-/* ── CONTACT PAGE ── */
-.contact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-  max-width: 600px;
-}
-
-.contact-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  text-align: center;
-}
-
-.contact-card .cc-icon { font-size: 40px; margin-bottom: 12px; }
-.contact-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-.contact-card a { color: var(--accent); text-decoration: none; font-size: 14px; font-family: 'DM Mono', monospace; }
-.contact-card a:hover { text-decoration: underline; }
-
-/* ── TOAST ── */
-.toast {
-  position: fixed;
-  bottom: 28px; right: 28px;
-  background: var(--dark);
-  color: #fff;
-  padding: 14px 22px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  z-index: 9999;
-  transform: translateY(80px);
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  max-width: 340px;
-  box-shadow: var(--shadow-lg);
-}
-
-.toast.show { transform: translateY(0); opacity: 1; }
-
-/* ── LOADING ── */
-.loading {
-  display: none;
-  text-align: center;
-  padding: 48px;
-  color: var(--muted);
-}
-
-.loading.show { display: block; }
-
-.spinner {
-  width: 36px; height: 36px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin: 0 auto 14px;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── FOOTER ── */
-footer {
-  background: var(--dark);
-  color: rgba(255,255,255,0.4);
-  text-align: center;
-  padding: 20px;
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: 1px;
-}
-
-footer span { color: var(--accent); }
-
-/* ── FILTER TABS ── */
-.filter-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.ftab {
-  padding: 8px 18px;
-  border-radius: 40px;
-  border: 1.5px solid var(--border);
-  background: var(--surface);
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.18s;
-  color: var(--dark);
-}
-
-.ftab.active, .ftab:hover {
-  background: var(--dark);
-  color: #fff;
-  border-color: var(--dark);
-}
-
-/* ── STATS ROW ── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.stat-card .sv {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--accent);
-  letter-spacing: -1px;
-  line-height: 1;
-}
-
-.stat-card .sl {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 4px;
-}
-
-/* ── PRINT STYLES ── */
+.label-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+.label-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+.label-card .asin-txt { font-family:'DM Mono',monospace; font-size:9px; font-weight:600; margin-top:6px; color:var(--text); word-break:break-all; line-height:1.3; }
+.label-card .remark-box { width:100%; margin-top:6px; border:1px solid var(--border); border-radius:5px; padding:5px 6px; font-family:'DM Mono',monospace; font-size:9px; background:var(--surface3); min-height:28px; resize:none; color:var(--text); }
+.audit-remark { min-width:120px; border:1px solid var(--border); border-radius:4px; padding:5px 8px; font-family:'DM Mono',monospace; font-size:11px; background:var(--surface2); color:var(--text); }
+.barcode-labels-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+.barcode-label { background:#fff; border:2px solid #222; border-radius:8px; padding:14px 12px; text-align:center; page-break-inside:avoid; }
+.barcode-label svg { max-width:100%; }
+.barcode-label .bl-asin { font-family:'DM Mono',monospace; font-size:13px; font-weight:700; margin-top:6px; letter-spacing:1.5px; color:#000; }
+.barcode-label .bl-num { font-size:10px; color:#666; margin-top:3px; font-family:'DM Mono',monospace; }
+.mapper-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
+.mapper-box h4 { font-size:14px; font-weight:700; margin-bottom:14px; color:#fff; }
+.mapper-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+.mapper-row label { font-size:13px; font-weight:600; min-width:140px; color:var(--text2); }
+.form-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px; max-width:560px; }
+.form-group { margin-bottom:20px; }
+.form-group label { display:block; font-size:11px; font-weight:700; letter-spacing:1.5px; margin-bottom:8px; text-transform:uppercase; color:var(--text2); }
+.form-group input,.form-group textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s; resize:vertical; }
+.form-group input:focus,.form-group textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,0.15); }
+.form-group textarea { min-height:120px; }
+.contact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; max-width:600px; }
+.contact-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; text-align:center; }
+.contact-card .cc-icon { font-size:40px; margin-bottom:12px; }
+.contact-card h4 { font-size:16px; font-weight:700; margin-bottom:6px; color:#fff; }
+.contact-card a { color:var(--accent); text-decoration:none; font-size:13px; font-family:'DM Mono',monospace; }
+.contact-card a:hover { text-decoration:underline; }
+.contact-card p { color:var(--muted); font-size:13px; }
+.toast { position:fixed; bottom:28px; right:28px; background:var(--surface2); border:1px solid var(--accent); color:var(--text); padding:14px 22px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transform:translateY(80px); opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); max-width:340px; box-shadow:var(--shadow-lg); }
+.toast.show { transform:translateY(0); opacity:1; }
+.loading { display:none; text-align:center; padding:48px; color:var(--muted); }
+.loading.show { display:block; }
+.spinner { width:38px; height:38px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto 14px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+footer { background:var(--dark); border-top:1px solid var(--border); color:var(--muted); text-align:center; padding:22px; font-size:12px; font-family:'DM Mono',monospace; letter-spacing:0.5px; position:relative; z-index:1; }
+footer span { color:var(--accent); }
+.filter-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.ftab { padding:8px 18px; border-radius:40px; border:1px solid var(--border); background:var(--surface2); font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.18s; color:var(--text2); }
+.ftab.active,.ftab:hover { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 4px 16px rgba(255,107,53,0.35); }
+.stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
+.stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; position:relative; overflow:hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+.stat-card .sv { font-size:26px; font-weight:800; color:var(--accent); letter-spacing:-1px; line-height:1; }
+.stat-card .sl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:5px; }
+.alert { padding:13px 16px; border-radius:10px; margin-bottom:16px; font-size:13px; display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+.alert-info { background:rgba(67,97,238,0.1); border:1px solid rgba(67,97,238,0.3); color:var(--cyan); }
+.alert-warn { background:rgba(255,214,10,0.08); border:1px solid rgba(255,214,10,0.3); color:var(--gold); }
+.alert-success { background:rgba(6,214,160,0.08); border:1px solid rgba(6,214,160,0.3); color:var(--green); }
 @media print {
-  .header, .back-btn, .btn-row, .upload-zone, .file-ok,
-  .ctrl-row, .filter-tabs, .results-header .btn { display: none !important; }
-  .results-panel { border: none; }
-  .barcode-label { page-break-inside: avoid; }
-  body::after {
-    content: 'Powered by HP World';
-    display: block;
-    text-align: center;
-    font-size: 11px;
-    color: #888;
-    padding: 20px;
-    font-family: 'DM Mono', monospace;
-    border-top: 1px solid #ddd;
-  }
+  body { background:#fff !important; color:#000 !important; }
+  body::before { display:none; }
+  .header,.back-btn,.btn-row,.upload-zone,.file-ok,.ctrl-row { display:none !important; }
+  .results-panel { border:none; }
+  .barcode-label { page-break-inside:avoid; }
 }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 640px) {
-  .header { padding: 0 16px; }
-  .dashboard { padding: 32px 16px 60px; }
-  .task-page { padding: 24px 16px 60px; }
-  .dash-hero h1 { font-size: 36px; }
-  .task-grid { grid-template-columns: 1fr; }
-  .label-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-box { padding: 24px 18px; }
+@media (max-width:640px) {
+  .header { padding:0 16px; }
+  .dashboard { padding:32px 16px 60px; }
+  .task-page { padding:24px 16px 60px; }
+  .dash-hero h1 { font-size:36px; letter-spacing:-2px; }
+  .task-grid { grid-template-columns:1fr; }
+  .label-grid { grid-template-columns:repeat(3,1fr); }
+  .form-box { padding:20px 16px; }
 }
-
-/* ── ALERT ── */
-.alert {
-  padding: 14px 18px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-.alert-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-.alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
 </style>
 </head>
 <body>
@@ -731,8 +282,9 @@ footer span { color: var(--accent); }
 <div class="page active" id="page-dashboard">
 <div class="dashboard">
   <div class="dash-hero">
-    <h1>Warehouse Task<br><em>Generation System</em></h1>
-    <p>Upload your inventory file, select a task type, and instantly generate printable task sheets for your warehouse team.</p>
+    <div class="hero-tag">⚡ HP World · Warehouse Task System</div>
+    <h1>Warehouse Task<br>Generation System</h1>
+    <p>Upload your inventory, select a task, generate print-ready sheets for your warehouse team — instantly.</p>
   </div>
 
   <div class="task-grid">
@@ -1531,54 +1083,65 @@ function generateAuditAsin() {
     });
 
     const allASINs = Object.keys(asinMap);
-    const picked   = pickRandom(allASINs, 60);
+    const picked   = pickRandom(allASINs, 63);
 
     showLoading('audit-asin', false);
 
-    // Build all 60 card data objects
-    const cards = picked.map((asin, idx) => {
-      const row   = asinMap[asin] || {};
-      const title = titleCol ? String(row[titleCol]||'').slice(0,45) : '';
-      const loc   = locCol   ? String(row[locCol]  ||'').trim() : '';
-      return { asin, title, loc, idx };
-    });
+    // 3 pages × 21 each = 63 total
+    const PAGE_SIZE = 21;
+    const pageGroups = [];
+    for (let i = 0; i < picked.length; i += PAGE_SIZE) {
+      pageGroups.push(picked.slice(i, i + PAGE_SIZE));
+    }
 
-    // Render all 60 cards into two hidden groups for PDF, visible grid for screen
     const panel = document.createElement('div');
     panel.innerHTML = `
       <div class="results-panel">
         <div class="results-header">
           <h3>🔎 ASIN Audit Sheet</h3>
-          <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')}</span>
+          <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')} · 3 pages × 21</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:20px">📋 ${picked.length} ASINs selected. PDF exports as 2 pages of 30 QR codes each.</div>
-          <div style="font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;color:var(--muted)">Page 1 — #01 to #30</div>
-          <div class="label-grid" id="audit-asin-grid-p1"></div>
-          <hr style="margin:24px 0">
-          <div style="font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;color:var(--muted)">Page 2 — #31 to #60</div>
-          <div class="label-grid" id="audit-asin-grid-p2"></div>
+          <div class="alert alert-info" style="margin-bottom:20px">📋 ${picked.length} ASINs — 3 pages of 21 QR codes each in PDF.</div>
+          ${pageGroups.map((grp, pi) => `
+            <div style="font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;color:var(--muted)${pi>0?';margin-top:24px':''}">
+              Page ${pi+1} — #${pi*PAGE_SIZE+1} to #${Math.min((pi+1)*PAGE_SIZE, picked.length)}
+            </div>
+            <div class="label-grid" id="audit-asin-grid-p${pi+1}"></div>
+            ${pi < pageGroups.length-1 ? '<hr style="margin:20px 0;border-color:var(--border)">' : ''}
+          `).join('')}
         </div>
       </div>`;
     document.getElementById('out-audit-asin').appendChild(panel);
 
+    // Render all cards into their page groups
+    const cards = picked.map((asin, idx) => {
+      const row   = asinMap[asin] || {};
+      const title = titleCol ? String(row[titleCol]||'').slice(0,35) : '';
+      const loc   = locCol   ? String(row[locCol]  ||'').trim() : '';
+      return { asin, title, loc, idx };
+    });
+
     cards.forEach(({asin, title, loc, idx}) => {
-      const page   = idx < 30 ? 'p1' : 'p2';
+      const pageIdx = Math.floor(idx / PAGE_SIZE) + 1;
+      const gridId  = `audit-asin-grid-p${pageIdx}`;
+      const gridEl  = document.getElementById(gridId);
+      if (!gridEl) return;
       const dispNo = idx + 1;
       const card   = document.createElement('div');
       card.className = 'label-card';
       card.innerHTML = `
-        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#888;margin-bottom:6px">#${String(dispNo).padStart(2,'0')}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">#${String(dispNo).padStart(2,'0')}</div>
         <div id="qr-a-${idx}" style="display:flex;justify-content:center"></div>
         <div class="asin-txt">${asin}</div>
-        ${title ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3;word-break:break-word">${title}</div>` : ''}
-        ${loc   ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📍 ${loc}</div>` : ''}
-        <textarea class="remark-box" placeholder="Remark / Count..."></textarea>`;
-      document.getElementById(`audit-asin-grid-${page}`).appendChild(card);
+        ${title ? `<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2;word-break:break-word">${title}</div>` : ''}
+        ${loc   ? `<div style="font-size:9px;color:var(--muted);margin-top:2px">📍 ${loc}</div>` : ''}
+        <textarea class="remark-box" placeholder="Remark..."></textarea>`;
+      gridEl.appendChild(card);
 
       try {
         new QRCode(document.getElementById(`qr-a-${idx}`), {
-          text: asin, width: 110, height: 110,
+          text: asin, width: 90, height: 90,
           colorDark: '#111110', colorLight: '#ffffff',
           correctLevel: QRCode.CorrectLevel.M
         });
@@ -1711,10 +1274,14 @@ function generateYSM() {
   setTimeout(() => {
     const labels = [];
     d.forEach(row => {
-      const asin = String(row[asinCol] || '').trim();
-      const qty = parseInt(row[qtyCol]) || 0;
+      const asin  = String(row[asinCol] || '').trim();
+      const qty   = parseInt(row[qtyCol]) || 0;
+      // Try to get item name from common title columns
+      const titleCol = findCol(Object.keys(row), ['title','name','product.?name','description','productname','item']);
+      const fullName = titleCol ? String(row[titleCol]||'').trim() : '';
+      const itemName = fullName.slice(0, 15) + (fullName.length > 15 ? '…' : '');
       if (!asin || qty <= 0) return;
-      for (let i = 1; i <= qty; i++) labels.push({ asin, unit: i, total: qty });
+      for (let i = 1; i <= qty; i++) labels.push({ asin, unit: i, total: qty, itemName });
     });
 
     showLoading('ysm', false);
@@ -1733,7 +1300,7 @@ function generateYSM() {
           <span class="results-count">${labels.length} labels · ${[...new Set(labels.map(l=>l.asin))].length} ASINs</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 ready · 4"×2" label per unit · Export PDF for clean printing.</div>
+          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 · 4"×2" · One label per page · ASIN + Item Name (max 15 chars) · Export PDF to print.</div>
           <div class="barcode-labels-wrap" id="ysm-labels-grid"></div>
         </div>
       </div>`;
@@ -1743,24 +1310,29 @@ function generateYSM() {
     labels.forEach((lbl, idx) => {
       const div = document.createElement('div');
       div.className = 'barcode-label';
-      // Apply Zebra 220 margins: top:0.8 left:0.9 bottom:0.8 right:0.7 (in units matching label)
       div.style.cssText = 'padding: 7px 6px 7px 8px; box-sizing:border-box;';
+      // Store data attributes for PDF rendering
+      div.dataset.asin     = lbl.asin;
+      div.dataset.unit     = lbl.unit;
+      div.dataset.total    = lbl.total;
+      div.dataset.itemName = lbl.itemName;
       div.innerHTML = `
         <svg id="bc-${idx}" style="display:block;width:100%;"></svg>
         <div class="bl-asin" style="margin-top:5px;letter-spacing:1.5px">${lbl.asin}</div>
+        ${lbl.itemName ? `<div class="bl-num" style="font-size:9px;color:#444;margin-top:2px;letter-spacing:0.5px">${lbl.itemName}</div>` : ''}
         <div class="bl-num">Unit ${lbl.unit} of ${lbl.total}</div>`;
       grid.appendChild(div);
 
       try {
         JsBarcode(`#bc-${idx}`, lbl.asin, {
-          format: 'CODE128', width: 2.2, height: 65,
+          format: 'CODE128', width: 2.2, height: 60,
           displayValue: false, background: '#ffffff',
           lineColor: '#000000', margin: 0, marginTop: 0, marginBottom: 0
         });
       } catch(e) {
         try {
           JsBarcode(`#bc-${idx}`, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
-            format: 'CODE128', width: 2.2, height: 65,
+            format: 'CODE128', width: 2.2, height: 60,
             displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
           });
         } catch(e2) {}
@@ -1820,35 +1392,41 @@ async function exportA4PDF(el, title) {
     pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH-4, {align:'center'});
     pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH-4);
     pdf.text(new Date().toLocaleDateString('en-GB'), pageW-margin, pageH-4, {align:'right'});
+    // Checked by / Verified by line
+    pdf.setFontSize(8); pdf.setTextColor(60);
+    const checkY = pageH - 12;
+    pdf.text('Checked by: ________________________________', margin, checkY);
+    pdf.text('Verified by TL/Supervisor: ________________________________', pageW/2 + 5, checkY);
     srcY += sliceH; remaining -= sliceH;
   }
   pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
   showToast('✅ PDF downloaded!');
 }
 
-// Audit ASIN PDF: exactly 2 pages, 30 QR per page — fixed layout
+// Audit ASIN PDF: 3 pages × 21 QR, 7 cols × 3 rows per page
 async function exportAuditAsinPDF(title) {
   showToast('📄 Building PDF — please wait...');
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth(); // 297mm landscape
+  const pageH = pdf.internal.pageSize.getHeight(); // 210mm landscape
   const margin = 5;
   const footerH = 7;
   const usableW = pageW - margin * 2;
   const usableH = pageH - margin * 2 - footerH;
 
-  // 4 cols × 8 rows = 32 cards (we have 30, so perfect)
-  const COLS = 4;
-  const CARD_W = 200;
-  const CARD_H = 220;
-  const GAP = 6;
+  // 7 cols × 3 rows = 21 per page — landscape A4
+  const COLS = 7;
+  const CARD_W = 110;
+  const CARD_H = 150;
+  const GAP = 4;
   const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
 
-  const pageIds = ['audit-asin-grid-p1', 'audit-asin-grid-p2'];
+  const PAGE_SIZE = 21;
+  const totalPages = 3; // 63 ASINs ÷ 21 = 3
 
-  for (let p = 0; p < pageIds.length; p++) {
-    const gridEl = document.getElementById(pageIds[p]);
+  for (let p = 0; p < totalPages; p++) {
+    const gridEl = document.getElementById(`audit-asin-grid-p${p+1}`);
     if (!gridEl || !gridEl.children.length) continue;
     if (p > 0) pdf.addPage();
 
@@ -1858,18 +1436,26 @@ async function exportAuditAsinPDF(title) {
       width:${CONTAINER_W}px;
       display:grid;
       grid-template-columns:repeat(${COLS},${CARD_W}px);
-      gap:${GAP}px;
-      padding:8px;
-      background:#fff;
-      box-sizing:border-box;
+      gap:${GAP}px; padding:8px;
+      background:#fff; box-sizing:border-box;
     `;
 
     Array.from(gridEl.children).forEach(card => {
       const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:8px;text-align:center;`;
-      // Make QR smaller inside card
+      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;font-family:monospace;`;
+      // Scale QR down to fit smaller card
       const qrDiv = clone.querySelector('[id^="qr-a-"]');
-      if (qrDiv) { qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.75);transform-origin:top center;margin-bottom:-10px'; }
+      if (qrDiv) qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.7);transform-origin:top center;margin-bottom:-14px;';
+      // Trim text
+      const asinTxt = clone.querySelector('.asin-txt');
+      if (asinTxt) asinTxt.style.cssText = 'font-size:8px;font-weight:700;margin-top:2px;word-break:break-all;color:#000;line-height:1.2;';
+      // Hide remark box in PDF
+      const rmk = clone.querySelector('.remark-box');
+      if (rmk) rmk.style.display = 'none';
+      // Hide title/loc (too small)
+      Array.from(clone.querySelectorAll('div')).forEach(d => {
+        if (d.style.fontSize === '9px') d.style.display = 'none';
+      });
       wrap.appendChild(clone);
     });
 
@@ -1890,21 +1476,25 @@ async function exportAuditAsinPDF(title) {
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
     }
 
-    pdf.setFontSize(6); pdf.setTextColor(130);
+    pdf.setFontSize(6); pdf.setTextColor(120);
     pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
-    pdf.text(`${title} · Page ${p+1} of 2`, margin, pageH - 2.5);
+    pdf.text(`${title} · Page ${p+1} of 3  (ASINs ${p*PAGE_SIZE+1}–${Math.min((p+1)*PAGE_SIZE,63)})`, margin, pageH - 2.5);
     pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
+    // Checked by / Verified by
+    pdf.setFontSize(7); pdf.setTextColor(50);
+    pdf.text('Checked by: ______________________________', margin, pageH - 9);
+    pdf.text('Verified by TL/Supervisor: ______________________________', pageW/2 + 5, pageH - 9);
   }
 
   pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast('✅ PDF — 2 pages × 30 QR codes!');
+  showToast('✅ PDF — 3 pages × 21 QR codes (7×3)!');
 }
 
-// Consolidation PDF: 30 QR per page — fixed layout
+// Consolidation PDF: 7 cols × 3 rows = 21 per page — landscape A4
 async function exportConsolidationPDF(title) {
   showToast('📄 Building consolidation PDF...');
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const margin = 5;
@@ -1915,12 +1505,12 @@ async function exportConsolidationPDF(title) {
   const grid = document.getElementById('consolidation-qr-grid');
   if (!grid || !grid.children.length) { showToast('⚠️ Nothing to export'); return; }
 
-  const allCards = Array.from(grid.children);
-  const PAGE_SIZE = 30;
-  const COLS = 4;
-  const CARD_W = 200;
-  const CARD_H = 210;
-  const GAP = 6;
+  const allCards  = Array.from(grid.children);
+  const PAGE_SIZE = 21;
+  const COLS = 7;
+  const CARD_W = 110;
+  const CARD_H = 140;
+  const GAP = 4;
   const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
   const totalPages = Math.ceil(allCards.length / PAGE_SIZE);
 
@@ -1940,9 +1530,11 @@ async function exportConsolidationPDF(title) {
 
     chunk.forEach(card => {
       const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:8px;text-align:center;`;
+      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;`;
       const qrDiv = clone.querySelector('[id^="qr-c-"]');
-      if (qrDiv) { qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.75);transform-origin:top center;margin-bottom:-10px'; }
+      if (qrDiv) qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.68);transform-origin:top center;margin-bottom:-16px;';
+      const asinTxt = clone.querySelector('.asin-txt');
+      if (asinTxt) asinTxt.style.cssText = 'font-size:8px;font-weight:700;word-break:break-all;color:#000;line-height:1.2;';
       wrap.appendChild(clone);
     });
 
@@ -1963,87 +1555,102 @@ async function exportConsolidationPDF(title) {
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
     }
 
-    pdf.setFontSize(6); pdf.setTextColor(130);
+    pdf.setFontSize(6); pdf.setTextColor(120);
     pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
     pdf.text(`${title} · Page ${p+1} of ${totalPages}`, margin, pageH - 2.5);
     pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
+    // Checked by / Verified by
+    pdf.setFontSize(7); pdf.setTextColor(50);
+    pdf.text('Checked by: ______________________________', margin, pageH - 9);
+    pdf.text('Verified by TL/Supervisor: ______________________________', pageW/2 + 5, pageH - 9);
   }
 
   pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ PDF — ${totalPages} page(s) × 30 QR each!`);
+  showToast(`✅ PDF — ${totalPages} page(s) × 21 QR (7×3 landscape)!`);
 }
 
 // YSM Labels: pure canvas barcode rendering, one label per page, Zebra 4"×2"
 async function exportYSMLabels(el) {
   const labels = el.querySelectorAll('.barcode-label');
   if (!labels.length) { showToast('⚠️ No labels found'); return; }
-  showToast(`⏳ Exporting ${labels.length} labels...`);
+  showToast(`⏳ Exporting ${labels.length} Zebra labels...`);
 
-  // 4" × 2" in mm
-  const W_mm = 101.6;
-  const H_mm = 50.8;
-  // Zebra 220 margins in mm
-  const mT = 0.8 * 25.4;   // top    20.32mm
-  const mL = 0.9 * 25.4;   // left   22.86mm
-  const mB = 0.8 * 25.4;   // bottom 20.32mm
-  const mR = 0.7 * 25.4;   // right  17.78mm
-  const printW = W_mm - mL - mR;  // 60.96mm
-  const printH = H_mm - mT - mB;  // 10.16mm
+  // Zebra 220 label: 4" wide × 2" tall
+  const W_mm  = 4  * 25.4;  // 101.6mm
+  const H_mm  = 2  * 25.4;  //  50.8mm
+  // Margins (inches → mm)
+  const mL = 0.9 * 25.4;   // 22.86mm
+  const mR = 0.7 * 25.4;   // 17.78mm
+  const mT = 0.8 * 25.4;   // 20.32mm
+  const mB = 0.8 * 25.4;   // 20.32mm
 
   const { jsPDF } = window.jspdf;
+  // Each page = one label size, landscape
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [H_mm, W_mm] });
 
-  // Use an offscreen canvas to render each barcode cleanly
-  const DPI = 203; // Zebra 220 native DPI
-  const PX_W = Math.round(W_mm / 25.4 * DPI);  // 4" × 203 = 812px
-  const PX_H = Math.round(H_mm / 25.4 * DPI);  // 2" × 203 = 406px
-  const px_mL = Math.round(mL / 25.4 * DPI);
-  const px_mT = Math.round(mT / 25.4 * DPI);
-  const px_printW = Math.round(printW / 25.4 * DPI);
-  const px_barH = Math.round(printH * 0.7 / 25.4 * DPI);  // barcode takes 70% of print height
-  const px_textY = px_mT + px_barH + Math.round(4 / 25.4 * DPI);
+  const DPI      = 203;              // Zebra 220 native DPI
+  const PX_W     = Math.round(W_mm / 25.4 * DPI);   // 812px
+  const PX_H     = Math.round(H_mm / 25.4 * DPI);   // 406px
+  const px_mL    = Math.round(mL / 25.4 * DPI);
+  const px_mT    = Math.round(mT / 25.4 * DPI);
+  const px_mB    = Math.round(mB / 25.4 * DPI);
+  const px_mR    = Math.round(mR / 25.4 * DPI);
+  const px_printW = PX_W - px_mL - px_mR;
+  const px_printH = PX_H - px_mT - px_mB;
+
+  // Row heights within print area
+  const px_barH     = Math.round(px_printH * 0.58);  // barcode = 58%
+  const px_asinSize = Math.round(11 / 25.4 * DPI);   // ASIN text font size
+  const px_nameSize = Math.round(9  / 25.4 * DPI);   // item name font size
+  const px_unitSize = Math.round(7  / 25.4 * DPI);   // unit counter font size
 
   for (let i = 0; i < labels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
-    // Get ASIN from label
-    const asinEl = labels[i].querySelector('.bl-asin');
-    const unitEl = labels[i].querySelector('.bl-num');
-    const asin   = asinEl ? asinEl.textContent.trim() : '';
-    const unit   = unitEl ? unitEl.textContent.trim() : '';
+    // Read data from DOM dataset (set during generation)
+    const lbl      = labels[i];
+    const asin     = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
+    const itemName = (lbl.dataset.itemName || '').slice(0, 15);
+    const unit     = lbl.dataset.unit  || '';
+    const total    = lbl.dataset.total || '';
 
-    // Draw on offscreen canvas
-    const oc = document.createElement('canvas');
-    oc.width = PX_W; oc.height = PX_H;
+    // ── Draw on offscreen canvas at 203 DPI ──
+    const oc  = document.createElement('canvas');
+    oc.width  = PX_W;
+    oc.height = PX_H;
     const ctx = oc.getContext('2d');
+
+    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, PX_W, PX_H);
 
-    // Draw barcode SVG onto canvas via JsBarcode
+    // ── 1. Barcode ──
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
     try {
       JsBarcode(svgEl, asin, {
         format: 'CODE128', width: 3, height: px_barH,
-        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+        displayValue: false, background: '#ffffff',
+        lineColor: '#000000', margin: 0
       });
     } catch(e) {
       try {
-        JsBarcode(svgEl, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+        JsBarcode(svgEl, asinClean, {
           format: 'CODE128', width: 3, height: px_barH,
           displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
         });
       } catch(e2) { continue; }
     }
 
-    // Convert SVG to image and draw
+    // Render SVG barcode to canvas
     const svgData = new XMLSerializer().serializeToString(svgEl);
-    const svgBlob = new Blob([svgData], {type:'image/svg+xml;charset=utf-8'});
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        // Center barcode horizontally within print area
+        // Center barcode horizontally in print area
         const bcW = Math.min(img.width, px_printW);
         const bcX = px_mL + (px_printW - bcW) / 2;
         ctx.drawImage(img, bcX, px_mT, bcW, px_barH);
@@ -2054,27 +1661,36 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    // Draw ASIN text below barcode
-    ctx.fillStyle = '#000000';
-    ctx.font = `bold ${Math.round(12 / 25.4 * DPI)}px monospace`;
-    ctx.textAlign = 'center';
-    ctx.fillText(asin, px_mL + px_printW / 2, px_textY);
+    const centerX = px_mL + px_printW / 2;
+    let textY = px_mT + px_barH + Math.round(5 / 25.4 * DPI);
 
-    // Draw unit counter smaller
-    ctx.font = `${Math.round(8 / 25.4 * DPI)}px monospace`;
-    ctx.fillStyle = '#555555';
-    ctx.fillText(unit, px_mL + px_printW / 2, px_textY + Math.round(10 / 25.4 * DPI));
+    // ── 2. ASIN text ──
+    ctx.fillStyle  = '#000000';
+    ctx.font       = `bold ${px_asinSize}px "Courier New", monospace`;
+    ctx.textAlign  = 'center';
+    ctx.letterSpacing = '2px';
+    ctx.fillText(asin, centerX, textY);
+    textY += Math.round(10 / 25.4 * DPI);
 
-    // Add to PDF
+    // ── 3. Item name (max 15 chars) ──
+    if (itemName) {
+      ctx.fillStyle = '#333333';
+      ctx.font      = `${px_nameSize}px "Arial", sans-serif`;
+      ctx.fillText(itemName, centerX, textY);
+      textY += Math.round(9 / 25.4 * DPI);
+    }
+
+    // ── 4. Unit counter ──
+    ctx.fillStyle = '#666666';
+    ctx.font      = `${px_unitSize}px monospace`;
+    ctx.fillText(`Unit ${unit} of ${total}`, centerX, textY);
+
+    // Add canvas image to PDF page (fills entire label)
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
-
-    // Footer
-    pdf.setFontSize(4); pdf.setTextColor(180);
-    pdf.text('Powered by HP World · Hrushikesh Padhi [HP World]', W_mm/2, H_mm-1, {align:'center'});
   }
 
   pdf.save(`YSM_Zebra220_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${labels.length} Zebra labels exported cleanly!`);
+  showToast(`✅ ${labels.length} Zebra labels exported — one per page!`);
 }
 
 // ════ FEEDBACK ════
