@@ -1723,71 +1723,74 @@ function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
-  // Build HTML content that Word can open
-  let html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-  .label {
-    width: 9.6cm;
-    height: 4.8cm;
-    border: 1px solid #333;
-    page-break-after: always;
-    page-break-inside: avoid;
-    display: block;
-    padding: 0.3cm 0.4cm 0.2cm 0.4cm;
-    box-sizing: border-box;
-    text-align: center;
-    margin: 0 auto;
-  }
-  .label img { width: 100%; height: 2.8cm; display: block; }
-  .asin { font-family: "Courier New", monospace; font-weight: bold; font-size: 14pt; letter-spacing: 2px; margin-top: 4px; }
-  .rsl  { font-size: 9pt; color: #c43d04; font-weight: bold; margin-top: 3px; }
-  .name { font-size: 9pt; color: #333; margin-top: 1px; word-break: break-word; }
-</style>
-</head>
-<body>`;
+  let body = '';
 
   ysmLabels.forEach((lbl, idx) => {
-    // Build barcode as SVG data URL
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     let barcodeSrc = '';
     try {
       JsBarcode(svgEl, lbl.asin, {
-        format: 'CODE128', width: 3, height: 100,
+        format: 'CODE128', width: 3, height: 120,
         displayValue: false, background: '#ffffff',
         lineColor: '#000000', margin: 0,
-        marginLeft: 10, marginRight: 10
+        marginLeft: 14, marginRight: 14, marginTop: 4, marginBottom: 4
       });
-      const svgData = new XMLSerializer().serializeToString(svgEl);
-      barcodeSrc = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      const svgStr = new XMLSerializer().serializeToString(svgEl);
+      barcodeSrc = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
     } catch(e) {}
 
-    html += `
-    <div class="label">
-      ${barcodeSrc ? `<img src="${barcodeSrc}" alt="barcode">` : ''}
-      <div class="asin">${lbl.asin}</div>
-      ${lbl.itemName ? `<div class="rsl">Reduced Shelf Life</div><div class="name">${lbl.itemName}</div>` : ''}
+    // Each label on its own page using page-break-after
+    const isLast = idx === ysmLabels.length - 1;
+    body += `
+    <div style="
+      width: 9.6cm;
+      height: 4.8cm;
+      border: 1.5px solid #222;
+      margin: 0 auto;
+      padding: 0.25cm 0.4cm 0.2cm 0.4cm;
+      box-sizing: border-box;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      page-break-after: ${isLast ? 'auto' : 'always'};
+      page-break-inside: avoid;
+    ">
+      ${barcodeSrc ? `<img src="${barcodeSrc}" style="width:100%;height:2.6cm;display:block;object-fit:fill">` : '<div style="height:2.6cm;background:#eee;display:flex;align-items:center;justify-content:center;font-size:10pt;color:#999">Barcode</div>'}
+      <div style="font-family:Courier New,monospace;font-weight:bold;font-size:13pt;letter-spacing:2px;margin-top:0.15cm;color:#000">${lbl.asin}</div>
+      ${lbl.itemName ? `
+      <div style="font-family:Arial,sans-serif;font-size:8pt;color:#c43d04;font-weight:bold;margin-top:0.05cm">Reduced Shelf Life</div>
+      <div style="font-family:Arial,sans-serif;font-size:8pt;color:#333;margin-top:0.02cm;word-break:break-word;line-height:1.2">${lbl.itemName}</div>
+      ` : ''}
     </div>`;
   });
 
-  html += '</body></html>';
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: 9.6cm 4.8cm; margin: 0; }
+  body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
+</head>
+<body>${body}</body>
+</html>`;
 
-  // Download as .doc (Word-compatible HTML)
   const blob = new Blob([html], { type: 'application/msword' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
   a.download = `YSM_Labels_${new Date().toISOString().split('T')[0]}.doc`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`✅ Word file downloaded! Open with Microsoft Word.`);
+  showToast(`✅ Word file ready! Open in Microsoft Word & print.`);
 }
-
 
 // ════ FEEDBACK ════
 function sendFeedback() {
