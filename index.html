@@ -724,11 +724,11 @@ footer span { color:var(--accent); }
     <span class="task-header-icon">🏷️</span>
     <div>
       <h2>YSM Barcode Task</h2>
-      <p>Generates one barcode label per unit. If ASIN=ABC and QTY=5, produces 5 individual labels ready for printing.</p>
+      <p>Generates one scannable CODE128 barcode label per unit — Zebra 220 compatible. Each label prints clean, one by one.</p>
     </div>
   </div>
 
-  <div class="alert alert-info">ℹ️ Upload a file, map the ASIN and Quantity columns, then click Generate. Each unit gets its own scannable barcode label.</div>
+  <div class="alert alert-info">ℹ️ Upload your file → map ASIN & Qty columns → Generate → Export PDF for Zebra printing.</div>
 
   <div class="upload-zone" id="uz-ysm" onclick="triggerUpload('f-ysm')">
     <input type="file" id="f-ysm" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'ysm')">
@@ -763,14 +763,64 @@ footer span { color:var(--accent); }
   </div>
 
   <div class="loading" id="load-ysm"><div class="spinner"></div><div>Generating labels...</div></div>
+
+  <!-- PRINT CONTAINER — only visible on print -->
+  <div id="ysm-print-area" style="display:none"></div>
+
   <div id="out-ysm"></div>
 
   <div class="btn-row" id="export-ysm" style="display:none">
-    <button class="btn btn-accent" onclick="exportPDF('out-ysm','YSM Barcode Labels')">⬇ Export PDF</button>
-    <button class="btn btn-outline" onclick="window.print()">🖨️ Print Labels</button>
+    <button class="btn btn-accent" onclick="exportYSMPDF()">⬇ Export PDF (Zebra)</button>
+    <button class="btn btn-outline" onclick="printYSMLabels()">🖨️ Print Labels</button>
   </div>
 </div>
 </div>
+
+<style>
+/* YSM Print Styles */
+@media print {
+  body * { visibility: hidden !important; }
+  #ysm-print-area, #ysm-print-area * { visibility: visible !important; }
+  #ysm-print-area {
+    display: block !important;
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .ysm-label-print {
+    width: 4in;
+    height: 2in;
+    page-break-after: always;
+    page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15in 0.2in;
+    box-sizing: border-box;
+    background: #fff;
+    margin: 0;
+  }
+  .ysm-label-print svg {
+    width: 100% !important;
+    height: 1.2in !important;
+  }
+  .ysm-label-print .lp-asin {
+    font-family: "Courier New", monospace;
+    font-size: 14pt;
+    font-weight: bold;
+    margin-top: 6pt;
+    letter-spacing: 1pt;
+  }
+  .ysm-label-print .lp-name {
+    font-family: Arial, sans-serif;
+    font-size: 9pt;
+    color: #333;
+    margin-top: 3pt;
+    text-align: center;
+  }
+}
+</style>
 
 <!-- ══════════════════════════════
      PAGE: FEEDBACK
@@ -1391,426 +1441,256 @@ function exportXLSX(task) {
 function buildYSMMapper() {
   const h = state.ysm.headers;
   const asinSel = document.getElementById('col-asin-ysm');
-  const qtySel = document.getElementById('col-qty-ysm');
+  const qtySel  = document.getElementById('col-qty-ysm');
   asinSel.innerHTML = h.map(c => `<option value="${c}" ${/asin|product.?id|sku|item/i.test(c)?'selected':''}>${c}</option>`).join('');
-  qtySel.innerHTML = h.map(c => `<option value="${c}" ${/qty|quantity|stock|count|unit/i.test(c)?'selected':''}>${c}</option>`).join('');
+  qtySel.innerHTML  = h.map(c => `<option value="${c}" ${/qty|quantity|stock|count|unit/i.test(c)?'selected':''}>${c}</option>`).join('');
   document.getElementById('mapper-ysm').style.display = 'block';
 }
+
+// Global label store for PDF export
+let ysmLabels = [];
 
 function generateYSM() {
   const d = state.ysm.data;
   if (!d.length) { showToast('⚠️ Upload a file first'); return; }
 
   const asinCol = document.getElementById('col-asin-ysm').value;
-  const qtyCol = document.getElementById('col-qty-ysm').value;
+  const qtyCol  = document.getElementById('col-qty-ysm').value;
 
   showLoading('ysm', true);
   document.getElementById('out-ysm').innerHTML = '';
+  document.getElementById('ysm-print-area').innerHTML = '';
+  document.getElementById('ysm-print-area').style.display = 'none';
 
   setTimeout(() => {
-    const labels = [];
+    ysmLabels = [];
+
     d.forEach(row => {
-      const asin  = String(row[asinCol] || '').trim();
-      const qty   = parseInt(row[qtyCol]) || 0;
-      // Try to get item name from common title columns
+      const asin     = String(row[asinCol] || '').trim();
+      const qty      = parseInt(row[qtyCol]) || 0;
       const titleCol = findCol(Object.keys(row), ['title','name','product.?name','description','productname','item']);
-      const fullName = titleCol ? String(row[titleCol]||'').trim() : '';
-      const itemName = fullName;  // full name, no truncation
+      const itemName = titleCol ? String(row[titleCol]||'').trim() : '';
       if (!asin || qty <= 0) return;
-      for (let i = 1; i <= qty; i++) labels.push({ asin, unit: i, total: qty, itemName });
+      for (let i = 1; i <= qty; i++) {
+        ysmLabels.push({ asin, itemName, unit: i, total: qty });
+      }
     });
 
     showLoading('ysm', false);
 
-    if (!labels.length) {
+    if (!ysmLabels.length) {
       document.getElementById('out-ysm').innerHTML =
         '<div class="alert alert-warn">⚠️ No valid rows found. Check ASIN and Quantity columns.</div>';
       return;
     }
 
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `
+    // ── Screen preview: vertical stack, one label block per row ──
+    const out = document.getElementById('out-ysm');
+    out.innerHTML = `
       <div class="results-panel">
         <div class="results-header">
           <h3>🏷️ YSM Barcode Labels</h3>
-          <span class="results-count">${labels.length} labels · ${[...new Set(labels.map(l=>l.asin))].length} ASINs</span>
+          <span class="results-count">${ysmLabels.length} labels · ${[...new Set(ysmLabels.map(l=>l.asin))].length} ASINs</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Zebra 220 · 4"×2" · One label per page · Full item name shown · Export PDF to print.</div>
-          <div class="barcode-labels-wrap" id="ysm-labels-grid"></div>
+          <div class="alert alert-info" style="margin-bottom:16px">
+            🖨️ Zebra 220 · CODE128 · One label per page · Export PDF or Print for clean output.
+          </div>
+          <div id="ysm-label-stack" style="display:flex;flex-direction:column;gap:16px;max-width:480px"></div>
         </div>
       </div>`;
-    document.getElementById('out-ysm').appendChild(wrap);
 
-    const grid = wrap.querySelector('#ysm-labels-grid');
-    labels.forEach((lbl, idx) => {
-      const div = document.createElement('div');
-      div.className = 'barcode-label';
-      div.style.cssText = 'padding: 7px 6px 7px 8px; box-sizing:border-box;';
-      // Store data attributes for PDF rendering
-      div.dataset.asin     = lbl.asin;
-      div.dataset.unit     = lbl.unit;
-      div.dataset.total    = lbl.total;
-      div.dataset.itemName = lbl.itemName;
-      div.innerHTML = `
-        <svg id="bc-${idx}" style="display:block;width:100%;"></svg>
-        <div class="bl-asin" style="margin-top:5px;letter-spacing:1.5px">${lbl.asin}</div>
-        ${lbl.itemName ? `<div class="bl-num" style="font-size:9px;color:#444;margin-top:2px;letter-spacing:0.5px">${lbl.itemName}</div>` : ''}`;
-      grid.appendChild(div);
+    const stack = document.getElementById('ysm-label-stack');
 
+    ysmLabels.forEach((lbl, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `
+        background:#fff; border:2px solid #222; border-radius:6px;
+        padding:12px 16px 10px 16px;
+        display:flex; flex-direction:column; align-items:center;
+        width:100%; box-sizing:border-box;
+      `;
+
+      const svgId = `ysm-bc-${idx}`;
+      wrapper.innerHTML = `
+        <svg id="${svgId}" style="width:100%;display:block"></svg>
+        <div style="font-family:'Courier New',monospace;font-weight:bold;font-size:15px;margin-top:8px;letter-spacing:1.5px;color:#000">${lbl.asin}</div>
+        ${lbl.itemName ? `<div style="font-family:Arial,sans-serif;font-size:11px;color:#444;margin-top:3px;text-align:center">${lbl.itemName}</div>` : ''}
+      `;
+      stack.appendChild(wrapper);
+
+      // Render barcode with proper width and height
       try {
-        JsBarcode(`#bc-${idx}`, lbl.asin, {
-          format: 'CODE128', width: 2.2, height: 60,
-          displayValue: false, background: '#ffffff',
-          lineColor: '#000000', margin: 0, marginTop: 0, marginBottom: 0
+        JsBarcode(`#${svgId}`, lbl.asin, {
+          format: 'CODE128',
+          width: 3,          // thick bars — scannable
+          height: 100,       // tall barcode
+          displayValue: false,
+          background: '#ffffff',
+          lineColor: '#000000',
+          margin: 10,
+          marginTop: 8,
+          marginBottom: 8,
+          marginLeft: 14,
+          marginRight: 14
         });
       } catch(e) {
         try {
-          JsBarcode(`#bc-${idx}`, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
-            format: 'CODE128', width: 2.2, height: 60,
-            displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+          JsBarcode(`#${svgId}`, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+            format:'CODE128', width:3, height:100, displayValue:false,
+            background:'#ffffff', lineColor:'#000000',
+            margin:10, marginLeft:14, marginRight:14
           });
         } catch(e2) {}
       }
     });
 
     document.getElementById('export-ysm').style.display = 'flex';
-    showToast(`✅ ${labels.length} barcode labels generated!`);
-  }, 600);
+    showToast(`✅ ${ysmLabels.length} labels generated!`);
+  }, 400);
 }
 
-// ════ PDF EXPORT ════
-async function exportPDF(containerId, title) {
-  showToast('📄 Generating PDF...');
-  const el = document.getElementById(containerId);
-  if (!el || !el.innerHTML.trim()) { showToast('⚠️ Nothing to export'); return; }
+function printYSMLabels() {
+  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
 
-  try {
-    if (containerId === 'out-ysm') {
-      await exportYSMLabels(el);
-    } else if (containerId === 'out-audit-asin') {
-      await exportAuditAsinPDF(title);
-    } else if (containerId === 'out-consolidation') {
-      await exportConsolidationPDF(title);
-    } else {
-      await exportA4PDF(el, title);
-    }
-  } catch(err) {
-    showToast('❌ PDF export failed. Try Print instead.');
-    console.error(err);
-  }
-}
+  const printArea = document.getElementById('ysm-print-area');
+  printArea.innerHTML = '';
 
-// Generic A4 export (for location audit, slow moving etc)
-async function exportA4PDF(el, title) {
-  const canvas = await html2canvas(el, {
-    scale: 2, useCORS: true, backgroundColor: '#f5f4f0', logging: false
+  ysmLabels.forEach((lbl, idx) => {
+    const div = document.createElement('div');
+    div.className = 'ysm-label-print';
+    const svgId = `print-bc-${idx}`;
+    div.innerHTML = `
+      <svg id="${svgId}"></svg>
+      <div class="lp-asin">${lbl.asin}</div>
+      ${lbl.itemName ? `<div class="lp-name">${lbl.itemName}</div>` : ''}
+    `;
+    printArea.appendChild(div);
   });
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const margin = 10;
-  const contentH = pageH - margin * 2 - 10;
-  const imgW = pageW - margin * 2;
-  let srcY = 0;
-  let remaining = (canvas.height * imgW) / canvas.width;
-  while (remaining > 0) {
-    const sliceH = Math.min(contentH, remaining);
-    const sc = document.createElement('canvas');
-    sc.width = canvas.width;
-    sc.height = (sliceH / imgW) * canvas.width;
-    sc.getContext('2d').drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sc.height, 0, 0, canvas.width, sc.height);
-    if (srcY > 0) pdf.addPage();
-    pdf.addImage(sc.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
-    pdf.setFontSize(7); pdf.setTextColor(140);
-    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH-4, {align:'center'});
-    pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH-4);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW-margin, pageH-4, {align:'right'});
-    // Checked by / Verified by line
-    pdf.setFontSize(8); pdf.setTextColor(60);
-    const checkY = pageH - 12;
-    pdf.text('Checked by: ________________________________', margin, checkY);
-    pdf.text('Verified by TL/Supervisor: ________________________________', pageW/2 + 5, checkY);
-    srcY += sliceH; remaining -= sliceH;
-  }
-  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast('✅ PDF downloaded!');
-}
 
-// Audit ASIN PDF: 3 pages × 21 QR, 7 cols × 3 rows per page
-async function exportAuditAsinPDF(title) {
-  showToast('📄 Building PDF — please wait...');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth(); // 297mm landscape
-  const pageH = pdf.internal.pageSize.getHeight(); // 210mm landscape
-  const margin = 5;
-  const footerH = 7;
-  const usableW = pageW - margin * 2;
-  const usableH = pageH - margin * 2 - footerH;
+  printArea.style.display = 'block';
 
-  // 7 cols × 3 rows = 21 per page — landscape A4
-  const COLS = 7;
-  const CARD_W = 110;
-  const CARD_H = 150;
-  const GAP = 4;
-  const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
-
-  const PAGE_SIZE = 21;
-  const totalPages = 3; // 63 ASINs ÷ 21 = 3
-
-  for (let p = 0; p < totalPages; p++) {
-    const gridEl = document.getElementById(`audit-asin-grid-p${p+1}`);
-    if (!gridEl || !gridEl.children.length) continue;
-    if (p > 0) pdf.addPage();
-
-    const wrap = document.createElement('div');
-    wrap.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:${CONTAINER_W}px;
-      display:grid;
-      grid-template-columns:repeat(${COLS},${CARD_W}px);
-      gap:${GAP}px; padding:8px;
-      background:#fff; box-sizing:border-box;
-    `;
-
-    Array.from(gridEl.children).forEach(card => {
-      const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;font-family:monospace;`;
-      // Scale QR down to fit smaller card
-      const qrDiv = clone.querySelector('[id^="qr-a-"]');
-      if (qrDiv) qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.7);transform-origin:top center;margin-bottom:-14px;';
-      // Trim text
-      const asinTxt = clone.querySelector('.asin-txt');
-      if (asinTxt) asinTxt.style.cssText = 'font-size:8px;font-weight:700;margin-top:2px;word-break:break-all;color:#000;line-height:1.2;';
-      // Hide remark box in PDF
-      const rmk = clone.querySelector('.remark-box');
-      if (rmk) rmk.style.display = 'none';
-      // Hide title/loc (too small)
-      Array.from(clone.querySelectorAll('div')).forEach(d => {
-        if (d.style.fontSize === '9px') d.style.display = 'none';
+  // Render barcodes then print
+  ysmLabels.forEach((lbl, idx) => {
+    try {
+      JsBarcode(`#print-bc-${idx}`, lbl.asin, {
+        format:'CODE128', width:3, height:100,
+        displayValue:false, background:'#ffffff',
+        lineColor:'#000000', margin:10, marginLeft:14, marginRight:14
       });
-      wrap.appendChild(clone);
-    });
+    } catch(e) {}
+  });
 
-    document.body.appendChild(wrap);
-    await new Promise(r => setTimeout(r, 300));
-
-    const canvas = await html2canvas(wrap, {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      width: CONTAINER_W, height: wrap.scrollHeight
-    });
-    document.body.removeChild(wrap);
-
-    const imgH = (canvas.height * usableW) / canvas.width;
-    if (imgH <= usableH) {
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW, imgH);
-    } else {
-      const scale = usableH / imgH;
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
-    }
-
-    pdf.setFontSize(6); pdf.setTextColor(120);
-    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
-    pdf.text(`${title} · Page ${p+1} of 3  (ASINs ${p*PAGE_SIZE+1}–${Math.min((p+1)*PAGE_SIZE,63)})`, margin, pageH - 2.5);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
-    // Checked by / Verified by
-    pdf.setFontSize(7); pdf.setTextColor(50);
-    pdf.text('Checked by: ______________________________', margin, pageH - 9);
-    pdf.text('Verified by TL/Supervisor: ______________________________', pageW/2 + 5, pageH - 9);
-  }
-
-  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast('✅ PDF — 3 pages × 21 QR codes (7×3)!');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { printArea.style.display = 'none'; }, 1000);
+  }, 500);
 }
 
-// Consolidation PDF: 7 cols × 3 rows = 21 per page — landscape A4
-async function exportConsolidationPDF(title) {
-  showToast('📄 Building consolidation PDF...');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const margin = 5;
-  const footerH = 7;
-  const usableW = pageW - margin * 2;
-  const usableH = pageH - margin * 2 - footerH;
+async function exportYSMPDF() {
+  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
+  showToast(`⏳ Building ${ysmLabels.length} Zebra labels...`);
 
-  const grid = document.getElementById('consolidation-qr-grid');
-  if (!grid || !grid.children.length) { showToast('⚠️ Nothing to export'); return; }
-
-  const allCards  = Array.from(grid.children);
-  const PAGE_SIZE = 21;
-  const COLS = 7;
-  const CARD_W = 110;
-  const CARD_H = 140;
-  const GAP = 4;
-  const CONTAINER_W = COLS * CARD_W + (COLS - 1) * GAP + 16;
-  const totalPages = Math.ceil(allCards.length / PAGE_SIZE);
-
-  for (let p = 0; p < totalPages; p++) {
-    if (p > 0) pdf.addPage();
-    const chunk = allCards.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE);
-
-    const wrap = document.createElement('div');
-    wrap.style.cssText = `
-      position:fixed; left:-9999px; top:0;
-      width:${CONTAINER_W}px;
-      display:grid;
-      grid-template-columns:repeat(${COLS},${CARD_W}px);
-      gap:${GAP}px; padding:8px;
-      background:#fff; box-sizing:border-box;
-    `;
-
-    chunk.forEach(card => {
-      const clone = card.cloneNode(true);
-      clone.style.cssText = `width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;`;
-      const qrDiv = clone.querySelector('[id^="qr-c-"]');
-      if (qrDiv) qrDiv.style.cssText = 'display:flex;justify-content:center;transform:scale(0.68);transform-origin:top center;margin-bottom:-16px;';
-      const asinTxt = clone.querySelector('.asin-txt');
-      if (asinTxt) asinTxt.style.cssText = 'font-size:8px;font-weight:700;word-break:break-all;color:#000;line-height:1.2;';
-      wrap.appendChild(clone);
-    });
-
-    document.body.appendChild(wrap);
-    await new Promise(r => setTimeout(r, 300));
-
-    const canvas = await html2canvas(wrap, {
-      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
-      width: CONTAINER_W, height: wrap.scrollHeight
-    });
-    document.body.removeChild(wrap);
-
-    const imgH = (canvas.height * usableW) / canvas.width;
-    if (imgH <= usableH) {
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW, imgH);
-    } else {
-      const scale = usableH / imgH;
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW * scale, usableH);
-    }
-
-    pdf.setFontSize(6); pdf.setTextColor(120);
-    pdf.text('Powered by HP World  ·  Hrushikesh Padhi [HP World]', pageW/2, pageH - 2.5, {align:'center'});
-    pdf.text(`${title} · Page ${p+1} of ${totalPages}`, margin, pageH - 2.5);
-    pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 2.5, {align:'right'});
-    // Checked by / Verified by
-    pdf.setFontSize(7); pdf.setTextColor(50);
-    pdf.text('Checked by: ______________________________', margin, pageH - 9);
-    pdf.text('Verified by TL/Supervisor: ______________________________', pageW/2 + 5, pageH - 9);
-  }
-
-  pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ PDF — ${totalPages} page(s) × 21 QR (7×3 landscape)!`);
-}
-
-// YSM Labels: pure canvas barcode rendering, one label per page, Zebra 4"×2"
-async function exportYSMLabels(el) {
-  const labels = el.querySelectorAll('.barcode-label');
-  if (!labels.length) { showToast('⚠️ No labels found'); return; }
-  showToast(`⏳ Exporting ${labels.length} Zebra labels...`);
-
-  // Label: 4" wide × 2" tall in mm
+  // Zebra 220: 4" × 2"
   const W_mm = 101.6;
-  const H_mm = 50.8;
+  const H_mm =  50.8;
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [H_mm, W_mm] });
 
-  // Canvas at exact 4:2 ratio = 1016×508px (1px = 0.1mm)
+  // Canvas = 1016 × 508px  (4:2 = exact label ratio, 1px = 0.1mm)
   const CW = 1016;
-  const CH = 508;
+  const CH =  508;
 
-  // Minimal side padding — quiet zones
-  const PAD_L = 20;
-  const PAD_R = 20;
-  const PAD_T = 20;
+  // Margins in px (matches Zebra quiet zone requirements)
+  const ML = 28;   // ~2.8mm left  quiet zone
+  const MR = 18;   // ~1.8mm right quiet zone
+  const MT = 16;   // ~1.6mm top
+  const BAR_W = CW - ML - MR;  // 970px — full scannable width
+  const BAR_H = 320;            // 320px tall — dominant, thick, clear
 
-  const BAR_AREA_W = CW - PAD_L - PAD_R;  // 976px — nearly full width
-  const TEXT_H     = 120;                  // px reserved for ASIN + name
-  const BAR_H      = CH - PAD_T - TEXT_H - 10;  // remaining height for barcode
+  // Text zone below barcode
+  const ASIN_Y = MT + BAR_H + 46;
+  const NAME_Y = ASIN_Y + 42;
 
-  function drawWrappedText(ctx, text, x, y, maxW, lineH) {
+  function wrapText(ctx, text, x, y, maxW, lh) {
     const words = text.split(' ');
-    let line = '', curY = y;
-    for (const word of words) {
-      const test = line ? line + ' ' + word : word;
-      if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, x, curY); line = word; curY += lineH;
-      } else { line = test; }
+    let line = '', cy = y;
+    for (const w of words) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && line) {
+        ctx.fillText(line, x, cy); line = w; cy += lh;
+      } else line = t;
     }
-    if (line) ctx.fillText(line, x, curY);
+    if (line) ctx.fillText(line, x, cy);
   }
 
-  for (let i = 0; i < labels.length; i++) {
+  for (let i = 0; i < ysmLabels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
-    const lbl       = labels[i];
-    const asin      = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
-    const itemName  = (lbl.dataset.itemName || '').trim();
-    const asinClean = asin.replace(/[^A-Z0-9\-\.\  ]/gi, '');
+    const lbl      = ysmLabels[i];
+    const asin     = lbl.asin.trim();
+    const itemName = lbl.itemName.trim();
+    const clean    = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
+    // Offscreen canvas
     const oc  = document.createElement('canvas');
-    oc.width  = CW;
-    oc.height = CH;
+    oc.width  = CW; oc.height = CH;
     const ctx = oc.getContext('2d');
-
-    // White background
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, CW, CH);
 
-    // Generate barcode SVG
-    const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    let barcodeOk = false;
-    const bcOpts = { format: 'CODE128', width: 3, height: BAR_H, displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0 };
-    try { JsBarcode(svgEl, asin || asinClean, bcOpts); barcodeOk = true; } catch(e) {}
-    if (!barcodeOk) {
-      try { JsBarcode(svgEl, asinClean, bcOpts); barcodeOk = true; } catch(e2) { continue; }
-    }
+    // Generate barcode SVG — width:3, height:BAR_H, no margin (we control placement)
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    let ok = false;
+    const opts = { format:'CODE128', width:3, height:BAR_H, displayValue:false, background:'#fff', lineColor:'#000', margin:0 };
+    try { JsBarcode(svg, asin || clean, opts); ok = true; } catch(e) {}
+    if (!ok) { try { JsBarcode(svg, clean, opts); ok = true; } catch(e) { continue; } }
 
-    // Render SVG and stretch barcode to fill full width
-    const svgData = new XMLSerializer().serializeToString(svgEl);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl  = URL.createObjectURL(svgBlob);
-    await new Promise(resolve => {
+    // Draw barcode: stretch to full scan width
+    const sd   = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([sd], { type:'image/svg+xml;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    await new Promise(res => {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, PAD_L, PAD_T, BAR_AREA_W, BAR_H);
-        URL.revokeObjectURL(svgUrl);
-        resolve();
+        ctx.drawImage(img, ML, MT, BAR_W, BAR_H);  // FULL WIDTH stretch
+        URL.revokeObjectURL(url);
+        res();
       };
-      img.onerror = () => { URL.revokeObjectURL(svgUrl); resolve(); };
-      img.src = svgUrl;
+      img.onerror = () => { URL.revokeObjectURL(url); res(); };
+      img.src = url;
     });
 
-    // ASIN text below barcode
-    const ASIN_Y = PAD_T + BAR_H + 44;
-    ctx.fillStyle = '#000000';
-    ctx.font      = 'bold 32px "Courier New", Courier, monospace';
+    // ASIN — bold, large, centered
+    ctx.fillStyle = '#000';
+    ctx.font      = 'bold 36px "Courier New",Courier,monospace';
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // Item name below ASIN
+    // Item name — smaller, grey
     if (itemName) {
-      const NAME_Y = ASIN_Y + 40;
-      ctx.fillStyle = '#333333';
-      ctx.font      = '24px Arial, sans-serif';
+      ctx.fillStyle = '#333';
+      ctx.font      = '26px Arial,sans-serif';
       ctx.textAlign = 'center';
-      if (ctx.measureText(itemName).width <= BAR_AREA_W) {
+      if (ctx.measureText(itemName).width <= BAR_W)
         ctx.fillText(itemName, CW / 2, NAME_Y);
-      } else {
-        drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_AREA_W, 28);
-      }
+      else
+        wrapText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 30);
     }
 
-    // Add canvas to PDF — fills entire label perfectly
+    // Add to PDF — canvas fills exact label
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
   }
 
-  pdf.save(`YSM_Zebra220_4x2_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${labels.length} Zebra labels exported!`);
+  pdf.save(`YSM_Zebra220_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast(`✅ ${ysmLabels.length} Zebra labels exported!`);
 }
+
+// Keep old name for compatibility
+async function exportYSMLabels(el) { await exportYSMPDF(); }
+
 // ════ FEEDBACK ════
 function sendFeedback() {
   const name = document.getElementById('fb-name').value.trim();
