@@ -1648,14 +1648,24 @@ async function exportYSMPDF() {
     try { JsBarcode(svg, asin || clean, opts); ok = true; } catch(e) {}
     if (!ok) { try { JsBarcode(svg, clean, opts); ok = true; } catch(e) { continue; } }
 
-    // Draw barcode: stretch to full scan width
+    // Draw barcode: use intermediate canvas to avoid SVG flip issues
     const sd   = new XMLSerializer().serializeToString(svg);
     const blob = new Blob([sd], { type:'image/svg+xml;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
     await new Promise(res => {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, ML, MT, BAR_W, BAR_H);  // FULL WIDTH stretch
+        // Draw to intermediate canvas at natural size first
+        const tmp = document.createElement('canvas');
+        tmp.width  = img.naturalWidth  || img.width  || BAR_W;
+        tmp.height = img.naturalHeight || img.height || BAR_H;
+        const tctx = tmp.getContext('2d');
+        tctx.fillStyle = '#fff';
+        tctx.fillRect(0, 0, tmp.width, tmp.height);
+        tctx.drawImage(img, 0, 0);
+
+        // Now draw from intermediate canvas to main canvas — correct orientation
+        ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, ML, MT, BAR_W, BAR_H);
         URL.revokeObjectURL(url);
         res();
       };
