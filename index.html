@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WareTask Pro — HP World</title>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #eeecea;
+  --dark: #111110;
+  --dark2: #2a2927;
+  --accent: #e8500a;
+  --accent2: #1a5cff;
+  --gold: #c9a227;
+  --green: #1a7a4a;
+  --border: #d8d6d1;
+  --muted: #888580;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+  --radius: 12px;
+  --radius-lg: 20px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--dark);
+  color: #fff;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.header-logo .dot { color: var(--accent); }
+
+.header-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 1px;
+}
+
+/* ── PAGE SYSTEM ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── DASHBOARD ── */
+.dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+}
+
+.dash-hero {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.dash-hero h1 {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+
+.dash-hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.dash-hero p {
+  font-size: 17px;
+  color: var(--muted);
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.task-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--card-color, var(--accent));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.22s ease;
+}
+
+.task-card:hover {
+  border-color: var(--card-color, var(--accent));
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.task-card:hover::before { transform: scaleY(1); }
+
+.card-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.card-icon {
+  font-size: 36px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.task-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+
+.task-card p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.card-arrow {
+  position: absolute;
+  top: 28px; right: 28px;
+  font-size: 18px;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.2s;
+}
+
+.task-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+/* ── TASK PAGE ── */
+.task-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1.5px solid var(--border);
+  padding: 8px 18px;
+  border-radius: 40px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--dark);
+  transition: all 0.2s;
+  margin-bottom: 32px;
+  text-decoration: none;
+}
+
+.back-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+.task-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 36px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-header-icon {
+  font-size: 48px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.task-header h2 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+}
+
+.task-header p { color: var(--muted); font-size: 15px; font-weight: 400; line-height: 1.5; }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  margin-bottom: 24px;
+}
+
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--accent);
+  background: rgba(232,80,10,0.03);
+}
+
+.upload-zone input { display: none; }
+.upload-zone .u-icon { font-size: 44px; margin-bottom: 12px; }
+.upload-zone h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.upload-zone p { color: var(--muted); font-size: 13px; }
+.upload-zone .fmts { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+.fmt-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.file-ok {
+  display: none;
+  background: #f0fdf6;
+  border: 1.5px solid #86efac;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.file-ok.show { display: flex; }
+.file-ok .fi-info { flex: 1; }
+.file-ok .fi-info span { display: block; font-weight: 400; color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
+
+/* ── CONTROLS ── */
+.ctrl-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+.ctrl-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.select-field, .input-field {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  color: var(--dark);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.select-field:focus, .input-field:focus { border-color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-primary { background: var(--dark); color: #fff; }
+.btn-primary:hover { background: var(--accent); transform: translateY(-1px); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #c43d04; transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--dark); }
+.btn-outline:hover { border-color: var(--dark); background: var(--dark); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #145c38; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+.btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+
+/* ── RESULTS ── */
+.results-panel {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 28px;
+}
+
+.results-header {
+  background: var(--dark);
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.results-header h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.results-count { font-family: 'DM Mono', monospace; font-size: 12px; opacity: 0.6; }
+
+.results-body { padding: 24px; }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--surface2); }
+th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--border); }
+td { padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.05); font-family: 'DM Mono', monospace; font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(232,80,10,0.03); }
+
+/* ── CARD GRID for QR/Barcode outputs ── */
+.label-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.label-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+.label-card:hover { box-shadow: var(--shadow); }
+
+.label-card .asin-txt {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 10px;
+  color: var(--dark);
+  word-break: break-all;
+}
+
+.label-card .remark-box {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--surface2);
+  min-height: 40px;
+  resize: none;
+  color: var(--dark);
+}
+
+/* ── AUDIT TABLE special ── */
+.audit-remark {
+  min-width: 160px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--surface2);
+}
+
+/* ── BARCODE LABELS PRINT ── */
+.barcode-labels-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.barcode-label {
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 6px;
+  padding: 14px 12px;
+  text-align: center;
+  page-break-inside: avoid;
+}
+
+.barcode-label svg { max-width: 100%; }
+
+.barcode-label .bl-asin {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+.barcode-label .bl-num {
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── YSM COLUMN MAPPER ── */
+.mapper-box {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.mapper-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+
+.mapper-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.mapper-row label {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 140px;
+  color: var(--dark2);
+}
+
+/* ── FEEDBACK / CONTACT ── */
+.form-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  max-width: 560px;
+}
+
+.form-group { margin-bottom: 20px; }
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.form-group input, .form-group textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  color: var(--dark);
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+
+.form-group textarea { min-height: 120px; }
+
+/* ── CONTACT PAGE ── */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  max-width: 600px;
+}
+
+.contact-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-align: center;
+}
+
+.contact-card .cc-icon { font-size: 40px; margin-bottom: 12px; }
+.contact-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.contact-card a { color: var(--accent); text-decoration: none; font-size: 14px; font-family: 'DM Mono', monospace; }
+.contact-card a:hover { text-decoration: underline; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: var(--dark);
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 340px;
+  box-shadow: var(--shadow-lg);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── LOADING ── */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 48px;
+  color: var(--muted);
+}
+
+.loading.show { display: block; }
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 14px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--dark);
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  padding: 20px;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+}
+
+footer span { color: var(--accent); }
+
+/* ── FILTER TABS ── */
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.ftab {
+  padding: 8px 18px;
+  border-radius: 40px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--dark);
+}
+
+.ftab.active, .ftab:hover {
+  background: var(--dark);
+  color: #fff;
+  border-color: var(--dark);
+}
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.stat-card .sv {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.stat-card .sl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* ── PRINT STYLES ── */
+@media print {
+  .header, .back-btn, .btn-row, .upload-zone, .file-ok,
+  .ctrl-row, .filter-tabs, .results-header .btn { display: none !important; }
+  .results-panel { border: none; }
+  .barcode-label { page-break-inside: avoid; }
+  body::after {
+    content: 'Powered by HP World';
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    color: #888;
+    padding: 20px;
+    font-family: 'DM Mono', monospace;
+    border-top: 1px solid #ddd;
+  }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .header { padding: 0 16px; }
+  .dashboard { padding: 32px 16px 60px; }
+  .task-page { padding: 24px 16px 60px; }
+  .dash-hero h1 { font-size: 36px; }
+  .task-grid { grid-template-columns: 1fr; }
+  .label-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-box { padding: 24px 18px; }
+}
+
+/* ── ALERT ── */
+.alert {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.alert-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <div class="header-logo">
+    📦 WareTask<span class="dot">Pro</span>
+  </div>
+  <div class="header-badge">POWERED BY HP WORLD</div>
+</header>
+
+<!-- ══════════════════════════════
+     PAGE: DASHBOARD
+══════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+<div class="dashboard">
+  <div class="dash-hero">
+    <h1>Warehouse Task<br><em>Generation System</em></h1>
+    <p>Upload your inventory file, select a task type, and instantly generate printable task sheets for your warehouse team.</p>
+  </div>
+
+  <div class="task-grid">
+
+    <div class="task-card" style="--card-color:#e8500a" onclick="openTask('consolidation')">
+      <div class="card-num">Task 01</div>
+      <span class="card-icon">🔀</span>
+      <h3>Consolidation</h3>
+      <p>Group ASINs spread across multiple locations and generate consolidation task lists.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#1a5cff" onclick="openTask('audit-loc')">
+      <div class="card-num">Task 02</div>
+      <span class="card-icon">📍</span>
+      <h3>Audit by Location</h3>
+      <p>Generate 80 random locations across Frozen, Chiller, Hazmat, Ambient, HRV & Mixed zones.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#c9a227" onclick="openTask('audit-asin')">
+      <div class="card-num">Task 03</div>
+      <span class="card-icon">🔎</span>
+      <h3>Audit by ASIN</h3>
+      <p>Pick 80 random ASINs from inventory for physical stock count verification.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
+      <div class="card-num">Task 04</div>
+      <span class="card-icon">🐢</span>
+      <h3>Slow Moving Items</h3>
+      <p>Identify items aged over 90 days requiring attention, relocation, or clearance.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
+      <div class="card-num">Task 05</div>
+      <span class="card-icon">🏷️</span>
+      <h3>YSM Barcode Task</h3>
+      <p>Generate individual scannable barcode labels for each unit. One label per item.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
+      <div class="card-num">Task 06</div>
+      <span class="card-icon">💬</span>
+      <h3>Feedback Form</h3>
+      <p>Send feedback, suggestions, or issues directly to the system administrator.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-card" style="--card-color:#0891b2" onclick="openTask('contact')">
+      <div class="card-num">Task 07</div>
+      <span class="card-icon">📞</span>
+      <h3>Contact Us</h3>
+      <p>Get in touch with the HP World warehouse operations team.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: CONSOLIDATION
+══════════════════════════════ -->
+<div class="page" id="page-consolidation">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🔀</span>
+    <div>
+      <h2>Consolidation Task</h2>
+      <p>Groups ASINs by unique location count. Select an exact count (2–10) or "More than 10". Optionally filter by Bay/Path for counts 2–10.</p>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="uz-consolidation" onclick="triggerUpload('f-consolidation')">
+    <input type="file" id="f-consolidation" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'consolidation')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Inventory File</h3>
+    <p>Click or drag & drop your inventory file here</p>
+    <div class="fmts">
+      <span class="fmt-tag">.XLSX</span>
+      <span class="fmt-tag">.XLS</span>
+      <span class="fmt-tag">.CSV</span>
+    </div>
+  </div>
+
+  <div class="file-ok" id="fo-consolidation">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-consolidation-name">—</strong>
+      <span id="fo-consolidation-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('consolidation')">✕</button>
+  </div>
+
+  <!-- FILTER CONTROLS -->
+  <div id="ctrl-consolidation" style="display:none">
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;align-items:end">
+
+        <!-- Location Count Dropdown -->
+        <div>
+          <div class="ctrl-label">Location Count</div>
+          <select class="select-field" id="con-count-filter" style="width:100%" onchange="onConCountChange()">
+            <option value="2">Exactly 2 locations</option>
+            <option value="3">Exactly 3 locations</option>
+            <option value="4">Exactly 4 locations</option>
+            <option value="5">Exactly 5 locations</option>
+            <option value="6">Exactly 6 locations</option>
+            <option value="7">Exactly 7 locations</option>
+            <option value="8">Exactly 8 locations</option>
+            <option value="9">Exactly 9 locations</option>
+            <option value="10">Exactly 10 locations</option>
+            <option value="11+">More than 10 (11+)</option>
+          </select>
+        </div>
+
+        <!-- Bay / Path Filter -->
+        <div id="con-bay-wrap">
+          <div class="ctrl-label">Bay / Path Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional, e.g. A101, F125)</span></div>
+          <input class="input-field" id="con-bay-input" type="text" placeholder="e.g. A101 or HAZ or F125" style="width:100%">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Matches any location containing this text (case-insensitive)</div>
+        </div>
+
+        <!-- Bay disabled notice (only shows for 11+) -->
+        <div id="con-bay-disabled" style="display:none">
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;font-size:13px;color:#92400e">
+            ⚠️ Bay/Path filter is <strong>disabled</strong> when "More than 10" is selected. Only location count filter applies.
+          </div>
+        </div>
+
+        <!-- Apply Button -->
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" style="width:100%" onclick="generateConsolidation()">⚡ Apply Filter</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" id="load-consolidation"><div class="spinner"></div><div>Processing...</div></div>
+  <div id="out-consolidation"></div>
+
+  <div class="btn-row" id="export-consolidation" style="display:none">
+    <button class="btn btn-accent" onclick="exportPDF('out-consolidation','Consolidation Task')">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: AUDIT BY LOCATION
+══════════════════════════════ -->
+<div class="page" id="page-audit-loc">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">📍</span>
+    <div>
+      <h2>Inventory Audit by Location</h2>
+      <p>Generates 80 random locations across all zone types. Upload your inventory to pick real locations from your data, or use the default generator.</p>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="uz-audit-loc" onclick="triggerUpload('f-audit-loc')">
+    <input type="file" id="f-audit-loc" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'audit-loc')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Inventory File</h3>
+    <p>Upload to use real locations from your data — or click Generate without uploading</p>
+    <div class="fmts">
+      <span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span>
+    </div>
+  </div>
+
+  <div class="file-ok" id="fo-audit-loc">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-audit-loc-name">—</strong>
+      <span id="fo-audit-loc-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('audit-loc')">✕</button>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 80 Locations</button>
+  </div>
+
+  <div class="loading" id="load-audit-loc"><div class="spinner"></div><div>Selecting locations...</div></div>
+  <div id="out-audit-loc"></div>
+
+  <div class="btn-row" id="export-audit-loc" style="display:none">
+    <button class="btn btn-accent" onclick="exportPDF('out-audit-loc','Audit by Location')">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: AUDIT BY ASIN
+══════════════════════════════ -->
+<div class="page" id="page-audit-asin">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🔎</span>
+    <div>
+      <h2>Inventory Audit by ASIN</h2>
+      <p>Picks 80 random ASINs from your inventory with QR code and remark space for physical verification.</p>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="uz-audit-asin" onclick="triggerUpload('f-audit-asin')">
+    <input type="file" id="f-audit-asin" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'audit-asin')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Inventory File</h3>
+    <p>Click or drag & drop your inventory file here</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+
+  <div class="file-ok" id="fo-audit-asin">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-audit-asin-name">—</strong>
+      <span id="fo-audit-asin-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('audit-asin')">✕</button>
+  </div>
+
+  <div class="ctrl-row" id="ctrl-audit-asin" style="display:none">
+    <button class="btn btn-primary" onclick="generateAuditAsin()">⚡ Pick 80 Random ASINs</button>
+  </div>
+
+  <div class="loading" id="load-audit-asin"><div class="spinner"></div><div>Selecting ASINs...</div></div>
+  <div id="out-audit-asin"></div>
+
+  <div class="btn-row" id="export-audit-asin" style="display:none">
+    <button class="btn btn-accent" onclick="exportPDF('out-audit-asin','Audit by ASIN')">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: SLOW MOVING
+══════════════════════════════ -->
+<div class="page" id="page-slow-moving">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🐢</span>
+    <div>
+      <h2>Slow Moving Items</h2>
+      <p>Filters items where Age Days &gt; 90. Maps your file's age column automatically.</p>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="uz-slow-moving" onclick="triggerUpload('f-slow-moving')">
+    <input type="file" id="f-slow-moving" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'slow-moving')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Inventory File</h3>
+    <p>File must contain Age Days / AgeInDays column</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+
+  <div class="file-ok" id="fo-slow-moving">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-slow-moving-name">—</strong>
+      <span id="fo-slow-moving-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('slow-moving')">✕</button>
+  </div>
+
+  <div class="ctrl-row" id="ctrl-slow-moving" style="display:none">
+    <div>
+      <div class="ctrl-label">Age Column</div>
+      <select class="select-field" id="col-age-slow"></select>
+    </div>
+    <div>
+      <div class="ctrl-label">Threshold (days)</div>
+      <input class="input-field" type="number" id="slow-threshold" value="90" min="1" style="width:100px">
+    </div>
+    <button class="btn btn-primary" onclick="generateSlowMoving()">⚡ Generate Task</button>
+  </div>
+
+  <div class="loading" id="load-slow-moving"><div class="spinner"></div><div>Filtering...</div></div>
+  <div id="out-slow-moving"></div>
+
+  <div class="btn-row" id="export-slow-moving" style="display:none">
+    <button class="btn btn-accent" onclick="exportPDF('out-slow-moving','Slow Moving Items')">⬇ Export PDF</button>
+    <button class="btn btn-green" onclick="exportXLSX('slow-moving')">⬇ Export Excel</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: YSM BARCODE
+══════════════════════════════ -->
+<div class="page" id="page-ysm">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🏷️</span>
+    <div>
+      <h2>YSM Barcode Task</h2>
+      <p>Generates one barcode label per unit. If ASIN=ABC and QTY=5, produces 5 individual labels ready for printing.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-info">ℹ️ Upload a file, map the ASIN and Quantity columns, then click Generate. Each unit gets its own scannable barcode label.</div>
+
+  <div class="upload-zone" id="uz-ysm" onclick="triggerUpload('f-ysm')">
+    <input type="file" id="f-ysm" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'ysm')">
+    <div class="u-icon">📂</div>
+    <h3>Upload File</h3>
+    <p>Any file with ASIN and Quantity columns</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+
+  <div class="file-ok" id="fo-ysm">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-ysm-name">—</strong>
+      <span id="fo-ysm-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('ysm')">✕</button>
+  </div>
+
+  <div class="mapper-box" id="mapper-ysm" style="display:none">
+    <h4>📋 Map Your Columns</h4>
+    <div class="mapper-row">
+      <label>ASIN Column</label>
+      <select class="select-field" id="col-asin-ysm"></select>
+    </div>
+    <div class="mapper-row">
+      <label>Quantity Column</label>
+      <select class="select-field" id="col-qty-ysm"></select>
+    </div>
+    <div class="mapper-row" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="generateYSM()">⚡ Generate Barcode Labels</button>
+    </div>
+  </div>
+
+  <div class="loading" id="load-ysm"><div class="spinner"></div><div>Generating labels...</div></div>
+  <div id="out-ysm"></div>
+
+  <div class="btn-row" id="export-ysm" style="display:none">
+    <button class="btn btn-accent" onclick="exportPDF('out-ysm','YSM Barcode Labels')">⬇ Export PDF</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ Print Labels</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: FEEDBACK
+══════════════════════════════ -->
+<div class="page" id="page-feedback">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">💬</span>
+    <div>
+      <h2>Feedback Form</h2>
+      <p>Send your feedback, suggestions, or report any issues directly to the team.</p>
+    </div>
+  </div>
+
+  <div class="form-box">
+    <div class="form-group">
+      <label>Your Name</label>
+      <input type="text" id="fb-name" placeholder="Enter your name">
+    </div>
+    <div class="form-group">
+      <label>Email (optional)</label>
+      <input type="email" id="fb-email" placeholder="your@email.com">
+    </div>
+    <div class="form-group">
+      <label>Message</label>
+      <textarea id="fb-msg" placeholder="Write your feedback here..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="sendFeedback()">📨 Send Feedback</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════
+     PAGE: CONTACT
+══════════════════════════════ -->
+<div class="page" id="page-contact">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">📞</span>
+    <div>
+      <h2>Contact Us</h2>
+      <p>Reach out to the HP World warehouse operations team.</p>
+    </div>
+  </div>
+
+  <div class="contact-grid">
+    <div class="contact-card">
+      <div class="cc-icon">📧</div>
+      <h4>Email</h4>
+      <a href="mailto:hrushikeshpadhi6@live.com">hrushikeshpadhi6@live.com</a>
+    </div>
+    <div class="contact-card">
+      <div class="cc-icon">🏢</div>
+      <h4>Organization</h4>
+      <p style="font-size:14px;color:var(--muted)">HP World<br>Warehouse Operations</p>
+    </div>
+  </div>
+
+  <div style="margin-top:28px" class="alert alert-info">
+    💡 For urgent issues or task support, email us directly and include your Warehouse ID and task type.
+  </div>
+</div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  Powered by <span>HP World</span> &nbsp;·&nbsp; Warehouse Task Generation System &nbsp;·&nbsp; All data processed locally in your browser
+</footer>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════
+     JAVASCRIPT
+══════════════════════════════ -->
+<script>
+
+// ════ STATE ════
+const state = {
+  consolidation: { data: [], headers: [], filter: '2-10' },
+  'audit-loc': { data: [], headers: [] },
+  'audit-asin': { data: [], headers: [] },
+  'slow-moving': { data: [], headers: [] },
+  ysm: { data: [], headers: [] }
+};
+
+let slowMovingRows = [];
+
+// ════ NAVIGATION ════
+function openTask(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-dashboard').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ════ FILE UPLOAD ════
+function triggerUpload(id) { document.getElementById(id).click(); }
+
+function handleUpload(input, task) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  reader.onload = (e) => {
+    try {
+      let wb;
+      if (ext === 'csv') wb = XLSX.read(e.target.result, { type: 'string' });
+      else wb = XLSX.read(e.target.result, { type: 'array' });
+
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!json.length) { showToast('⚠️ File is empty!'); return; }
+
+      state[task].data = json;
+      state[task].headers = Object.keys(json[0]);
+
+      document.getElementById('fo-' + task + '-name').textContent = file.name;
+      document.getElementById('fo-' + task + '-info').textContent =
+        `${json.length.toLocaleString()} rows · ${state[task].headers.length} columns`;
+      document.getElementById('fo-' + task).classList.add('show');
+
+      const ctrl = document.getElementById('ctrl-' + task);
+      if (ctrl) ctrl.style.display = 'flex';
+
+      // Task-specific post-load
+      if (task === 'slow-moving') buildSlowMovingCols();
+      if (task === 'ysm') buildYSMMapper();
+
+      showToast(`✅ Loaded ${json.length.toLocaleString()} records`);
+    } catch (err) {
+      showToast('❌ Could not read file. Check format.');
+      console.error(err);
+    }
+  };
+
+  if (ext === 'csv') reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function resetUpload(task) {
+  state[task].data = [];
+  state[task].headers = [];
+  document.getElementById('fo-' + task).classList.remove('show');
+  const fi = document.getElementById('f-' + task);
+  if (fi) fi.value = '';
+  const ctrl = document.getElementById('ctrl-' + task);
+  if (ctrl) ctrl.style.display = 'none';
+  document.getElementById('out-' + task).innerHTML = '';
+  const exp = document.getElementById('export-' + task);
+  if (exp) exp.style.display = 'none';
+  if (task === 'ysm') document.getElementById('mapper-ysm').style.display = 'none';
+}
+
+// ════ UTILITIES ════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showLoading(id, show) {
+  document.getElementById('load-' + id).classList.toggle('show', show);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickRandom(arr, n) {
+  return shuffle(arr).slice(0, Math.min(n, arr.length));
+}
+
+function findCol(headers, patterns) {
+  return headers.find(h => patterns.some(p => new RegExp(p, 'i').test(h))) || '';
+}
+
+// ════ TASK 1: CONSOLIDATION ════
+
+// Toggle bay filter visibility based on dropdown selection
+function onConCountChange() {
+  const val = document.getElementById('con-count-filter').value;
+  const isMoreThan10 = val === '11+';
+  document.getElementById('con-bay-wrap').style.display = isMoreThan10 ? 'none' : 'block';
+  document.getElementById('con-bay-disabled').style.display = isMoreThan10 ? 'block' : 'none';
+  if (isMoreThan10) document.getElementById('con-bay-input').value = '';
+}
+
+function generateConsolidation() {
+  const d = state.consolidation.data;
+  if (!d.length) { showToast('⚠️ Upload a file first'); return; }
+
+  const countFilter = document.getElementById('con-count-filter').value;   // "2".."10" or "11+"
+  const isMoreThan10 = countFilter === '11+';
+  const bayRaw = isMoreThan10 ? '' : (document.getElementById('con-bay-input').value || '').trim();
+  const bayFilter = bayRaw.toLowerCase();
+
+  showLoading('consolidation', true);
+  document.getElementById('out-consolidation').innerHTML = '';
+  document.getElementById('export-consolidation').style.display = 'none';
+
+  setTimeout(() => {
+    const h = state.consolidation.headers;
+    const asinCol = findCol(h, ['asin','product.?id','item.?id','fcsku','sku']);
+    const locCol  = findCol(h, ['location','bin','shelf','slot','locationid']);
+
+    if (!asinCol) { showLoading('consolidation',false); showToast('⚠️ Could not find ASIN column'); return; }
+    if (!locCol)  { showLoading('consolidation',false); showToast('⚠️ Could not find Location column'); return; }
+
+    // ── Step 1: Group by ASIN → Set of unique locations ──
+    const map = {};
+    d.forEach(row => {
+      const asin = String(row[asinCol] || '').trim();
+      const loc  = String(row[locCol]  || '').trim();
+      if (!asin) return;
+      if (!map[asin]) map[asin] = new Set();
+      if (loc) map[asin].add(loc);
+    });
+
+    // ── Step 2: Build result list with location count ──
+    let results = Object.entries(map).map(([asin, locs]) => ({
+      asin,
+      count: locs.size,
+      locs   // keep set for bay filtering
+    }));
+
+    // ── Step 3: Apply location COUNT filter ──
+    if (isMoreThan10) {
+      // IMPORTANT: only count filter, NO bay filter
+      results = results.filter(r => r.count > 10);
+    } else {
+      const exact = parseInt(countFilter, 10);
+      results = results.filter(r => r.count === exact);
+
+      // ── Step 4: Apply bay/path filter (AND logic, only for 2–10) ──
+      if (bayFilter) {
+        results = results.filter(r =>
+          [...r.locs].some(l => l.toLowerCase().includes(bayFilter))
+        );
+      }
+    }
+
+    results.sort((a, b) => b.count - a.count);
+    showLoading('consolidation', false);
+
+    if (!results.length) {
+      const msg = isMoreThan10
+        ? 'No ASINs found with more than 10 unique locations.'
+        : bayFilter
+          ? `No ASINs with exactly ${countFilter} locations containing "<strong>${bayRaw}</strong>".`
+          : `No ASINs with exactly ${countFilter} unique locations.`;
+      document.getElementById('out-consolidation').innerHTML =
+        `<div class="alert alert-warn">⚠️ ${msg}</div>`;
+      return;
+    }
+
+    // ── Build label string for results header ──
+    const filterLabel = isMoreThan10
+      ? 'More than 10 locations'
+      : bayFilter
+        ? `Exactly ${countFilter} locations · Bay contains "${bayRaw}"`
+        : `Exactly ${countFilter} locations`;
+
+    const panel = document.createElement('div');
+    panel.className = 'results-panel';
+    panel.innerHTML = `
+      <div class="results-header">
+        <h3>🔀 Consolidation Task</h3>
+        <span class="results-count">${results.length} ASINs · ${filterLabel}</span>
+      </div>
+      <div class="results-body">
+        <div class="stats-row">
+          <div class="stat-card"><div class="sv">${results.length}</div><div class="sl">Matched ASINs</div></div>
+          <div class="stat-card"><div class="sv">${isMoreThan10 ? '11+' : countFilter}</div><div class="sl">Location Count</div></div>
+          ${bayFilter ? `<div class="stat-card"><div class="sv" style="font-size:16px">"${bayRaw}"</div><div class="sl">Bay Filter</div></div>` : ''}
+        </div>
+        ${isMoreThan10 ? '<div class="alert alert-warn" style="margin-bottom:16px">⚠️ Bay/Path filter was not applied — disabled for "More than 10" selection.</div>' : ''}
+        <div class="label-grid" id="consolidation-qr-grid"></div>
+      </div>`;
+
+    document.getElementById('out-consolidation').appendChild(panel);
+
+    const grid = panel.querySelector('#consolidation-qr-grid');
+    results.forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.className = 'label-card';
+
+      // Priority colouring: for 11+ always HIGH, otherwise by count
+      let priority, pColor;
+      if (isMoreThan10) {
+        priority = 'HIGH'; pColor = '#e8500a';
+      } else {
+        const n = item.count;
+        priority = n >= 8 ? 'HIGH' : n >= 5 ? 'MEDIUM' : 'LOW';
+        pColor   = n >= 8 ? '#e8500a' : n >= 5 ? '#c9a227' : '#1a7a4a';
+      }
+
+      card.innerHTML = `
+        <div style="display:inline-block;padding:3px 10px;border-radius:4px;background:${pColor};color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:8px">${priority}</div>
+        <div id="qr-c-${idx}" style="display:flex;justify-content:center;margin-bottom:8px"></div>
+        <div class="asin-txt">${item.asin}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:#555;margin-top:6px;font-weight:600">📍 ${item.count} Location${item.count > 1 ? 's' : ''}</div>`;
+      grid.appendChild(card);
+
+      try {
+        new QRCode(document.getElementById(`qr-c-${idx}`), {
+          text: item.asin,
+          width: 130, height: 130,
+          colorDark: '#111110', colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch(e) {}
+    });
+
+    document.getElementById('export-consolidation').style.display = 'flex';
+    showToast(`✅ ${results.length} ASINs matched`);
+  }, 350);
+}
+
+// ════ TASK 2: AUDIT BY LOCATION ════
+function generateAuditLoc() {
+  showLoading('audit-loc', true);
+  document.getElementById('out-audit-loc').innerHTML = '';
+
+  setTimeout(() => {
+    const d = state['audit-loc'].data;
+    const h = state['audit-loc'].headers;
+    let locations = [];
+
+    if (d.length) {
+      // Use real locations from file
+      const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
+      if (locCol) {
+        const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(Boolean))];
+
+        // Try to categorize by zone patterns
+        const frozen = allLocs.filter(l => /P-?1-?F|FROZ|FREEZE/i.test(l));
+        const chiller = allLocs.filter(l => /P-?1-?C|CHILL|COLD/i.test(l));
+        const hazmat = allLocs.filter(l => /HAZ/i.test(l));
+        const hrv = allLocs.filter(l => /HRV/i.test(l));
+        const ambient = allLocs.filter(l => /P-?1-?A|AMBIENT|AMB/i.test(l));
+        const mixed = allLocs.filter(l => /^[XHRTD]/i.test(l));
+        const others = allLocs.filter(l =>
+          !frozen.includes(l) && !chiller.includes(l) && !hazmat.includes(l) &&
+          !hrv.includes(l) && !ambient.includes(l) && !mixed.includes(l)
+        );
+
+        locations = [
+          ...pickRandom(frozen.length ? frozen : generateFrozen(), 10).map(l=>({loc:l,zone:'Frozen'})),
+          ...pickRandom(chiller.length ? chiller : generateChiller(), 10).map(l=>({loc:l,zone:'Chiller'})),
+          ...pickRandom(hazmat.length ? hazmat : generateHazmat(), 10).map(l=>({loc:l,zone:'Hazmat'})),
+          ...pickRandom(ambient.length ? ambient : generateAmbient(), 18).map(l=>({loc:l,zone:'Ambient'})),
+          ...pickRandom(hrv.length ? hrv : generateHRV(), 10).map(l=>({loc:l,zone:'HRV'})),
+          ...pickRandom(mixed.length ? mixed : [...others,...generateMixed()], 12).map(l=>({loc:l,zone:'Mixed'})),
+        ];
+      } else {
+        locations = buildDefaultLocations();
+      }
+    } else {
+      locations = buildDefaultLocations();
+    }
+
+    locations = shuffle(locations);
+
+    showLoading('audit-loc', false);
+    renderAuditLocResults(locations);
+  }, 400);
+}
+
+function generateFrozen(n=20) { return Array.from({length:n},(_,i)=>`P-1-F-${String(i+1).padStart(3,'0')}`); }
+function generateChiller(n=20) { return Array.from({length:n},(_,i)=>`P-1-C-${String(i+1).padStart(3,'0')}`); }
+function generateHazmat(n=30) { return Array.from({length:n},(_,i)=>`HAZ-A${Math.floor(Math.random()*5)+1}${String(i+1).padStart(2,'0')}`); }
+function generateAmbient(n=40) { return Array.from({length:n},(_,i)=>`P-1-A-${String(i+1).padStart(3,'0')}`); }
+function generateHRV(n=20) { return Array.from({length:n},(_,i)=>`HRV-${String(i+1).padStart(3,'0')}`); }
+function generateMixed(n=24) {
+  const pfx = ['X','H','R','T','D'];
+  return Array.from({length:n},(_,i)=>`${pfx[i%pfx.length]}-${String(i+1).padStart(3,'0')}`);
+}
+
+function buildDefaultLocations() {
+  return [
+    ...pickRandom(generateFrozen(20),10).map(l=>({loc:l,zone:'Frozen'})),
+    ...pickRandom(generateChiller(20),10).map(l=>({loc:l,zone:'Chiller'})),
+    ...pickRandom(generateHazmat(30),10).map(l=>({loc:l,zone:'Hazmat'})),
+    ...pickRandom(generateAmbient(40),18).map(l=>({loc:l,zone:'Ambient'})),
+    ...pickRandom(generateHRV(20),10).map(l=>({loc:l,zone:'HRV'})),
+    ...pickRandom(generateMixed(24),12).map(l=>({loc:l,zone:'Mixed'})),
+  ];
+}
+
+function renderAuditLocResults(locations) {
+  const zoneColors = {
+    Frozen:'#1a5cff', Chiller:'#0891b2', Hazmat:'#dc2626',
+    Ambient:'#1a7a4a', HRV:'#7c3aed', Mixed:'#c9a227'
+  };
+
+  const zones = [...new Set(locations.map(l=>l.zone))];
+  const statsHTML = zones.map(z => {
+    const cnt = locations.filter(l=>l.zone===z).length;
+    return `<div class="stat-card"><div class="sv" style="color:${zoneColors[z]||'var(--accent)'}">${cnt}</div><div class="sl">${z}</div></div>`;
+  }).join('');
+
+  const rowsHTML = locations.map((item, i) => `
+    <tr>
+      <td style="font-weight:700;font-family:'DM Mono',monospace">${String(i+1).padStart(2,'0')}</td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${zoneColors[item.zone]||'#888'}22;color:${zoneColors[item.zone]||'#888'};font-size:10px;font-weight:700;letter-spacing:1px">${item.zone}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${item.loc}</td>
+      <td><input class="audit-remark" type="text" placeholder="Remark..."></td>
+    </tr>`).join('');
+
+  const date = new Date().toLocaleDateString('en-GB');
+
+  document.getElementById('out-audit-loc').innerHTML = `
+    <div class="results-panel" id="audit-loc-print">
+      <div class="results-header">
+        <h3>📍 Location Audit Sheet</h3>
+        <span class="results-count">${locations.length} locations · ${date}</span>
+      </div>
+      <div class="results-body">
+        <div class="stats-row">${statsHTML}</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Zone</th><th>Location</th><th>Remark / Count</th></tr></thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('export-audit-loc').style.display = 'flex';
+}
+
+// ════ TASK 3: AUDIT BY ASIN ════
+function generateAuditAsin() {
+  const d = state['audit-asin'].data;
+  if (!d.length) { showToast('⚠️ Upload a file first'); return; }
+
+  showLoading('audit-asin', true);
+  document.getElementById('out-audit-asin').innerHTML = '';
+
+  setTimeout(() => {
+    const h = state['audit-asin'].headers;
+    const asinCol = findCol(h, ['asin','product.?id','item.?id','sku','fnsku']);
+    const titleCol = findCol(h, ['title','name','product.?name','description']);
+    const locCol = findCol(h, ['location','bin','shelf','locationid']);
+
+    if (!asinCol) { showLoading('audit-asin',false); showToast('⚠️ ASIN column not found'); return; }
+
+    const allASINs = [...new Set(d.map(r => String(r[asinCol]||'').trim()).filter(Boolean))];
+    const picked = pickRandom(allASINs, 80);
+
+    showLoading('audit-asin', false);
+
+    const grid = document.createElement('div');
+    grid.innerHTML = `
+      <div class="results-panel">
+        <div class="results-header">
+          <h3>🔎 ASIN Audit Sheet</h3>
+          <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')}</span>
+        </div>
+        <div class="results-body">
+          <div class="alert alert-info" style="margin-bottom:20px">📋 Scan each QR code or verify ASIN physically. Fill in the remark after checking.</div>
+          <div class="label-grid" id="audit-asin-grid"></div>
+        </div>
+      </div>`;
+
+    document.getElementById('out-audit-asin').appendChild(grid);
+
+    const g = grid.querySelector('#audit-asin-grid');
+    picked.forEach((asin, idx) => {
+      const card = document.createElement('div');
+      card.className = 'label-card';
+      // Find extra info
+      const row = d.find(r => String(r[asinCol]||'').trim() === asin) || {};
+      const title = titleCol ? String(row[titleCol]||'').slice(0,40) : '';
+      const loc = locCol ? String(row[locCol]||'') : '';
+
+      card.innerHTML = `
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#888;margin-bottom:6px">#${String(idx+1).padStart(2,'0')}</div>
+        <div id="qr-a-${idx}" style="display:flex;justify-content:center"></div>
+        <div class="asin-txt">${asin}</div>
+        ${title ? `<div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3">${title}</div>` : ''}
+        ${loc ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">📍 ${loc}</div>` : ''}
+        <textarea class="remark-box" placeholder="Remark / Count..."></textarea>`;
+      g.appendChild(card);
+
+      try {
+        new QRCode(document.getElementById(`qr-a-${idx}`), {
+          text: asin, width: 110, height: 110,
+          colorDark: '#111110', colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch(e) {}
+    });
+
+    document.getElementById('export-audit-asin').style.display = 'flex';
+  }, 400);
+}
+
+// ════ TASK 4: SLOW MOVING ════
+function buildSlowMovingCols() {
+  const h = state['slow-moving'].headers;
+  const sel = document.getElementById('col-age-slow');
+  sel.innerHTML = h.map(c => `<option value="${c}" ${/age|days/i.test(c)?'selected':''}>${c}</option>`).join('');
+}
+
+function generateSlowMoving() {
+  const d = state['slow-moving'].data;
+  if (!d.length) { showToast('⚠️ Upload a file first'); return; }
+
+  const ageCol = document.getElementById('col-age-slow').value;
+  const threshold = parseFloat(document.getElementById('slow-threshold').value) || 90;
+  const h = state['slow-moving'].headers;
+  const asinCol = findCol(h, ['asin','product.?id','item.?id']);
+  const locCol = findCol(h, ['location','bin','shelf','locationid']);
+  const qtyCol = findCol(h, ['qty','quantity','stock','count','units']);
+  const titleCol = findCol(h, ['title','name','description']);
+
+  showLoading('slow-moving', true);
+  document.getElementById('out-slow-moving').innerHTML = '';
+
+  setTimeout(() => {
+    slowMovingRows = d.filter(r => parseFloat(r[ageCol]) > threshold)
+      .map(r => ({
+        ASIN: asinCol ? r[asinCol] : '—',
+        Title: titleCol ? String(r[titleCol]||'').slice(0,50) : '—',
+        Location: locCol ? r[locCol] : '—',
+        Quantity: qtyCol ? r[qtyCol] : '—',
+        'Age Days': parseFloat(r[ageCol]).toFixed(1)
+      }))
+      .sort((a,b) => parseFloat(b['Age Days']) - parseFloat(a['Age Days']));
+
+    showLoading('slow-moving', false);
+
+    if (!slowMovingRows.length) {
+      document.getElementById('out-slow-moving').innerHTML =
+        `<div class="alert alert-info">ℹ️ No items found with Age Days > ${threshold}.</div>`;
+      return;
+    }
+
+    const cols = Object.keys(slowMovingRows[0]);
+    const rowsHTML = slowMovingRows.map(row => `
+      <tr>${cols.map(c => {
+        const v = row[c];
+        if (c === 'Age Days') {
+          const n = parseFloat(v);
+          const col = n > 150 ? '#dc2626' : n > 120 ? '#e8500a' : '#c9a227';
+          return `<td style="color:${col};font-weight:700">${v}</td>`;
+        }
+        return `<td>${v||'—'}</td>`;
+      }).join('')}</tr>`).join('');
+
+    document.getElementById('out-slow-moving').innerHTML = `
+      <div class="results-panel">
+        <div class="results-header">
+          <h3>🐢 Slow Moving Items</h3>
+          <span class="results-count">${slowMovingRows.length} items · Age > ${threshold} days</span>
+        </div>
+        <div class="results-body">
+          <div class="stats-row">
+            <div class="stat-card"><div class="sv">${slowMovingRows.length}</div><div class="sl">Total Items</div></div>
+            <div class="stat-card"><div class="sv" style="color:#dc2626">${slowMovingRows.filter(r=>parseFloat(r['Age Days'])>150).length}</div><div class="sl">Over 150 Days</div></div>
+            <div class="stat-card"><div class="sv">${Math.max(...slowMovingRows.map(r=>parseFloat(r['Age Days']))).toFixed(0)}</div><div class="sl">Max Age (Days)</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+              <tbody>${rowsHTML}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+
+    document.getElementById('export-slow-moving').style.display = 'flex';
+  }, 400);
+}
+
+function exportXLSX(task) {
+  if (!slowMovingRows.length) return;
+  const ws = XLSX.utils.json_to_sheet(slowMovingRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Slow Moving');
+  XLSX.writeFile(wb, `slow_moving_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast('📥 Excel exported!');
+}
+
+// ════ TASK 5: YSM BARCODES ════
+function buildYSMMapper() {
+  const h = state.ysm.headers;
+  const asinSel = document.getElementById('col-asin-ysm');
+  const qtySel = document.getElementById('col-qty-ysm');
+  asinSel.innerHTML = h.map(c => `<option value="${c}" ${/asin|product.?id|sku|item/i.test(c)?'selected':''}>${c}</option>`).join('');
+  qtySel.innerHTML = h.map(c => `<option value="${c}" ${/qty|quantity|stock|count|unit/i.test(c)?'selected':''}>${c}</option>`).join('');
+  document.getElementById('mapper-ysm').style.display = 'block';
+}
+
+function generateYSM() {
+  const d = state.ysm.data;
+  if (!d.length) { showToast('⚠️ Upload a file first'); return; }
+
+  const asinCol = document.getElementById('col-asin-ysm').value;
+  const qtyCol = document.getElementById('col-qty-ysm').value;
+
+  showLoading('ysm', true);
+  document.getElementById('out-ysm').innerHTML = '';
+
+  setTimeout(() => {
+    // Build labels: one per unit
+    const labels = [];
+    d.forEach(row => {
+      const asin = String(row[asinCol] || '').trim();
+      const qty = parseInt(row[qtyCol]) || 0;
+      if (!asin || qty <= 0) return;
+      for (let i = 1; i <= qty; i++) {
+        labels.push({ asin, unit: i, total: qty });
+      }
+    });
+
+    showLoading('ysm', false);
+
+    if (!labels.length) {
+      document.getElementById('out-ysm').innerHTML =
+        '<div class="alert alert-warn">⚠️ No valid rows found. Check ASIN and Quantity columns.</div>';
+      return;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="results-panel">
+        <div class="results-header">
+          <h3>🏷️ YSM Barcode Labels</h3>
+          <span class="results-count">${labels.length} labels · ${[...new Set(labels.map(l=>l.asin))].length} ASINs</span>
+        </div>
+        <div class="results-body">
+          <div class="alert alert-info" style="margin-bottom:16px">🖨️ Each block below is one Zebra label. Export PDF or use Print button for clean printing.</div>
+          <div class="barcode-labels-wrap" id="ysm-labels-grid"></div>
+        </div>
+      </div>`;
+
+    document.getElementById('out-ysm').appendChild(wrap);
+
+    const grid = wrap.querySelector('#ysm-labels-grid');
+    labels.forEach((lbl, idx) => {
+      const div = document.createElement('div');
+      div.className = 'barcode-label';
+      div.innerHTML = `
+        <svg id="bc-${idx}"></svg>
+        <div class="bl-asin">${lbl.asin}</div>
+        <div class="bl-num">Unit ${lbl.unit} of ${lbl.total}</div>`;
+      grid.appendChild(div);
+
+      try {
+        JsBarcode(`#bc-${idx}`, lbl.asin, {
+          format: 'CODE128',
+          width: 2,
+          height: 60,
+          displayValue: false,
+          background: '#ffffff',
+          lineColor: '#000000',
+          margin: 4
+        });
+      } catch(e) {
+        // fallback for non-standard chars
+        try {
+          JsBarcode(`#bc-${idx}`, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+            format: 'CODE128', width:2, height:60, displayValue:false
+          });
+        } catch(e2) {}
+      }
+    });
+
+    document.getElementById('export-ysm').style.display = 'flex';
+    showToast(`✅ ${labels.length} barcode labels generated!`);
+  }, 600);
+}
+
+// ════ PDF EXPORT ════
+async function exportPDF(containerId, title) {
+  showToast('📄 Generating PDF...');
+  const el = document.getElementById(containerId);
+  if (!el || !el.innerHTML.trim()) { showToast('⚠️ Nothing to export'); return; }
+
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#f5f4f0',
+      logging: false
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const footerH = 10;
+    const contentH = pageH - margin * 2 - footerH;
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    let y = margin;
+    let remaining = imgH;
+    let srcY = 0;
+
+    while (remaining > 0) {
+      const sliceH = Math.min(contentH, remaining);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = (sliceH / imgW) * canvas.width;
+      const ctx = sliceCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+
+      if (srcY > 0) pdf.addPage();
+      pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, imgW, sliceH);
+
+      // Footer
+      pdf.setFontSize(8);
+      pdf.setTextColor(150);
+      pdf.text('Powered by HP World', pageW / 2, pageH - 4, { align: 'center' });
+      pdf.text(`${title} · Page ${pdf.internal.getNumberOfPages()}`, margin, pageH - 4);
+      pdf.text(new Date().toLocaleDateString('en-GB'), pageW - margin, pageH - 4, { align: 'right' });
+
+      srcY += sliceH;
+      remaining -= sliceH;
+    }
+
+    pdf.save(`${title.replace(/\s+/g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+    showToast('✅ PDF downloaded!');
+  } catch(err) {
+    showToast('❌ PDF export failed. Try Print instead.');
+    console.error(err);
+  }
+}
+
+// ════ FEEDBACK ════
+function sendFeedback() {
+  const name = document.getElementById('fb-name').value.trim();
+  const email = document.getElementById('fb-email').value.trim();
+  const msg = document.getElementById('fb-msg').value.trim();
+
+  if (!name || !msg) { showToast('⚠️ Name and message are required'); return; }
+
+  // EmailJS - initialize with your public key
+  // emailjs.init("YOUR_PUBLIC_KEY");  ← Add your EmailJS public key here
+
+  const mailtoLink = `mailto:hrushikeshpadhi6@live.com?subject=WareTask Feedback from ${encodeURIComponent(name)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${msg}`)}`;
+
+  // Try EmailJS first, fallback to mailto
+  try {
+    emailjs.send("service_id", "template_id", {
+      from_name: name,
+      from_email: email || 'noreply@waretask.com',
+      message: msg,
+      to_email: 'hrushikeshpadhi6@live.com'
+    }).then(() => {
+      showToast('✅ Feedback sent successfully!');
+      document.getElementById('fb-name').value = '';
+      document.getElementById('fb-email').value = '';
+      document.getElementById('fb-msg').value = '';
+    }).catch(() => {
+      window.location.href = mailtoLink;
+    });
+  } catch(e) {
+    window.location.href = mailtoLink;
+    showToast('📧 Opening email client...');
+  }
+}
+
+// ════ DRAG & DROP ════
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const taskId = zone.id.replace('uz-','');
+    const inp = document.getElementById('f-' + taskId);
+    if (inp) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      inp.files = dt.files;
+      handleUpload(inp, taskId);
+    }
+  });
+});
+
+</script>
+</body>
+</html>
