@@ -1735,39 +1735,28 @@ async function exportYSMLabels(el) {
 
   // ── Canvas layout ──
   // Canvas = 820×420px with proper margins all sides
-  const CW = 820;
+  const CW = 800;
   const CH = 420;
 
-  // Quiet zone margins — white space around barcode for scanner
-  const ML = 50;   // left quiet zone
-  const MR = 50;   // right quiet zone
-  const MT = 20;   // top margin
-  const MB = 20;   // bottom margin
+  // All measurements in px
+  const QUIET = 40;   // white quiet zone each side
+  const MT    = 16;   // top white space above barcode
+  const BAR_H = 290;  // barcode bar height
+  const BAR_W = CW - QUIET * 2;   // 720px — barcode print area
 
-  const BAR_W  = CW - ML - MR;   // 720px — inside quiet zones
-  const BAR_H  = 300;             // tall barcode
-  const BAR_X  = ML;
-  const BAR_Y  = MT;
-
-  const ASIN_Y = BAR_Y + BAR_H + 30;
+  const ASIN_Y = MT + BAR_H + 32;
   const NAME_Y = ASIN_Y + 22;
 
   function drawWrappedText(ctx, text, x, y, maxW, lineH) {
     const words = text.split(' ');
-    let line = '';
-    let curY  = y;
+    let line = '', curY = y;
     for (const word of words) {
       const test = line ? line + ' ' + word : word;
       if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, x, curY);
-        line = word;
-        curY += lineH;
-      } else {
-        line = test;
-      }
+        ctx.fillText(line, x, curY); line = word; curY += lineH;
+      } else { line = test; }
     }
     if (line) ctx.fillText(line, x, curY);
-    return curY;
   }
 
   for (let i = 0; i < labels.length; i++) {
@@ -1786,36 +1775,51 @@ async function exportYSMLabels(el) {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, CW, CH);
 
-    // ── 1. Generate barcode SVG ──
+    // ── 1. Generate barcode SVG with built-in quiet zone margins ──
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     let barcodeOk = false;
+    const bcOptions = {
+      format: 'CODE128',
+      width: 2,           // bar width — keep at 2 so total fits
+      height: BAR_H,
+      displayValue: false,
+      background: '#ffffff',
+      lineColor: '#000000',
+      margin: QUIET,       // ← bake quiet zone INTO the SVG itself
+      marginTop: MT,
+      marginBottom: 10,
+      marginLeft: QUIET,
+      marginRight: QUIET
+    };
+
     try {
-      JsBarcode(svgEl, asin || asinClean, {
-        format: 'CODE128', width: 3, height: BAR_H,
-        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
-      });
+      JsBarcode(svgEl, asin || asinClean, bcOptions);
       barcodeOk = true;
     } catch(e) {}
 
     if (!barcodeOk) {
       try {
-        JsBarcode(svgEl, asinClean, {
-          format: 'CODE128', width: 3, height: BAR_H,
-          displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
-        });
+        JsBarcode(svgEl, asinClean, bcOptions);
         barcodeOk = true;
       } catch(e2) { continue; }
     }
 
-    // ── 2. Stretch barcode to full available width ──
+    // ── 2. Draw barcode at natural SVG size, centered, NO stretching ──
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        ctx.drawImage(img, BAR_X, BAR_Y, BAR_W, BAR_H);
+        // Get natural SVG dimensions
+        const natW = img.naturalWidth  || img.width  || BAR_W;
+        const natH = img.naturalHeight || img.height || (BAR_H + MT + 10);
+        // Scale to fit canvas width exactly — preserves aspect ratio
+        const scale = CW / natW;
+        const drawH = natH * scale;
+        // Draw top-left at 0,0 — fills full width with margin already inside
+        ctx.drawImage(img, 0, 0, CW, drawH);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1829,16 +1833,14 @@ async function exportYSMLabels(el) {
     ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — full name, single line if fits, wraps if too long ──
+    // ── 4. Item name — full, single line or wrap ──
     if (itemName) {
       ctx.fillStyle = '#333333';
       ctx.font      = '14px Arial, sans-serif';
       ctx.textAlign = 'center';
-      // Try single line first
       if (ctx.measureText(itemName).width <= BAR_W) {
         ctx.fillText(itemName, CW / 2, NAME_Y);
       } else {
-        // Wrap only if absolutely necessary
         drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
       }
     }
