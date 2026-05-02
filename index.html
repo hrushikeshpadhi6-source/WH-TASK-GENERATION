@@ -1589,42 +1589,15 @@ function printYSMLabels() {
 
 async function exportYSMPDF() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  showToast(`⏳ Building ${ysmLabels.length} Zebra labels...`);
+  showToast(`⏳ Building ${ysmLabels.length} labels — please wait...`);
 
-  // Zebra 220: 4" × 2"
-  const W_mm = 101.6;
-  const H_mm =  50.8;
+  const W_mm = 101.6;  // 4 inches
+  const H_mm =  50.8;  // 2 inches
 
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [H_mm, W_mm] });
 
-  // Canvas = 1016 × 508px  (4:2 = exact label ratio, 1px = 0.1mm)
-  const CW = 1016;
-  const CH =  508;
-
-  // Margins in px (matches Zebra quiet zone requirements)
-  const ML = 28;   // ~2.8mm left  quiet zone
-  const MR = 18;   // ~1.8mm right quiet zone
-  const MT = 16;   // ~1.6mm top
-  const BAR_W = CW - ML - MR;  // 970px — full scannable width
-  const BAR_H = 320;            // 320px tall — dominant, thick, clear
-
-  // Text zone below barcode
-  const ASIN_Y = MT + BAR_H + 46;
-  const NAME_Y = ASIN_Y + 42;
-
-  function wrapText(ctx, text, x, y, maxW, lh) {
-    const words = text.split(' ');
-    let line = '', cy = y;
-    for (const w of words) {
-      const t = line ? line + ' ' + w : w;
-      if (ctx.measureText(t).width > maxW && line) {
-        ctx.fillText(line, x, cy); line = w; cy += lh;
-      } else line = t;
-    }
-    if (line) ctx.fillText(line, x, cy);
-  }
-
+  // Render each label as a real DOM element, capture with html2canvas
   for (let i = 0; i < ysmLabels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
@@ -1633,72 +1606,97 @@ async function exportYSMPDF() {
     const itemName = lbl.itemName.trim();
     const clean    = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
-    // Offscreen canvas
-    const oc  = document.createElement('canvas');
-    oc.width  = CW; oc.height = CH;
-    const ctx = oc.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, CW, CH);
+    // Create a real DOM label at fixed pixel size matching label ratio
+    // 4":2" = 2:1  →  800×400px
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 800px;
+      height: 400px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 12px 16px 8px 16px;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    `;
 
-    // Generate barcode SVG — width:3, height:BAR_H, no margin (we control placement)
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    let ok = false;
-    const opts = { format:'CODE128', width:3, height:BAR_H, displayValue:false, background:'#fff', lineColor:'#000', margin:0 };
-    try { JsBarcode(svg, asin || clean, opts); ok = true; } catch(e) {}
-    if (!ok) { try { JsBarcode(svg, clean, opts); ok = true; } catch(e) { continue; } }
+    // SVG barcode element inside the DOM label
+    const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svgEl.style.cssText = 'width:768px;height:260px;display:block;flex-shrink:0';
+    el.appendChild(svgEl);
 
-    // Draw barcode: use intermediate canvas to avoid SVG flip issues
-    const sd   = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([sd], { type:'image/svg+xml;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    await new Promise(res => {
-      const img = new Image();
-      img.onload = () => {
-        // Draw to intermediate canvas at natural size first
-        const tmp = document.createElement('canvas');
-        tmp.width  = img.naturalWidth  || img.width  || BAR_W;
-        tmp.height = img.naturalHeight || img.height || BAR_H;
-        const tctx = tmp.getContext('2d');
-        tctx.fillStyle = '#fff';
-        tctx.fillRect(0, 0, tmp.width, tmp.height);
-        tctx.drawImage(img, 0, 0);
+    // ASIN text
+    const asinDiv = document.createElement('div');
+    asinDiv.style.cssText = 'font-family:"Courier New",monospace;font-weight:bold;font-size:28px;letter-spacing:2px;color:#000;margin-top:10px;text-align:center;width:100%';
+    asinDiv.textContent = asin;
+    el.appendChild(asinDiv);
 
-        // Now draw from intermediate canvas to main canvas — correct orientation
-        ctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, ML, MT, BAR_W, BAR_H);
-        URL.revokeObjectURL(url);
-        res();
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); res(); };
-      img.src = url;
-    });
-
-    // ASIN — bold, large, centered
-    ctx.fillStyle = '#000';
-    ctx.font      = 'bold 36px "Courier New",Courier,monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(asin, CW / 2, ASIN_Y);
-
-    // Item name — smaller, grey
+    // Item name text
     if (itemName) {
-      ctx.fillStyle = '#333';
-      ctx.font      = '26px Arial,sans-serif';
-      ctx.textAlign = 'center';
-      if (ctx.measureText(itemName).width <= BAR_W)
-        ctx.fillText(itemName, CW / 2, NAME_Y);
-      else
-        wrapText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 30);
+      const nameDiv = document.createElement('div');
+      nameDiv.style.cssText = 'font-family:Arial,sans-serif;font-size:16px;color:#333;margin-top:4px;text-align:center;width:100%;word-break:break-word;line-height:1.3';
+      nameDiv.textContent = itemName;
+      el.appendChild(nameDiv);
     }
 
-    // Add to PDF — canvas fills exact label
-    pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
+    document.body.appendChild(el);
+
+    // Render barcode into the SVG element
+    let barcodeOk = false;
+    try {
+      JsBarcode(svgEl, asin || clean, {
+        format: 'CODE128',
+        width: 3,
+        height: 240,
+        displayValue: false,
+        background: '#ffffff',
+        lineColor: '#000000',
+        margin: 0,
+        marginTop: 0,
+        marginBottom: 0,
+        marginLeft: 10,
+        marginRight: 10
+      });
+      barcodeOk = true;
+    } catch(e) {
+      try {
+        JsBarcode(svgEl, clean, {
+          format:'CODE128', width:3, height:240,
+          displayValue:false, background:'#ffffff', lineColor:'#000000',
+          margin:0, marginLeft:10, marginRight:10
+        });
+        barcodeOk = true;
+      } catch(e2) {}
+    }
+
+    // Wait for render
+    await new Promise(r => setTimeout(r, 150));
+
+    // Capture with html2canvas
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: 800,
+      height: 400
+    });
+
+    document.body.removeChild(el);
+
+    // Add to PDF
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
   }
 
-  pdf.save(`YSM_Zebra220_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${ysmLabels.length} Zebra labels exported!`);
+  pdf.save(`YSM_Zebra_${new Date().toISOString().split('T')[0]}.pdf`);
+  showToast(`✅ ${ysmLabels.length} labels exported!`);
 }
 
-// Keep old name for compatibility
 async function exportYSMLabels(el) { await exportYSMPDF(); }
 
 // ════ FEEDBACK ════
