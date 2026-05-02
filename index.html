@@ -1415,7 +1415,7 @@ function generateYSM() {
       // Try to get item name from common title columns
       const titleCol = findCol(Object.keys(row), ['title','name','product.?name','description','productname','item']);
       const fullName = titleCol ? String(row[titleCol]||'').trim() : '';
-      const itemName = fullName.slice(0, 15) + (fullName.length > 15 ? '…' : '');
+      const itemName = fullName;  // full name, no truncation
       if (!asin || qty <= 0) return;
       for (let i = 1; i <= qty; i++) labels.push({ asin, unit: i, total: qty, itemName });
     });
@@ -1733,36 +1733,55 @@ async function exportYSMLabels(el) {
   const px_printW = PX_W - px_mL - px_mR;
   const px_printH = PX_H - px_mT - px_mB;
 
-  // ── Layout: use a simple fixed pixel canvas, no DPI complexity ──
-  // Canvas = 800×400px (roughly 4"×2" at screen res, jsPDF scales to label size)
-  const CW = 800;   // canvas width  px
-  const CH = 400;   // canvas height px
+  // ── Canvas layout ──
+  // Canvas = 820×420px with proper margins all sides
+  const CW = 820;
+  const CH = 420;
 
-  // Zones (px):
-  const BAR_TOP  = 20;           // barcode starts here
-  const BAR_H    = 270;          // barcode height — TALL and dominant
-  const BAR_L    = 20;           // left margin
-  const BAR_R    = 20;           // right margin
-  const BAR_W    = CW - BAR_L - BAR_R;  // barcode full width = 760px
+  const ML = 8;    // tiny left margin
+  const MR = 8;    // tiny right margin
+  const MT = 8;    // tiny top margin
+  const MB = 8;    // tiny bottom margin
 
-  const ASIN_Y   = BAR_TOP + BAR_H + 38;  // ASIN text Y
-  const NAME_Y   = ASIN_Y + 36;           // item name Y
+  const BAR_W  = CW - ML - MR;   // 804px — nearly full width
+  const BAR_H  = 320;             // TALL barcode — dominant
+  const BAR_X  = ML;
+  const BAR_Y  = MT;
+
+  const ASIN_Y = BAR_Y + BAR_H + 28;
+  const NAME_Y = ASIN_Y + 22;
+
+  function drawWrappedText(ctx, text, x, y, maxW, lineH) {
+    const words = text.split(' ');
+    let line = '';
+    let curY  = y;
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, curY);
+        line = word;
+        curY += lineH;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, x, curY);
+    return curY;
+  }
 
   for (let i = 0; i < labels.length; i++) {
     if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
 
     const lbl      = labels[i];
     const asin     = (lbl.dataset.asin     || lbl.querySelector('.bl-asin')?.textContent || '').trim();
-    const itemName = (lbl.dataset.itemName || '').slice(0, 15);
+    const itemName = (lbl.dataset.itemName || '').trim();  // full name, no limit
     const asinClean = asin.replace(/[^A-Z0-9\-\.\ ]/gi, '');
 
-    // Draw on canvas
     const oc  = document.createElement('canvas');
     oc.width  = CW;
     oc.height = CH;
     const ctx = oc.getContext('2d');
 
-    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, CW, CH);
 
@@ -1772,13 +1791,8 @@ async function exportYSMLabels(el) {
     let barcodeOk = false;
     try {
       JsBarcode(svgEl, asin || asinClean, {
-        format: 'CODE128',
-        width: 3,
-        height: BAR_H,
-        displayValue: false,
-        background: '#ffffff',
-        lineColor: '#000000',
-        margin: 0
+        format: 'CODE128', width: 3, height: BAR_H,
+        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
       });
       barcodeOk = true;
     } catch(e) {}
@@ -1793,15 +1807,14 @@ async function exportYSMLabels(el) {
       } catch(e2) { continue; }
     }
 
-    // ── 2. Draw barcode stretched to full width ──
+    // ── 2. Stretch barcode to full available width ──
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl  = URL.createObjectURL(svgBlob);
     await new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        // STRETCH barcode to fill full available width — this is the key fix
-        ctx.drawImage(img, BAR_L, BAR_TOP, BAR_W, BAR_H);
+        ctx.drawImage(img, BAR_X, BAR_Y, BAR_W, BAR_H);
         URL.revokeObjectURL(svgUrl);
         resolve();
       };
@@ -1809,20 +1822,20 @@ async function exportYSMLabels(el) {
       img.src = svgUrl;
     });
 
-    // ── 3. ASIN text — bold, large, centered ──
-    ctx.fillStyle  = '#000000';
-    ctx.font       = 'bold 30px "Courier New", Courier, monospace';
-    ctx.textAlign  = 'center';
+    // ── 3. ASIN — bold monospace, centered ──
+    ctx.fillStyle = '#000000';
+    ctx.font      = 'bold 20px "Courier New", Courier, monospace';
+    ctx.textAlign = 'center';
     ctx.fillText(asin, CW / 2, ASIN_Y);
 
-    // ── 4. Item name — smaller, grey, max 15 chars ──
+    // ── 4. Item name — full text, wrapped, small font ──
     if (itemName) {
-      ctx.fillStyle = '#444444';
-      ctx.font      = '22px Arial, sans-serif';
-      ctx.fillText(itemName, CW / 2, NAME_Y);
+      ctx.fillStyle = '#333333';
+      ctx.font      = '14px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      drawWrappedText(ctx, itemName, CW / 2, NAME_Y, BAR_W, 17);
     }
 
-    // Add to PDF — stretch canvas to fill the full 4"×2" label
     pdf.addImage(oc.toDataURL('image/png'), 'PNG', 0, 0, W_mm, H_mm);
   }
 
