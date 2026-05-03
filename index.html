@@ -1698,6 +1698,143 @@ async function exportYSMPDF() {
 }
 
 
+// ════ YSM WORD EXPORT — exact match to working docx ════
+async function exportYSMWord() {
+  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
+  showToast('⏳ Generating Word file...');
+  try {
+    if (!window.JSZip) {
+      await new Promise((res,rej) => {
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload=res; s.onerror=rej; document.head.appendChild(s);
+      });
+    }
+
+    const P128=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
+
+    function makeLabelPNG(asin, combined) {
+      const W=406,H=244,ML=37,MT=37,CW=349,BAR_H=116;
+      const cvs=document.createElement('canvas');
+      cvs.width=W; cvs.height=H;
+      const ctx=cvs.getContext('2d');
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+      const vals={};
+      for(let i=0;i<95;i++) vals[String.fromCharCode(i+32)]=i;
+      const codes=[104]; let chk=104;
+      for(let i=0;i<asin.length;i++){const v=vals[asin[i]]||0;codes.push(v);chk+=v*(i+1);}
+      codes.push(chk%103); codes.push(106);
+      const bars=codes.map(c=>P128[Math.min(c,106)]).join('');
+      const bu=Math.max(1,Math.floor(CW/bars.length));
+      let x=ML+Math.floor((CW-bu*bars.length)/2);
+      ctx.fillStyle='#000';
+      for(const b of bars){if(b==='1')ctx.fillRect(x,MT,bu,BAR_H);x+=bu;}
+      ctx.font='bold 14px "Courier New",monospace';
+      ctx.textAlign='center'; ctx.fillStyle='#000';
+      ctx.fillText(asin,W/2,MT+BAR_H+18);
+      ctx.font='11px Arial,sans-serif';
+      const words=combined.split(' '); let l1='',l2='';
+      for(const w of words){
+        const t=(l1+' '+w).trim();
+        if(ctx.measureText(t).width<=CW) l1=t; else l2=(l2+' '+w).trim();
+      }
+      if(l1)ctx.fillText(l1,W/2,MT+BAR_H+34);
+      if(l2)ctx.fillText(l2,W/2,MT+BAR_H+48);
+      const b64=cvs.toDataURL('image/png').split(',')[1];
+      const bin=atob(b64); const arr=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      return arr;
+    }
+
+    const pngs=[];
+    for(const lbl of ysmLabels){
+      const asin=lbl.asin.trim();
+      const name=lbl.itemName||'';
+      const combined=name?'Reduced Shelf Life \u2014 '+name:'Reduced Shelf Life';
+      pngs.push(makeLabelPNG(asin,combined));
+    }
+    const n=pngs.length;
+    const zip=new JSZip();
+
+    // [Content_Types].xml
+    zip.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+
+    // _rels/.rels
+    zip.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+
+    // word/_rels/document.xml.rels — images start at rId9 matching working file
+    let wRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    for(let i=0;i<n;i++)
+      wRels+='<Relationship Id="rId'+(9+i)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image'+(i+1)+'.png"/>';
+    wRels+='</Relationships>';
+    zip.file('word/_rels/document.xml.rels',wRels);
+
+    // Images
+    for(let i=0;i<n;i++) zip.file('word/media/image'+(i+1)+'.png',pngs[i]);
+
+    // word/document.xml — EXACT structure from working file
+    const ANS='xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+    let body='';
+    for(let i=0;i<n;i++){
+      const isLast=i===n-1;
+      const rId='rId'+(9+i);
+      body+='<w:p>'+
+        '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>'+
+        '<w:r><w:drawing>'+
+        '<wp:inline '+ANS+'>'+
+        '<wp:extent cx="1828800" cy="1097280"/>'+
+        '<wp:docPr id="'+(i+1)+'" name="Picture '+(i+1)+'"/>'+
+        '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>'+
+        '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+        '<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="image.png"/><pic:cNvPicPr/></pic:nvPicPr>'+
+        '<pic:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
+        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1097280"/></a:xfrm>'+
+        '<a:prstGeom prst="rect"/></pic:spPr>'+
+        '</pic:pic></a:graphicData></a:graphic>'+
+        '</wp:inline></w:drawing>'+
+        (isLast?'':'<w:br w:type="page"/>')+
+        '</w:r></w:p>';
+    }
+
+    // Full namespace declaration matching working file exactly
+    const docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"'+
+      ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'+
+      ' xmlns:o="urn:schemas-microsoft-com:office:office"'+
+      ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'+
+      ' xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'+
+      ' xmlns:v="urn:schemas-microsoft-com:vml"'+
+      ' xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing"'+
+      ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'+
+      ' xmlns:w10="urn:schemas-microsoft-com:office:word"'+
+      ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'+
+      ' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"'+
+      ' mc:Ignorable="w14 wp14">'+
+      '<w:body>'+body+
+      '<w:sectPr>'+
+      '<w:pgSz w:w="2880" w:h="1728"/>'+
+      '<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="144" w:footer="144" w:gutter="0"/>'+
+      '<w:cols w:space="720"/>'+
+      '<w:docGrid w:linePitch="360"/>'+
+      '</w:sectPr></w:body></w:document>';
+
+    zip.file('word/document.xml',docXml);
+
+    const blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='YSM_Labels_'+new Date().toISOString().split('T')[0]+'.docx';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('\u2705 Word (.docx) ready! Open \u2192 Print on Zebra ZD220');
+
+  } catch(err) {
+    console.error(err);
+    showToast('\u274c Error: '+err.message);
+  }
+}
+
+
 // ════ PDF EXPORT ════
 async function exportPDF(containerId, title) {
   showToast('📄 Generating PDF...');
@@ -1928,159 +2065,3 @@ document.querySelectorAll('.upload-zone').forEach(zone => {
 
 </script>
 </body>
-</html>// ════ YSM WORD EXPORT — JSZip exact match ════
-async function exportYSMWord() {
-  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  showToast('⏳ Generating Word file...');
-
-  try {
-    // Load JSZip if not loaded
-    if (!window.JSZip) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-
-    // CODE128B barcode patterns
-    const P128 = ['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
-
-    // Generate each label as a full canvas image (barcode + ASIN + text)
-    function makeLabelPNG(asin, combined) {
-      const W=406,H=244,ML=37,MT=37,CW=349,BAR_H=116;
-      const cvs = document.createElement('canvas');
-      cvs.width=W; cvs.height=H;
-      const ctx = cvs.getContext('2d');
-      ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-
-      // Build CODE128B
-      const vals={};
-      for(let i=0;i<95;i++) vals[String.fromCharCode(i+32)]=i;
-      const codes=[104]; let chk=104;
-      for(let i=0;i<asin.length;i++){const v=vals[asin[i]]||0;codes.push(v);chk+=v*(i+1);}
-      codes.push(chk%103); codes.push(106);
-      const bars=codes.map(c=>P128[Math.min(c,106)]).join('');
-      const bu=Math.max(1,Math.floor(CW/bars.length));
-      const totalBW=bu*bars.length;
-      let x=ML+Math.floor((CW-totalBW)/2);
-      ctx.fillStyle='#000';
-      for(const b of bars){if(b==='1')ctx.fillRect(x,MT,bu,BAR_H);x+=bu;}
-
-      // ASIN text
-      ctx.font='bold 14px "Courier New",monospace';
-      ctx.textAlign='center'; ctx.fillStyle='#000';
-      ctx.fillText(asin,W/2,MT+BAR_H+18);
-
-      // Combined text with word wrap
-      ctx.font='11px Arial,sans-serif';
-      const words=combined.split(' '); let l1='',l2='';
-      for(const w of words){
-        const t=(l1+' '+w).trim();
-        if(ctx.measureText(t).width<=CW) l1=t; else l2=(l2+' '+w).trim();
-      }
-      const ty=MT+BAR_H+34;
-      if(l1)ctx.fillText(l1,W/2,ty);
-      if(l2)ctx.fillText(l2,W/2,ty+14);
-
-      // Canvas to Uint8Array
-      const b64=cvs.toDataURL('image/png').split(',')[1];
-      const bin=atob(b64); const arr=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-      return arr;
-    }
-
-    // Generate all label PNGs
-    const pngs=[];
-    for(const lbl of ysmLabels){
-      const asin=lbl.asin.trim();
-      const name=lbl.itemName||'';
-      const combined=name?('Reduced Shelf Life \u2014 '+name):'Reduced Shelf Life';
-      pngs.push(makeLabelPNG(asin,combined));
-    }
-
-    const n=pngs.length;
-    const zip=new JSZip();
-
-    // [Content_Types].xml
-    zip.file('[Content_Types].xml',
-      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
-      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
-      '<Default Extension="xml" ContentType="application/xml"/>'+
-      '<Default Extension="png" ContentType="image/png"/>'+
-      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
-      '</Types>');
-
-    // _rels/.rels
-    zip.file('_rels/.rels',
-      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
-      '</Relationships>');
-
-    // word/_rels/document.xml.rels
-    let wRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-    for(let i=0;i<n;i++)
-      wRels+='<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image'+(i+1)+'.png"/>';
-    wRels+='</Relationships>';
-    zip.file('word/_rels/document.xml.rels', wRels);
-
-    // word/media images
-    for(let i=0;i<n;i++) zip.file('word/media/image'+(i+1)+'.png', pngs[i]);
-
-    // word/document.xml — exact structure matching working test file
-    const ANS='xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
-    let body='';
-    for(let i=0;i<n;i++){
-      const isLast=i===n-1;
-      body+='<w:p>'+
-        '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>'+
-        '<w:r><w:drawing>'+
-        '<wp:inline '+ANS+'>'+
-        '<wp:extent cx="1828800" cy="1097280"/>'+
-        '<wp:docPr id="'+(i+1)+'" name="Label'+(i+1)+'"/>'+
-        '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>'+
-        '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
-        '<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name=""/><pic:cNvPicPr/></pic:nvPicPr>'+
-        '<pic:blipFill><a:blip r:embed="rId'+(i+1)+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
-        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1097280"/></a:xfrm>'+
-        '<a:prstGeom prst="rect"/></pic:spPr>'+
-        '</pic:pic></a:graphicData></a:graphic>'+
-        '</wp:inline></w:drawing>'+
-        '</w:r></w:p>';
-    }
-
-    const docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'+
-      ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'+
-      ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
-      '<w:body>'+body+
-      '<w:sectPr>'+
-      '<w:pgSz w:w="2880" w:h="1728"/>'+
-      '<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="144" w:footer="144" w:gutter="0"/>'+
-      '<w:cols w:space="720"/>'+
-      '<w:docGrid w:linePitch="360"/>'+
-      '</w:sectPr></w:body></w:document>';
-    zip.file('word/document.xml', docXml);
-
-    // Generate and download
-    const blob=await zip.generateAsync({
-      type:'blob',
-      mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    });
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download='YSM_Labels_'+new Date().toISOString().split('T')[0]+'.docx';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-    showToast('✅ Word (.docx) ready! Open in Word → Print on Zebra ZD220');
-
-  } catch(err) {
-    console.error(err);
-    showToast('❌ Error: '+err.message);
-  }
-}
