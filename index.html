@@ -1697,16 +1697,16 @@ async function exportYSMPDF() {
   showToast(`✅ PDF done! ${ysmLabels.length} labels.`);
 }
 
-// ════ YSM WORD EXPORT ════
+// ════ YSM WORD EXPORT — matches Excel VBA exactly ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
-  // 2" x 1" in twips (1 inch = 1440 twips)
-  const W_twips = 2880;  // 2 inches
-  const H_twips = 1440;  // 1 inch
-  // margins 0.1" = 144 twips
-  const M_twips = 144;
+  // Matches Excel VBA exactly:
+  // Font: MRV Code39extMA (barcode font), Size 12
+  // Barcode value: *ASIN* (asterisks wrap)
+  // Portrait, LeftMargin 0.9", others 0.15"
+  // Row height 50pt, Column width 25
 
   let body = '';
 
@@ -1715,26 +1715,41 @@ async function exportYSMWord() {
     const asin   = lbl.asin.trim();
     const name   = lbl.itemName || '';
     const isLast = i === ysmLabels.length - 1;
+    const bcValue = '*' + asin + '*';  // Code39 format exactly like VBA
 
-    const bcCvs = renderBarcodeToCanvas(asin);
-    const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
+    // Page break between labels (not after last)
+    const pgBreak = isLast ? '' : 'page-break-after:always;';
 
-    body += '<p style="margin:0;padding:2px 0 0 0;text-align:center;line-height:1;'
-          + (isLast ? '' : 'page-break-after:always;')
-          + '">';
-    if (bcPng) {
-      body += '<img src="' + bcPng + '" style="width:4.6cm;height:1.35cm;display:block;margin:0 auto;">';
-    }
-    body += '</p>';
-    body += '<p style="margin:0;padding:0;text-align:center;font-family:Courier New,monospace;font-weight:bold;font-size:8pt;line-height:1.1;' + (isLast?'':'') + '">' + asin + '</p>';
-    body += '<p style="margin:0;padding:0;text-align:center;font-family:Arial,sans-serif;font-weight:bold;font-size:7pt;color:#c43d04;line-height:1.1;">' + 'Reduced Shelf Life' + '</p>';
+    body += '<div style="text-align:center;' + pgBreak + 'page-break-inside:avoid;margin:0;padding:0;">';
+
+    // Barcode row — Code39 font exactly like Excel
+    body += '<p style="margin:0;padding:0;font-family:\'MRV Code39extMA\',\'Free 3 of 9\',\'Code39\',monospace;font-size:36pt;text-align:center;line-height:1;color:#000;height:50pt;vertical-align:middle;">'
+          + bcValue + '</p>';
+
+    // ASIN text below barcode
+    body += '<p style="margin:2pt 0 0 0;padding:0;font-family:\'Courier New\',monospace;font-weight:bold;font-size:9pt;text-align:center;color:#000;line-height:1.2;">'
+          + asin + '</p>';
+
+    // Reduced Shelf Life
+    body += '<p style="margin:1pt 0 0 0;padding:0;font-family:Arial,sans-serif;font-weight:bold;font-size:8pt;text-align:center;color:#c43d04;line-height:1.2;">'
+          + 'Reduced Shelf Life' + '</p>';
+
+    // Item name
     if (name) {
-      body += '<p style="margin:0;padding:0;text-align:center;font-family:Arial,sans-serif;font-size:6.5pt;color:#333;line-height:1.1;">' + name + '</p>';
+      body += '<p style="margin:1pt 0 0 0;padding:0;font-family:Arial,sans-serif;font-size:7.5pt;text-align:center;color:#333;line-height:1.2;">'
+            + name + '</p>';
     }
-    if (!isLast) body += '<br style="page-break-after:always;">';
+
+    body += '</div>';
   }
 
-  // Use Word XML to force page size — this is what Word actually reads
+  // Footer — matches VBA "GWC REPORT BY HRUSHIKESH PADHI (HP World)"
+  body += '<p style="margin:10pt 0 0 0;font-family:Arial,sans-serif;font-size:10pt;text-align:center;color:#333;">'
+        + 'GWC REPORT BY HRUSHIKESH PADHI (HP World)</p>';
+
+  // Page setup matches VBA exactly:
+  // Portrait, LeftMargin=0.9", others=0.15"
+  // 0.9" = 1296 twips, 0.15" = 216 twips
   const html = '<!DOCTYPE html>'
     + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
     + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
@@ -1746,22 +1761,18 @@ async function exportYSMWord() {
     + '<w:Zoom>100</w:Zoom>'
     + '<w:DoNotOptimizeForBrowser/>'
     + '</w:WordDocument>'
-    + '<o:OfficeDocumentSettings>'
-    + '<o:PixelsPerInch>96</o:PixelsPerInch>'
-    + '</o:OfficeDocumentSettings>'
     + '</xml><![endif]-->'
     + '<style>'
     + '@page {'
-    + '  size: ' + W_twips + 'twip ' + H_twips + 'twip;'
-    + '  mso-page-orientation: landscape;'
-    + '  margin: ' + M_twips + 'twip;'
-    + '  mso-header-margin: ' + M_twips + 'twip;'
-    + '  mso-footer-margin: ' + M_twips + 'twip;'
-    + '  mso-paper-source: 0;'
+    + '  size: 2in 1in;'
+    + '  margin-top: 0.15in;'
+    + '  margin-bottom: 0.15in;'
+    + '  margin-left: 0.9in;'
+    + '  margin-right: 0.15in;'
     + '}'
-    + 'body { margin:' + M_twips + 'twip; padding:0; }'
+    + 'body { margin:0; padding:0; }'
     + 'p { margin:0; padding:0; }'
-    + 'img { border:0; }'
+    + 'div { display:block; }'
     + '</style>'
     + '</head>'
     + '<body>' + body + '</body>'
@@ -1776,7 +1787,7 @@ async function exportYSMWord() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → should be 2"x1" → Print on Zebra ZD220');
+  showToast('✅ Word ready! Needs "MRV Code39extMA" font installed for barcode to show.');
 }
 
 
