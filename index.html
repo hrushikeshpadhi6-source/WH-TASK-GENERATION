@@ -1745,6 +1745,18 @@ function renderBarcodeToCanvas(asin) {
   }
 }
 
+function rotateBarcodeCanvas(bcCvs) {
+  // Rotate 90° clockwise for Zebra ZD220
+  const rot = document.createElement('canvas');
+  rot.width  = bcCvs.height;
+  rot.height = bcCvs.width;
+  const rctx = rot.getContext('2d');
+  rctx.translate(rot.width, 0);
+  rctx.rotate(Math.PI / 2);
+  rctx.drawImage(bcCvs, 0, 0);
+  return rot;
+}
+
 // ════ YSM PDF EXPORT ════
 async function exportYSMPDF() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
@@ -1770,8 +1782,15 @@ async function exportYSMPDF() {
     pdf.rect(0, 0, W_mm, H_mm, 'F');
 
     if (bcCvs && bcCvs.width > 0) {
-      // Add barcode image - top portion of label
-      pdf.addImage(bcCvs.toDataURL('image/png'), 'PNG', 1, 1, W_mm-2, 14);
+      // Rotate barcode 90° for Zebra ZD220
+      const rotCvs = document.createElement('canvas');
+      rotCvs.width  = bcCvs.height;
+      rotCvs.height = bcCvs.width;
+      const rctx = rotCvs.getContext('2d');
+      rctx.translate(rotCvs.width, 0);
+      rctx.rotate(Math.PI / 2);
+      rctx.drawImage(bcCvs, 0, 0);
+      pdf.addImage(rotCvs.toDataURL('image/png'), 'PNG', 1, 1, W_mm-2, 14);
     }
 
     // ASIN text
@@ -1812,8 +1831,9 @@ async function exportYSMWord() {
     const name = lbl.itemName || '';
     const isLast = i === ysmLabels.length - 1;
 
-    // Render barcode to PNG
-    const bcCvs = renderBarcodeToCanvas(asin);
+    // Render barcode to PNG — rotated 90°
+    const bcRaw = renderBarcodeToCanvas(asin);
+    const bcCvs = bcRaw ? rotateBarcodeCanvas(bcRaw) : null;
     const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
 
     pages += `<p style="margin:0;padding:0;page-break-before:${i===0?'avoid':'always'};">`;
@@ -1862,7 +1882,8 @@ function printYSMLabels() {
     const lbl  = ysmLabels[i];
     const asin = lbl.asin.trim();
     const name = lbl.itemName || '';
-    const bcCvs = renderBarcodeToCanvas(asin);
+    const bcRaw = renderBarcodeToCanvas(asin);
+    const bcCvs = bcRaw ? rotateBarcodeCanvas(bcRaw) : null;
     const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
     const isLast = i === ysmLabels.length - 1;
 
