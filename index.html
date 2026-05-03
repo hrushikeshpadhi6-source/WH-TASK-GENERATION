@@ -1774,3 +1774,23 @@ async function exportYSMWord() {
   URL.revokeObjectURL(url);
   showToast('✅ Word file ready! Open → Page Setup: 2"x1", Margins: 0.1" → Print on Zebra');
 }
+
+// ════ DRAG & DROP ════
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const taskId = zone.id.replace('uz-','');
+    const inp = document.getElementById('f-' + taskId);
+    if (inp) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      inp.files = dt.files;
+      handleUpload(inp, taskId);
+    }
+  });
+});
