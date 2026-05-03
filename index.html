@@ -1775,6 +1775,215 @@ async function exportYSMWord() {
   showToast('✅ Word file ready! Open → Page Setup: 2"x1", Margins: 0.1" → Print on Zebra');
 }
 
+
+// ════ PDF EXPORT ════
+async function exportPDF(containerId, title) {
+  showToast('📄 Generating PDF...');
+  const el = document.getElementById(containerId);
+  if (!el || !el.innerHTML.trim()) { showToast('⚠️ Nothing to export'); return; }
+  try {
+    if (containerId === 'out-ysm') {
+      await exportYSMPDF();
+    } else if (containerId === 'out-audit-asin') {
+      await exportAuditAsinPDF(title);
+    } else if (containerId === 'out-consolidation') {
+      await exportConsolidationPDF(title);
+    } else {
+      await exportA4PDF(el, title);
+    }
+  } catch(err) {
+    showToast('❌ PDF export failed.');
+    console.error(err);
+  }
+}
+
+async function exportA4PDF(el, title) {
+  const canvas = await html2canvas(el, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 8, footerH = 16;
+  const usableH = pageH - margin*2 - footerH;
+  const imgW = pageW - margin*2;
+  let srcY = 0, remaining = (canvas.height * imgW) / canvas.width;
+  while (remaining > 0) {
+    const slH = Math.min(usableH, remaining);
+    const sc = document.createElement('canvas');
+    sc.width = canvas.width; sc.height = (slH/imgW)*canvas.width;
+    sc.getContext('2d').drawImage(canvas, 0, srcY*canvas.width/imgW, canvas.width, sc.height, 0, 0, canvas.width, sc.height);
+    if (srcY > 0) pdf.addPage();
+    pdf.addImage(sc.toDataURL('image/jpeg',0.92),'JPEG',margin,margin,imgW,slH);
+    pdf.setFontSize(7); pdf.setTextColor(130);
+    pdf.text('Powered by HP World · Hrushikesh Padhi [HP World]', pageW/2, pageH-10, {align:'center'});
+    pdf.text(title+' · Page '+pdf.internal.getNumberOfPages(), margin, pageH-10);
+    pdf.text(new Date().toLocaleDateString('en-GB'), pageW-margin, pageH-10, {align:'right'});
+    pdf.setFontSize(8); pdf.setTextColor(50);
+    pdf.text('Checked by: ________________________________', margin, pageH-5);
+    pdf.text('Verified by TL/Supervisor: ________________________________', pageW/2+5, pageH-5);
+    srcY += slH; remaining -= slH;
+  }
+  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
+  showToast('✅ PDF downloaded!');
+}
+
+async function exportAuditAsinPDF(title) {
+  showToast('📄 Building PDF...');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 5, usableW = pageW-margin*2, usableH = pageH-margin*2-14;
+  const COLS=7, CARD_W=110, CARD_H=150, GAP=4;
+  const CONTAINER_W = COLS*CARD_W+(COLS-1)*GAP+16;
+  const PAGE_SIZE=21, totalPages=3;
+  for (let p=0; p<totalPages; p++) {
+    const gridEl = document.getElementById('audit-asin-grid-p'+(p+1));
+    if (!gridEl||!gridEl.children.length) continue;
+    if (p>0) pdf.addPage();
+    const wrap = document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
+    Array.from(gridEl.children).forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;';
+      const qr = clone.querySelector('[id^="qr-a-"]');
+      if(qr) qr.style.cssText='display:flex;justify-content:center;transform:scale(0.7);transform-origin:top center;margin-bottom:-14px;';
+      const rmk = clone.querySelector('.remark-box');
+      if(rmk) rmk.style.display='none';
+      wrap.appendChild(clone);
+    });
+    document.body.appendChild(wrap);
+    await new Promise(r=>setTimeout(r,300));
+    const canvas = await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,width:CONTAINER_W,height:wrap.scrollHeight});
+    document.body.removeChild(wrap);
+    const imgH=(canvas.height*usableW)/canvas.width;
+    if(imgH<=usableH) pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,imgH);
+    else { const scale=usableH/imgH; pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW*scale,usableH); }
+    pdf.setFontSize(6); pdf.setTextColor(120);
+    pdf.text('Powered by HP World · Hrushikesh Padhi [HP World]',pageW/2,pageH-8,{align:'center'});
+    pdf.text(title+' · Page '+(p+1)+' of 3',margin,pageH-8);
+    pdf.text(new Date().toLocaleDateString('en-GB'),pageW-margin,pageH-8,{align:'right'});
+    pdf.setFontSize(7); pdf.setTextColor(50);
+    pdf.text('Checked by: ______________________________',margin,pageH-3);
+    pdf.text('Verified by TL/Supervisor: ______________________________',pageW/2+5,pageH-3);
+  }
+  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
+  showToast('✅ PDF — 3 pages x 21 QR!');
+}
+
+async function exportConsolidationPDF(title) {
+  showToast('📄 Building PDF...');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin=5, usableW=pageW-margin*2, usableH=pageH-margin*2-14;
+  const grid = document.getElementById('consolidation-qr-grid');
+  if (!grid||!grid.children.length) { showToast('⚠️ Nothing to export'); return; }
+  const allCards=Array.from(grid.children), PAGE_SIZE=21;
+  const COLS=7, CARD_W=110, CARD_H=140, GAP=4;
+  const CONTAINER_W=COLS*CARD_W+(COLS-1)*GAP+16;
+  const totalPages=Math.ceil(allCards.length/PAGE_SIZE);
+  for (let p=0; p<totalPages; p++) {
+    if(p>0) pdf.addPage();
+    const chunk=allCards.slice(p*PAGE_SIZE,(p+1)*PAGE_SIZE);
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
+    chunk.forEach(card=>{
+      const clone=card.cloneNode(true);
+      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;';
+      const qr=clone.querySelector('[id^="qr-c-"]');
+      if(qr) qr.style.cssText='display:flex;justify-content:center;transform:scale(0.68);transform-origin:top center;margin-bottom:-16px;';
+      wrap.appendChild(clone);
+    });
+    document.body.appendChild(wrap);
+    await new Promise(r=>setTimeout(r,300));
+    const canvas=await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,width:CONTAINER_W,height:wrap.scrollHeight});
+    document.body.removeChild(wrap);
+    const imgH=(canvas.height*usableW)/canvas.width;
+    if(imgH<=usableH) pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,imgH);
+    else { const scale=usableH/imgH; pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW*scale,usableH); }
+    pdf.setFontSize(6); pdf.setTextColor(120);
+    pdf.text('Powered by HP World · Hrushikesh Padhi [HP World]',pageW/2,pageH-8,{align:'center'});
+    pdf.text(title+' · Page '+(p+1)+' of '+totalPages,margin,pageH-8);
+    pdf.text(new Date().toLocaleDateString('en-GB'),pageW-margin,pageH-8,{align:'right'});
+    pdf.setFontSize(7); pdf.setTextColor(50);
+    pdf.text('Checked by: ______________________________',margin,pageH-3);
+    pdf.text('Verified by TL/Supervisor: ______________________________',pageW/2+5,pageH-3);
+  }
+  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
+  showToast('✅ Consolidation PDF done!');
+}
+
+// ════ ZPL ════
+function buildZPL(labels) {
+  let zpl = '';
+  labels.forEach(lbl => {
+    const asin  = (lbl.asin||'').trim();
+    const name  = (lbl.itemName||'').trim();
+    const name1 = name.slice(0,35);
+    const name2 = name.length>35 ? name.slice(35,68) : '';
+    zpl += '^XA\n^MMT\n^PW406\n^LL203\n^LS0\n^CI28\n';
+    zpl += '^FO10,5^BY2,3^BCN,100,N,N^FD'+asin+'^FS\n';
+    zpl += '^FO10,112^A0N,18,18^FB386,1,0,C^FD'+asin+'^FS\n';
+    zpl += '^FO10,133^A0N,14,14^FB386,1,0,C^FR^FDReduced Shelf Life^FS\n';
+    zpl += '^FO10,150^A0N,13,13^FB386,1,0,C^FD'+name1+'^FS\n';
+    if(name2) zpl += '^FO10,165^A0N,12,12^FB386,1,0,C^FD'+name2+'^FS\n';
+    zpl += '^PQ1,0,1,Y\n^XZ\n';
+  });
+  return zpl;
+}
+
+function exportZPL() {
+  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
+  const zpl  = buildZPL(ysmLabels);
+  const blob = new Blob([zpl], { type:'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='YSM_ZPL_'+new Date().toISOString().split('T')[0]+'.zpl';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('✅ ZPL downloaded!');
+}
+
+async function sendToZebra() {
+  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
+  const zpl = buildZPL(ysmLabels);
+  try {
+    const r = await fetch('http://localhost:9100',{method:'POST',body:zpl,headers:{'Content-Type':'text/plain'}});
+    if(r.ok){showToast('✅ Sent to Zebra!'); return;}
+  } catch(e) {}
+  const blob=new Blob([zpl],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='PRINT_ME.zpl';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('✅ ZPL downloaded! Open CMD → type: copy /b PRINT_ME.zpl "ZDesigner ZD220-203dpi ZPL"');
+}
+
+// ════ FEEDBACK ════
+function sendFeedback() {
+  const name  = document.getElementById('fb-name').value.trim();
+  const email = document.getElementById('fb-email').value.trim();
+  const msg   = document.getElementById('fb-msg').value.trim();
+  if (!name||!msg) { showToast('⚠️ Name and message are required'); return; }
+  const bodyText = 'Name: '+name+'\nEmail: '+email+'\n\nMessage:\n'+msg;
+  const mailtoLink = 'mailto:hrushikeshpadhi6@live.com?subject=WareTask Feedback from '+encodeURIComponent(name)+'&body='+encodeURIComponent(bodyText);
+  try {
+    emailjs.send('service_id','template_id',{from_name:name,from_email:email||'noreply@waretask.com',message:msg,to_email:'hrushikeshpadhi6@live.com'})
+      .then(()=>{
+        showToast('✅ Feedback sent!');
+        document.getElementById('fb-name').value='';
+        document.getElementById('fb-email').value='';
+        document.getElementById('fb-msg').value='';
+      }).catch(()=>{ window.location.href=mailtoLink; });
+  } catch(e) {
+    window.location.href=mailtoLink;
+    showToast('📧 Opening email client...');
+  }
+}
+
 // ════ DRAG & DROP ════
 document.querySelectorAll('.upload-zone').forEach(zone => {
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
