@@ -1728,18 +1728,25 @@ async function exportYSMLabels(el) { await exportYSMPDF(); }
 function renderBarcodeToCanvas(asin) {
   const cvs = document.createElement('canvas');
   try {
-    JsBarcode(cvs, asin, { format:'CODE128', width:3, height:120, displayValue:false, background:'#ffffff', lineColor:'#000000' });
+    JsBarcode(cvs, asin, {
+      format:'CODE128', width:2, height:100,
+      displayValue:false, background:'#ffffff', lineColor:'#000000'
+    });
     return cvs;
   } catch(e) {
     try {
-      JsBarcode(cvs, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), { format:'CODE128', width:3, height:120, displayValue:false, background:'#ffffff', lineColor:'#000000' });
+      JsBarcode(cvs, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+        format:'CODE128', width:2, height:100,
+        displayValue:false, background:'#ffffff', lineColor:'#000000'
+      });
       return cvs;
     } catch(e2) { return null; }
   }
 }
 
+// Build label canvas — PORTRAIT 2"×1" = 400×200px
 function buildLabelCanvas(asin, itemName) {
-  const CW = 1016, CH = 508;
+  const CW = 400, CH = 200;
   const cvs = document.createElement('canvas');
   cvs.width = CW; cvs.height = CH;
   const ctx = cvs.getContext('2d');
@@ -1747,85 +1754,88 @@ function buildLabelCanvas(asin, itemName) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, CW, CH);
 
-  // Barcode
+  // Barcode — full width with small quiet zone
   const bcCvs = renderBarcodeToCanvas(asin);
   if (bcCvs && bcCvs.width > 0) {
-    ctx.drawImage(bcCvs, 20, 8, CW - 40, 290);
+    ctx.drawImage(bcCvs, 10, 4, CW - 20, 110);
   }
 
   // ASIN
   ctx.fillStyle = '#000000';
-  ctx.font = 'bold 36px "Courier New"';
+  ctx.font = 'bold 16px "Courier New"';
   ctx.textAlign = 'center';
-  ctx.fillText(asin, CW/2, 340);
+  ctx.fillText(asin, CW/2, 130);
 
-  // "Reduced Shelf Life" in orange
+  // Reduced Shelf Life
   if (itemName) {
-    ctx.font = 'bold 22px Arial';
+    ctx.font = 'bold 10px Arial';
     ctx.fillStyle = '#c43d04';
-    ctx.textAlign = 'center';
-    ctx.fillText('Reduced Shelf Life', CW/2, 385);
+    ctx.fillText('Reduced Shelf Life', CW/2, 148);
 
-    // Item name below
-    ctx.font = '20px Arial';
+    // Item name — truncate to fit
+    ctx.font = '9px Arial';
     ctx.fillStyle = '#333333';
-    ctx.textAlign = 'center';
-    // Wrap if needed
-    const maxW = CW - 60;
-    const words = itemName.split(' ');
-    let line = '', y = 415;
-    for (const w of words) {
-      const test = line ? line + ' ' + w : w;
-      if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, CW/2, y);
-        line = w; y += 26;
-      } else line = test;
+    let name = itemName;
+    while (ctx.measureText(name).width > CW - 20 && name.length > 10) {
+      name = name.slice(0, -4) + '...';
     }
-    if (line) ctx.fillText(line, CW/2, y);
+    ctx.fillText(name, CW/2, 163);
   }
 
   return cvs;
 }
 
-// ════ YSM PDF EXPORT ════
+// Flipped 180° for PDF if needed
+function buildLabelCanvasFlipped(asin, itemName) {
+  const src = buildLabelCanvas(asin, itemName);
+  const cvs = document.createElement('canvas');
+  cvs.width = src.width; cvs.height = src.height;
+  const ctx = cvs.getContext('2d');
+  ctx.translate(cvs.width, cvs.height);
+  ctx.rotate(Math.PI);
+  ctx.drawImage(src, 0, 0);
+  return cvs;
+}
+
+// ════ YSM PDF EXPORT — PORTRAIT 2"×1" ════
 async function exportYSMPDF() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building PDF...');
 
-  const W_mm = 101.6, H_mm = 50.8;
+  // Portrait: width=2", height=1"
+  const W_mm = 50.8;   // 2 inches
+  const H_mm = 25.4;   // 1 inch
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[H_mm, W_mm] });
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[W_mm, H_mm] });
 
   for (let i = 0; i < ysmLabels.length; i++) {
-    if (i > 0) pdf.addPage([H_mm, W_mm], 'landscape');
+    if (i > 0) pdf.addPage([W_mm, H_mm], 'portrait');
     const lbl = ysmLabels[i];
     const cvs = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
     pdf.addImage(cvs.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, W_mm, H_mm);
   }
 
   pdf.save(`YSM_Zebra_${new Date().toISOString().split('T')[0]}.pdf`);
-  showToast(`✅ ${ysmLabels.length} labels exported!`);
+  showToast(`✅ ${ysmLabels.length} labels — PDF done!`);
 }
 
-// ════ YSM WORD EXPORT ════
+// ════ YSM WORD EXPORT — PORTRAIT 2"×1" ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
-  // Each label = full PNG image embedded in Word
-  // Use mso-break-type:page-break to force page break in Word
-  let body = '';
+  let imgs = '';
   for (let i = 0; i < ysmLabels.length; i++) {
-    const lbl = ysmLabels[i];
-    const cvs = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
-    const png = cvs.toDataURL('image/png');
+    const lbl  = ysmLabels[i];
+    const cvs  = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
+    const png  = cvs.toDataURL('image/png');
     const isLast = i === ysmLabels.length - 1;
 
-    body += `<p style="margin:0;padding:0;line-height:0;">
-<img src="${png}" width="386" height="193" style="width:10.16cm;height:5.08cm;display:block;">
-</p>
-${isLast ? '' : '<br clear="all" style="mso-break-type:page-break">'}
-`;
+    // Image sized exactly to label: 2"×1" = 144×72pt in Word
+    imgs += `<img src="${png}" width="144" height="72" style="width:5.08cm;height:2.54cm;display:block;margin:0;padding:0;border:none;" alt="${lbl.asin}">`;
+    if (!isLast) {
+      imgs += `<br style="mso-break-type:page-break;">`;
+    }
   }
 
   const html = `<!DOCTYPE html>
@@ -1834,7 +1844,6 @@ ${isLast ? '' : '<br clear="all" style="mso-break-type:page-break">'}
       xmlns="http://www.w3.org/TR/REC-html40">
 <head>
 <meta charset="UTF-8">
-<title>YSM Labels</title>
 <!--[if gte mso 9]><xml>
 <w:WordDocument>
   <w:View>Print</w:View>
@@ -1843,30 +1852,23 @@ ${isLast ? '' : '<br clear="all" style="mso-break-type:page-break">'}
 </w:WordDocument>
 </xml><![endif]-->
 <style>
-  @page Section1 {
-    size: 10.16cm 5.08cm;
-    margin: 0cm;
-    mso-header-margin: 0cm;
-    mso-footer-margin: 0cm;
-    mso-paper-source: 0;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    tab-interval: 36.0pt;
-  }
-  div.Section1 { page: Section1; }
-  p { margin: 0; padding: 0; }
+@page {
+  size: 5.08cm 2.54cm;
+  margin: 0cm;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-size: 0;
+  line-height: 0;
+}
+img { display:block; border:none; }
 </style>
 </head>
-<body>
-<div class="Section1">
-${body}
-</div>
-</body>
+<body>${imgs}</body>
 </html>`;
 
-  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
+  const blob = new Blob(['\ufeff' + html], { type:'application/vnd.ms-word;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
@@ -1875,10 +1877,12 @@ ${body}
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → Print → set paper 4"×2" → Print');
+  showToast('✅ Word ready! Open → check page size is 2"×1" → Print on Zebra');
 }
 
 async function exportYSMLabels(el) { await exportYSMPDF(); }
+
+
 
 
 
