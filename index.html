@@ -2048,9 +2048,9 @@ async function exportYSMWord() {
         '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1097280"/></a:xfrm>'+
         '<a:prstGeom prst="rect"/></pic:spPr>'+
         '</pic:pic></a:graphicData></a:graphic>'+
-        '</wp:inline></w:drawing>'+
-        (isLast?'':'<w:br w:type="page"/>')+
-        '</w:r></w:p>';
+        '</wp:inline></w:drawing></w:r>'+
+        (isLast?'':'<w:r><w:br w:type="page"/></w:r>')+
+        '</w:p>';
     }
 
     const docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
