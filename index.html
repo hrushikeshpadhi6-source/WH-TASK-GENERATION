@@ -1697,7 +1697,7 @@ async function exportYSMPDF() {
   showToast(`✅ PDF done! ${ysmLabels.length} labels.`);
 }
 
-// ════ YSM WORD EXPORT — matches Excel VBA exactly ════
+// ════ YSM WORD EXPORT — 4"x2" LANDSCAPE ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
@@ -1711,89 +1711,102 @@ async function exportYSMWord() {
     const isLast = i === ysmLabels.length - 1;
     const bcValue = '*' + asin + '*';
 
-    body += '<table style="width:100%;border-collapse:collapse;page-break-inside:avoid;">'
-          + '<tr>'
-          // Barcode cell — full width, tall, centered
-          + '<td style="'
-          + 'font-family:\'MRV Code39extMA\',\'Free 3 of 9\',monospace;'
-          + 'font-size:48pt;'
-          + 'text-align:left;'
-          + 'vertical-align:middle;'
-          + 'padding:0 0 0 0;'
-          + 'height:72pt;'
+    // Each label block — 4"x2" landscape
+    // Barcode takes ~55% height, text below fills rest
+    body += '<table style="'
           + 'width:100%;'
-          + 'border:none;'
-          + 'letter-spacing:0;'
-          + '">' + bcValue + '</td>'
-          + '</tr>'
-          + '<tr>'
-          + '<td style="'
-          + 'font-family:\'Courier New\',monospace;'
-          + 'font-weight:bold;'
-          + 'font-size:10pt;'
+          + 'border-collapse:collapse;'
+          + 'page-break-inside:avoid;'
+          + 'margin:0;padding:0;'
+          + '">'
+
+          // ROW 1: Barcode — tall, full width
+          + '<tr><td style="'
+          + 'font-family:\'MRV Code39extMA\',\'Free 3 of 9\',monospace;'
+          + 'font-size:60pt;'
+          + 'line-height:1;'
           + 'text-align:center;'
-          + 'padding:2pt 0;'
+          + 'vertical-align:middle;'
+          + 'padding:4pt 2pt 0 2pt;'
+          + 'height:80pt;'
           + 'border:none;'
-          + '">' + asin + '</td>'
-          + '</tr>'
-          + '<tr>'
-          + '<td style="'
+          + 'color:#000;'
+          + '">' + bcValue + '</td></tr>'
+
+          // ROW 2: ASIN
+          + '<tr><td style="'
+          + 'font-family:\'Courier New\',Courier,monospace;'
+          + 'font-weight:bold;'
+          + 'font-size:12pt;'
+          + 'text-align:center;'
+          + 'padding:3pt 0 0 0;'
+          + 'border:none;'
+          + 'letter-spacing:2pt;'
+          + '">' + asin + '</td></tr>'
+
+          // ROW 3: Reduced Shelf Life
+          + '<tr><td style="'
           + 'font-family:Arial,sans-serif;'
           + 'font-weight:bold;'
-          + 'font-size:8pt;'
+          + 'font-size:9pt;'
           + 'color:#c43d04;'
           + 'text-align:center;'
-          + 'padding:1pt 0;'
+          + 'padding:2pt 0 0 0;'
           + 'border:none;'
-          + '">Reduced Shelf Life</td>'
-          + '</tr>'
-          + (name ? '<tr><td style="font-family:Arial,sans-serif;font-size:7.5pt;color:#333;text-align:center;padding:1pt 0;border:none;">' + name + '</td></tr>' : '')
+          + '">Reduced Shelf Life</td></tr>'
+
+          // ROW 4: Item name (if exists)
+          + (name
+            ? '<tr><td style="'
+              + 'font-family:Arial,sans-serif;'
+              + 'font-size:8pt;'
+              + 'color:#333;'
+              + 'text-align:center;'
+              + 'padding:1pt 4pt 0 4pt;'
+              + 'border:none;'
+              + 'word-wrap:break-word;'
+              + '">' + name + '</td></tr>'
+            : '')
+
           + '</table>'
-          + (isLast ? '' : '<br style="page-break-before:always;mso-break-type:page-break;">');
+          // Page break after each label except last
+          + (isLast ? '' : '<br style="mso-break-type:page-break;page-break-before:always;">');
   }
 
-  // Footer
-  body += '<p style="text-align:center;font-family:Arial,sans-serif;font-size:9pt;color:#333;margin-top:8pt;">GWC REPORT BY HRUSHIKESH PADHI (HP World)</p>';
+  // CSS: 4"x2" landscape, margins 0.1" all sides
+  const css = '@page {'
+    + '  size: 10.16cm 5.08cm;'        // 4" x 2"
+    + '  margin: 0.25cm;'               // ~0.1"
+    + '  mso-page-orientation:landscape;'
+    + '}'
+    + 'html,body{margin:0;padding:0;}'
+    + 'table{width:100%;border-collapse:collapse;}'
+    + 'td{border:none;padding:0;}'
+    + 'p,br{margin:0;padding:0;}';
 
   const html = '<!DOCTYPE html>'
     + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
-    + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
-    + ' xmlns="http://www.w3.org/TR/REC-html40">'
+    + '      xmlns:w="urn:schemas-microsoft-com:office:word"'
+    + '      xmlns="http://www.w3.org/TR/REC-html40">'
     + '<head><meta charset="UTF-8">'
     + '<!--[if gte mso 9]><xml>'
     + '<w:WordDocument>'
-    + '<w:View>Print</w:View>'
-    + '<w:Zoom>100</w:Zoom>'
+    + '<w:View>Print</w:View><w:Zoom>100</w:Zoom>'
     + '<w:DoNotOptimizeForBrowser/>'
-    + '</w:WordDocument>'
-    + '</xml><![endif]-->'
-    + '<style>'
-    + '@page {'
-    + '  size: 2in 1in;'
-    + '  margin-top: 0.15in;'
-    + '  margin-bottom: 0.15in;'
-    + '  margin-left: 0.15in;'
-    + '  margin-right: 0.15in;'
-    + '}'
-    + 'body { margin:0; padding:0; font-size:0; }'
-    + 'table { border-collapse:collapse; width:100%; }'
-    + 'td { border:none; padding:0; }'
-    + 'p { margin:0; padding:0; }'
-    + '</style>'
+    + '</w:WordDocument></xml><![endif]-->'
+    + '<style>' + css + '</style>'
     + '</head>'
     + '<body>' + body + '</body>'
     + '</html>';
 
-  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
+  const blob = new Blob(['\ufeff' + html], { type:'application/vnd.ms-word;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
   a.download = 'YSM_Labels_' + new Date().toISOString().split('T')[0] + '.doc';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → Layout → Size → 2"x1" → Print on Zebra');
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('✅ Word ready! Open → Layout → Size → Custom 4"×2" → Print on Zebra');
 }
 
 
