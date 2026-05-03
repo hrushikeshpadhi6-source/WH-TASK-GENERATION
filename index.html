@@ -1744,58 +1744,76 @@ function renderBarcodeToCanvas(asin) {
   }
 }
 
-// Build label canvas — rotated 90° for Zebra ZD220
+// Build label canvas — rotated 270° for Zebra ZD220
 function buildLabelCanvas(asin, itemName) {
-  // Content canvas: 600×300 (landscape content)
   const CW = 600, CH = 300;
-  // Output canvas: rotated 90° so dimensions swap → 300×600
+  // Output rotated: swap dimensions
   const cvs = document.createElement('canvas');
-  cvs.width  = CH;   // 300
-  cvs.height = CW;   // 600
+  cvs.width  = CH;  // 300
+  cvs.height = CW;  // 600
   const ctx = cvs.getContext('2d');
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-  // Rotate 90° clockwise
+  // Rotate 270° (= -90°) counter-clockwise
   ctx.save();
-  ctx.translate(cvs.width, 0);
-  ctx.rotate(Math.PI / 2);
+  ctx.translate(0, cvs.height);
+  ctx.rotate(-Math.PI / 2);
 
-  // Now draw content in the original 600×300 space
-
-  // Barcode
-  const bcCvs = renderBarcodeToCanvas(asin);
-  if (bcCvs && bcCvs.width > 0) {
-    ctx.drawImage(bcCvs, 15, 6, CW - 30, 150);
+  // Draw barcode directly onto canvas using JsBarcode
+  // Create a temp canvas for barcode at correct size
+  const bcTemp = document.createElement('canvas');
+  try {
+    JsBarcode(bcTemp, asin, {
+      format: 'CODE128',
+      width: 2,
+      height: 140,
+      displayValue: false,
+      background: '#ffffff',
+      lineColor: '#000000',
+      margin: 0
+    });
+  } catch(e) {
+    try {
+      JsBarcode(bcTemp, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+        format: 'CODE128', width: 2, height: 140,
+        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+      });
+    } catch(e2) {}
   }
 
-  // ASIN
+  if (bcTemp.width > 0 && bcTemp.height > 0) {
+    // Draw barcode stretched to full content width
+    ctx.drawImage(bcTemp, 10, 5, CW - 20, 145);
+  }
+
+  // ASIN — bold, clear
   ctx.fillStyle = '#000000';
-  ctx.font = 'bold 22px "Courier New"';
+  ctx.font = 'bold 24px "Courier New"';
   ctx.textAlign = 'center';
-  ctx.fillText(asin, CW/2, 180);
+  ctx.fillText(asin, CW / 2, 175);
 
   // Reduced Shelf Life
-  ctx.font = 'bold 16px Arial';
+  ctx.font = 'bold 18px Arial';
   ctx.fillStyle = '#c43d04';
-  ctx.fillText('Reduced Shelf Life', CW/2, 210);
+  ctx.fillText('Reduced Shelf Life', CW / 2, 208);
 
-  // Item name
+  // Item name with word wrap
   if (itemName) {
-    ctx.font = '15px Arial';
-    ctx.fillStyle = '#333333';
-    const maxW = CW - 30;
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#222222';
+    const maxW = CW - 20;
     const words = itemName.split(' ');
     let line = '', y = 238;
     for (const w of words) {
       const test = line ? line + ' ' + w : w;
       if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, CW/2, y);
+        ctx.fillText(line, CW / 2, y);
         line = w; y += 22;
       } else { line = test; }
     }
-    if (line) ctx.fillText(line, CW/2, y);
+    if (line) ctx.fillText(line, CW / 2, y);
   }
 
   ctx.restore();
