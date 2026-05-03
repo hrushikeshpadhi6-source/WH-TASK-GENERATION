@@ -1575,73 +1575,28 @@ function printYSMLabels() {
       + '</div>';
   });
 
-  // Open popup — browser headers/footers only show on the main window
   const win = window.open('', '_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>YSM Labels</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>YSM</title>'
     + '<style>'
     + '* { margin:0; padding:0; box-sizing:border-box; }'
-    + '@page {'
-    + '  size: 2in 1in;'
-    + '  margin: 0;'
-    + '}'
-    + 'html, body { width:2in; height:1in; margin:0; padding:0; background:#fff; }'
+    + '@page { size: 2in 1in; margin: 0; }'
+    + 'html, body { width:2in; height:1in; overflow:hidden; background:#fff; }'
     + '.label {'
-    + '  width: 2in;'
-    + '  height: 1in;'
-    + '  padding: 0.04in 0.06in;'
-    + '  display: flex;'
-    + '  flex-direction: column;'
-    + '  align-items: center;'
-    + '  justify-content: center;'
-    + '  background: #fff;'
-    + '  overflow: hidden;'
-    + '  page-break-after: always;'
-    + '  page-break-inside: avoid;'
+    + '  width:2in; height:1in;'
+    + '  display:flex; flex-direction:column;'
+    + '  align-items:center; justify-content:center;'
+    + '  page-break-after:always; page-break-inside:avoid;'
+    + '  padding:0.03in 0.05in;'
+    + '  background:#fff; overflow:hidden;'
     + '}'
-    + '.label.brk { page-break-after: always; }'
-    + '.bc {'
-    + '  width: 1.85in;'
-    + '  height: 0.5in;'
-    + '  display: block;'
-    + '  object-fit: fill;'
-    + '}'
-    + '.asin {'
-    + '  font-family: "Courier New", monospace;'
-    + '  font-weight: bold;'
-    + '  font-size: 7.5pt;'
-    + '  text-align: center;'
-    + '  letter-spacing: 0.5px;'
-    + '  margin-top: 2pt;'
-    + '  color: #000;'
-    + '}'
-    + '.rsl {'
-    + '  font-family: Arial, sans-serif;'
-    + '  font-weight: bold;'
-    + '  font-size: 6pt;'
-    + '  color: #c43d04;'
-    + '  text-align: center;'
-    + '  margin-top: 1pt;'
-    + '}'
-    + '.name {'
-    + '  font-family: Arial, sans-serif;'
-    + '  font-size: 5.5pt;'
-    + '  color: #333;'
-    + '  text-align: center;'
-    + '  margin-top: 1pt;'
-    + '  line-height: 1.2;'
-    + '  word-break: break-word;'
-    + '}'
+    + '.bc { width:1.9in; height:0.52in; display:block; object-fit:fill; }'
+    + '.asin { font-family:"Courier New",monospace; font-weight:bold; font-size:7pt; text-align:center; letter-spacing:0.5px; color:#000; margin-top:1pt; }'
+    + '.rsl  { font-family:Arial,sans-serif; font-weight:bold; font-size:5.5pt; color:#c43d04; text-align:center; margin-top:1pt; }'
+    + '.name { font-family:Arial,sans-serif; font-size:5pt; color:#333; text-align:center; margin-top:1pt; line-height:1.1; }'
     + '</style></head>'
     + '<body>' + labelHTML + '</body></html>');
   win.document.close();
-
-  // Auto print after content loads
-  win.onload = function() {
-    setTimeout(() => {
-      win.focus();
-      win.print();
-    }, 500);
-  };
+  win.onload = function() { setTimeout(() => { win.focus(); win.print(); }, 400); };
 
   showToast('✅ Print window opened! Select ZDesigner ZD220 → Print');
 }
