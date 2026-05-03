@@ -1556,38 +1556,92 @@ function generateYSM() {
 function printYSMLabels() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
 
-  const printArea = document.getElementById('ysm-print-area');
-  printArea.innerHTML = '';
-
+  // Build label HTML content
+  let labelHTML = '';
   ysmLabels.forEach((lbl, idx) => {
-    const div = document.createElement('div');
-    div.className = 'ysm-label-print';
-    const svgId = `print-bc-${idx}`;
-    div.innerHTML = `
-      <svg id="${svgId}"></svg>
-      <div class="lp-asin">${lbl.asin}</div>
-      ${lbl.itemName ? `<div class="lp-name"><b style="color:#c43d04">Reduced Shelf Life</b> — ${lbl.itemName}</div>` : ''}
-    `;
-    printArea.appendChild(div);
+    const asin = lbl.asin.trim();
+    const name = lbl.itemName || '';
+    const isLast = idx === ysmLabels.length - 1;
+
+    // Render barcode to canvas PNG
+    const bcCvs = renderBarcodeToCanvas(asin);
+    const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
+
+    labelHTML += '<div class="label' + (isLast ? '' : ' brk') + '">'
+      + (bcPng ? '<img src="' + bcPng + '" class="bc">' : '')
+      + '<div class="asin">' + asin + '</div>'
+      + '<div class="rsl">Reduced Shelf Life</div>'
+      + (name ? '<div class="name">' + name + '</div>' : '')
+      + '</div>';
   });
 
-  printArea.style.display = 'block';
+  // Open popup — browser headers/footers only show on the main window
+  const win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>YSM Labels</title>'
+    + '<style>'
+    + '* { margin:0; padding:0; box-sizing:border-box; }'
+    + '@page {'
+    + '  size: 2in 1in;'
+    + '  margin: 0;'
+    + '}'
+    + 'body { background:#fff; margin:0; padding:0; }'
+    + '.label {'
+    + '  width: 2in;'
+    + '  height: 1in;'
+    + '  padding: 0.05in 0.08in;'
+    + '  display: flex;'
+    + '  flex-direction: column;'
+    + '  align-items: center;'
+    + '  justify-content: center;'
+    + '  background: #fff;'
+    + '  overflow: hidden;'
+    + '}'
+    + '.label.brk { page-break-after: always; }'
+    + '.bc {'
+    + '  width: 100%;'
+    + '  height: 0.52in;'
+    + '  display: block;'
+    + '  object-fit: fill;'
+    + '}'
+    + '.asin {'
+    + '  font-family: "Courier New", monospace;'
+    + '  font-weight: bold;'
+    + '  font-size: 7.5pt;'
+    + '  text-align: center;'
+    + '  letter-spacing: 0.5px;'
+    + '  margin-top: 2pt;'
+    + '  color: #000;'
+    + '}'
+    + '.rsl {'
+    + '  font-family: Arial, sans-serif;'
+    + '  font-weight: bold;'
+    + '  font-size: 6pt;'
+    + '  color: #c43d04;'
+    + '  text-align: center;'
+    + '  margin-top: 1pt;'
+    + '}'
+    + '.name {'
+    + '  font-family: Arial, sans-serif;'
+    + '  font-size: 5.5pt;'
+    + '  color: #333;'
+    + '  text-align: center;'
+    + '  margin-top: 1pt;'
+    + '  line-height: 1.2;'
+    + '  word-break: break-word;'
+    + '}'
+    + '</style></head>'
+    + '<body>' + labelHTML + '</body></html>');
+  win.document.close();
 
-  // Render barcodes then print
-  ysmLabels.forEach((lbl, idx) => {
-    try {
-      JsBarcode(`#print-bc-${idx}`, lbl.asin, {
-        format:'CODE128', width:3, height:100,
-        displayValue:false, background:'#ffffff',
-        lineColor:'#000000', margin:10, marginLeft:14, marginRight:14
-      });
-    } catch(e) {}
-  });
+  // Auto print after content loads
+  win.onload = function() {
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 300);
+  };
 
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => { printArea.style.display = 'none'; }, 1000);
-  }, 500);
+  showToast('✅ Print window opened! Select ZDesigner ZD220 → Print');
 }
 
 
