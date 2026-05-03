@@ -1744,20 +1744,25 @@ function renderBarcodeToCanvas(asin) {
   }
 }
 
-// Build label canvas — content at BOTTOM for Zebra direction
+// Build label canvas — rotated 90° for Zebra ZD220
 function buildLabelCanvas(asin, itemName) {
+  // Content canvas: 600×300 (landscape content)
   const CW = 600, CH = 300;
+  // Output canvas: rotated 90° so dimensions swap → 300×600
   const cvs = document.createElement('canvas');
-  cvs.width = CW; cvs.height = CH;
+  cvs.width  = CH;   // 300
+  cvs.height = CW;   // 600
   const ctx = cvs.getContext('2d');
 
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, CW, CH);
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-  // Rotate entire canvas 180° — flips content direction for Zebra
+  // Rotate 90° clockwise
   ctx.save();
-  ctx.translate(CW, CH);
-  ctx.rotate(Math.PI);
+  ctx.translate(cvs.width, 0);
+  ctx.rotate(Math.PI / 2);
+
+  // Now draw content in the original 600×300 space
 
   // Barcode
   const bcCvs = renderBarcodeToCanvas(asin);
