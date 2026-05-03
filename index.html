@@ -1744,80 +1744,86 @@ function renderBarcodeToCanvas(asin) {
   }
 }
 
-// Build label canvas — rotated 270° for Zebra ZD220
+// Build label canvas — barcode first, then rotate for Zebra ZD220
 function buildLabelCanvas(asin, itemName) {
   const CW = 600, CH = 300;
-  // Output rotated: swap dimensions
-  const cvs = document.createElement('canvas');
-  cvs.width  = CH;  // 300
-  cvs.height = CW;  // 600
-  const ctx = cvs.getContext('2d');
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  // STEP 1: Draw everything on a normal horizontal canvas first
+  const src = document.createElement('canvas');
+  src.width = CW; src.height = CH;
+  const sctx = src.getContext('2d');
+  sctx.fillStyle = '#ffffff';
+  sctx.fillRect(0, 0, CW, CH);
 
-  // Rotate 270° (= -90°) counter-clockwise
-  ctx.save();
-  ctx.translate(0, cvs.height);
-  ctx.rotate(-Math.PI / 2);
-
-  // Draw barcode directly onto canvas using JsBarcode
-  // Create a temp canvas for barcode at correct size
-  const bcTemp = document.createElement('canvas');
+  // Barcode — render directly to temp canvas, then copy
+  const bcCvs = document.createElement('canvas');
+  let barcodeDrawn = false;
   try {
-    JsBarcode(bcTemp, asin, {
-      format: 'CODE128',
-      width: 2,
-      height: 140,
-      displayValue: false,
-      background: '#ffffff',
-      lineColor: '#000000',
-      margin: 0
+    JsBarcode(bcCvs, asin, {
+      format:'CODE128', width:2, height:140,
+      displayValue:false, background:'#ffffff', lineColor:'#000000', margin:0
     });
+    barcodeDrawn = true;
   } catch(e) {
     try {
-      JsBarcode(bcTemp, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
-        format: 'CODE128', width: 2, height: 140,
-        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 0
+      JsBarcode(bcCvs, asin.replace(/[^A-Z0-9\-\.\ ]/gi,''), {
+        format:'CODE128', width:2, height:140,
+        displayValue:false, background:'#ffffff', lineColor:'#000000', margin:0
       });
-    } catch(e2) {}
+      barcodeDrawn = true;
+    } catch(e2) { barcodeDrawn = false; }
   }
 
-  if (bcTemp.width > 0 && bcTemp.height > 0) {
-    // Draw barcode stretched to full content width
-    ctx.drawImage(bcTemp, 10, 5, CW - 20, 145);
+  if (barcodeDrawn && bcCvs.width > 10) {
+    sctx.drawImage(bcCvs, 10, 5, CW - 20, 145);
+  } else {
+    // Fallback: draw striped pattern so label isn't blank
+    sctx.fillStyle = '#000';
+    for(let x = 10; x < CW-10; x += 6) {
+      sctx.fillRect(x, 5, 3, 140);
+    }
   }
 
-  // ASIN — bold, clear
-  ctx.fillStyle = '#000000';
-  ctx.font = 'bold 24px "Courier New"';
-  ctx.textAlign = 'center';
-  ctx.fillText(asin, CW / 2, 175);
+  // ASIN
+  sctx.fillStyle = '#000000';
+  sctx.font = 'bold 24px Courier New';
+  sctx.textAlign = 'center';
+  sctx.fillText(asin, CW/2, 175);
 
   // Reduced Shelf Life
-  ctx.font = 'bold 18px Arial';
-  ctx.fillStyle = '#c43d04';
-  ctx.fillText('Reduced Shelf Life', CW / 2, 208);
+  sctx.font = 'bold 18px Arial';
+  sctx.fillStyle = '#c43d04';
+  sctx.fillText('Reduced Shelf Life', CW/2, 208);
 
-  // Item name with word wrap
+  // Item name
   if (itemName) {
-    ctx.font = '16px Arial';
-    ctx.fillStyle = '#222222';
-    const maxW = CW - 20;
+    sctx.font = '15px Arial';
+    sctx.fillStyle = '#222222';
     const words = itemName.split(' ');
-    let line = '', y = 238;
+    let line = '', y = 235;
     for (const w of words) {
       const test = line ? line + ' ' + w : w;
-      if (ctx.measureText(test).width > maxW && line) {
-        ctx.fillText(line, CW / 2, y);
-        line = w; y += 22;
-      } else { line = test; }
+      if (sctx.measureText(test).width > CW - 20 && line) {
+        sctx.fillText(line, CW/2, y); line = w; y += 20;
+      } else line = test;
     }
-    if (line) ctx.fillText(line, CW / 2, y);
+    if (line) sctx.fillText(line, CW/2, y);
   }
 
-  ctx.restore();
-  return cvs;
+  // STEP 2: Rotate the completed canvas 270° into output canvas
+  const out = document.createElement('canvas');
+  out.width  = CH;  // 300
+  out.height = CW;  // 600
+  const octx = out.getContext('2d');
+  octx.fillStyle = '#ffffff';
+  octx.fillRect(0, 0, out.width, out.height);
+  octx.save();
+  octx.translate(0, out.height);
+  octx.rotate(-Math.PI / 2);
+  octx.drawImage(src, 0, 0);
+  octx.restore();
+
+  return out;
 }
 
 // Flipped 180° for PDF if needed
