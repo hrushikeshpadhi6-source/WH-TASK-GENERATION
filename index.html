@@ -1697,109 +1697,121 @@ async function exportYSMPDF() {
   showToast(`✅ PDF done! ${ysmLabels.length} labels.`);
 }
 
-// ════ YSM WORD EXPORT — matches your Barcode_Format.docx exactly ════
+// ════ YSM WORD EXPORT — Real .docx via Python backend ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  showToast('⏳ Building Word file...');
+  showToast('⏳ Generating Word file...');
 
-  // EXACT values from your Barcode_Format.docx:
-  // Page: 2880 x 1728 twips (2" x 1.2")
-  // Margins: top=259, right=144, bottom=144, left=259 twips
-  // Barcode image: 1572895 x 681355 EMU (1.72" x 0.74")
-  // Font: MRV Code39extMA, size 8pt
+  // Build label data
+  const labelData = ysmLabels.map(l => ({
+    asin: l.asin.trim(),
+    itemName: l.itemName || ''
+  }));
 
-  let body = '';
+  try {
+    // Call Claude API to run Python and generate the docx as base64
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: `You are a Python code executor. Run this Python code and return ONLY the base64-encoded content of the generated docx file. No explanation, no markdown, just the raw base64 string.
 
-  for (let i = 0; i < ysmLabels.length; i++) {
-    const lbl    = ysmLabels[i];
-    const asin   = lbl.asin.trim();
-    const name   = lbl.itemName || '';
-    const isLast = i === ysmLabels.length - 1;
+LABELS_JSON: ${JSON.stringify(labelData)}
 
-    // Render barcode as PNG using canvas (same as your Excel VBA image)
-    const bcCvs = renderBarcodeToCanvas(asin);
-    const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
+PYTHON CODE:
+import sys, json, io, base64
+from docx import Document
+from docx.shared import Pt, Twips, RGBColor, Emu
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+import PIL.Image as PILImage
+import PIL.ImageDraw as PILDraw
+import PIL.ImageFont as PILFont
 
-    body += '<div style="page-break-inside:avoid;text-align:center;margin:0;padding:0;'
-          + (isLast ? '' : 'page-break-after:always;') + '">';
+PATTERNS_128B = ['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011']
+CODE128B_VALS = {chr(i+32): i for i in range(95)}
 
-    // Barcode image — 1.72" x 0.74" matching your format exactly
-    if (bcPng) {
-      body += '<img src="' + bcPng + '" style="'
-            + 'width:4.37cm;'     // 1.72"
-            + 'height:1.88cm;'    // 0.74"
-            + 'display:block;'
-            + 'margin:0 auto;'
-            + '">';
-    }
+def make_label_image(asin, combined_text):
+    DPI=203; W=int(2.0*DPI); H=int(1.2*DPI)
+    ML=int(0.18*DPI); MR=int(0.10*DPI); MT=int(0.18*DPI); MB=int(0.10*DPI)
+    CW=W-ML-MR; CH=H-MT-MB; BAR_H=int(CH*0.62)
+    img=PILImage.new('RGB',(W,H),(255,255,255)); draw=PILDraw.Draw(img)
+    codes=[104]; chk=104
+    for i,c in enumerate(asin):
+        v=CODE128B_VALS.get(c,0); codes.append(v); chk+=v*(i+1)
+    codes.append(chk%103); codes.append(106)
+    bars=''.join(PATTERNS_128B[min(c,106)] for c in codes)
+    bar_unit=max(1,CW//len(bars)); total_bar_w=bar_unit*len(bars)
+    bar_x=ML+(CW-total_bar_w)//2; x=bar_x
+    for bit in bars:
+        if bit=='1': draw.rectangle([x,MT,x+bar_unit-1,MT+BAR_H],fill=(0,0,0))
+        x+=bar_unit
+    try:
+        fa=PILFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf',14)
+        ft=PILFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',11)
+    except:
+        fa=PILFont.load_default(); ft=PILFont.load_default()
+    asin_y=MT+BAR_H+6; draw.text((W//2,asin_y),asin,font=fa,fill=(0,0,0),anchor='mt')
+    text_y=asin_y+18; words=combined_text.split(' '); line1=''; line2=''
+    for w in words:
+        test=(line1+' '+w).strip()
+        try: tw=ft.getlength(test)
+        except: tw=len(test)*6
+        if tw<=CW: line1=test
+        else: line2=(line2+' '+w).strip()
+    if line1: draw.text((W//2,text_y),line1,font=ft,fill=(0,0,0),anchor='mt')
+    if line2: draw.text((W//2,text_y+14),line2,font=ft,fill=(0,0,0),anchor='mt')
+    buf=io.BytesIO(); img.save(buf,'PNG',dpi=(DPI,DPI)); return buf.getvalue()
 
-    // ASIN - Courier New bold 9pt
-    body += '<p style="margin:2pt 0 0 0;padding:0;'
-          + 'font-family:\'Courier New\',Courier,monospace;'
-          + 'font-weight:bold;font-size:9pt;'
-          + 'text-align:center;color:#000;line-height:1;">'
-          + asin + '</p>';
+labels=${JSON.stringify(labelData)}
+doc=Document()
+for p in doc.paragraphs: p._element.getparent().remove(p._element)
+sec=doc.sections[0]
+sec.page_width=Twips(2880); sec.page_height=Twips(1728)
+sec.top_margin=Twips(0); sec.right_margin=Twips(0)
+sec.bottom_margin=Twips(0); sec.left_margin=Twips(0)
+IMG_W=Emu(int(2.0*914400)); IMG_H=Emu(int(1.2*914400))
+for i,lbl in enumerate(labels):
+    asin=lbl['asin'].strip(); name=lbl.get('itemName','').strip()
+    combined=('Reduced Shelf Life — '+name) if name else 'Reduced Shelf Life'
+    img_bytes=make_label_image(asin,combined)
+    p=doc.add_paragraph(); p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before=Pt(0); p.paragraph_format.space_after=Pt(0)
+    r=p.add_run(); r.add_picture(io.BytesIO(img_bytes),width=IMG_W,height=IMG_H)
+    if i<len(labels)-1:
+        br=OxmlElement('w:br'); br.set(qn('w:type'),'page'); r._r.append(br)
+buf=io.BytesIO(); doc.save(buf); print(base64.b64encode(buf.getvalue()).decode())`
+        }]
+      })
+    });
 
-    // Reduced Shelf Life - Arial bold 8pt orange
-    body += '<p style="margin:1pt 0 0 0;padding:0;'
-          + 'font-family:Arial,sans-serif;'
-          + 'font-weight:bold;font-size:8pt;'
-          + 'text-align:center;color:#c43d04;line-height:1;">'
-          + 'Reduced Shelf Life</p>';
+    const data = await response.json();
+    const b64 = data.content?.[0]?.text?.trim();
 
-    // Item name - Arial 7.5pt
-    if (name) {
-      body += '<p style="margin:1pt 0 0 0;padding:0;'
-            + 'font-family:Arial,sans-serif;'
-            + 'font-size:7.5pt;'
-            + 'text-align:center;color:#333;line-height:1.1;">'
-            + name + '</p>';
-    }
+    if (!b64 || b64.length < 100) throw new Error('No docx data returned');
 
-    body += '</div>';
+    // Convert base64 to blob and download
+    const binary = atob(b64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'YSM_Labels_' + new Date().toISOString().split('T')[0] + '.docx';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('✅ Word (.docx) downloaded! Open → Print on Zebra ZD220');
+
+  } catch(err) {
+    console.error('Word export error:', err);
+    showToast('❌ Failed. Try again or use PDF export.');
   }
-
-  // Page setup EXACTLY matching your Barcode_Format.docx:
-  // w:w="2880" w:h="1728" (2" x 1.2")
-  // margins: top=259 right=144 bottom=144 left=259 twips
-  // 1440 twips = 1 inch → 2880/1440=2" and 1728/1440=1.2"
-  const html = '<!DOCTYPE html>'
-    + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
-    + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
-    + ' xmlns="http://www.w3.org/TR/REC-html40">'
-    + '<head><meta charset="UTF-8">'
-    + '<!--[if gte mso 9]><xml>'
-    + '<w:WordDocument>'
-    + '<w:View>Print</w:View>'
-    + '<w:Zoom>100</w:Zoom>'
-    + '<w:DoNotOptimizeForBrowser/>'
-    + '</w:WordDocument></xml><![endif]-->'
-    + '<style>'
-    // Exact page size from your docx file
-    + '@page {'
-    + '  size: 5.08cm 3.05cm;'   // 2" x 1.2"
-    + '  margin-top: 0.457cm;'    // 259 twips
-    + '  margin-right: 0.254cm;'  // 144 twips
-    + '  margin-bottom: 0.254cm;' // 144 twips
-    + '  margin-left: 0.457cm;'   // 259 twips
-    + '}'
-    + 'html,body{margin:0;padding:0;}'
-    + 'div{display:block;}'
-    + 'p{margin:0;padding:0;}'
-    + 'img{display:block;border:none;}'
-    + '</style>'
-    + '</head>'
-    + '<body>' + body + '</body>'
-    + '</html>';
-
-  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = 'YSM_Labels_' + new Date().toISOString().split('T')[0] + '.doc';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → page is already 2"×1.2" → Print on Zebra ZD220');
 }
 
 
