@@ -1744,7 +1744,7 @@ function renderBarcodeToCanvas(asin) {
   }
 }
 
-// Build label canvas — PORTRAIT 2"×1" = 600×300px (2:1 ratio, higher res)
+// Build label canvas — content at BOTTOM for Zebra direction
 function buildLabelCanvas(asin, itemName) {
   const CW = 600, CH = 300;
   const cvs = document.createElement('canvas');
@@ -1754,7 +1754,12 @@ function buildLabelCanvas(asin, itemName) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, CW, CH);
 
-  // Barcode — full width with quiet zone
+  // Rotate entire canvas 180° — flips content direction for Zebra
+  ctx.save();
+  ctx.translate(CW, CH);
+  ctx.rotate(Math.PI);
+
+  // Barcode
   const bcCvs = renderBarcodeToCanvas(asin);
   if (bcCvs && bcCvs.width > 0) {
     ctx.drawImage(bcCvs, 15, 6, CW - 30, 150);
@@ -1775,7 +1780,6 @@ function buildLabelCanvas(asin, itemName) {
   if (itemName) {
     ctx.font = '15px Arial';
     ctx.fillStyle = '#333333';
-    // Wrap text if needed
     const maxW = CW - 30;
     const words = itemName.split(' ');
     let line = '', y = 238;
@@ -1789,6 +1793,7 @@ function buildLabelCanvas(asin, itemName) {
     if (line) ctx.fillText(line, CW/2, y);
   }
 
+  ctx.restore();
   return cvs;
 }
 
@@ -1817,15 +1822,8 @@ async function exportYSMPDF() {
   for (let i = 0; i < ysmLabels.length; i++) {
     if (i > 0) pdf.addPage([W_mm, H_mm], 'portrait');
     const lbl = ysmLabels[i];
-    const src = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
-    // Rotate 180° for Zebra printer direction
-    const flipped = document.createElement('canvas');
-    flipped.width = src.width; flipped.height = src.height;
-    const fctx = flipped.getContext('2d');
-    fctx.translate(flipped.width, flipped.height);
-    fctx.rotate(Math.PI);
-    fctx.drawImage(src, 0, 0);
-    pdf.addImage(flipped.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, W_mm, H_mm);
+    const cvs = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
+    pdf.addImage(cvs.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, W_mm, H_mm);
   }
 
   pdf.save(`YSM_Zebra_${new Date().toISOString().split('T')[0]}.pdf`);
