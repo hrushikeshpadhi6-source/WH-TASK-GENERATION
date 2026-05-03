@@ -1817,8 +1817,15 @@ async function exportYSMPDF() {
   for (let i = 0; i < ysmLabels.length; i++) {
     if (i > 0) pdf.addPage([W_mm, H_mm], 'portrait');
     const lbl = ysmLabels[i];
-    const cvs = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
-    pdf.addImage(cvs.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, W_mm, H_mm);
+    const src = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
+    // Rotate 180° for Zebra printer direction
+    const flipped = document.createElement('canvas');
+    flipped.width = src.width; flipped.height = src.height;
+    const fctx = flipped.getContext('2d');
+    fctx.translate(flipped.width, flipped.height);
+    fctx.rotate(Math.PI);
+    fctx.drawImage(src, 0, 0);
+    pdf.addImage(flipped.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, W_mm, H_mm);
   }
 
   pdf.save(`YSM_Zebra_${new Date().toISOString().split('T')[0]}.pdf`);
