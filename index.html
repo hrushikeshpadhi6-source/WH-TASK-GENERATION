@@ -1697,10 +1697,16 @@ async function exportYSMPDF() {
   showToast(`✅ PDF done! ${ysmLabels.length} labels.`);
 }
 
-// ════ YSM WORD EXPORT — 4"x2" LANDSCAPE ════
+// ════ YSM WORD EXPORT — matches your Barcode_Format.docx exactly ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
+
+  // EXACT values from your Barcode_Format.docx:
+  // Page: 2880 x 1728 twips (2" x 1.2")
+  // Margins: top=259, right=144, bottom=144, left=259 twips
+  // Barcode image: 1572895 x 681355 EMU (1.72" x 0.74")
+  // Font: MRV Code39extMA, size 8pt
 
   let body = '';
 
@@ -1709,104 +1715,91 @@ async function exportYSMWord() {
     const asin   = lbl.asin.trim();
     const name   = lbl.itemName || '';
     const isLast = i === ysmLabels.length - 1;
-    const bcValue = '*' + asin + '*';
 
-    // Each label block — 4"x2" landscape
-    // Barcode takes ~55% height, text below fills rest
-    body += '<table style="'
-          + 'width:100%;'
-          + 'border-collapse:collapse;'
-          + 'page-break-inside:avoid;'
-          + 'margin:0;padding:0;'
-          + '">'
+    // Render barcode as PNG using canvas (same as your Excel VBA image)
+    const bcCvs = renderBarcodeToCanvas(asin);
+    const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
 
-          // ROW 1: Barcode — tall, full width
-          + '<tr><td style="'
-          + 'font-family:\'MRV Code39extMA\',\'Free 3 of 9\',monospace;'
-          + 'font-size:60pt;'
-          + 'line-height:1;'
-          + 'text-align:center;'
-          + 'vertical-align:middle;'
-          + 'padding:4pt 2pt 0 2pt;'
-          + 'height:80pt;'
-          + 'border:none;'
-          + 'color:#000;'
-          + '">' + bcValue + '</td></tr>'
+    body += '<div style="page-break-inside:avoid;text-align:center;margin:0;padding:0;'
+          + (isLast ? '' : 'page-break-after:always;') + '">';
 
-          // ROW 2: ASIN
-          + '<tr><td style="'
+    // Barcode image — 1.72" x 0.74" matching your format exactly
+    if (bcPng) {
+      body += '<img src="' + bcPng + '" style="'
+            + 'width:4.37cm;'     // 1.72"
+            + 'height:1.88cm;'    // 0.74"
+            + 'display:block;'
+            + 'margin:0 auto;'
+            + '">';
+    }
+
+    // ASIN - Courier New bold 9pt
+    body += '<p style="margin:2pt 0 0 0;padding:0;'
           + 'font-family:\'Courier New\',Courier,monospace;'
-          + 'font-weight:bold;'
-          + 'font-size:12pt;'
-          + 'text-align:center;'
-          + 'padding:3pt 0 0 0;'
-          + 'border:none;'
-          + 'letter-spacing:2pt;'
-          + '">' + asin + '</td></tr>'
+          + 'font-weight:bold;font-size:9pt;'
+          + 'text-align:center;color:#000;line-height:1;">'
+          + asin + '</p>';
 
-          // ROW 3: Reduced Shelf Life
-          + '<tr><td style="'
+    // Reduced Shelf Life - Arial bold 8pt orange
+    body += '<p style="margin:1pt 0 0 0;padding:0;'
           + 'font-family:Arial,sans-serif;'
-          + 'font-weight:bold;'
-          + 'font-size:9pt;'
-          + 'color:#c43d04;'
-          + 'text-align:center;'
-          + 'padding:2pt 0 0 0;'
-          + 'border:none;'
-          + '">Reduced Shelf Life</td></tr>'
+          + 'font-weight:bold;font-size:8pt;'
+          + 'text-align:center;color:#c43d04;line-height:1;">'
+          + 'Reduced Shelf Life</p>';
 
-          // ROW 4: Item name (if exists)
-          + (name
-            ? '<tr><td style="'
-              + 'font-family:Arial,sans-serif;'
-              + 'font-size:8pt;'
-              + 'color:#333;'
-              + 'text-align:center;'
-              + 'padding:1pt 4pt 0 4pt;'
-              + 'border:none;'
-              + 'word-wrap:break-word;'
-              + '">' + name + '</td></tr>'
-            : '')
+    // Item name - Arial 7.5pt
+    if (name) {
+      body += '<p style="margin:1pt 0 0 0;padding:0;'
+            + 'font-family:Arial,sans-serif;'
+            + 'font-size:7.5pt;'
+            + 'text-align:center;color:#333;line-height:1.1;">'
+            + name + '</p>';
+    }
 
-          + '</table>'
-          // Page break after each label except last
-          + (isLast ? '' : '<br style="mso-break-type:page-break;page-break-before:always;">');
+    body += '</div>';
   }
 
-  // CSS: 4"x2" landscape, margins 0.1" all sides
-  const css = '@page {'
-    + '  size: 10.16cm 5.08cm;'        // 4" x 2"
-    + '  margin: 0.25cm;'               // ~0.1"
-    + '  mso-page-orientation:landscape;'
-    + '}'
-    + 'html,body{margin:0;padding:0;}'
-    + 'table{width:100%;border-collapse:collapse;}'
-    + 'td{border:none;padding:0;}'
-    + 'p,br{margin:0;padding:0;}';
-
+  // Page setup EXACTLY matching your Barcode_Format.docx:
+  // w:w="2880" w:h="1728" (2" x 1.2")
+  // margins: top=259 right=144 bottom=144 left=259 twips
+  // 1440 twips = 1 inch → 2880/1440=2" and 1728/1440=1.2"
   const html = '<!DOCTYPE html>'
     + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
-    + '      xmlns:w="urn:schemas-microsoft-com:office:word"'
-    + '      xmlns="http://www.w3.org/TR/REC-html40">'
+    + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
+    + ' xmlns="http://www.w3.org/TR/REC-html40">'
     + '<head><meta charset="UTF-8">'
     + '<!--[if gte mso 9]><xml>'
     + '<w:WordDocument>'
-    + '<w:View>Print</w:View><w:Zoom>100</w:Zoom>'
+    + '<w:View>Print</w:View>'
+    + '<w:Zoom>100</w:Zoom>'
     + '<w:DoNotOptimizeForBrowser/>'
     + '</w:WordDocument></xml><![endif]-->'
-    + '<style>' + css + '</style>'
+    + '<style>'
+    // Exact page size from your docx file
+    + '@page {'
+    + '  size: 5.08cm 3.05cm;'   // 2" x 1.2"
+    + '  margin-top: 0.457cm;'    // 259 twips
+    + '  margin-right: 0.254cm;'  // 144 twips
+    + '  margin-bottom: 0.254cm;' // 144 twips
+    + '  margin-left: 0.457cm;'   // 259 twips
+    + '}'
+    + 'html,body{margin:0;padding:0;}'
+    + 'div{display:block;}'
+    + 'p{margin:0;padding:0;}'
+    + 'img{display:block;border:none;}'
+    + '</style>'
     + '</head>'
     + '<body>' + body + '</body>'
     + '</html>';
 
-  const blob = new Blob(['\ufeff' + html], { type:'application/vnd.ms-word;charset=utf-8' });
+  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
   a.download = 'YSM_Labels_' + new Date().toISOString().split('T')[0] + '.doc';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → Layout → Size → Custom 4"×2" → Print on Zebra');
+  showToast('✅ Word ready! Open → page is already 2"×1.2" → Print on Zebra ZD220');
 }
 
 
