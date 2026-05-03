@@ -771,10 +771,9 @@ footer span { color:var(--accent); }
   <div id="out-ysm"></div>
 
   <div class="btn-row" id="export-ysm" style="display:none">
-    <button class="btn btn-green" onclick="printZPLDirect()" style="font-size:15px;padding:14px 28px">🖨️ PRINT ON ZEBRA ZD220</button>
-    <button class="btn btn-accent" onclick="exportZPL()">⬇ Download ZPL File</button>
-    <button class="btn btn-primary" onclick="exportYSMPDF()">⬇ Export PDF</button>
-    <button class="btn btn-outline" onclick="printYSMLabels()">🖨️ Browser Print</button>
+    <button class="btn btn-green" onclick="sendToZebra()" style="font-size:16px;padding:16px 32px">🖨️ PRINT ON ZEBRA ZD220</button>
+    <button class="btn btn-accent" onclick="exportYSMPDF()">⬇ Export PDF</button>
+    <button class="btn btn-primary" onclick="exportYSMWord()">⬇ Export Word</button>
   </div>
 </div>
 </div>
@@ -1575,28 +1574,34 @@ function printYSMLabels() {
       + '</div>';
   });
 
-  const win = window.open('', '_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>YSM</title>'
+  // 2"x1" at 96dpi = 192x96px
+  const win = window.open('', '_blank', 'width=192,height=96,toolbar=0,menubar=0,location=0,status=0,scrollbars=0,resizable=0');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>.</title>'
     + '<style>'
     + '* { margin:0; padding:0; box-sizing:border-box; }'
     + '@page { size: 2in 1in; margin: 0; }'
-    + 'html, body { margin:0; padding:0; background:#fff; }'
+    + 'html { width:2in; height:1in; }'
+    + 'body { width:2in; height:1in; margin:0; padding:0; background:#fff; overflow:hidden; }'
     + '.label {'
     + '  width:2in; height:1in;'
     + '  display:flex; flex-direction:column;'
     + '  align-items:center; justify-content:center;'
     + '  page-break-after:always;'
-    + '  page-break-inside:avoid;'
     + '  background:#fff;'
     + '}'
-    + '.bc { width:2in; height:0.56in; display:block; }'
-    + '.asin { font-family:"Courier New",monospace; font-weight:bold; font-size:8pt; text-align:center; color:#000; margin-top:2pt; width:100%; }'
-    + '.rsl  { font-family:Arial,sans-serif; font-weight:bold; font-size:6pt; color:#c43d04; text-align:center; margin-top:1pt; width:100%; }'
-    + '.name { font-family:Arial,sans-serif; font-size:5.5pt; color:#333; text-align:center; margin-top:1pt; line-height:1.1; width:100%; }'
+    + '.bc { width:1.95in; height:0.54in; display:block; }'
+    + '.asin { font-family:"Courier New",monospace; font-weight:bold; font-size:7.5pt; text-align:center; color:#000; margin-top:1.5pt; }'
+    + '.rsl  { font-family:Arial,sans-serif; font-weight:bold; font-size:6pt; color:#c43d04; text-align:center; margin-top:1pt; }'
+    + '.name { font-family:Arial,sans-serif; font-size:5pt; color:#333; text-align:center; margin-top:0.5pt; line-height:1.1; }'
     + '</style></head>'
     + '<body>' + labelHTML + '</body></html>');
   win.document.close();
-  win.onload = function() { setTimeout(() => { win.focus(); win.print(); }, 400); };
+  win.onload = function() {
+    setTimeout(() => {
+      win.focus();
+      win.print();
+    }, 400);
+  };
 
   showToast('✅ Print window opened! Select ZDesigner ZD220 → Print');
 }
@@ -1697,48 +1702,39 @@ async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
-  let sections = '';
+  let body = '';
 
   for (let i = 0; i < ysmLabels.length; i++) {
-    const lbl   = ysmLabels[i];
-    const asin  = lbl.asin.trim();
-    const name  = lbl.itemName || '';
+    const lbl    = ysmLabels[i];
+    const asin   = lbl.asin.trim();
+    const name   = lbl.itemName || '';
     const isLast = i === ysmLabels.length - 1;
 
-    // Render barcode PNG
+    // Barcode as PNG
     const bcCvs = renderBarcodeToCanvas(asin);
     const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
 
-    // Each label = one Word section with its own page setup
-    // Matches exactly: 2"x1" landscape, 0.1" margins, center vertical
-    sections += `
-<div style="
-  width:5.08cm;
-  height:2.54cm;
-  margin:0;
-  padding:0.25cm 0.25cm 0.15cm 0.25cm;
-  box-sizing:border-box;
-  background:#ffffff;
-  overflow:hidden;
-  display:block;
-  page-break-after:${isLast ? 'avoid' : 'always'};
-  page-break-inside:avoid;
-  text-align:center;
-">
-  ${bcPng ? `<img src="${bcPng}" style="width:100%;height:1.3cm;display:block;margin:0 auto;">` : ''}
-  <p style="margin:2px 0 0 0;padding:0;font-family:'Courier New',Courier,monospace;font-weight:bold;font-size:8pt;text-align:center;line-height:1;color:#000;">${asin}</p>
-  <p style="margin:1px 0 0 0;padding:0;font-family:Arial,sans-serif;font-weight:bold;font-size:7pt;text-align:center;line-height:1;color:#c43d04;">Reduced Shelf Life</p>
-  ${name ? `<p style="margin:1px 0 0 0;padding:0;font-family:Arial,sans-serif;font-size:6pt;text-align:center;line-height:1.1;color:#333;">${name}</p>` : ''}
-</div>`;
+    body += '<p style="margin:0;padding:0;text-align:center;line-height:0;'
+          + (isLast ? '' : 'page-break-after:always;')
+          + '">';
+    if (bcPng) {
+      body += '<img src="' + bcPng + '" '
+            + 'width="192" height="60" '
+            + 'style="width:5.08cm;height:1.6cm;display:block;margin:0 auto;">';
+    }
+    body += '<br style="line-height:0;margin:0;padding:0;">';
+    body += '<span style="font-family:Courier New,monospace;font-weight:bold;font-size:9pt;color:#000;">' + asin + '</span><br>';
+    body += '<span style="font-family:Arial,sans-serif;font-weight:bold;font-size:7.5pt;color:#c43d04;">Reduced Shelf Life</span><br>';
+    if (name) {
+      body += '<span style="font-family:Arial,sans-serif;font-size:7pt;color:#333;">' + name + '</span>';
+    }
+    body += '</p>';
   }
 
-  // Word HTML matching exactly your page setup screenshots:
-  // Paper: Custom 2"x1" (5.08cm x 2.54cm)
-  // Orientation: Landscape (width > height = 2"x1")  
-  // Margins: 0.1" all sides = 0.254cm
-  // Layout: Center vertical, New page sections
   const html = '<!DOCTYPE html>'
-    + '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+    + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
+    + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
+    + ' xmlns="http://www.w3.org/TR/REC-html40">'
     + '<head><meta charset="UTF-8">'
     + '<!--[if gte mso 9]><xml>'
     + '<w:WordDocument>'
@@ -1749,20 +1745,22 @@ async function exportYSMWord() {
     + '</xml><![endif]-->'
     + '<style>'
     + '@page {'
-    + '  size: 5.08cm 2.54cm;'        /* 2" x 1" */
-    + '  margin: 0.254cm;'             /* 0.1" all sides */
-    + '  mso-page-orientation: landscape;'
-    + '  mso-margin-top-alt: 0.254cm;'
-    + '  mso-margin-bottom-alt: 0.254cm;'
-    + '  vertical-align: center;'
+    + '  size: 5.08cm 2.54cm;'
+    + '  margin: 0.25cm;'
     + '}'
-    + 'html, body { margin:0; padding:0; background:#fff; }'
-    + 'div { display:block; }'
+    + 'html, body {'
+    + '  margin: 0;'
+    + '  padding: 0;'
+    + '  font-size: 0;'
+    + '  line-height: 0;'
+    + '}'
     + 'p { margin:0; padding:0; }'
-    + 'img { display:block; border:none; }'
+    + 'img { display:block; border:0; }'
+    + 'span { display:inline; }'
+    + 'br { display:block; margin:0; line-height:1pt; }'
     + '</style>'
     + '</head>'
-    + '<body>' + sections + '</body>'
+    + '<body>' + body + '</body>'
     + '</html>';
 
   const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
@@ -1770,167 +1768,9 @@ async function exportYSMWord() {
   const a    = document.createElement('a');
   a.href = url;
   a.download = 'YSM_Labels_' + new Date().toISOString().split('T')[0] + '.doc';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('✅ Word done! Open → File → Print → ZDesigner ZD220 → Print');
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Word file ready! Open → Page Setup: 2"x1", Margins: 0.1" → Print on Zebra');
 }
-
-async function exportYSMLabels(el) { await exportYSMPDF(); }
-
-// ════ ZPL — Zebra ZD220 203dpi ════
-// Label: 2"x1" = 406x203 dots at 203dpi
-
-function buildZPL(labels) {
-  let zpl = '';
-  labels.forEach(lbl => {
-    const asin  = (lbl.asin || '').trim();
-    const name  = (lbl.itemName || '').trim();
-    // Truncate name to ~35 chars to fit
-    const name1 = name.slice(0, 35);
-    const name2 = name.length > 35 ? name.slice(35, 68) : '';
-
-    zpl += `^XA
-^MMT
-^PW406
-^LL203
-^LS0
-^CI28
-
-^FO10,5^BY2,3^BCN,100,N,N^FD${asin}^FS
-
-^FO10,112^A0N,18,18^FB386,1,0,C^FD${asin}^FS
-
-^FO10,133^A0N,14,14^FB386,1,0,C^FR^FDReduced Shelf Life^FS
-
-^FO10,150^A0N,13,13^FB386,1,0,C^FD${name1}^FS
-${name2 ? `^FO10,165^A0N,12,12^FB386,1,0,C^FD${name2}^FS` : ''}
-
-^PQ1,0,1,Y
-^XZ
-`;
-  });
-  return zpl;
-}
-
-function exportZPL() {
-  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  const zpl  = buildZPL(ysmLabels);
-  const blob = new Blob([zpl], { type: 'text/plain' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `YSM_ZPL_${new Date().toISOString().split('T')[0]}.zpl`;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('✅ ZPL downloaded! See instructions below how to print.');
-}
-
-function printZPLDirect() {
-  if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
-  const zpl     = buildZPL(ysmLabels);
-  const zplJson = JSON.stringify(zpl);
-  const count   = ysmLabels.length;
-  const zplSafe = zpl.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  const win = window.open('', '_blank', 'width=620,height=560');
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print on Zebra ZD220</title>'
-    + '<style>'
-    + 'body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;}'
-    + 'h2{color:#c43d04;}'
-    + '.box{background:#fff;border:2px solid #ddd;border-radius:8px;padding:16px;margin:12px 0;}'
-    + '.step{display:flex;gap:12px;align-items:flex-start;margin:10px 0;}'
-    + '.num{background:#c43d04;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;}'
-    + 'textarea{width:100%;height:100px;font-family:monospace;font-size:11px;padding:8px;border:1px solid #ccc;border-radius:4px;resize:none;}'
-    + '.btn{background:#c43d04;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;margin:4px;}'
-    + '.btn2{background:#4361ee;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;margin:4px;}'
-    + '.ok{background:#d4edda;border:1px solid #28a745;color:#155724;padding:10px;border-radius:6px;display:none;margin-top:8px;}'
-    + '</style></head><body>'
-    + '<h2>🦓 Print on Zebra ZD220</h2>'
-    + '<p>Printer: <b>ZDesigner ZD220-203dpi ZPL</b> &nbsp;|&nbsp; <b>' + count + ' labels</b></p>'
-    + '<div class="box">'
-    + '<b>📋 ZPL Code:</b><br><br>'
-    + '<textarea id="zt" readonly>' + zplSafe + '</textarea><br>'
-    + '<button class="btn" onclick="document.getElementById(\'zt\').select();document.execCommand(\'copy\');document.getElementById(\'ok\').style.display=\'block\'">📋 Copy ZPL</button>'
-    + '<button class="btn2" id="dlbtn">⬇ Download .zpl</button>'
-    + '<div class="ok" id="ok">✅ Copied! Paste into Notepad → Save as .zpl → Print to Zebra</div>'
-    + '</div>'
-    + '<div class="box"><b>🖨️ HOW TO PRINT:</b>'
-    + '<div class="step"><div class="num">1</div><div>Click <b>Download .zpl</b> button above</div></div>'
-    + '<div class="step"><div class="num">2</div><div>Right-click the .zpl file → <b>Open with → Notepad</b></div></div>'
-    + '<div class="step"><div class="num">3</div><div><b>Ctrl+P</b> → select <b>ZDesigner ZD220</b> → Print ✅</div></div>'
-    + '</div>'
-    + '</body></html>';
-
-  win.document.write(html);
-  win.document.close();
-
-  // Attach download handler after window loads
-  win.document.getElementById('dlbtn').onclick = function() {
-    const blob = new Blob([zpl], {type:'text/plain'});
-    const url  = URL.createObjectURL(blob);
-    const a    = win.document.createElement('a');
-    a.href=url; a.download='YSM_Labels_Zebra.zpl';
-    win.document.body.appendChild(a); a.click();
-    win.document.body.removeChild(a); URL.revokeObjectURL(url);
-  };
-}
-
-
-// ════ FEEDBACK ════
-function sendFeedback() {
-  const name = document.getElementById('fb-name').value.trim();
-  const email = document.getElementById('fb-email').value.trim();
-  const msg = document.getElementById('fb-msg').value.trim();
-
-  if (!name || !msg) { showToast('⚠️ Name and message are required'); return; }
-
-  // EmailJS - initialize with your public key
-  // emailjs.init("YOUR_PUBLIC_KEY");  ← Add your EmailJS public key here
-
-  const bodyText = 'Name: ' + name + '\nEmail: ' + email + '\n\nMessage:\n' + msg;
-  const mailtoLink = 'mailto:hrushikeshpadhi6@live.com?subject=WareTask Feedback from ' + encodeURIComponent(name) + '&body=' + encodeURIComponent(bodyText);
-
-  // Try EmailJS first, fallback to mailto
-  try {
-    emailjs.send("service_id", "template_id", {
-      from_name: name,
-      from_email: email || 'noreply@waretask.com',
-      message: msg,
-      to_email: 'hrushikeshpadhi6@live.com'
-    }).then(() => {
-      showToast('✅ Feedback sent successfully!');
-      document.getElementById('fb-name').value = '';
-      document.getElementById('fb-email').value = '';
-      document.getElementById('fb-msg').value = '';
-    }).catch(() => {
-      window.location.href = mailtoLink;
-    });
-  } catch(e) {
-    window.location.href = mailtoLink;
-    showToast('📧 Opening email client...');
-  }
-}
-
-// ════ DRAG & DROP ════
-document.querySelectorAll('.upload-zone').forEach(zone => {
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('drag');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const taskId = zone.id.replace('uz-','');
-    const inp = document.getElementById('f-' + taskId);
-    if (inp) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      inp.files = dt.files;
-      handleUpload(inp, taskId);
-    }
-  });
-});
-
-</script>
-</body>
-</html>
