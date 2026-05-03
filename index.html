@@ -1819,23 +1819,37 @@ async function exportYSMPDF() {
   showToast(`✅ ${ysmLabels.length} labels — PDF done!`);
 }
 
-// ════ YSM WORD EXPORT — PORTRAIT 2"×1" ════
+// ════ YSM WORD EXPORT ════
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
-  let imgs = '';
+  // Each label canvas = 400x200px (2:1 ratio matching 2"x1" label)
+  const labelParts = [];
   for (let i = 0; i < ysmLabels.length; i++) {
-    const lbl  = ysmLabels[i];
-    const cvs  = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
-    const png  = cvs.toDataURL('image/png');
-    const isLast = i === ysmLabels.length - 1;
+    const lbl = ysmLabels[i];
+    const cvs = buildLabelCanvas(lbl.asin.trim(), lbl.itemName);
+    labelParts.push(cvs.toDataURL('image/png'));
+  }
 
-    // Image sized exactly to label: 2"×1" = 144×72pt in Word
-    imgs += `<img src="${png}" width="144" height="72" style="width:5.08cm;height:2.54cm;display:block;margin:0;padding:0;border:none;" alt="${lbl.asin}">`;
-    if (!isLast) {
-      imgs += `<br style="mso-break-type:page-break;">`;
-    }
+  // Build Word HTML — each image IS the page, NO extra elements
+  // Use table trick: each row = one label page, forces correct page break
+  let rows = '';
+  for (let i = 0; i < labelParts.length; i++) {
+    const isLast = i === labelParts.length - 1;
+    rows += `<tr>
+<td style="padding:0;margin:0;border:none;width:5.08cm;height:2.54cm;overflow:hidden;">
+<img src="${labelParts[i]}" style="width:5.08cm;height:2.54cm;display:block;" alt="label">
+</td>
+</tr>
+${isLast ? '' : '<tr style="page-break-after:always;mso-break-type:page-break;"><td style="padding:0;height:0;border:none;font-size:0;line-height:0;">&nbsp;</td></tr>'}`;
+  }
+
+  // Simpler approach — just use divs with exact page size, no blank lines
+  let divs = '';
+  for (let i = 0; i < labelParts.length; i++) {
+    const isLast = i === labelParts.length - 1;
+    divs += `<div style="width:5.08cm;height:2.54cm;overflow:hidden;display:block;margin:0;padding:0;${isLast?'':'page-break-after:always;'}"><img src="${labelParts[i]}" style="width:5.08cm;height:2.54cm;display:block;margin:0;padding:0;" alt="label"></div>`;
   }
 
   const html = `<!DOCTYPE html>
@@ -1852,23 +1866,27 @@ async function exportYSMWord() {
 </w:WordDocument>
 </xml><![endif]-->
 <style>
-@page {
-  size: 5.08cm 2.54cm;
-  margin: 0cm;
-}
-body {
-  margin: 0;
-  padding: 0;
-  font-size: 0;
-  line-height: 0;
-}
-img { display:block; border:none; }
+  @page {
+    size: 5.08cm 2.54cm;
+    margin: 0cm 0cm 0cm 0cm;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 5.08cm;
+    height: 2.54cm;
+    overflow: hidden;
+    font-size: 0;
+    line-height: 0;
+  }
+  div { display: block; margin: 0; padding: 0; }
+  img { display: block; border: 0; margin: 0; padding: 0; }
 </style>
 </head>
-<body>${imgs}</body>
+<body>${divs}</body>
 </html>`;
 
-  const blob = new Blob(['\ufeff' + html], { type:'application/vnd.ms-word;charset=utf-8' });
+  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-word;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url;
@@ -1877,10 +1895,11 @@ img { display:block; border:none; }
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✅ Word ready! Open → check page size is 2"×1" → Print on Zebra');
+  showToast('✅ Word ready! Each label = one page. Print on Zebra ZD220.');
 }
 
 async function exportYSMLabels(el) { await exportYSMPDF(); }
+
 
 
 
