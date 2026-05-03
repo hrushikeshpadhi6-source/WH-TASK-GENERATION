@@ -1965,14 +1965,13 @@ async function exportYSMWord() {
       const bu=Math.max(1,Math.floor(CW/bars.length));
       const totalBW=bu*bars.length;
       let x=ML+Math.floor((CW-totalBW)/2);
-      const barTop=Math.floor((H-BAR_H)/2)-20;
       ctx.fillStyle='#000';
-      for(const b of bars){if(b==='1')ctx.fillRect(x,barTop,bu,BAR_H);x+=bu;}
+      for(const b of bars){if(b==='1')ctx.fillRect(x,MT,bu,BAR_H);x+=bu;}
 
       // ASIN text
       ctx.font='bold 14px "Courier New",monospace';
       ctx.textAlign='center'; ctx.fillStyle='#000';
-      ctx.fillText(asin,W/2,barTop+BAR_H+18);
+      ctx.fillText(asin,W/2,MT+BAR_H+18);
 
       // Combined text with word wrap
       ctx.font='11px Arial,sans-serif';
@@ -1981,7 +1980,7 @@ async function exportYSMWord() {
         const t=(l1+' '+w).trim();
         if(ctx.measureText(t).width<=CW) l1=t; else l2=(l2+' '+w).trim();
       }
-      const ty=barTop+BAR_H+34;
+      const ty=MT+BAR_H+34;
       if(l1)ctx.fillText(l1,W/2,ty);
       if(l2)ctx.fillText(l2,W/2,ty+14);
 
@@ -2040,7 +2039,7 @@ async function exportYSMWord() {
       body+='<w:p>'+
         '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>'+
         '<w:r><w:drawing>'+
-        '<wp:inline distT="0" distB="0" distL="0" distR="0" '+ANS+'>'+
+        '<wp:inline '+ANS+'>'+
         '<wp:extent cx="1828800" cy="1097280"/>'+
         '<wp:docPr id="'+(i+1)+'" name="Label'+(i+1)+'"/>'+
         '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>'+
@@ -2051,7 +2050,6 @@ async function exportYSMWord() {
         '<a:prstGeom prst="rect"/></pic:spPr>'+
         '</pic:pic></a:graphicData></a:graphic>'+
         '</wp:inline></w:drawing>'+
-        (isLast?"":"<w:br w:type='page'/>")+ 
         '</w:r></w:p>';
     }
 
@@ -2063,6 +2061,8 @@ async function exportYSMWord() {
       '<w:sectPr>'+
       '<w:pgSz w:w="2880" w:h="1728"/>'+
       '<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" w:header="144" w:footer="144" w:gutter="0"/>'+
+      '<w:cols w:space="720"/>'+
+      '<w:docGrid w:linePitch="360"/>'+
       '</w:sectPr></w:body></w:document>';
     zip.file('word/document.xml', docXml);
 
