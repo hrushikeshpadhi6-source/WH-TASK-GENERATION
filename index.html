@@ -1702,6 +1702,12 @@ async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Building Word file...');
 
+  // 2" x 1" in twips (1 inch = 1440 twips)
+  const W_twips = 2880;  // 2 inches
+  const H_twips = 1440;  // 1 inch
+  // margins 0.1" = 144 twips
+  const M_twips = 144;
+
   let body = '';
 
   for (let i = 0; i < ysmLabels.length; i++) {
@@ -1710,27 +1716,25 @@ async function exportYSMWord() {
     const name   = lbl.itemName || '';
     const isLast = i === ysmLabels.length - 1;
 
-    // Barcode as PNG
     const bcCvs = renderBarcodeToCanvas(asin);
     const bcPng = bcCvs ? bcCvs.toDataURL('image/png') : '';
 
-    body += '<p style="margin:0;padding:0;text-align:center;line-height:0;'
+    body += '<p style="margin:0;padding:2px 0 0 0;text-align:center;line-height:1;'
           + (isLast ? '' : 'page-break-after:always;')
           + '">';
     if (bcPng) {
-      body += '<img src="' + bcPng + '" '
-            + 'width="192" height="60" '
-            + 'style="width:5.08cm;height:1.6cm;display:block;margin:0 auto;">';
-    }
-    body += '<br style="line-height:0;margin:0;padding:0;">';
-    body += '<span style="font-family:Courier New,monospace;font-weight:bold;font-size:9pt;color:#000;">' + asin + '</span><br>';
-    body += '<span style="font-family:Arial,sans-serif;font-weight:bold;font-size:7.5pt;color:#c43d04;">Reduced Shelf Life</span><br>';
-    if (name) {
-      body += '<span style="font-family:Arial,sans-serif;font-size:7pt;color:#333;">' + name + '</span>';
+      body += '<img src="' + bcPng + '" style="width:4.6cm;height:1.35cm;display:block;margin:0 auto;">';
     }
     body += '</p>';
+    body += '<p style="margin:0;padding:0;text-align:center;font-family:Courier New,monospace;font-weight:bold;font-size:8pt;line-height:1.1;' + (isLast?'':'') + '">' + asin + '</p>';
+    body += '<p style="margin:0;padding:0;text-align:center;font-family:Arial,sans-serif;font-weight:bold;font-size:7pt;color:#c43d04;line-height:1.1;">' + 'Reduced Shelf Life' + '</p>';
+    if (name) {
+      body += '<p style="margin:0;padding:0;text-align:center;font-family:Arial,sans-serif;font-size:6.5pt;color:#333;line-height:1.1;">' + name + '</p>';
+    }
+    if (!isLast) body += '<br style="page-break-after:always;">';
   }
 
+  // Use Word XML to force page size — this is what Word actually reads
   const html = '<!DOCTYPE html>'
     + '<html xmlns:o="urn:schemas-microsoft-com:office:office"'
     + ' xmlns:w="urn:schemas-microsoft-com:office:word"'
@@ -1742,22 +1746,22 @@ async function exportYSMWord() {
     + '<w:Zoom>100</w:Zoom>'
     + '<w:DoNotOptimizeForBrowser/>'
     + '</w:WordDocument>'
+    + '<o:OfficeDocumentSettings>'
+    + '<o:PixelsPerInch>96</o:PixelsPerInch>'
+    + '</o:OfficeDocumentSettings>'
     + '</xml><![endif]-->'
     + '<style>'
     + '@page {'
-    + '  size: 5.08cm 2.54cm;'
-    + '  margin: 0.25cm;'
+    + '  size: ' + W_twips + 'twip ' + H_twips + 'twip;'
+    + '  mso-page-orientation: landscape;'
+    + '  margin: ' + M_twips + 'twip;'
+    + '  mso-header-margin: ' + M_twips + 'twip;'
+    + '  mso-footer-margin: ' + M_twips + 'twip;'
+    + '  mso-paper-source: 0;'
     + '}'
-    + 'html, body {'
-    + '  margin: 0;'
-    + '  padding: 0;'
-    + '  font-size: 0;'
-    + '  line-height: 0;'
-    + '}'
+    + 'body { margin:' + M_twips + 'twip; padding:0; }'
     + 'p { margin:0; padding:0; }'
-    + 'img { display:block; border:0; }'
-    + 'span { display:inline; }'
-    + 'br { display:block; margin:0; line-height:1pt; }'
+    + 'img { border:0; }'
     + '</style>'
     + '</head>'
     + '<body>' + body + '</body>'
@@ -1772,7 +1776,7 @@ async function exportYSMWord() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✅ Word file ready! Open → Page Setup: 2"x1", Margins: 0.1" → Print on Zebra');
+  showToast('✅ Word ready! Open → should be 2"x1" → Print on Zebra ZD220');
 }
 
 
