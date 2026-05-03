@@ -1711,9 +1711,7 @@ async function exportYSMWord() {
     const isLast = i === ysmLabels.length - 1;
     const bcValue = '*' + asin + '*';
 
-    body += '<table style="width:100%;border-collapse:collapse;'
-          + (isLast ? '' : 'page-break-after:always;')
-          + 'page-break-inside:avoid;">'
+    body += '<table style="width:100%;border-collapse:collapse;page-break-inside:avoid;">'
           + '<tr>'
           // Barcode cell — full width, tall, centered
           + '<td style="'
@@ -1750,7 +1748,8 @@ async function exportYSMWord() {
           + '">Reduced Shelf Life</td>'
           + '</tr>'
           + (name ? '<tr><td style="font-family:Arial,sans-serif;font-size:7.5pt;color:#333;text-align:center;padding:1pt 0;border:none;">' + name + '</td></tr>' : '')
-          + '</table>';
+          + '</table>'
+          + (isLast ? '' : '<br style="page-break-before:always;mso-break-type:page-break;">');
   }
 
   // Footer
