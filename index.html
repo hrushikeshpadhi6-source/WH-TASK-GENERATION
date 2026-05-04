@@ -331,7 +331,7 @@ th { padding:11px 14px; text-align:left; font-size:10px; font-weight:700; letter
 td { padding:10px 14px; border-bottom:1px solid rgba(46,44,69,0.5); font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); }
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:rgba(255,107,53,0.04); }
-.label-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+.label-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
 .label-card {
   background:var(--surface2); border:1px solid var(--border);
   border-radius:var(--radius); padding:12px 8px; text-align:center;
@@ -561,11 +561,24 @@ footer span { color:var(--accent); }
           </select>
         </div>
 
-        <!-- Bay Manual Text Input -->
+        <!-- Zone Filter -->
         <div id="con-bay-wrap">
-          <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional)</span></div>
-          <input class="input-field" type="text" id="con-bay-input" placeholder="e.g. A103, C205, HAZ" style="width:100%">
-          <div style="font-size:11px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace">Type bay to filter · leave empty = show all</div>
+          <div class="ctrl-label">Zone Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional)</span></div>
+          <select class="input-field" id="con-zone-input" style="width:100%;margin-bottom:8px;">
+            <option value="">-- All Zones --</option>
+            <option value="P-1-A">🏪 Ambient (P-1-A)</option>
+            <option value="P-1-C">❄️ Chiller (P-1-C)</option>
+            <option value="P-1-F">🧊 Freezer (P-1-F)</option>
+            <option value="HAZ">⚠️ Hazmat (HAZ)</option>
+            <option value="HRV">📦 HRV</option>
+            <option value="P-1-D">🏋️ Heavy Duty (P-1-D)</option>
+            <option value="P-1-V">🗃️ V-Bin (P-1-V)</option>
+            <option value="P-1-X">📦 X-Bin (P-1-X)</option>
+            <option value="P-1-T">📦 T-Bin (P-1-T)</option>
+            <option value="P-1-H">📦 H-Bin (P-1-H)</option>
+            <option value="P-1-R">📦 R-Bin (P-1-R)</option>
+          </select>
+          <div style="font-size:11px;color:var(--muted);">Filter by warehouse zone · leave empty = all zones</div>
         </div>
 
         <!-- Apply Button -->
@@ -857,13 +870,27 @@ footer span { color:var(--accent); }
     </div>
   </div>
 
-  <!-- Store Login -->
-  <div style="background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:2px solid #e2e8f0;max-width:400px;">
-    <label style="font-weight:700;color:#1e293b;display:block;margin-bottom:8px;font-size:14px;">🏪 Enter Store ID</label>
-    <input id="store-id-input" type="text" placeholder="e.g. QAA7" maxlength="6"
-      style="width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:3px;font-family:'Courier New',monospace;color:#1e293b;box-sizing:border-box;"
-      oninput="this.value=this.value.toUpperCase()">
-    <p style="color:#64748b;font-size:12px;margin-top:6px;">Your Store ID is the WarehouseId in your file (e.g. QAA7, QAB1...)</p>
+  <!-- Report Info -->
+  <div style="background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:2px solid #e2e8f0;max-width:560px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <label style="font-weight:700;color:#1e293b;display:block;margin-bottom:6px;font-size:13px;">🏪 Store ID</label>
+        <input id="store-id-input" type="text" placeholder="e.g. QAA7" maxlength="6"
+          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:3px;font-family:'Courier New',monospace;color:#1e293b;box-sizing:border-box;"
+          oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#1e293b;display:block;margin-bottom:6px;font-size:13px;">📅 Report Date</label>
+        <input id="report-date-input" type="date"
+          style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;box-sizing:border-box;">
+      </div>
+    </div>
+    <div>
+      <label style="font-weight:700;color:#1e293b;display:block;margin-bottom:6px;font-size:13px;">👤 Report Prepared By</label>
+      <input id="report-by-input" type="text" placeholder="Enter your name"
+        style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;box-sizing:border-box;">
+      <p style="color:#64748b;font-size:11px;margin-top:5px;">This name will appear on the report and PDF export.</p>
+    </div>
   </div>
 
   <div class="upload-zone" id="uz-report" onclick="triggerUpload('f-report')">
@@ -965,6 +992,30 @@ footer span { color:var(--accent); }
 ══════════════════════════════ -->
 <script>
 
+
+// ════ ZONE DETECTION ════
+function detectZone(locId) {
+  const l = String(locId || '').toUpperCase();
+  if (l.includes('P-1-C')) return 'Chiller';
+  if (l.includes('P-1-F')) return 'Freezer';
+  if (l.includes('P-1-D')) return 'HeavyDuty';
+  if (l.includes('P-1-A')) return 'Ambient';
+  if (l.includes('P-1-V')) return 'V-Bin';
+  if (l.includes('P-1-X')) return 'X-Bin';
+  if (l.includes('P-1-T')) return 'T-Bin';
+  if (l.includes('P-1-H')) return 'H-Bin';
+  if (l.includes('P-1-R')) return 'R-Bin';
+  if (l.includes('HAZ'))   return 'Hazmat';
+  if (l.includes('HRV'))   return 'HRV';
+  return 'Other';
+}
+
+// Pick N random unique items from array (different each time)
+function pickRandUnique(arr, n) {
+  const shuffled = arr.slice().sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, arr.length));
+}
+
 // ════ STATE ════
 const state = {
   consolidation: { data: [], headers: [], filter: '2-10' },
@@ -1033,6 +1084,7 @@ function handleUpload(input, task) {
       // Task-specific post-load
       if (task === 'slow-moving') buildSlowMovingCols();
       if (task === 'ysm') buildYSMMapper();
+      if (task === 'consolidation') buildConBaySelect();
 
       showToast(`✅ Loaded ${json.length.toLocaleString()} records`);
     } catch (err) {
@@ -1107,13 +1159,33 @@ function onConCountChange() {
   if (isMoreThan10) document.getElementById('con-bay-input').value = '';
 }
 
+function buildConBaySelect() {
+  const d = state['consolidation'].data;
+  const h = state['consolidation'].headers;
+  const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
+  if (!locCol || !d.length) return;
+  const bays = [...new Set(d.map(r => extractBay(String(r[locCol]||''))).filter(Boolean))].sort();
+  const sel = document.getElementById('con-bay-input');
+  if (!sel) return;
+  // Clear and rebuild options
+  sel.innerHTML = '<option value="">-- All Bays --</option>';
+  bays.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b;
+    sel.appendChild(opt);
+  });
+}
+
 function generateConsolidation() {
   const d = state.consolidation.data;
   if (!d.length) { showToast('⚠️ Upload a file first'); return; }
 
   const countFilter = document.getElementById('con-count-filter').value;
   const isMoreThan10 = countFilter === '11+';
-  const bayRaw = isMoreThan10 ? '' : (document.getElementById('con-bay-input').value || '').trim().toUpperCase();
+  // Read zone filter
+  const zoneFilter = (document.getElementById('con-zone-input')||{}).value || '';
+  const selectedBays = []; // legacy compat
+  const bayRaw = '';
 
   showLoading('consolidation', true);
   document.getElementById('out-consolidation').innerHTML = '';
@@ -1143,8 +1215,8 @@ function generateConsolidation() {
     } else {
       const exact = parseInt(countFilter, 10);
       results = results.filter(r => r.count === exact);
-      if (bayRaw) {
-        results = results.filter(r => [...r.locs].some(l => extractBay(l) === bayRaw));
+      if (zoneFilter) {
+        results = results.filter(r => [...r.locs].some(l => String(l).toUpperCase().includes(zoneFilter.toUpperCase())));
       }
     }
 
@@ -1158,7 +1230,7 @@ function generateConsolidation() {
     }
 
     const filterLabel = isMoreThan10 ? 'More than 10 locations'
-      : bayRaw ? `Exactly ${countFilter} locations · Bay: ${bayRaw}`
+      : zoneFilter ? `Exactly ${countFilter} locations · Zone: ${zoneFilter}`
       : `Exactly ${countFilter} locations`;
 
     const panel = document.createElement('div');
@@ -1172,7 +1244,7 @@ function generateConsolidation() {
         <div class="stats-row">
           <div class="stat-card"><div class="sv">${results.length}</div><div class="sl">Matched ASINs</div></div>
           <div class="stat-card"><div class="sv">${isMoreThan10?'11+':countFilter}</div><div class="sl">Location Count</div></div>
-          ${bayRaw?`<div class="stat-card"><div class="sv" style="font-size:15px">${bayRaw}</div><div class="sl">Bay</div></div>`:''}
+          ${zoneFilter?`<div class="stat-card"><div class="sv" style="font-size:12px">${zoneFilter}</div><div class="sl">Zone Filter</div></div>`:''}
         </div>
         <div class="label-grid" id="consolidation-qr-grid"></div>
         ${results.length>30?`<div class="alert alert-info" style="margin-top:16px">ℹ️ Showing top 30 on screen. All ${results.length} in PDF export.</div>`:''}
@@ -1212,44 +1284,78 @@ function generateAuditLoc() {
   setTimeout(() => {
     const d = state['audit-loc'].data;
     const h = state['audit-loc'].headers;
+    const locCol = findCol(h, ['location','bin','shelf','locationid']);
+
+    // Zone targets: 10 Frozen, 10 Chiller, 10 Hazmat, 18 Ambient, 10 HRV, 12 Mixed bins
+    const targets = {
+      Freezer:10, Chiller:10, Hazmat:10, Ambient:18, HRV:10,
+      HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1, Other:8
+    };
+
     let locations = [];
 
-    if (d.length) {
-      const locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
-      if (locCol) {
-        // Exclude TransferTotes completely
-        const allLocs = [...new Set(d.map(r => String(r[locCol]||'').trim()).filter(l =>
-          l && !/transfertote|tote:/i.test(l)
-        ))];
+    if (d.length && locCol) {
+      // Group locations by zone
+      const zoneLocs = {};
+      const seen = new Set();
+      d.forEach(row => {
+        const loc = String(row[locCol]||'').trim();
+        if (!loc || seen.has(loc)) return;
+        seen.add(loc);
+        const zone = detectZone(loc);
+        if (!zoneLocs[zone]) zoneLocs[zone] = [];
+        zoneLocs[zone].push(loc);
+      });
 
-        const frozen  = allLocs.filter(l => /P-1-F/i.test(l));
-        const chiller = allLocs.filter(l => /P-1-C/i.test(l));
-        const hazmat  = allLocs.filter(l => /HAZ/i.test(l));
-        const hrv     = allLocs.filter(l => /HRV/i.test(l));
-        const ambient = allLocs.filter(l => /P-1-A/i.test(l));
-        // Mixed: ONLY P-1-D, P-1-H, P-1-X, P-1-T, P-1-V, P-1-R
-        const mixed   = allLocs.filter(l => /P-1-[DHXTVR]/i.test(l));
+      // Pick from each zone
+      Object.entries(targets).forEach(([zone, n]) => {
+        const avail = zoneLocs[zone] || [];
+        if (avail.length) {
+          const sel = pickRandUnique(avail, n);
+          locations = locations.concat(sel);
+        }
+      });
 
-        locations = [
-          ...pickRandom(frozen.length  ? frozen  : generateFrozen(),  10).map(l=>({loc:l,zone:'Frozen'})),
-          ...pickRandom(chiller.length ? chiller : generateChiller(), 10).map(l=>({loc:l,zone:'Chiller'})),
-          ...pickRandom(hazmat.length  ? hazmat  : generateHazmat(),  10).map(l=>({loc:l,zone:'Hazmat'})),
-          ...pickRandom(ambient.length ? ambient : generateAmbient(), 18).map(l=>({loc:l,zone:'Ambient'})),
-          ...pickRandom(hrv.length     ? hrv     : generateHRV(),     10).map(l=>({loc:l,zone:'HRV'})),
-          ...pickRandom(mixed.length   ? mixed   : generateMixed(),   12).map(l=>({loc:l,zone:'Mixed'})),
-        ];
-      } else {
-        locations = buildDefaultLocations();
-      }
-    } else {
-      locations = buildDefaultLocations();
+      // Shuffle and cap at 70
+      locations = locations.sort(() => Math.random() - 0.5).slice(0, 70);
     }
 
-    locations = shuffle(locations);
+    // Fallback if no file uploaded
+    if (!locations.length) {
+      const zones = [
+        {pfx:'P-1-F', n:10}, {pfx:'P-1-C', n:10}, {pfx:'HAZ-A', n:10},
+        {pfx:'P-1-A', n:18}, {pfx:'HRV',   n:10}, {pfx:'P-1-D', n:4},
+        {pfx:'P-1-V', n:3}, {pfx:'P-1-X', n:2}, {pfx:'P-1-H', n:2}, {pfx:'P-1-R', n:1}
+      ];
+      zones.forEach(({pfx, n}) => {
+        for (let i=0; i<n; i++) {
+          const row = String(100+Math.floor(Math.random()*30)).padStart(3,'0');
+          const col = String.fromCharCode(65+Math.floor(Math.random()*6));
+          const num = String(100+Math.floor(Math.random()*50));
+          locations.push(`${pfx}${row}${col}${num}`);
+        }
+      });
+      locations = locations.sort(() => Math.random()-0.5);
+    }
+
     showLoading('audit-loc', false);
+
+    const container = document.createElement('div');
+    container.innerHTML = `
+      <div class="results-panel">
+        <div class="results-header">
+          <h3>Audit by Location</h3>
+          <span class="results-count">${locations.length} locations · ${new Date().toLocaleDateString('en-GB')} · All zones covered</span>
+        </div>
+        <div class="results-body" id="audit-loc-body"></div>
+      </div>`;
+    document.getElementById('out-audit-loc').appendChild(container);
     renderAuditLocResults(locations);
-  }, 400);
+    document.getElementById('export-audit-loc').style.display = 'flex';
+    showToast(`${locations.length} locations — all zones — different every time!`);
+  }, 100);
 }
+
 
 function generateFrozen(n=20)  { return Array.from({length:n},(_,i)=>`P-1-F-${String(i+1).padStart(3,'0')}`); }
 function generateChiller(n=20) { return Array.from({length:n},(_,i)=>`P-1-C-${String(i+1).padStart(3,'0')}`); }
@@ -1316,110 +1422,120 @@ function renderAuditLocResults(locations) {
 // ════ TASK 3: AUDIT BY ASIN ════
 function generateAuditAsin() {
   const d = state['audit-asin'].data;
-  if (!d.length) { showToast('⚠️ Upload a file first'); return; }
-
+  if (!d.length) { showToast('Upload a file first'); return; }
   showLoading('audit-asin', true);
   document.getElementById('out-audit-asin').innerHTML = '';
 
   setTimeout(() => {
     const h = state['audit-asin'].headers;
     const asinCol  = findCol(h, ['asin','product.?id','item.?id','sku','fnsku']);
-    const titleCol = findCol(h, ['title','name','product.?name','description']);
     const locCol   = findCol(h, ['location','bin','shelf','locationid']);
+    const titleCol = findCol(h, ['title','name','product.?name','description']);
+    if (!asinCol) { showLoading('audit-asin',false); showToast('ASIN column not found'); return; }
 
-    if (!asinCol) { showLoading('audit-asin',false); showToast('⚠️ ASIN column not found'); return; }
-
-    // Build ASIN → best row map (prefer rows that have a real location)
+    // Group ASINs by zone
+    const zoneASINs = {};
     const asinMap = {};
     d.forEach(row => {
       const asin = String(row[asinCol]||'').trim();
       if (!asin) return;
-      const loc = locCol ? String(row[locCol]||'').trim() : '';
-      // Store first row; upgrade to a row with a real location if current stored row has none
-      if (!asinMap[asin]) {
-        asinMap[asin] = row;
-      } else if (loc && !String(asinMap[asin][locCol]||'').trim()) {
-        asinMap[asin] = row; // upgrade to row with real location
+      const loc  = locCol ? String(row[locCol]||'').trim() : '';
+      const zone = detectZone(loc);
+      if (!asinMap[asin]) asinMap[asin] = row;
+      if (!zoneASINs[zone]) zoneASINs[zone] = new Set();
+      zoneASINs[zone].add(asin);
+    });
+
+    // Pick proportionally from each zone — total 96 (3 pages x 32)
+    // Zone targets: Ambient=20, Chiller=20, Freezer=10, Hazmat=8, HRV=5, HeavyDuty=8, Bins=15, Other=10
+    const targets = {
+      Ambient:20, Chiller:20, Freezer:10, Hazmat:8, HRV:5,
+      HeavyDuty:8, 'V-Bin':4, 'X-Bin':3, 'H-Bin':3, 'R-Bin':3, 'T-Bin':2, Other:5
+    };
+
+    let picked = [];
+    Object.entries(targets).forEach(([zone, n]) => {
+      const avail = [...(zoneASINs[zone]||new Set())];
+      if (avail.length) {
+        const sel = pickRandUnique(avail, n);
+        picked = picked.concat(sel);
       }
     });
 
-    const allASINs = Object.keys(asinMap);
-    const picked   = pickRandom(allASINs, 63);
+    // Shuffle final list so zones are mixed
+    picked = picked.sort(() => Math.random() - 0.5);
+    // Cap at 96
+    picked = picked.slice(0, 96);
 
     showLoading('audit-asin', false);
+    if (!picked.length) { showToast('No ASINs found'); return; }
 
-    // 3 pages × 21 each = 63 total
-    const PAGE_SIZE = 21;
+    const PAGE_SIZE = 32;
     const pageGroups = [];
-    for (let i = 0; i < picked.length; i += PAGE_SIZE) {
+    for (let i = 0; i < picked.length; i += PAGE_SIZE)
       pageGroups.push(picked.slice(i, i + PAGE_SIZE));
-    }
 
     const panel = document.createElement('div');
     panel.innerHTML = `
       <div class="results-panel">
         <div class="results-header">
-          <h3>🔎 ASIN Audit Sheet</h3>
-          <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')} · 3 pages × 21</span>
+          <h3>ASIN Audit Sheet</h3>
+          <span class="results-count">${picked.length} ASINs · ${new Date().toLocaleDateString('en-GB')} · ${pageGroups.length} pages x 32</span>
         </div>
         <div class="results-body">
-          <div class="alert alert-info" style="margin-bottom:20px">📋 ${picked.length} ASINs — 3 pages of 21 QR codes each in PDF.</div>
-          ${pageGroups.map((grp, pi) => `
+          <div class="alert alert-info" style="margin-bottom:16px">
+            ${picked.length} random ASINs across all zones — ${pageGroups.length} pages x 32 (8x4). Different every time!
+          </div>
+          ${pageGroups.map((grp,pi) => `
             <div style="font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;color:var(--muted)${pi>0?';margin-top:24px':''}">
-              Page ${pi+1} — #${pi*PAGE_SIZE+1} to #${Math.min((pi+1)*PAGE_SIZE, picked.length)}
+              Page ${pi+1} — #${pi*32+1} to #${Math.min((pi+1)*32, picked.length)}
             </div>
             <div class="label-grid" id="audit-asin-grid-p${pi+1}"></div>
-            ${pi < pageGroups.length-1 ? '<hr style="margin:20px 0;border-color:var(--border)">' : ''}
+            ${pi < pageGroups.length-1 ? '<hr style="margin:16px 0;border-color:var(--border)">' : ''}
           `).join('')}
         </div>
       </div>`;
     document.getElementById('out-audit-asin').appendChild(panel);
 
-    // Render all cards into their page groups
-    const cards = picked.map((asin, idx) => {
-      const row   = asinMap[asin] || {};
-      const title = titleCol ? String(row[titleCol]||'').slice(0,35) : '';
-      const loc   = locCol   ? String(row[locCol]  ||'').trim() : '';
-      return { asin, title, loc, idx };
-    });
-
-    cards.forEach(({asin, title, loc, idx}) => {
+    picked.forEach((asin, idx) => {
+      const row  = asinMap[asin] || {};
       const pageIdx = Math.floor(idx / PAGE_SIZE) + 1;
-      const gridId  = `audit-asin-grid-p${pageIdx}`;
-      const gridEl  = document.getElementById(gridId);
+      const gridEl  = document.getElementById(`audit-asin-grid-p${pageIdx}`);
       if (!gridEl) return;
-      const dispNo = idx + 1;
-      const card   = document.createElement('div');
+      const card = document.createElement('div');
       card.className = 'label-card';
+      const loc  = locCol ? String(row[locCol]||'').trim() : '';
+      const zone = detectZone(loc);
+      const zoneBadge = `<div style="font-size:8px;font-weight:700;color:#fff;background:${zoneColor(zone)};border-radius:3px;padding:1px 4px;margin-bottom:2px;">${zone}</div>`;
       card.innerHTML = `
-        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px">#${String(dispNo).padStart(2,'0')}</div>
-        <div id="qr-a-${idx}" style="display:flex;justify-content:center"></div>
-        <div class="asin-txt">${asin}</div>
-        ${title ? `<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.2;word-break:break-word">${title}</div>` : ''}
-        ${loc   ? `<div style="font-size:9px;color:var(--muted);margin-top:2px">📍 ${loc}</div>` : ''}
-        <textarea class="remark-box" placeholder="Remark..."></textarea>`;
+        <div style="font-size:7px;color:var(--muted);margin-bottom:1px;">#${String(idx+1).padStart(2,'0')}</div>
+        ${zoneBadge}
+        <div id="qr-a-${idx}" style="display:flex;justify-content:center;"></div>
+        <div class="asin-txt" style="font-size:8px;margin-top:2px;">${asin}</div>`;
       gridEl.appendChild(card);
-
       try {
         new QRCode(document.getElementById(`qr-a-${idx}`), {
-          text: asin, width: 90, height: 90,
-          colorDark: '#111110', colorLight: '#ffffff',
+          text: asin, width: 68, height: 68,
+          colorDark: '#000', colorLight: '#fff',
           correctLevel: QRCode.CorrectLevel.M
         });
       } catch(e) {}
     });
 
     document.getElementById('export-audit-asin').style.display = 'flex';
-    showToast(`✅ ${picked.length} ASINs loaded — no N/A locations`);
-  }, 400);
+    showToast(`${picked.length} ASINs — all zones covered!`);
+  }, 100);
 }
 
-// ════ TASK 4: SLOW MOVING ════
-function buildSlowMovingCols() {
-  const h = state['slow-moving'].headers;
-  const sel = document.getElementById('col-age-slow');
-  sel.innerHTML = h.map(c => `<option value="${c}" ${/age|days/i.test(c)?'selected':''}>${c}</option>`).join('');
+function zoneColor(zone) {
+  const map = {
+    Chiller:'#0891b2', Freezer:'#1d4ed8', Hazmat:'#dc2626', HRV:'#7c3aed',
+    Ambient:'#059669', HeavyDuty:'#92400e', 'V-Bin':'#0f766e', 'X-Bin':'#b45309',
+    'T-Bin':'#be185d', 'H-Bin':'#1e40af', 'R-Bin':'#065f46', Other:'#64748b'
+  };
+  return map[zone] || '#64748b';
 }
+
 
 function generateSlowMoving() {
   const d = state['slow-moving'].data;
@@ -1912,8 +2028,13 @@ async function exportYSMWord() {
 let reportData = [];
 
 function generateReport() {
-  const storeId = document.getElementById('store-id-input').value.trim().toUpperCase();
-  if (!storeId) { showToast('Please enter your Store ID (e.g. QAA7)'); return; }
+  const storeId  = document.getElementById('store-id-input').value.trim().toUpperCase();
+  const reportBy = document.getElementById('report-by-input').value.trim() || 'N/A';
+  const reportDateEl = document.getElementById('report-date-input').value;
+  const reportDate   = reportDateEl || 'N/A';
+  if (!storeId)  { showToast('Please enter your Store ID (e.g. QAA7)'); return; }
+  if (!reportBy || reportBy === 'N/A') { showToast('Please enter your name (Prepared By)'); return; }
+  if (!reportDate || reportDate === 'N/A') { showToast('Please select the report date'); return; }
   if (!state['report'] || !state['report'].data || !state['report'].data.length) {
     showToast('Please upload your inventory audit file first'); return;
   }
@@ -1936,27 +2057,35 @@ function generateReport() {
   const cRef=getCol(['ReferenceIdValue','referenceid','orderid','refid']);
   const storeRows = cWH ? rows.filter(r=>String(r[cWH]||'').toUpperCase()===storeId) : rows;
   if (!storeRows.length) { showToast('No data found for store: '+storeId); return; }
-  // Date from timestamp string only (not serial number)
-  const ts2 = storeRows.map(r=>String(r[cTS]||'')).filter(s=>s.includes('-')).sort();
-  const dateStr = ts2.length ? ts2[0].split(' ')[0] : 'N/A';
+  // Date from user input
+  const dateStr = reportDate;
   // Outbound Pick rows count + units
   const obRows = storeRows.filter(r=>String(r[cProc]||'')==='Outbound Pick');
   const obCount = obRows.length;
   const obUnits = obRows.reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
-  // Vendor Stow = ReceiveV3_Stow
-  const vendorRows = storeRows.filter(r=>String(r[cProc]||'')==='ReceiveV3_Stow');
-  const vendorCount = vendorRows.length;
-  const vendorUnits = vendorRows.reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
+  // ReceiveV3_Stow split: Vendor (ref not blank) vs Transshipment (ref blank)
+  const allStowRows    = storeRows.filter(r=>String(r[cProc]||'')==='ReceiveV3_Stow');
+  const cRefAny        = getCol(['ReferenceIdValue','referenceid','orderid','refid']);
+  const vendorRows     = allStowRows.filter(r=>{ const v=String(r[cRefAny]||'').trim(); return v!==''&&v!=='nan'&&v!=='null'; });
+  const transStowRows  = allStowRows.filter(r=>{ const v=String(r[cRefAny]||'').trim(); return v===''||v==='nan'||v==='null'; });
+  const vendorCount    = vendorRows.length;
+  const vendorUnits    = vendorRows.reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
+  const transStowCount = transStowRows.length;
+  const transStowUnits = transStowRows.reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
   // Transship
   const tsRecvRows = storeRows.filter(r=>String(r[cProc]||'')==='TransshipReceive');
   const tsRecvUnits = tsRecvRows.reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
   // Destroyed
   const destroyUnits = storeRows.filter(r=>String(r[cProc]||'').toLowerCase().includes('destroy')).reduce((s,r)=>s+Math.abs(Number(r[cQty]||0)),0);
   // Process breakdown with renamed labels
+  const cRefAny2 = getCol(['ReferenceIdValue','referenceid','orderid','refid']);
   const procMap = {};
   storeRows.forEach(r=>{
     let p = String(r[cProc]||'Unknown').replace(/_/g,' ').trim();
-    if (p==='ReceiveV3 Stow') p='Vendor Stow';
+    if (p==='ReceiveV3 Stow') {
+      const rv=String(r[cRefAny2]||'').trim();
+      p=(rv!==''&&rv!=='nan'&&rv!=='null')?'Vendor Stow':'Transshipment Stow';
+    }
     if (p==='TransshipReceive') p='Transship Receive';
     procMap[p]=(procMap[p]||0)+1;
   });
@@ -1986,6 +2115,10 @@ function generateReport() {
   const top3Pick=assocRows.filter(a=>a.orders>0).slice(0,3);
   const top3Stow=assocRows.slice().sort((a,b)=>b.stow-a.stow).filter(a=>a.stow>0).slice(0,3);
   reportData=storeRows.map(r=>({WarehouseId:r[cWH]||storeId,Timestamp:r[cTS]||'',Location:r[cLoc]||'',ASIN:r[cASIN]||'',ProductTitle:r[cTitle]||'',User:r[cUser]||'',Quantity:r[cQty]||'',Process:r[cProc]||'',ReferenceId:r[cRef]||''}));
+  // UPO = Total Units / Unique Orders
+  const uniqueOrdersCount = new Set(obRows.map(r=>String(r[cRef]||'')).filter(Boolean)).size;
+  const upo = uniqueOrdersCount>0 ? (obUnits/uniqueOrdersCount).toFixed(2) : '0.00';
+  const totalStowUnits = Math.round(vendorUnits+transStowUnits);
   const medals=['🥇','🥈','🥉'];
   const mkBadge=(i,bg)=>'<span style="background:'+bg+';color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px;">'+medals[i]+'</span>';
   const html=
@@ -1993,16 +2126,16 @@ function generateReport() {
     +'<div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f766e 100%);padding:28px 36px;color:#fff;">'
     +'<div style="font-size:11px;letter-spacing:3px;opacity:0.7;text-transform:uppercase;margin-bottom:6px;">HP World - Dark Store Task Pro</div>'
     +'<div style="font-size:28px;font-weight:900;margin-bottom:8px;">Inventory Audit Report</div>'
-    +'<div style="font-size:15px;opacity:0.9;">Store: <strong>'+storeId+'</strong> &nbsp;|&nbsp; Date: <strong>'+dateStr+'</strong> &nbsp;|&nbsp; Hrushikesh Padhi - ENWPP9081D/2019</div>'
+    +'<div style="font-size:15px;opacity:0.9;">Store: <strong>'+storeId+'</strong> &nbsp;|&nbsp; Date: <strong>'+dateStr+'</strong> &nbsp;|&nbsp; Prepared by: <strong>'+reportBy+'</strong></div>'
     +'</div>'
     // KPIs
     +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:20px 28px;background:#f8fafc;">'
-    +[{i:'🚚',l:'Outbound Pick',v:obCount,s:'Total pick rows',c:'#e8500a'},
-      {i:'📦',l:'Units Picked',v:Math.round(obUnits),s:'Outbound Pick qty',c:'#0891b2'},
-      {i:'🏭',l:'Vendor Stow',v:vendorCount,s:'ReceiveV3 Stow rows',c:'#7c3aed'},
-      {i:'📥',l:'Vendor Units',v:Math.round(vendorUnits),s:'Vendor Stow qty',c:'#6d28d9'},
-      {i:'🔄',l:'Transship Recv',v:Math.round(tsRecvUnits),s:'TransshipReceive',c:'#0f766e'},
-      {i:'⚠️',l:'Destroyed Units',v:Math.round(destroyUnits),s:'All Destroy types',c:'#dc2626'},
+    +[{i:'📋',l:'Unique Orders',v:uniqueOrdersCount.toLocaleString(),s:'Outbound Pick',c:'#e8500a'},
+      {i:'📦',l:'Units Picked',v:Math.round(obUnits).toLocaleString(),s:'Outbound Pick qty',c:'#0891b2'},
+      {i:'⚡',l:'UPO',v:upo,s:'Units Per Order',c:'#f59e0b'},
+      {i:'🏭',l:'Stow Total',v:totalStowUnits.toLocaleString(),s:'Vendor '+Math.round(vendorUnits)+' + TS '+Math.round(transStowUnits),c:'#7c3aed'},
+      {i:'🔄',l:'Transship Recv',v:Math.round(tsRecvUnits).toLocaleString(),s:'TransshipReceive units',c:'#0f766e'},
+      {i:'⚠️',l:'Destroyed Units',v:Math.round(destroyUnits).toLocaleString(),s:'All Destroy types',c:'#dc2626'},
     ].map(k=>'<div style="background:#fff;border-radius:12px;padding:14px 10px;text-align:center;border-top:4px solid '+k.c+';box-shadow:0 2px 8px rgba(0,0,0,0.06);"><div style="font-size:22px;">'+k.i+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v.toLocaleString()+'</div><div style="font-size:11px;font-weight:700;color:#1e293b;margin-top:4px;">'+k.l+'</div><div style="font-size:10px;color:#94a3b8;">'+k.s+'</div></div>').join('')
     +'</div>'
     // Top 3 Pickers + Top 3 Stowers
@@ -2034,7 +2167,7 @@ function generateReport() {
     +'<tr style="background:#0f172a;color:#fff;"><th style="padding:10px 12px;text-align:left;">Associate</th><th style="padding:10px;text-align:right;">Active (min)</th><th style="padding:10px;text-align:right;color:#fdba74;">Outbound Picks</th><th style="padding:10px;text-align:right;color:#fdba74;">Pick Units</th><th style="padding:10px;text-align:right;color:#6ee7b7;">Vendor Stow</th><th style="padding:10px;text-align:right;color:#7dd3fc;">TS Recv</th><th style="padding:10px;text-align:right;color:#fca5a5;">Destroy</th></tr>'
     +assocRows.map((a,i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:9px 12px;font-weight:700;color:#1e293b;">'+a.name+'</td><td style="padding:9px;text-align:right;color:#64748b;">'+a.mins+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+a.orders+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+Math.round(a.picks)+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0f766e;">'+(Math.round(a.stow)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0891b2;">'+(Math.round(a.tsRecv)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:'+(a.destroy>0?'#dc2626':'#94a3b8')+'">'+(Math.round(a.destroy)||'-')+'</td></tr>').join('')
     +'</table></div>'
-    +'<div style="padding:12px 28px;background:#0f172a;color:#475569;font-size:12px;display:flex;justify-content:space-between;"><span>Hrushikesh Padhi - HP World - ENWPP9081D/2019</span><span>2026 HP WORLD - Dark Store Task Pro</span></div>'
+    +'<div style="padding:12px 28px;background:#0f172a;color:#475569;font-size:12px;display:flex;justify-content:space-between;"><span>Prepared by: <strong style=\"color:#e2e8f0;\">'+reportBy+'</strong> &middot; Store: '+storeId+' &middot; '+dateStr+'</span><span>HP WORLD - Dark Store Task Pro</span></div>'
     +'</div>';
   document.getElementById('out-report').innerHTML = html;
   document.getElementById('report-export-btns').style.display = 'flex';
@@ -2081,9 +2214,10 @@ async function exportReportPDF() {
 async function exportReportExcel() {
   if (!reportData.length) { showToast('Generate report first'); return; }
   showToast('Building Excel...');
-  const storeId = document.getElementById('store-id-input').value.trim().toUpperCase()||'STORE';
+  const storeId  = document.getElementById('store-id-input').value.trim().toUpperCase()||'STORE';
+  const reportBy = document.getElementById('report-by-input').value.trim()||'N/A';
+  const date     = document.getElementById('report-date-input').value || new Date().toISOString().split('T')[0];
   const wb = XLSX.utils.book_new();
-  const date = new Date().toISOString().split('T')[0];
 
   // Sheet 1: Full Audit Data
   const ws1 = XLSX.utils.json_to_sheet(reportData);
@@ -2099,7 +2233,7 @@ async function exportReportExcel() {
   const summary = [
     ['INVENTORY AUDIT REPORT - HP WORLD'],
     ['Store ID', storeId, 'Date', date],
-    ['Generated By', 'Hrushikesh Padhi', 'Company', 'HP World ENWPP9081D/2019'],
+    ['Prepared By', reportBy, 'Store', storeId],
     [],
     ['KPI', 'Value', 'Description'],
     ['Total Transactions', reportData.length, 'All rows in audit file'],
@@ -2195,9 +2329,10 @@ async function exportAuditAsinPDF(title) {
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const margin = 5, usableW = pageW-margin*2, usableH = pageH-margin*2-14;
-  const COLS=7, CARD_W=110, CARD_H=150, GAP=4;
+  const COLS=8, CARD_W=95, CARD_H=120, GAP=3;
   const CONTAINER_W = COLS*CARD_W+(COLS-1)*GAP+16;
-  const PAGE_SIZE=21, totalPages=3;
+  const PAGE_SIZE=32;
+  const totalPages=document.querySelectorAll('[id^="audit-asin-grid-p"]').length || 3;
   for (let p=0; p<totalPages; p++) {
     const gridEl = document.getElementById('audit-asin-grid-p'+(p+1));
     if (!gridEl||!gridEl.children.length) continue;
@@ -2206,7 +2341,7 @@ async function exportAuditAsinPDF(title) {
     wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
     Array.from(gridEl.children).forEach(card => {
       const clone = card.cloneNode(true);
-      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;';
+      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:4px 3px;text-align:center;';
       wrap.appendChild(clone);
     });
     document.body.appendChild(wrap);
@@ -2244,7 +2379,7 @@ async function exportConsolidationPDF(title) {
     wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
     chunk.forEach(card=>{
       const clone=card.cloneNode(true);
-      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:6px 4px;text-align:center;';
+      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:4px 3px;text-align:center;';
       wrap.appendChild(clone);
     });
     document.body.appendChild(wrap);
