@@ -547,38 +547,32 @@ footer span { color:var(--accent); }
         <!-- Location Count Dropdown -->
         <div>
           <div class="ctrl-label">Location Count</div>
-          <select class="select-field" id="con-count-filter" style="width:100%" onchange="onConCountChange()">
-            <option value="2">Exactly 2 locations</option>
-            <option value="3">Exactly 3 locations</option>
-            <option value="4">Exactly 4 locations</option>
-            <option value="5">Exactly 5 locations</option>
-            <option value="6">Exactly 6 locations</option>
-            <option value="7">Exactly 7 locations</option>
-            <option value="8">Exactly 8 locations</option>
-            <option value="9">Exactly 9 locations</option>
-            <option value="10">Exactly 10 locations</option>
+          <select class="select-field" id="con-count-filter" multiple
+            style="width:100%;height:135px;font-size:13px;"
+            title="Hold Ctrl/Cmd to select multiple counts">
+            <option value="2">2 locations</option>
+            <option value="3">3 locations</option>
+            <option value="4">4 locations</option>
+            <option value="5">5 locations</option>
+            <option value="6">6 locations</option>
+            <option value="7">7 locations</option>
+            <option value="8">8 locations</option>
+            <option value="9">9 locations</option>
+            <option value="10">10 locations</option>
             <option value="11+">More than 10 (11+)</option>
           </select>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Hold Ctrl/Cmd to select multiple</div>
         </div>
 
-        <!-- Zone Filter -->
+        <!-- Bay Multi-Select (populated from uploaded file) -->
         <div id="con-bay-wrap">
-          <div class="ctrl-label">Zone Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional)</span></div>
-          <select class="input-field" id="con-zone-input" style="width:100%;margin-bottom:8px;">
-            <option value="">-- All Zones --</option>
-            <option value="P-1-A">🏪 Ambient (P-1-A)</option>
-            <option value="P-1-C">❄️ Chiller (P-1-C)</option>
-            <option value="P-1-F">🧊 Freezer (P-1-F)</option>
-            <option value="HAZ">⚠️ Hazmat (HAZ)</option>
-            <option value="HRV">📦 HRV</option>
-            <option value="P-1-D">🏋️ Heavy Duty (P-1-D)</option>
-            <option value="P-1-V">🗃️ V-Bin (P-1-V)</option>
-            <option value="P-1-X">📦 X-Bin (P-1-X)</option>
-            <option value="P-1-T">📦 T-Bin (P-1-T)</option>
-            <option value="P-1-H">📦 H-Bin (P-1-H)</option>
-            <option value="P-1-R">📦 R-Bin (P-1-R)</option>
+          <div class="ctrl-label">Bay Filter <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(optional — Ctrl+click for multiple)</span></div>
+          <select class="input-field" id="con-bay-input" multiple
+            style="height:110px;font-family:'DM Mono',monospace;font-size:12px;"
+            title="Hold Ctrl/Cmd to select multiple bays">
+            <option value="">-- All Bays --</option>
           </select>
-          <div style="font-size:11px;color:var(--muted);">Filter by warehouse zone · leave empty = all zones</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Hold Ctrl/Cmd to select multiple · leave empty = all bays</div>
         </div>
 
         <!-- Apply Button -->
@@ -1154,9 +1148,10 @@ function extractBay(loc) {
 }
 
 function onConCountChange() {
-  const isMoreThan10 = document.getElementById('con-count-filter').value === '11+';
-  document.getElementById('con-bay-wrap').style.display = isMoreThan10 ? 'none' : 'block';
-  if (isMoreThan10) document.getElementById('con-bay-input').value = '';
+  const sel = document.getElementById('con-count-filter');
+  const selected = Array.from(sel.selectedOptions).map(o=>o.value);
+  const onlyMore10 = selected.length > 0 && selected.every(v=>v==='11+');
+  document.getElementById('con-bay-wrap').style.display = onlyMore10 ? 'none' : 'block';
 }
 
 function buildConBaySelect() {
@@ -1180,12 +1175,17 @@ function generateConsolidation() {
   const d = state.consolidation.data;
   if (!d.length) { showToast('⚠️ Upload a file first'); return; }
 
-  const countFilter = document.getElementById('con-count-filter').value;
-  const isMoreThan10 = countFilter === '11+';
-  // Read zone filter
-  const zoneFilter = (document.getElementById('con-zone-input')||{}).value || '';
-  const selectedBays = []; // legacy compat
-  const bayRaw = '';
+  // Read multi-select location counts
+  const countSel = document.getElementById('con-count-filter');
+  const selectedCounts = Array.from(countSel.selectedOptions).map(o=>o.value);
+  const hasMore10 = selectedCounts.includes('11+');
+  const exactCounts = selectedCounts.filter(v=>v!=='11+').map(v=>parseInt(v,10));
+  const countFilter = selectedCounts.join(', ') || '2';
+  const isMoreThan10 = hasMore10 && exactCounts.length===0;
+
+  // Read multi-select bay filter
+  const baySel = document.getElementById('con-bay-input');
+  const selectedBays = Array.from(baySel.selectedOptions).map(o=>o.value.trim()).filter(v=>v!=='');
 
   showLoading('consolidation', true);
   document.getElementById('out-consolidation').innerHTML = '';
@@ -1210,14 +1210,20 @@ function generateConsolidation() {
 
     let results = Object.entries(map).map(([asin, locs]) => ({ asin, count: locs.size, locs }));
 
-    if (isMoreThan10) {
-      results = results.filter(r => r.count > 10);
+    // Filter by selected counts (multi-select)
+    if (selectedCounts.length === 0) {
+      // Default: show count=2
+      results = results.filter(r => r.count === 2);
     } else {
-      const exact = parseInt(countFilter, 10);
-      results = results.filter(r => r.count === exact);
-      if (zoneFilter) {
-        results = results.filter(r => [...r.locs].some(l => String(l).toUpperCase().includes(zoneFilter.toUpperCase())));
-      }
+      results = results.filter(r => {
+        if (hasMore10 && r.count > 10) return true;
+        if (exactCounts.length > 0 && exactCounts.includes(r.count)) return true;
+        return false;
+      });
+    }
+    // Filter by selected bays (multi-select)
+    if (selectedBays.length > 0) {
+      results = results.filter(r => [...r.locs].some(l => selectedBays.includes(extractBay(l))));
     }
 
     results.sort((a, b) => b.count - a.count);
@@ -1225,13 +1231,13 @@ function generateConsolidation() {
 
     if (!results.length) {
       document.getElementById('out-consolidation').innerHTML =
-        '<div class="alert alert-warn">⚠️ No ASINs matched. ' + (bayRaw ? 'Bay "' + bayRaw + '" not found or no items with ' + countFilter + ' locations there.' : 'No items with ' + (isMoreThan10?'more than 10':countFilter) + ' locations.') + '</div>';
+        '<div class="alert alert-warn">No ASINs matched. Try different location counts or bay filter.</div>';
       return;
     }
 
-    const filterLabel = isMoreThan10 ? 'More than 10 locations'
-      : zoneFilter ? `Exactly ${countFilter} locations · Zone: ${zoneFilter}`
-      : `Exactly ${countFilter} locations`;
+    const filterLabel = selectedCounts.length === 0 ? 'Exactly 2 locations'
+      : hasMore10 && exactCounts.length === 0 ? 'More than 10 locations'
+      : 'Locations: ' + selectedCounts.join(', ') + (selectedBays.length ? ' · Bay: ' + selectedBays.join(', ') : '');
 
     const panel = document.createElement('div');
     panel.className = 'results-panel';
@@ -1243,8 +1249,8 @@ function generateConsolidation() {
       <div class="results-body">
         <div class="stats-row">
           <div class="stat-card"><div class="sv">${results.length}</div><div class="sl">Matched ASINs</div></div>
-          <div class="stat-card"><div class="sv">${isMoreThan10?'11+':countFilter}</div><div class="sl">Location Count</div></div>
-          ${zoneFilter?`<div class="stat-card"><div class="sv" style="font-size:12px">${zoneFilter}</div><div class="sl">Zone Filter</div></div>`:''}
+          <div class="stat-card"><div class="sv" style="font-size:13px">${selectedCounts.length?selectedCounts.join(', '):'2'}</div><div class="sl">Location Count</div></div>
+          ${selectedBays.length>0?`<div class="stat-card"><div class="sv" style="font-size:11px">${selectedBays.join(', ')}</div><div class="sl">Bay Filter</div></div>`:''}
         </div>
         <div class="label-grid" id="consolidation-qr-grid"></div>
         ${results.length>30?`<div class="alert alert-info" style="margin-top:16px">ℹ️ Showing top 30 on screen. All ${results.length} in PDF export.</div>`:''}
@@ -1256,7 +1262,7 @@ function generateConsolidation() {
       const card = document.createElement('div');
       card.className = 'label-card';
       const n = item.count;
-      const priority = (isMoreThan10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
+      const priority = (n>10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
       const pColor = priority==='HIGH'?'#e8500a':priority==='MEDIUM'?'#c9a227':'#1a7a4a';
       card.innerHTML = `
         <div style="display:inline-block;padding:3px 10px;border-radius:4px;background:${pColor};color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:8px">${priority}</div>
