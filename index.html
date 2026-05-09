@@ -462,6 +462,105 @@ footer span { color:var(--accent); }
   font-size: 13px;
   color: #333;
 }
+
+/* ── NEW TASK PAGES: Catalog Issue + Scanning Issue + Manpower ── */
+#page-catalog-issue, #page-scanning-issue, #page-manpower {
+  background: #f8f7ff;
+  min-height: 100vh;
+}
+#page-catalog-issue .task-page,
+#page-scanning-issue .task-page,
+#page-manpower .task-page {
+  --bg:#f8f7ff; --surface:#ffffff; --surface2:#f0effe;
+  --border:#d5d2f0; --text:#1a1830; --text2:#3d3a6b;
+  --muted:#7b78a8; --accent:#d97706; color:#1a1830;
+}
+#page-catalog-issue .back-btn,
+#page-scanning-issue .back-btn,
+#page-manpower .back-btn { background:#fff; border-color:#d5d2f0; color:#3d3a6b; }
+#page-catalog-issue .back-btn:hover { background:#d97706; color:#fff; border-color:#d97706; }
+#page-scanning-issue .back-btn:hover { background:#0284c7; color:#fff; border-color:#0284c7; }
+#page-manpower .back-btn:hover { background:#6366f1; color:#fff; border-color:#6366f1; }
+#page-catalog-issue .task-header h2 {
+  background:linear-gradient(135deg,#1a1830,#d97706);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#page-scanning-issue .task-header h2 {
+  background:linear-gradient(135deg,#1a1830,#0284c7);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#page-manpower .task-header h2 {
+  background:linear-gradient(135deg,#1a1830,#6366f1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#page-catalog-issue .task-header,
+#page-scanning-issue .task-header,
+#page-manpower .task-header { border-bottom-color:#d5d2f0 !important; }
+#page-catalog-issue .upload-zone,
+#page-scanning-issue .upload-zone { background:#fff; border-color:#d5d2f0; }
+#page-catalog-issue .upload-zone h3,
+#page-scanning-issue .upload-zone h3 { color:#1a1830; }
+#page-catalog-issue .results-panel,
+#page-scanning-issue .results-panel { background:#fff; border-color:#d5d2f0; }
+#page-catalog-issue .stat-card,
+#page-scanning-issue .stat-card { background:#fff; border-color:#d5d2f0; }
+#page-catalog-issue table thead,
+#page-scanning-issue table thead { background:#f0effe; }
+#page-catalog-issue table td,
+#page-scanning-issue table td { color:#3d3a6b; }
+
+/* Catalog/Scanning search bar */
+.ci-search-bar {
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  background:#fff; border:1.5px solid #d5d2f0;
+  border-radius:12px; padding:14px 18px; margin-bottom:16px;
+}
+.ci-search-bar input {
+  flex:1; min-width:180px; border:1px solid #d5d2f0; border-radius:8px;
+  padding:9px 14px; font-family:'Syne',sans-serif; font-size:14px;
+  color:#1a1830; outline:none; background:#f8f7ff;
+}
+.ci-search-bar input:focus { border-color:#d97706; box-shadow:0 0 0 3px rgba(217,119,6,0.1); }
+.ci-item-card {
+  background:#fff; border:1px solid #d5d2f0; border-radius:14px;
+  padding:18px 20px; margin-bottom:14px; position:relative; overflow:hidden;
+}
+.ci-item-card::before {
+  content:''; position:absolute; top:0; left:0; bottom:0; width:4px;
+  background:linear-gradient(180deg,#d97706,#f59e0b);
+}
+.si-item-card::before { background:linear-gradient(180deg,#0284c7,#0ea5e9) !important; }
+.ci-asin-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#fff7ed; border:1px solid #fed7aa; border-radius:8px;
+  padding:4px 12px; font-family:'DM Mono',monospace; font-size:13px;
+  font-weight:700; color:#c2410c; margin-bottom:10px;
+}
+.si-asin-badge { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+.ci-title { font-size:14px; font-weight:700; color:#1a1830; margin-bottom:10px; line-height:1.4; }
+.ci-loc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-top:10px; }
+.ci-loc-chip {
+  background:#f8f7ff; border:1px solid #d5d2f0; border-radius:10px;
+  padding:10px 8px; text-align:center; position:relative;
+}
+.ci-loc-chip .loc-name { font-family:'DM Mono',monospace; font-size:11px; font-weight:700; color:#1a1830; }
+.ci-loc-chip .loc-qty { font-size:16px; font-weight:800; color:#d97706; margin:4px 0 2px; }
+.si-loc-chip .loc-qty { color:#0284c7 !important; }
+.ci-loc-chip .loc-zone { font-size:9px; color:#7b78a8; letter-spacing:0.5px; text-transform:uppercase; }
+
+/* Manpower placeholder */
+.manpower-under-process {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:400px; text-align:center; padding:60px 20px;
+}
+.manpower-under-process .mp-icon { font-size:80px; margin-bottom:24px; animation:mpPulse 2s ease-in-out infinite; }
+@keyframes mpPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.08);opacity:0.8;} }
+.manpower-under-process h3 { font-size:28px; font-weight:800; color:#6366f1; margin-bottom:10px; }
+.manpower-under-process p { color:#7b78a8; font-size:15px; max-width:420px; line-height:1.7; }
+.mp-progress-bar { width:280px; height:8px; background:#e0e7ff; border-radius:4px; margin-top:24px; overflow:hidden; }
+.mp-progress-fill { height:100%; width:45%; background:linear-gradient(90deg,#6366f1,#a5b4fc); border-radius:4px; animation:mpBar 2s ease-in-out infinite alternate; }
+@keyframes mpBar { from{width:30%;} to{width:65%;} }
+
 @media print {
   .pdf-signature-bar { display: flex !important; }
 }
@@ -513,7 +612,7 @@ footer span { color:var(--accent); }
 <div class="page active" id="page-dashboard">
 <div style="background:linear-gradient(90deg,#e8500a,#ff6b35);overflow:hidden;white-space:nowrap;padding:9px 0;">
   <span style="display:inline-block;animation:ticker 22s linear infinite;font-weight:800;font-size:13px;color:#fff;letter-spacing:1.5px;font-family:Arial,sans-serif;">
-    &nbsp;&nbsp;&nbsp;🔔 NEW &nbsp;·&nbsp; LATESLAM REPORT COMING SOON &nbsp;·&nbsp; 🔔 NEW &nbsp;·&nbsp; LATESLAM REPORT COMING SOON &nbsp;·&nbsp; 🔔 NEW &nbsp;·&nbsp; LATESLAM REPORT COMING SOON &nbsp;·&nbsp; 🔔 NEW &nbsp;·&nbsp; LATESLAM REPORT COMING SOON &nbsp;&nbsp;&nbsp;
+    &nbsp;&nbsp;&nbsp;🔔 &nbsp;·&nbsp; MANPOWER ALLOCATION FEATURES COMING SOON &nbsp;·&nbsp; 🔔 &nbsp;·&nbsp; MANPOWER ALLOCATION FEATURES COMING SOON &nbsp;·&nbsp; 🔔 &nbsp;·&nbsp; MANPOWER ALLOCATION FEATURES COMING SOON &nbsp;&nbsp;&nbsp;
   </span>
 </div>
 <div class="dashboard">
@@ -583,8 +682,29 @@ footer span { color:var(--accent); }
       <div class="card-num">Task 07</div>
       <span class="card-icon">⏱️</span>
       <h3>Late Slam Calculator</h3>
-      <p>Upload orders → fetch forecast from Google Sheet → full 30-min slot variance report per store.</p>
+      <p>Upload orders → fetch forecast → full 30-min slot variance report per store.</p>
       <span class="card-arrow">→</span>
+    </div>
+    <div class="task-card" style="--card-color:#d97706" onclick="openTask('catalog-issue')">
+      <div class="card-num">Task 08</div>
+      <span class="card-icon">📋</span>
+      <h3>Catalog Issue Items</h3>
+      <p>Avoid VOC and Late Slam – Move Fast to Special Bin. Auto-fetch from Google Sheet.</p>
+      <span class="card-arrow">→</span>
+    </div>
+    <div class="task-card" style="--card-color:#0284c7" onclick="openTask('scanning-issue')">
+      <div class="card-num">Task 09</div>
+      <span class="card-icon">🔬</span>
+      <h3>Scanning Issue Items</h3>
+      <p>Identify scanning problem ASINs from Google Sheet and generate barcode labels.</p>
+      <span class="card-arrow">→</span>
+    </div>
+    <div class="task-card" style="--card-color:#6366f1; cursor:default; opacity:0.85;" onclick="">
+      <div class="card-num" style="color:#6366f1;">Task 10</div>
+      <span class="card-icon">👥</span>
+      <h3>Manpower Allocation</h3>
+      <p>Smart manpower planning & shift allocation tool.</p>
+      <div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;color:#818cf8;letter-spacing:1px;">⚙️ UNDER PROCESS</div>
     </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
       <span class="card-icon">💬</span>
@@ -596,12 +716,6 @@ footer span { color:var(--accent); }
       <span class="card-icon">📞</span>
       <h3>Contact Us</h3>
       <p>Get in touch with the HP World warehouse operations team.</p>
-      <span class="card-arrow">→</span>
-    </div>
-  </div>
-      <span class="card-icon">⏱️</span>
-      <h3>Late Slam Calculator</h3>
-      <p>Upload orders CSV → fetch forecast from Google Sheet → full 30-min variance report per store.</p>
       <span class="card-arrow">→</span>
     </div>
   </div>
@@ -1105,6 +1219,140 @@ footer span { color:var(--accent); }
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
     <button class="btn btn-green" onclick="lsExportExcel()">⬇ Export Excel</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TASK 08: CATALOG ISSUE ITEMS
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-catalog-issue">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">📋</span>
+    <div>
+      <h2>Catalog Issue Items</h2>
+      <p>Avoid VOC and Late Slam – Move Fast to Special Bin. Auto-fetches catalog issue ASINs from Google Sheet.</p>
+    </div>
+  </div>
+
+  <!-- Upload zone -->
+  <div class="upload-zone" id="uz-catalog" onclick="document.getElementById('f-catalog').click()">
+    <input type="file" id="f-catalog" accept=".xlsx,.xls,.csv" style="display:none" onchange="ciHandleUpload(this,'catalog')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Real Time Inventory File</h3>
+    <p>Upload inventory then click Fetch & Match to load catalog issue ASINs</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+  <div class="file-ok" id="fo-catalog">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-catalog-name">—</strong>
+      <span id="fo-catalog-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ciReset('catalog')">✕</button>
+  </div>
+
+  <!-- Fetch button + status -->
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+    <button class="btn btn-accent" style="background:linear-gradient(135deg,#d97706,#b45309);" onclick="ciFetchAndMatch('catalog')">
+      ☁️ Fetch & Match from Google Sheet
+    </button>
+    <button class="btn btn-outline" onclick="ciExportPDF('catalog')" id="ci-pdf-btn" style="display:none">⬇ Export PDF</button>
+    <button class="btn btn-green" onclick="ciExportExcel('catalog')" id="ci-excel-btn" style="display:none">⬇ Export Excel</button>
+  </div>
+  <div id="ci-fetch-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
+
+  <!-- Search + Filter -->
+  <div class="ci-search-bar" id="ci-search-wrap" style="display:none">
+    <input id="ci-search" type="text" placeholder="🔍  Search ASIN, item name or location…" oninput="ciFilterResults('catalog')">
+    <select id="ci-zone-filter" class="select-field" style="background:#f8f7ff;border-color:#d5d2f0;color:#1a1830;font-size:13px;" onchange="ciFilterResults('catalog')">
+      <option value="ALL">All Zones</option>
+      <option value="Chiller">Chiller</option>
+      <option value="Freezer">Freezer</option>
+      <option value="Ambient">Ambient</option>
+      <option value="Hazmat">Hazmat</option>
+      <option value="HRV">HRV</option>
+      <option value="HeavyDuty">HeavyDuty</option>
+    </select>
+    <span id="ci-match-count" style="font-size:12px;color:#7b78a8;white-space:nowrap;"></span>
+  </div>
+
+  <div class="loading" id="load-catalog"><div class="spinner"></div><div>Fetching & matching…</div></div>
+  <div id="out-catalog"></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TASK 09: SCANNING ISSUE ITEMS
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-scanning-issue">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🔬</span>
+    <div>
+      <h2>Scanning Issue Items</h2>
+      <p>Identify scanning problem ASINs from Google Sheet and generate CODE128 barcode labels per location.</p>
+    </div>
+  </div>
+
+  <div class="upload-zone" id="uz-scanning" onclick="document.getElementById('f-scanning').click()">
+    <input type="file" id="f-scanning" accept=".xlsx,.xls,.csv" style="display:none" onchange="ciHandleUpload(this,'scanning')">
+    <div class="u-icon">📂</div>
+    <h3>Upload Real Time Inventory File</h3>
+    <p>Upload inventory then click Fetch & Match to load scanning issue ASINs</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+  <div class="file-ok" id="fo-scanning">
+    <span>✅</span>
+    <div class="fi-info">
+      <strong id="fo-scanning-name">—</strong>
+      <span id="fo-scanning-info">—</span>
+    </div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ciReset('scanning')">✕</button>
+  </div>
+
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+    <button class="btn btn-primary" onclick="ciFetchAndMatch('scanning')">
+      ☁️ Fetch & Match from Google Sheet
+    </button>
+    <button class="btn btn-accent" onclick="siPrintBarcodes()" id="si-print-btn" style="display:none">🖨️ Print Barcode Labels</button>
+    <button class="btn btn-green" onclick="ciExportExcel('scanning')" id="si-excel-btn" style="display:none">⬇ Export Excel</button>
+  </div>
+  <div id="si-fetch-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
+
+  <div class="ci-search-bar" id="si-search-wrap" style="display:none">
+    <input id="si-search" type="text" placeholder="🔍  Search ASIN or location…" oninput="ciFilterResults('scanning')">
+    <span id="si-match-count" style="font-size:12px;color:#7b78a8;white-space:nowrap;"></span>
+  </div>
+
+  <div class="loading" id="load-scanning"><div class="spinner"></div><div>Fetching & matching…</div></div>
+  <div id="si-barcode-print-area" style="display:none"></div>
+  <div id="out-scanning"></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TASK 10: MANPOWER ALLOCATION (PLACEHOLDER)
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-manpower">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">👥</span>
+    <div>
+      <h2>Manpower Allocation</h2>
+      <p>Smart manpower planning, shift allocation and performance tracking tool.</p>
+    </div>
+  </div>
+  <div class="manpower-under-process">
+    <div class="mp-icon">⚙️</div>
+    <h3>Under Process</h3>
+    <p>Manpower allocation logic is being developed. This feature will allow smart shift planning, associate assignment, and productivity tracking across all zones.</p>
+    <div class="mp-progress-bar"><div class="mp-progress-fill"></div></div>
+    <div style="margin-top:16px;font-size:12px;color:#a5b4fc;font-family:'DM Mono',monospace;letter-spacing:1px;">BUILDING IN PROGRESS — STAY TUNED</div>
   </div>
 </div>
 </div>
@@ -2983,6 +3231,514 @@ function lsReset() {
   else lsDragSetup();
 })();
 
+
+
+// ═══════════════════════════════════════════════════════════════
+// TASK 08 & 09 — CATALOG ISSUE + SCANNING ISSUE ITEMS
+// Shared state and logic, differentiated by 'mode' param
+// ═══════════════════════════════════════════════════════════════
+
+var ciState = {
+  catalog:  { data: [], headers: [], matched: [], asins: [] },
+  scanning: { data: [], headers: [], matched: [], asins: [] }
+};
+
+// ── Google Sheet tab names ───────────────────────────────────
+var CI_SHEET_ID  = '1iBkvzRQumEAKZlx7kV-oS3KyLaybLkhwgy8Z2rErBsA';
+var CI_TABS = {
+  catalog:  'CATALOG ISSUE ASIN',
+  scanning: 'SCANNING ISSUE ASIN'
+};
+
+// ── Upload handler (shared for both tasks) ───────────────────
+function ciHandleUpload(input, mode) {
+  var file = input.files[0];
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb;
+      if (ext === 'csv') wb = XLSX.read(e.target.result, { type: 'string' });
+      else               wb = XLSX.read(e.target.result, { type: 'array' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var json = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
+      if (!json.length) { showToast('⚠️ File empty!'); return; }
+
+      // Strip BOM from column names
+      json = json.map(function(r) {
+        var clean = {};
+        Object.keys(r).forEach(function(k) {
+          clean[k.replace(/[\uFEFF"]/g, '').trim()] = r[k];
+        });
+        return clean;
+      });
+
+      ciState[mode].data    = json;
+      ciState[mode].headers = Object.keys(json[0]);
+
+      var foName = document.getElementById('fo-' + mode + '-name');
+      var foInfo = document.getElementById('fo-' + mode + '-info');
+      var foEl   = document.getElementById('fo-' + mode);
+      if (foName) foName.textContent = file.name;
+      if (foInfo) foInfo.textContent = json.length.toLocaleString() + ' rows · ' + ciState[mode].headers.length + ' cols';
+      if (foEl)   foEl.classList.add('show');
+      showToast('✅ ' + json.length.toLocaleString() + ' rows loaded');
+    } catch(err) {
+      showToast('❌ Cannot read file');
+      console.error(err);
+    }
+  };
+  if (ext === 'csv') reader.readAsText(file);
+  else               reader.readAsArrayBuffer(file);
+}
+
+// ── Fetch ASINs from Google Sheet via JSONP then match ────────
+function ciFetchAndMatch(mode) {
+  var tabName   = CI_TABS[mode];
+  var statusId  = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
+  var statusEl  = document.getElementById(statusId);
+
+  if (!ciState[mode].data.length) {
+    showToast('⚠️ Upload inventory file first');
+    return;
+  }
+
+  function setStatus(msg, type) {
+    if (!statusEl) return;
+    statusEl.style.display     = 'block';
+    statusEl.style.background  = type==='ok' ? '#f0fdf4' : type==='warn' ? '#fff3cd' : '#fff0f0';
+    statusEl.style.color       = type==='ok' ? '#166534' : type==='warn' ? '#856404' : '#c00';
+    statusEl.style.border      = '1px solid ' + (type==='ok' ? '#86efac' : type==='warn' ? '#fde68a' : '#fca5a5');
+    statusEl.innerHTML = msg;
+  }
+
+  setStatus('⏳ Fetching ' + tabName + ' from Google Sheet…', 'warn');
+  showLoading(mode === 'catalog' ? 'catalog' : 'scanning', true);
+
+  // JSONP approach — works from file:// and any browser
+  var cbName = 'ciGvizCb_' + mode + '_' + Date.now();
+  var timeout = setTimeout(function() {
+    delete window[cbName];
+    var old = document.getElementById('jsonp-' + cbName);
+    if (old) old.parentNode.removeChild(old);
+    setStatus('❌ Fetch timed out. Check internet connection.', 'err');
+    showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+  }, 15000);
+
+  window[cbName] = function(response) {
+    clearTimeout(timeout);
+    delete window[cbName];
+    var old = document.getElementById('jsonp-' + cbName);
+    if (old) old.parentNode.removeChild(old);
+
+    try {
+      var asins = ciParseGvizASINs(response);
+      if (!asins.length) {
+        setStatus('⚠️ No ASINs found in tab: ' + tabName, 'warn');
+        showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+        return;
+      }
+      ciState[mode].asins = asins;
+      setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching with inventory…', 'ok');
+      // Match and render
+      ciMatchAndRender(mode, asins);
+    } catch(err) {
+      setStatus('❌ Parse error: ' + err.message, 'err');
+      showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+    }
+  };
+
+  var url = 'https://docs.google.com/spreadsheets/d/' + CI_SHEET_ID +
+            '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tabName) +
+            '&callback=' + cbName;
+  var script = document.createElement('script');
+  script.id  = 'jsonp-' + cbName;
+  script.src = url;
+  script.onerror = function() {
+    clearTimeout(timeout);
+    delete window[cbName];
+    setStatus('❌ Could not reach Google Sheet. Check your internet.', 'err');
+    showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+  };
+  document.head.appendChild(script);
+}
+
+// ── Parse ASIN list from gviz JSON response ──────────────────
+// Column A contains ASINs
+function ciParseGvizASINs(response) {
+  var asins = [];
+  if (!response || !response.table) return asins;
+  var rows = response.table.rows || [];
+  rows.forEach(function(row) {
+    if (!row.c || !row.c[0]) return;
+    var val = String(row.c[0].v || '').trim();
+    if (val && val.toLowerCase() !== 'asin' && val !== '') {
+      asins.push(val.toUpperCase());
+    }
+  });
+  return asins;
+}
+
+// ── Match ASINs with inventory and render results ─────────────
+function ciMatchAndRender(mode, asins) {
+  var data    = ciState[mode].data;
+  var headers = ciState[mode].headers;
+
+  // Auto-detect columns
+  var asinCol  = findCol(headers, ['asin','product.?id','fnsku','sku','item.?id']);
+  var locCol   = findCol(headers, ['location','bin','shelf','locationid','loc.?id']);
+  var qtyCol   = findCol(headers, ['qty','quantity','stock','count','units','on.?hand']);
+  var titleCol = findCol(headers, ['title','name','description','product.?name','item.?name']);
+
+  if (!asinCol) {
+    showToast('⚠️ ASIN column not found in inventory file');
+    showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+    return;
+  }
+
+  // Build ASIN set for fast lookup
+  var asinSet = {};
+  asins.forEach(function(a) { asinSet[a] = true; });
+
+  // Group by ASIN → { asin: { title, locations: [{loc, qty, zone}] } }
+  var matched = {};
+  var totalRows = 0;
+
+  data.forEach(function(row) {
+    var asin = String(row[asinCol] || '').trim().toUpperCase();
+    if (!asin || !asinSet[asin]) return;
+    totalRows++;
+    var loc   = locCol   ? String(row[locCol]   || '').trim() : '—';
+    var qty   = qtyCol   ? (parseFloat(row[qtyCol]) || 0) : 0;
+    var title = titleCol ? String(row[titleCol]  || '').trim() : '';
+    var zone  = detectZone(loc);
+
+    if (!matched[asin]) {
+      matched[asin] = { title: title, locations: {} };
+    }
+    if (title && !matched[asin].title) matched[asin].title = title;
+
+    // Aggregate qty per location
+    if (!matched[asin].locations[loc]) {
+      matched[asin].locations[loc] = { qty: 0, zone: zone };
+    }
+    matched[asin].locations[loc].qty += qty;
+  });
+
+  var matchedList = Object.keys(matched).map(function(asin) {
+    return {
+      asin:  asin,
+      title: matched[asin].title,
+      locs:  Object.keys(matched[asin].locations).map(function(l) {
+        return { loc: l, qty: matched[asin].locations[l].qty, zone: matched[asin].locations[l].zone };
+      })
+    };
+  }).sort(function(a,b) { return a.asin.localeCompare(b.asin); });
+
+  ciState[mode].matched = matchedList;
+  showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+
+  var notFound = asins.filter(function(a) { return !matched[a]; });
+  var statusId = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
+  var statusEl = document.getElementById(statusId);
+  if (statusEl) {
+    statusEl.innerHTML =
+      '✅ Matched <strong>' + matchedList.length + '</strong> of <strong>' + asins.length + '</strong> ASINs · ' +
+      '<strong>' + totalRows + '</strong> inventory rows · ' +
+      (notFound.length > 0 ? '<span style="color:#856404">⚠️ ' + notFound.length + ' ASINs not in inventory</span>' : '0 missing');
+  }
+
+  // Show search bar
+  var swId = mode === 'catalog' ? 'ci-search-wrap' : 'si-search-wrap';
+  var sw = document.getElementById(swId);
+  if (sw) sw.style.display = 'flex';
+
+  var mcId = mode === 'catalog' ? 'ci-match-count' : 'si-match-count';
+  var mc = document.getElementById(mcId);
+  if (mc) mc.textContent = matchedList.length + ' ASINs matched';
+
+  ciRenderResults(mode, matchedList);
+
+  // Show export buttons
+  if (mode === 'catalog') {
+    var pBtn = document.getElementById('ci-pdf-btn');
+    var eBtn = document.getElementById('ci-excel-btn');
+    if (pBtn) pBtn.style.display = 'inline-flex';
+    if (eBtn) eBtn.style.display = 'inline-flex';
+  } else {
+    var sBtn = document.getElementById('si-print-btn');
+    var seBtn = document.getElementById('si-excel-btn');
+    if (sBtn) sBtn.style.display = 'inline-flex';
+    if (seBtn) seBtn.style.display = 'inline-flex';
+  }
+
+  showToast('✅ ' + matchedList.length + ' ASINs matched!');
+}
+
+// ── Render results for both modes ────────────────────────────
+function ciRenderResults(mode, list) {
+  var outId = mode === 'catalog' ? 'out-catalog' : 'out-scanning';
+  var outEl = document.getElementById(outId);
+  if (!outEl) return;
+
+  if (!list.length) {
+    outEl.innerHTML = '<div class="alert alert-warn" style="margin-top:16px;">⚠️ No matching ASINs found in the uploaded inventory file.</div>';
+    return;
+  }
+
+  var nowStr = getNowString();
+  var isCatalog = mode === 'catalog';
+
+  var html = '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;margin-top:4px;">' +
+    '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
+    '<h3>' + (isCatalog ? '📋 Catalog Issue Items' : '🔬 Scanning Issue Items') + '</h3>' +
+    '<span class="results-count">' + list.length + ' ASINs · ' + nowStr + '</span>' +
+    '</div><div class="results-body" style="background:#fff;">';
+
+  // Stats row
+  var totalLocs = list.reduce(function(s, item) { return s + item.locs.length; }, 0);
+  var totalQty  = list.reduce(function(s, item) {
+    return s + item.locs.reduce(function(q, l) { return q + l.qty; }, 0);
+  }, 0);
+
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;">' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:' + (isCatalog ? '#d97706':'#0284c7') + ';">' + list.length + '</div><div class="sl">Matched ASINs</div></div>' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#374151;">' + totalLocs + '</div><div class="sl">Locations</div></div>' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#059669;">' + Math.round(totalQty) + '</div><div class="sl">Total Units</div></div>' +
+    '</div>';
+
+  // Item cards
+  html += '<div id="' + (isCatalog?'ci':'si') + '-results-inner">';
+
+  list.forEach(function(item, idx) {
+    var cardClass = isCatalog ? 'ci-item-card' : 'ci-item-card si-item-card';
+    var badgeClass = isCatalog ? 'ci-asin-badge' : 'ci-asin-badge si-asin-badge';
+    var locChipClass = isCatalog ? 'ci-loc-chip' : 'ci-loc-chip si-loc-chip';
+    var qtyColor = isCatalog ? '#d97706' : '#0284c7';
+
+    html += '<div class="' + cardClass + '" data-asin="' + item.asin + '">';
+
+    // ASIN badge
+    html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">';
+    html += '<span class="' + badgeClass + '">' + item.asin + '</span>';
+    if (isCatalog && item.title) {
+      html += '<span class="ci-title" style="flex:1;margin:0;">' + item.title + '</span>';
+    }
+    html += '</div>';
+
+    // Location grid with QR (catalog) or barcode chips (scanning)
+    html += '<div class="ci-loc-grid">';
+
+    item.locs.forEach(function(l, li) {
+      html += '<div class="' + locChipClass + '">';
+
+      if (isCatalog) {
+        // QR code for location
+        html += '<div id="ci-qr-' + idx + '-' + li + '" style="display:flex;justify-content:center;margin-bottom:4px;"></div>';
+      } else {
+        // Barcode for ASIN per location
+        html += '<svg id="si-bc-' + idx + '-' + li + '" style="width:100%;max-width:130px;display:block;margin:0 auto 4px;"></svg>';
+      }
+
+      html += '<div class="loc-name">' + l.loc + '</div>';
+      html += '<div class="loc-qty" style="color:' + qtyColor + ';">' + Math.round(l.qty) + ' units</div>';
+      html += '<div class="loc-zone">' + l.zone + '</div>';
+      html += '</div>';
+    });
+
+    html += '</div></div>'; // close loc-grid + item-card
+  });
+
+  html += '</div>'; // close results-inner
+  html += '</div></div>'; // close results-body + results-panel
+
+  outEl.innerHTML = html;
+
+  // Generate QR codes (catalog) or barcodes (scanning) after DOM update
+  setTimeout(function() {
+    list.forEach(function(item, idx) {
+      item.locs.forEach(function(l, li) {
+        if (isCatalog) {
+          // QR for location
+          var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
+          if (qrEl) {
+            try {
+              new QRCode(qrEl, {
+                text: l.loc || item.asin,
+                width: 100, height: 100,
+                colorDark: '#000000', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+              });
+            } catch(e) {}
+          }
+        } else {
+          // Barcode for ASIN
+          var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
+          if (bcEl) {
+            try {
+              JsBarcode('#si-bc-' + idx + '-' + li, item.asin, {
+                format: 'CODE128', width: 2, height: 60,
+                displayValue: false, background: '#ffffff',
+                lineColor: '#000000', margin: 5
+              });
+            } catch(e) {}
+          }
+        }
+      });
+    });
+  }, 100);
+}
+
+// ── Filter / Search ───────────────────────────────────────────
+function ciFilterResults(mode) {
+  var isCatalog = mode === 'catalog';
+  var searchId  = isCatalog ? 'ci-search' : 'si-search';
+  var zoneId    = 'ci-zone-filter';
+  var innerId   = isCatalog ? 'ci-results-inner' : 'si-results-inner';
+  var countId   = isCatalog ? 'ci-match-count' : 'si-match-count';
+
+  var q    = (document.getElementById(searchId) || {}).value || '';
+  var zone = isCatalog ? ((document.getElementById(zoneId) || {}).value || 'ALL') : 'ALL';
+  var term = q.toLowerCase().trim();
+
+  var matched = ciState[mode].matched;
+  var filtered = matched.filter(function(item) {
+    var inSearch = !term ||
+      item.asin.toLowerCase().includes(term) ||
+      (item.title || '').toLowerCase().includes(term) ||
+      item.locs.some(function(l) { return l.loc.toLowerCase().includes(term); });
+    var inZone = zone === 'ALL' || item.locs.some(function(l) { return l.zone === zone; });
+    return inSearch && inZone;
+  });
+
+  var mc = document.getElementById(countId);
+  if (mc) mc.textContent = filtered.length + ' of ' + matched.length + ' ASINs';
+
+  ciRenderResults(mode, filtered);
+}
+
+// ── Export PDF (catalog) ──────────────────────────────────────
+async function ciExportPDF(mode) {
+  var el = document.getElementById(mode === 'catalog' ? 'out-catalog' : 'out-scanning');
+  if (!el || !el.innerHTML.trim()) { showToast('Generate results first'); return; }
+  showToast('⏳ Building PDF…');
+  try { await exportA4PDF(el, mode === 'catalog' ? 'Catalog Issue Items' : 'Scanning Issue Items'); }
+  catch(err) { showToast('PDF error: ' + err.message); }
+}
+
+// ── Export Excel (both modes) ─────────────────────────────────
+function ciExportExcel(mode) {
+  var list = ciState[mode].matched;
+  if (!list.length) { showToast('Generate results first'); return; }
+  var isCatalog = mode === 'catalog';
+  var wb = XLSX.utils.book_new();
+  var rows = [
+    [isCatalog ? 'CATALOG ISSUE ITEMS' : 'SCANNING ISSUE ITEMS', '', 'Generated:', getNowString()],
+    [],
+    ['ASIN', isCatalog ? 'Item Name' : '', 'Location', 'Quantity', 'Zone']
+  ];
+  list.forEach(function(item) {
+    item.locs.forEach(function(l) {
+      rows.push([item.asin, isCatalog ? item.title : '', l.loc, Math.round(l.qty), l.zone]);
+    });
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [16,40,18,12,14].map(function(w){return{wch:w};});
+  XLSX.utils.book_append_sheet(wb, ws, isCatalog ? 'Catalog Issue' : 'Scanning Issue');
+  XLSX.writeFile(wb, (isCatalog ? 'CatalogIssue' : 'ScanningIssue') + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  showToast('✅ Excel exported!');
+}
+
+// ── Print barcode labels (scanning) ──────────────────────────
+function siPrintBarcodes() {
+  var list = ciState['scanning'].matched;
+  if (!list.length) { showToast('Generate results first'); return; }
+
+  var printArea = document.getElementById('si-barcode-print-area');
+  if (!printArea) return;
+
+  var html = '';
+  list.forEach(function(item) {
+    item.locs.forEach(function(l, li) {
+      html += '<div class="ysm-label-print">' +
+        '<svg id="siprint-bc-' + li + '-' + item.asin + '"></svg>' +
+        '<div class="lp-asin">' + item.asin + '</div>' +
+        '<div class="lp-name">' + l.loc + ' · ' + Math.round(l.qty) + ' units · ' + l.zone + '</div>' +
+        '</div>';
+    });
+  });
+
+  printArea.innerHTML = html;
+  printArea.style.display = 'block';
+
+  setTimeout(function() {
+    list.forEach(function(item) {
+      item.locs.forEach(function(l, li) {
+        try {
+          JsBarcode('#siprint-bc-' + li + '-' + item.asin, item.asin, {
+            format: 'CODE128', width: 3, height: 100,
+            displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 10
+          });
+        } catch(e) {}
+      });
+    });
+    setTimeout(function() { window.print(); printArea.style.display = 'none'; }, 300);
+  }, 200);
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function ciReset(mode) {
+  ciState[mode] = { data: [], headers: [], matched: [], asins: [] };
+  var prefix = mode === 'catalog' ? 'ci' : 'si';
+  var foEl = document.getElementById('fo-' + mode);
+  if (foEl) foEl.classList.remove('show');
+  var fi = document.getElementById('f-' + mode);
+  if (fi) fi.value = '';
+  var out = document.getElementById('out-' + mode);
+  if (out) out.innerHTML = '';
+  var sw = document.getElementById(prefix + '-search-wrap');
+  if (sw) sw.style.display = 'none';
+  var st = document.getElementById(prefix + '-fetch-status');
+  if (st) st.style.display = 'none';
+  if (mode === 'catalog') {
+    var pb = document.getElementById('ci-pdf-btn');
+    var eb = document.getElementById('ci-excel-btn');
+    if (pb) pb.style.display = 'none';
+    if (eb) eb.style.display = 'none';
+  } else {
+    var sp = document.getElementById('si-print-btn');
+    var se = document.getElementById('si-excel-btn');
+    if (sp) sp.style.display = 'none';
+    if (se) se.style.display = 'none';
+  }
+  showToast('Reset done');
+}
+
+// ── Drag & drop for new upload zones ─────────────────────────
+(function() {
+  function setupDrag(zoneId, inputId, mode) {
+    var zone = document.getElementById(zoneId);
+    if (!zone) return;
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('drag'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault(); zone.classList.remove('drag');
+      var file = e.dataTransfer.files[0]; if (!file) return;
+      var dt = new DataTransfer(); dt.items.add(file);
+      var inp = document.getElementById(inputId);
+      if (inp) { inp.files = dt.files; ciHandleUpload(inp, mode); }
+    });
+  }
+
+  function init() {
+    setupDrag('uz-catalog',  'f-catalog',  'catalog');
+    setupDrag('uz-scanning', 'f-scanning', 'scanning');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 
 </script>
 </body>
