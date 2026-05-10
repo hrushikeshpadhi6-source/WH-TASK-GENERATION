@@ -607,29 +607,29 @@ footer span { color:var(--accent); }
 }
 /* Left colored section */
 .locid-left {
-  width: 20mm;
+  width: 22mm;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1mm 2mm;
+  padding: 1mm 2.5mm;
   line-height: 1.25;
   gap: 0.5mm;
 }
 .locid-left .lil-top {
-  font-size: 7pt;
-  font-weight: 700;
+  font-size: 11pt;
+  font-weight: 800;
   font-family: Arial, sans-serif;
-  color: rgba(0,0,0,0.82);
+  color: rgba(0,0,0,0.9);
   text-align: center;
   letter-spacing: 0pt;
 }
 .locid-left .lil-bot {
-  font-size: 10pt;
+  font-size: 15pt;
   font-weight: 900;
   font-family: Arial, sans-serif;
-  color: rgba(0,0,0,0.82);
+  color: rgba(0,0,0,0.9);
   text-align: center;
 }
 /* Center main section */
@@ -749,6 +749,69 @@ footer span { color:var(--accent); }
   .form-box { padding:20px 16px; }
 }
 
+
+/* ── SIMPLE LOGIN ── */
+#login-overlay {
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(135deg,#0a0914 0%,#0f0e17 40%,#1a1928 100%);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; overflow-y:auto; padding:20px;
+}
+#login-overlay::before {
+  content:''; position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(67,97,238,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%,rgba(114,9,183,0.10) 0%,transparent 60%);
+  pointer-events:none;
+}
+.login-card {
+  background:rgba(26,25,40,0.97); border:1px solid rgba(67,97,238,0.3);
+  border-radius:24px; padding:44px 40px; width:100%; max-width:400px;
+  box-shadow:0 24px 80px rgba(0,0,0,0.7); position:relative; z-index:1;
+  animation:loginFadeIn 0.4s ease;
+}
+@keyframes loginFadeIn {
+  from{opacity:0;transform:translateY(24px) scale(0.97);}
+  to  {opacity:1;transform:translateY(0)    scale(1);}
+}
+.login-logo-wrap { text-align:center; margin-bottom:28px; }
+.login-logo-wrap img { width:72px; height:72px; object-fit:contain; filter:drop-shadow(0 0 16px rgba(67,97,238,0.6)); margin-bottom:12px; }
+.login-title {
+  font-size:24px; font-weight:800; letter-spacing:-0.5px;
+  background:linear-gradient(135deg,#fff 0%,#b8b6ff 60%,#ff6b35 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:4px;
+}
+.login-sub { font-size:13px; color:#8b8aad; }
+.login-field { margin-bottom:16px; }
+.login-field label { display:block; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#8b8aad; margin-bottom:8px; }
+.login-field input {
+  width:100%; background:rgba(15,14,23,0.7); border:1px solid rgba(46,44,69,0.9);
+  border-radius:10px; padding:13px 16px; font-family:'Syne',sans-serif; font-size:14px;
+  color:#e8e6ff; outline:none; transition:border-color 0.2s,box-shadow 0.2s; box-sizing:border-box;
+}
+.login-field input:focus { border-color:#4361ee; box-shadow:0 0 0 3px rgba(67,97,238,0.2); }
+.login-field input::placeholder { color:#3d3a6b; }
+.login-btn { width:100%; padding:14px; border-radius:12px; border:none; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:0.5px; cursor:pointer; transition:all 0.2s; }
+.login-btn-primary { background:linear-gradient(135deg,#ff6b35,#c43d04); color:#fff; box-shadow:0 4px 20px rgba(255,107,53,0.4); }
+.login-btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(255,107,53,0.5); }
+.login-msg { font-size:13px; padding:11px 14px; border-radius:10px; margin-bottom:14px; font-weight:600; display:none; line-height:1.5; }
+.login-msg.error   { background:rgba(247,37,133,0.12); border:1px solid rgba(247,37,133,0.3); color:#f72585; }
+.login-msg.success { background:rgba(6,214,160,0.10);  border:1px solid rgba(6,214,160,0.3);  color:#06d6a0; }
+.login-footer-text { font-size:12px; color:#3d3a6b; text-align:center; margin-top:16px; }
+.login-session-badge {
+  position:fixed; top:12px; right:16px; z-index:10000;
+  background:rgba(10,9,20,0.95); border:1px solid rgba(46,44,69,0.8);
+  border-radius:40px; padding:8px 16px 8px 12px;
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; font-family:'DM Mono',monospace; color:#8b8aad;
+  cursor:pointer; transition:all 0.2s; box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+.login-session-badge:hover { border-color:#ff6b35; }
+.login-session-badge .sb-dot { width:8px; height:8px; border-radius:50%; background:#06d6a0; box-shadow:0 0 8px rgba(6,214,160,0.8); flex-shrink:0; }
+.login-session-badge .sb-name { color:#e8e6ff; font-weight:600; }
+@media(max-width:480px){ .login-card{ padding:32px 20px; } }
+
 @keyframes ticker {
   0%   { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
@@ -756,6 +819,42 @@ footer span { color:var(--accent); }
 </style>
 </head>
 <body>
+
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo-wrap">
+      <img src="data:image/png;base64,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" alt="HP World Logo">
+      <div class="login-title">Dark Store Task Pro</div>
+      <div class="login-sub">HP World · Warehouse Operations</div>
+    </div>
+    <div class="login-msg" id="login-msg"></div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password"
+        autofocus onkeydown="if(event.key==='Enter')authLogin()">
+    </div>
+    <button class="login-btn login-btn-primary" onclick="authLogin()">Sign In →</button>
+    <div class="login-footer-text">© 2026 HP World · ENWPP9081D/2019</div>
+  </div>
+</div>
+
+<div class="login-session-badge" id="session-badge" style="display:none;" onclick="authShowLogout()">
+  <div class="sb-dot"></div>
+  <span class="sb-name">HP World</span>
+  <span style="opacity:0.5;font-size:10px;">▾</span>
+</div>
+
+<div id="logout-menu" style="display:none;position:fixed;top:52px;right:16px;z-index:10001;
+  background:rgba(10,9,20,0.98);border:1px solid rgba(46,44,69,0.9);border-radius:12px;
+  padding:8px;min-width:160px;box-shadow:0 12px 40px rgba(0,0,0,0.6);">
+  <button onclick="authLogout()" style="width:100%;padding:10px 12px;background:transparent;border:none;
+    color:#f72585;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+    text-align:left;border-radius:8px;"
+    onmouseover="this.style.background='rgba(247,37,133,0.1)'"
+    onmouseout="this.style.background='transparent'">🚪 Sign Out</button>
+</div>
+
+<div id="app-shell" style="display:none;">
 
 <header class="header">
   <div class="header-logo" onclick="goHome()" title="Go to Home">
@@ -3224,26 +3323,34 @@ function lsGenerate() {
 
       // Fill slots
       rows.forEach(function(row) {
-        var slotTime  = row[slotCol];   // picklist_created_time
-        var plToStage = row[stageCol];  // pl_create_to_stage (seconds)
-        var promUtr   = row[promCol];   // promise_utr (seconds)
+        // picklist_created_time → slot bucket (FLOOR to 30 min)
+        var slotTime  = row[slotCol];
+        // pl_create_to_stage (actual seconds) and promise_utr (SLA seconds)
+        var plToStage = row[stageCol];
+        var promUtr   = row[promCol];
         var unitVal   = parseFloat(row[unitsCol]) || 1;
-        // Try lsParseSlot first; if it fails, try new Date()
+
+        // Parse timestamp to 30-min slot key
         var slot = lsParseSlot(slotTime);
         if (!slot && slotTime) {
+          // Fallback: try native Date parse
           var d = new Date(String(slotTime));
           if (!isNaN(d.getTime())) {
             var hh2 = d.getHours(), mn2 = d.getMinutes();
-            var sm2 = Math.floor(mn2 / 30) * 30;
-            slot = (hh2 < 10 ? '0' : '') + hh2 + ':' + (sm2 === 0 ? '00' : '30');
+            slot = (hh2 < 10 ? '0' : '') + hh2 + ':' + (Math.floor(mn2/30)*30 === 0 ? '00' : '30');
           }
         }
+
         if (slot && slots[slot]) {
           slots[slot].orders++;
           slots[slot].units += unitVal;
-          if (lsIsLateslam(plToStage, promUtr)) {
-            slots[slot].lateslam++;
-          }
+          // Lateslam: blank promise → NOT lateslam
+          // pl_create_to_stage > promise_utr → LATESLAM
+          var actualSecs  = parseFloat(String(plToStage).trim());
+          var promiseSecs = parseFloat(String(promUtr).trim());
+          var isLS = !isNaN(actualSecs) && !isNaN(promiseSecs) &&
+                     promiseSecs > 0 && actualSecs > promiseSecs;
+          if (isLS) slots[slot].lateslam++;
         }
       });
 
@@ -3703,7 +3810,7 @@ function ciMatchAndRender(mode, asins) {
   var asinCol  = findCol(headers, ['asin','product.?id','fnsku','sku','item.?id']);
   var locCol   = findCol(headers, ['location','bin','shelf','locationid','loc.?id']);
   var qtyCol   = findCol(headers, ['qty','quantity','stock','count','units','on.?hand']);
-  var titleCol = findCol(headers, ['title','name','description','product.?name','item.?name']);
+  var titleCol = findCol(headers, ['product.?title','title','name','description','product.?name','item.?name']);
 
   if (!asinCol) {
     showToast('⚠️ ASIN column not found in inventory file');
@@ -3953,18 +4060,21 @@ function ciExportExcel(mode) {
   if (!list.length) { showToast('Generate results first'); return; }
   var isCatalog = mode === 'catalog';
   var wb = XLSX.utils.book_new();
+  // Only ASIN + Item Name (no Location, Qty, Zone)
   var rows = [
-    [isCatalog ? 'CATALOG ISSUE ITEMS' : 'SCANNING ISSUE ITEMS', '', 'Generated:', getNowString()],
+    [isCatalog ? 'CATALOG ISSUE ITEMS' : 'SCANNING ISSUE ITEMS', 'Generated:', getNowString()],
     [],
-    ['ASIN', isCatalog ? 'Item Name' : '', 'Location', 'Quantity', 'Zone']
+    ['ASIN', 'Item Name']
   ];
+  // Deduplicate: one row per ASIN (not per location)
+  var seen = {};
   list.forEach(function(item) {
-    item.locs.forEach(function(l) {
-      rows.push([item.asin, isCatalog ? item.title : '', l.loc, Math.round(l.qty), l.zone]);
-    });
+    if (seen[item.asin]) return;
+    seen[item.asin] = true;
+    rows.push([item.asin, item.title || '']);
   });
   var ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [16,40,18,12,14].map(function(w){return{wch:w};});
+  ws['!cols'] = [{wch:18},{wch:60}];
   XLSX.utils.book_append_sheet(wb, ws, isCatalog ? 'Catalog Issue' : 'Scanning Issue');
   XLSX.writeFile(wb, (isCatalog ? 'CatalogIssue' : 'ScanningIssue') + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
   showToast('✅ Excel exported!');
@@ -4015,14 +4125,14 @@ async function siExportWord() {
 
   // Build flat label list: one entry per ASIN per location
   var labels = [];
+  // One label per unique ASIN (no per-location duplication)
+  var seenAsins = {};
   list.forEach(function(item) {
-    item.locs.forEach(function(l) {
-      labels.push({
-        asin:    item.asin,
-        loc:     l.loc,
-        qty:     Math.round(l.qty),
-        zone:    l.zone
-      });
+    if (seenAsins[item.asin]) return;
+    seenAsins[item.asin] = true;
+    labels.push({
+      asin:  item.asin,
+      title: item.title || ''
     });
   });
 
@@ -4098,7 +4208,7 @@ async function siExportWord() {
     // Generate all PNGs
     var pngs = [];
     labels.forEach(function(lbl) {
-      var line2 = lbl.loc + '  ·  ' + lbl.qty + ' units  ·  ' + lbl.zone;
+      var line2 = lbl.title || lbl.asin;
       pngs.push(makeSILabelPNG(lbl.asin, line2));
     });
 
@@ -4706,6 +4816,69 @@ async function locidExportPDF() {
   else locidDragSetup();
 })();
 
+</script>
+</div><!-- /app-shell -->
+<script>
+// ── SIMPLE PASSWORD LOGIN ──────────────────────────────────────
+var CORRECT_PASSWORD = 'Darkstore@123';
+var SESSION_KEY      = 'hp_auth_session';
+
+function authMsg(id, text, type) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent   = text;
+  el.className     = 'login-msg ' + (type || 'info');
+  el.style.display = text ? 'block' : 'none';
+}
+function authShowApp() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('app-shell').style.display     = 'block';
+  document.getElementById('session-badge').style.display = 'flex';
+  try { sessionStorage.setItem(SESSION_KEY,'1'); } catch(e) {}
+}
+function authShowLogin() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('app-shell').style.display     = 'none';
+  document.getElementById('session-badge').style.display = 'none';
+  var m = document.getElementById('logout-menu');
+  if (m) m.style.display = 'none';
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+function authLogin() {
+  var pass = (document.getElementById('login-pass').value || '').trim();
+  if (!pass) { authMsg('login-msg','⚠️ Enter the password.','error'); return; }
+  if (pass === CORRECT_PASSWORD) {
+    authMsg('login-msg','✅ Welcome to HP World!','success');
+    setTimeout(authShowApp, 600);
+  } else {
+    authMsg('login-msg','❌ Incorrect password. Try again.','error');
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+function authShowLogout() {
+  var m = document.getElementById('logout-menu');
+  if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function authLogout() {
+  var m = document.getElementById('logout-menu');
+  if (m) m.style.display = 'none';
+  authShowLogin();
+  showToast('👋 Signed out');
+}
+document.addEventListener('click', function(e) {
+  var menu  = document.getElementById('logout-menu');
+  var badge = document.getElementById('session-badge');
+  if (menu && badge && !badge.contains(e.target) && !menu.contains(e.target))
+    menu.style.display = 'none';
+});
+// Boot
+(function() {
+  document.getElementById('app-shell').style.display = 'none';
+  var ok = false;
+  try { ok = sessionStorage.getItem(SESSION_KEY) === '1'; } catch(e) {}
+  if (ok) authShowApp(); else authShowLogin();
+})();
 </script>
 </body>
 </html>
