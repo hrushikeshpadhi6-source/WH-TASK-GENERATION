@@ -2345,10 +2345,11 @@ function generateConsolidation() {
     results.forEach((item, idx) => {
       const card = document.createElement('div');
       card.className = 'label-card';
+      card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
       const n = item.count;
       const priority = (n>10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
       const pColor = priority==='HIGH'?'#e8500a':priority==='MEDIUM'?'#c9a227':'#1a7a4a';
-      card.innerHTML = '<div style="font-size:9px;font-weight:700;color:#fff;background:' + pColor + ';border-radius:3px;padding:2px 6px;margin-bottom:4px;">' + priority + ' · ' + item.count + 'L</div><div id="qr-c-' + idx + '" style="display:flex;justify-content:center;"></div><div class="asin-txt">' + item.asin + '</div>';
+      card.innerHTML = '<div style="font-size:9px;font-weight:700;color:#fff;background:' + pColor + ';border-radius:3px;padding:2px 6px;margin-bottom:4px;">' + priority + ' · ' + item.count + 'L</div><div id="qr-c-' + idx + '" style="display:flex;justify-content:center;"></div><div class="asin-txt" style="color:#000 !important;background:#fff;font-size:10px;font-weight:800;margin-top:4px;">' + item.asin + '</div>';
       grid.appendChild(card);
       try {
         new QRCode(document.getElementById('qr-c-' + idx), { text: item.asin, width: 100, height: 100, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
@@ -2493,6 +2494,7 @@ function generateAuditAsin() {
       if (!gridEl) return;
       const card = document.createElement('div');
       card.className = 'label-card';
+      card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
       const loc  = locCol ? String(row[locCol]||'').trim() : '';
       const zone = detectZone(loc);
       const zoneBadge = '<div style="font-size:8px;font-weight:700;color:#fff;background:' + zoneColor(zone) + ';border-radius:3px;padding:1px 4px;margin-bottom:2px;">' + zone + '</div>';
@@ -2915,7 +2917,7 @@ async function exportReportPDF() {
   const el = document.getElementById('report-printable');
   if (!el) { showToast('Generate report first'); return; }
   try {
-    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false, removeContainer:true});
     const {jsPDF} = window.jspdf;
     const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
     const pageW = pdf.internal.pageSize.getWidth();
@@ -3019,7 +3021,7 @@ async function exportPDF(containerId, title) {
 }
 
 async function exportA4PDF(el, title) {
-  const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+  const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false, removeContainer:true});
   const {jsPDF} = window.jspdf;
   const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
   const pageW = pdf.internal.pageSize.getWidth();
@@ -3036,7 +3038,7 @@ async function exportA4PDF(el, title) {
     sc.getContext('2d').drawImage(canvas, 0, srcY*canvas.width/imgW, canvas.width, sc.height, 0, 0, canvas.width, sc.height);
     if (srcY > 0) pdf.addPage();
     pageNum++;
-    pdf.addImage(sc.toDataURL('image/jpeg',0.92),'JPEG',margin,margin,imgW,slH);
+    pdf.addImage(sc.toDataURL('image/jpeg',0.88),'JPEG',margin,margin,imgW,slH);
     const footerY = pageH - footerH + 4;
     pdf.setFontSize(7); pdf.setTextColor(130);
     pdf.text(nowStr, pageW - margin, footerY, {align:'right'});
@@ -4239,37 +4241,36 @@ function ciRenderResults(mode, list) {
     outEl.innerHTML = html2;
   }
 
-  // ── Generate QR / barcodes after DOM update ────────────────
-  setTimeout(function() {
-    list.forEach(function(item, idx) {
-      item.locs.forEach(function(l, li) {
-        if (isCatalog) {
-          var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
-          if (qrEl && !qrEl.hasChildNodes()) {
-            try {
-              new QRCode(qrEl, {
-                text: l.loc || item.asin,
-                width: 90, height: 90,
-                colorDark: '#000000', colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-              });
-            } catch(e) {}
-          }
-        } else {
-          var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
-          if (bcEl) {
-            try {
-              JsBarcode('#si-bc-' + idx + '-' + li, item.asin, {
-                format: 'CODE128', width: 2, height: 60,
-                displayValue: false, background: '#ffffff',
-                lineColor: '#000000', margin: 5
-              });
-            } catch(e) {}
-          }
+  // Chunked QR/barcode rendering (rAF-based, non-blocking)
+  var _ciQ = [];
+  list.forEach(function(item, idx) {
+    item.locs.forEach(function(l, li) { _ciQ.push({item:item,l:l,idx:idx,li:li}); });
+  });
+  var _ciPtr = 0, _ciCat = isCatalog;
+  function _ciChunk() {
+    var end = Math.min(_ciPtr + 15, _ciQ.length);
+    for (var ri = _ciPtr; ri < end; ri++) {
+      var e = _ciQ[ri];
+      if (_ciCat) {
+        var qe = document.getElementById('ci-qr-' + e.idx + '-' + e.li);
+        if (qe && !qe.hasChildNodes()) {
+          try { new QRCode(qe, { text:e.l.loc||e.item.asin, width:90, height:90,
+            colorDark:'#000000', colorLight:'#ffffff',
+            correctLevel:QRCode.CorrectLevel.H }); } catch(ex) {}
         }
-      });
-    });
-  }, 100);
+      } else {
+        var be = document.getElementById('si-bc-' + e.idx + '-' + e.li);
+        if (be) {
+          try { JsBarcode('#si-bc-' + e.idx + '-' + e.li, e.item.asin,
+            { format:'CODE128', width:2, height:60, displayValue:false,
+              background:'#ffffff', lineColor:'#000000', margin:5 }); } catch(ex) {}
+        }
+      }
+    }
+    _ciPtr = end;
+    if (_ciPtr < _ciQ.length) requestAnimationFrame(_ciChunk);
+  }
+  setTimeout(function(){ requestAnimationFrame(_ciChunk); }, 60);
 }
 
 // ── Filter / Search ───────────────────────────────────────────
@@ -5056,33 +5057,29 @@ function locidGenerate() {
     var printEl = document.getElementById('locid-print-area');
     printEl.innerHTML = sheetHTML;
 
-    // Generate QR codes in BOTH areas
-    setTimeout(function() {
-      locidQueue.forEach(function(lbl, globalIdx) {
-        var qrText = lbl.full; // QR encodes FULL location ID (e.g. P-1-A116F182)
-
-        // Preview QR
-        var pvEl = document.getElementById('locid-qr-' + globalIdx);
-        if (pvEl && !pvEl.hasChildNodes()) {
-          try {
-            new QRCode(pvEl, { text: qrText, width: 56, height: 56,
-              colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-          } catch(e) {}
+    // Chunked QR rendering (rAF, 20/frame — keeps UI responsive)
+    var _lqItems = locidQueue.slice(), _lqTotal = _lqItems.length;
+    function _lqChunk(si) {
+      var end = Math.min(si + 20, _lqTotal);
+      for (var qi = si; qi < end; qi++) {
+        var qt = _lqItems[qi].full;
+        var pv = document.getElementById('locid-qr-' + qi);
+        if (pv && !pv.hasChildNodes()) {
+          try { new QRCode(pv, { text:qt, width:56, height:56,
+            colorDark:'#000000', colorLight:'#ffffff',
+            correctLevel:QRCode.CorrectLevel.H }); } catch(e) {}
         }
-
-        // Print QR (higher resolution)
-        var prEl = printEl.querySelector('#locid-qr-' + globalIdx);
-        if (prEl && !prEl.hasChildNodes()) {
-          try {
-            new QRCode(prEl, { text: qrText, width: 90, height: 90,
-              colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-          } catch(e) {}
+        var pr = printEl.querySelector('#locid-qr-' + qi);
+        if (pr && !pr.hasChildNodes()) {
+          try { new QRCode(pr, { text:qt, width:90, height:90,
+            colorDark:'#000000', colorLight:'#ffffff',
+            correctLevel:QRCode.CorrectLevel.H }); } catch(e) {}
         }
-      });
-
-      showLoading('locid', false);
-      showToast('✅ ' + locidQueue.length + ' labels ready!');
-    }, 250);
+      }
+      if (end < _lqTotal) requestAnimationFrame(function(){ _lqChunk(end); });
+      else { showLoading('locid', false); showToast('✅ ' + _lqTotal + ' labels ready!'); }
+    }
+    setTimeout(function(){ _lqChunk(0); }, 50);
   }, 100);
 }
 
@@ -5379,30 +5376,29 @@ function stgRenderLabels(labels) {
     var printEl = document.getElementById('locid-print-area');
     printEl.innerHTML = sheetHTML;
 
-    // Generate QR codes
-    setTimeout(function() {
-      labels.forEach(function(lbl, globalIdx) {
-        // Preview QR
-        var pvEl = document.getElementById('stg-qr-' + globalIdx);
-        if (pvEl && !pvEl.hasChildNodes()) {
-          try {
-            new QRCode(pvEl, { text: lbl.full, width: 56, height: 56,
-              colorDark: '#000000', colorLight: '#ffffff',
-              correctLevel: QRCode.CorrectLevel.H });
-          } catch(e) {}
+    // Chunked QR rendering for staging (rAF, non-blocking)
+    var _sqItems = labels.slice(), _sqTotal = _sqItems.length;
+    function _sqChunk(si) {
+      var end = Math.min(si + 20, _sqTotal);
+      for (var qi = si; qi < end; qi++) {
+        var lbl = _sqItems[qi];
+        var pv  = document.getElementById('stg-qr-' + qi);
+        if (pv && !pv.hasChildNodes()) {
+          try { new QRCode(pv, { text:lbl.full, width:56, height:56,
+            colorDark:'#000000', colorLight:'#ffffff',
+            correctLevel:QRCode.CorrectLevel.H }); } catch(e) {}
         }
-        // Print QR
-        var prEl = printEl.querySelector('#stg-qr-' + globalIdx);
-        if (prEl && !prEl.hasChildNodes()) {
-          try {
-            new QRCode(prEl, { text: lbl.full, width: 90, height: 90,
-              colorDark: '#000000', colorLight: '#ffffff',
-              correctLevel: QRCode.CorrectLevel.H });
-          } catch(e) {}
+        var pr = printEl.querySelector('#stg-qr-' + qi);
+        if (pr && !pr.hasChildNodes()) {
+          try { new QRCode(pr, { text:lbl.full, width:90, height:90,
+            colorDark:'#000000', colorLight:'#ffffff',
+            correctLevel:QRCode.CorrectLevel.H }); } catch(e) {}
         }
-      });
-      showLoading('locid', false);
-    }, 250);
+      }
+      if (end < _sqTotal) requestAnimationFrame(function(){ _sqChunk(end); });
+      else { showLoading('locid', false); showToast('✅ ' + _sqTotal + ' staging labels generated!'); }
+    }
+    setTimeout(function(){ _sqChunk(0); }, 50);
   }, 100);
 }
 
@@ -5670,6 +5666,85 @@ if (document.readyState === 'loading') {
 } else {
   initDailyWidgets();
 }
+
+
+// ─────────────────────────────────────────────────────────
+// PERFORMANCE UTILITIES
+// ─────────────────────────────────────────────────────────
+
+// QR canvas cache — avoid regenerating identical QR codes
+var _qrCache = {};
+
+// Shared fast html2canvas options
+function fastCanvas(el, scale) {
+  return html2canvas(el, {
+    scale: scale || 2, useCORS: true, backgroundColor: '#ffffff',
+    logging: false, removeContainer: true, imageTimeout: 8000
+  });
+}
+
+// Shared PDF builder — renders each sheet separately, yields between pages
+async function buildPDFFromSheets(sheets, filename, toastMsg) {
+  var jsPDFLib = window.jspdf;
+  if (!jsPDFLib) return;
+  var pdf = new jsPDFLib.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var pgW = pdf.internal.pageSize.getWidth();
+  var pgH = pdf.internal.pageSize.getHeight();
+  for (var pi = 0; pi < sheets.length; pi++) {
+    if (sheets.length > 2 && typeof showToast==='function') {
+      showToast('⏳ Page ' + (pi+1) + ' / ' + sheets.length + '…');
+    }
+    if (pi > 0) await new Promise(function(r){ setTimeout(r, 0); });
+    var cv = await fastCanvas(sheets[pi], 2);
+    var iw = pgW, ih = (cv.height * pgW) / cv.width;
+    if (ih > pgH) { var sc = pgH/ih; iw*=sc; ih=pgH; }
+    if (pi > 0) pdf.addPage();
+    pdf.addImage(cv.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, iw, ih);
+    cv.width = 1; cv.height = 1; // free memory
+  }
+  pdf.save(filename);
+}
+
+// Patch locidExportPDF to use buildPDFFromSheets
+locidExportPDF = async function() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) { showToast('Generate labels first'); return; }
+  showToast('⏳ Building PDF…');
+  try {
+    printEl.style.cssText += ';display:block;position:fixed;left:0;top:0;width:794px;z-index:-1;';
+    var sheets = Array.from(printEl.querySelectorAll('.locid-sheet'));
+    if (!sheets.length) sheets = [printEl];
+    await buildPDFFromSheets(sheets, 'LocationIDs_'+new Date().toISOString().split('T')[0]+'.pdf', showToast);
+    printEl.style.display='none'; printEl.style.position=''; printEl.style.width=''; printEl.style.zIndex='';
+    showToast('✅ PDF — ' + sheets.length + ' page(s)!');
+  } catch(err) { document.getElementById('locid-print-area').style.display='none'; showToast('PDF error: '+err.message); }
+};
+
+// Patch stgExportPDF to use buildPDFFromSheets
+stgExportPDF = async function() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) { showToast('Generate labels first'); return; }
+  showToast('⏳ Building PDF…');
+  try {
+    printEl.style.cssText += ';display:block;position:fixed;left:0;top:0;width:794px;z-index:-1;';
+    var sheets = Array.from(printEl.querySelectorAll('.locid-sheet'));
+    if (!sheets.length) sheets = [printEl];
+    await buildPDFFromSheets(sheets, 'StagingLabels_'+new Date().toISOString().split('T')[0]+'.pdf', showToast);
+    printEl.style.display='none'; printEl.style.position=''; printEl.style.width=''; printEl.style.zIndex='';
+    showToast('✅ PDF — ' + sheets.length + ' page(s)!');
+  } catch(err) { document.getElementById('locid-print-area').style.display='none'; showToast('PDF error: '+err.message); }
+};
+
+// Memory: clear QR cache on task switch if it grows large
+var _origOpenTask2 = typeof openTask==='function' ? openTask : null;
+if (_origOpenTask2) {
+  openTask = function(t) {
+    if (Object.keys(_qrCache).length > 150) _qrCache = {};
+    _origOpenTask2(t);
+  };
+}
+
+// Performance optimizations active: chunked QR, fast PDF, memory management
 
 </script>
 </div><!-- /app-shell -->
