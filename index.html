@@ -1644,13 +1644,16 @@ footer span { color:var(--accent); }
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
     <button id="locid-tab-manual" onclick="locidSetTab('manual')"
       style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;border:none;cursor:pointer;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;box-shadow:0 4px 16px rgba(22,163,74,0.35);">
-      ✏️ Manual Entry</button>
+      ✏️ Warehouse Labels</button>
     <button id="locid-tab-upload" onclick="locidSetTab('upload')"
       style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;background:transparent;color:#3d3a6b;border:1px solid #d5d2f0;">
       📂 Upload File</button>
     <button id="locid-tab-bulk" onclick="locidSetTab('bulk')"
       style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;background:transparent;color:#3d3a6b;border:1px solid #d5d2f0;">
       📋 Bulk Paste</button>
+    <button id="locid-tab-staging" onclick="locidSetTab('staging')"
+      style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;background:transparent;color:#3d3a6b;border:1px solid #d5d2f0;">
+      🏷️ Staging Labels</button>
   </div>
 
   <!-- MANUAL ENTRY -->
@@ -1732,6 +1735,74 @@ footer span { color:var(--accent); }
         <button onclick="locidAddBulk()"
           style="padding:10px 20px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
           + Add All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGING LOCATION PANEL -->
+  <div id="locid-panel-staging" style="display:none;">
+    <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:6px;">🏷️ Staging Location Label Generator</div>
+      <div style="font-size:12px;color:#7b78a8;margin-bottom:16px;">
+        Generates labels like <code style="background:#e0f2fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#0369a1;">STOWAGE_1_A_001</code>
+        — cyan background, two-line text, arrow, QR code.
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end;margin-bottom:14px;">
+        <div>
+          <div class="ctrl-label">Prefix</div>
+          <input class="input-field" id="stg-prefix" value="STOWAGE" style="width:100%;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase();stgPreview()">
+        </div>
+        <div>
+          <div class="ctrl-label">Zone No.</div>
+          <input class="input-field" id="stg-zone" type="number" value="1" min="1" max="99" style="width:100%;"
+            oninput="stgPreview()">
+        </div>
+        <div>
+          <div class="ctrl-label">Row Letter</div>
+          <input class="input-field" id="stg-row" value="A" maxlength="2" style="width:100%;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase();stgPreview()">
+        </div>
+        <div>
+          <div class="ctrl-label">Start No.</div>
+          <input class="input-field" id="stg-start" type="number" value="1" min="1" max="999" style="width:100%;"
+            oninput="stgPreview()">
+        </div>
+        <div>
+          <div class="ctrl-label">End No.</div>
+          <input class="input-field" id="stg-end" type="number" value="20" min="1" max="999" style="width:100%;"
+            oninput="stgPreview()">
+        </div>
+        <div>
+          <div class="ctrl-label">Direction</div>
+          <select class="select-field" id="stg-dir" style="width:100%;">
+            <option value="↑">↑ Up</option>
+            <option value="↓">↓ Down</option>
+            <option value="→">→ Right</option>
+            <option value="←">← Left</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;font-family:'DM Mono',monospace;margin-bottom:14px;" id="stg-preview-text">
+        Preview: STOWAGE_1_A_001 … STOWAGE_1_A_020
+      </div>
+      <button onclick="stgGenerate()"
+        style="padding:12px 24px;border-radius:8px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(2,132,199,0.4);">
+        ⚡ Generate Staging Labels
+      </button>
+    </div>
+
+    <!-- Staging also supports manual single entry -->
+    <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Or add single full ID</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input class="input-field" id="stg-single" placeholder="e.g. STOWAGE_1_A_011" style="flex:1;min-width:200px;font-family:'DM Mono',monospace;text-transform:uppercase;"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')stgAddSingle()">
+        <button onclick="stgAddSingle()"
+          style="padding:11px 20px;border-radius:8px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+          + Add
+        </button>
       </div>
     </div>
   </div>
@@ -2159,8 +2230,9 @@ function generateAuditLoc() {
     let locations = [];
     const targets = {
       Freezer:10, Chiller:10, Hazmat:10, Ambient:18, HRV:10,
-      HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1, Other:8
+      HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1
     };
+    // Note: "Other" zone intentionally excluded — only standard P-1-R type locations
     if (d.length && locCol) {
       const zoneLocs = {};
       const seen = new Set();
@@ -4844,6 +4916,303 @@ async function locidExportPDF() {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', locidDragSetup);
   else locidDragSetup();
+})();
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// STAGING LOCATION MAKER
+// Photo format: STOWAGE_1_A_011
+//   Left: cyan background, line1="STOWAGE_", line2="1 A 011", arrow
+//   Right: white section, QR of full ID
+// ═══════════════════════════════════════════════════════════════
+
+var STAGING_BG = '#29b6d8'; // cyan-blue matching photo
+
+// ── Tab setTab extension for 'staging' ───────────────────────
+var _origLocidSetTab = locidSetTab;
+locidSetTab = function(tab) {
+  // Handle staging tab ourselves, pass others to original
+  var stagingPanel = document.getElementById('locid-panel-staging');
+  var stagingBtn   = document.getElementById('locid-tab-staging');
+
+  if (tab === 'staging') {
+    // Hide all other panels
+    ['manual','upload','bulk'].forEach(function(t) {
+      var p = document.getElementById('locid-panel-' + t);
+      var b = document.getElementById('locid-tab-' + t);
+      if (p) p.style.display = 'none';
+      if (b) {
+        b.style.background = 'transparent';
+        b.style.color      = '#3d3a6b';
+        b.style.border     = '1px solid #d5d2f0';
+        b.style.boxShadow  = 'none';
+      }
+    });
+    if (stagingPanel) stagingPanel.style.display = 'block';
+    if (stagingBtn) {
+      stagingBtn.style.background = 'linear-gradient(135deg,#0284c7,#0369a1)';
+      stagingBtn.style.color      = '#fff';
+      stagingBtn.style.border     = 'none';
+      stagingBtn.style.boxShadow  = '0 4px 16px rgba(2,132,199,0.4)';
+    }
+    stgPreview();
+  } else {
+    if (stagingPanel) stagingPanel.style.display = 'none';
+    if (stagingBtn) {
+      stagingBtn.style.background = 'transparent';
+      stagingBtn.style.color      = '#3d3a6b';
+      stagingBtn.style.border     = '1px solid #d5d2f0';
+      stagingBtn.style.boxShadow  = 'none';
+    }
+    _origLocidSetTab(tab);
+  }
+};
+
+// ── Preview line ──────────────────────────────────────────────
+function stgPreview() {
+  var prefix = (document.getElementById('stg-prefix').value || 'STOWAGE').trim().toUpperCase();
+  var zone   = (document.getElementById('stg-zone').value   || '1').trim();
+  var row    = (document.getElementById('stg-row').value    || 'A').trim().toUpperCase();
+  var start  = parseInt(document.getElementById('stg-start').value) || 1;
+  var end    = parseInt(document.getElementById('stg-end').value)   || 20;
+  var count  = Math.max(0, end - start + 1);
+
+  var first = stgBuildId(prefix, zone, row, start);
+  var last  = stgBuildId(prefix, zone, row, end);
+  var el    = document.getElementById('stg-preview-text');
+  if (el) {
+    el.textContent = 'Preview: ' + first + ' … ' + last + ' (' + count + ' labels)';
+  }
+}
+
+// ── Build full staging ID ─────────────────────────────────────
+// Format: STOWAGE_1_A_011  (prefix_zone_row_3digitNum)
+function stgBuildId(prefix, zone, row, num) {
+  return prefix + '_' + zone + '_' + row + '_' + String(num).padStart(3, '0');
+}
+
+// ── Parse a full staging ID back to parts ─────────────────────
+// "STOWAGE_1_A_011" → { line1:"STOWAGE_", line2:"1 A 011", full:"STOWAGE_1_A_011" }
+function stgParseId(fullId) {
+  var s = (fullId || '').trim().toUpperCase();
+  var parts = s.split('_');
+  if (parts.length >= 4) {
+    // PREFIX_ZONE_ROW_NUM
+    var prefix = parts[0];
+    var zone   = parts[1];
+    var row    = parts[2];
+    var num    = parts.slice(3).join('_');
+    return {
+      line1: prefix + '_',
+      line2: zone + ' ' + row + ' ' + num,
+      full:  s
+    };
+  } else if (parts.length === 3) {
+    return {
+      line1: parts[0] + '_',
+      line2: parts[1] + ' ' + parts[2],
+      full:  s
+    };
+  } else {
+    return { line1: s, line2: '', full: s };
+  }
+}
+
+// ── Generate range of staging labels ──────────────────────────
+function stgGenerate() {
+  var prefix = (document.getElementById('stg-prefix').value || 'STOWAGE').trim().toUpperCase();
+  var zone   = (document.getElementById('stg-zone').value   || '1').trim();
+  var row    = (document.getElementById('stg-row').value    || 'A').trim().toUpperCase();
+  var start  = parseInt(document.getElementById('stg-start').value) || 1;
+  var end    = parseInt(document.getElementById('stg-end').value)   || 20;
+  var dir    = document.getElementById('stg-dir').value || '↑';
+
+  if (end < start) { showToast('⚠️ End must be ≥ Start'); return; }
+  if (end - start > 199) { showToast('⚠️ Max 200 labels at once'); return; }
+
+  var labels = [];
+  for (var n = start; n <= end; n++) {
+    var fullId = stgBuildId(prefix, zone, row, n);
+    var parsed = stgParseId(fullId);
+    labels.push({ full: fullId, line1: parsed.line1, line2: parsed.line2, dir: dir });
+  }
+
+  stgRenderLabels(labels);
+  showToast('✅ ' + labels.length + ' staging labels generated!');
+}
+
+// ── Add single manual staging label ───────────────────────────
+function stgAddSingle() {
+  var val = (document.getElementById('stg-single').value || '').trim().toUpperCase();
+  if (!val) { showToast('⚠️ Enter a staging ID'); return; }
+  var dir    = '↑';
+  var parsed = stgParseId(val);
+  stgRenderLabels([{ full: val, line1: parsed.line1, line2: parsed.line2, dir: dir }]);
+  document.getElementById('stg-single').value = '';
+  showToast('✅ ' + val + ' added');
+}
+
+// ── Render staging label sheets ────────────────────────────────
+function stgRenderLabels(labels) {
+  showLoading('locid', true);
+  document.getElementById('out-locid').innerHTML = '';
+
+  setTimeout(function() {
+    var PER_PAGE = 20;
+    var totalPages = Math.ceil(labels.length / PER_PAGE);
+    var sheetHTML = '';
+
+    for (var pg = 0; pg < totalPages; pg++) {
+      var slice = labels.slice(pg * PER_PAGE, (pg + 1) * PER_PAGE);
+      sheetHTML += '<div class="locid-sheet"' + (pg > 0 ? ' style="page-break-before:always;"' : '') + '>';
+      if (totalPages > 1) {
+        sheetHTML += '<div style="font-size:8pt;color:#aaa;font-family:Arial;text-align:right;margin-bottom:2mm;">Page ' + (pg+1) + ' / ' + totalPages + '</div>';
+      }
+      sheetHTML += '<div class="locid-page-grid">';
+      slice.forEach(function(lbl, li) {
+        var globalIdx = pg * PER_PAGE + li;
+        sheetHTML += stgBuildLabelHTML(lbl, globalIdx);
+      });
+      sheetHTML += '</div></div>';
+    }
+
+    // Preview (scaled)
+    document.getElementById('out-locid').innerHTML =
+      '<div style="margin-top:16px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">' +
+          '<div style="font-weight:700;font-size:14px;color:#1a1830;">' +
+            '🏷️ Staging Labels — ' + labels.length + ' labels · ' + totalPages + ' page(s)' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button onclick="stgPrint()" style="padding:12px 24px;border-radius:8px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(2,132,199,0.35);">🖨️ Print</button>' +
+            '<button onclick="stgExportPDF()" style="padding:12px 20px;border-radius:8px;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;border:none;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⬇ PDF</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="background:#64748b;padding:12px;border-radius:10px;overflow:hidden;">' +
+          '<div style="transform-origin:top left;transform:scale(0.65);width:153.8%;background:#fff;">' +
+            sheetHTML +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    // Print area
+    var printEl = document.getElementById('locid-print-area');
+    printEl.innerHTML = sheetHTML;
+
+    // Generate QR codes
+    setTimeout(function() {
+      labels.forEach(function(lbl, globalIdx) {
+        // Preview QR
+        var pvEl = document.getElementById('stg-qr-' + globalIdx);
+        if (pvEl && !pvEl.hasChildNodes()) {
+          try {
+            new QRCode(pvEl, { text: lbl.full, width: 56, height: 56,
+              colorDark: '#000000', colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.H });
+          } catch(e) {}
+        }
+        // Print QR
+        var prEl = printEl.querySelector('#stg-qr-' + globalIdx);
+        if (prEl && !prEl.hasChildNodes()) {
+          try {
+            new QRCode(prEl, { text: lbl.full, width: 90, height: 90,
+              colorDark: '#000000', colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.H });
+          } catch(e) {}
+        }
+      });
+      showLoading('locid', false);
+    }, 250);
+  }, 100);
+}
+
+// ── Build one staging label HTML ──────────────────────────────
+// Matches photo: [CYAN | line1 line2 arrow | QR]
+function stgBuildLabelHTML(lbl, idx) {
+  return '<div class="locid-label" id="stg-lbl-' + idx + '">' +
+    // LEFT: cyan background, two text lines
+    '<div style="width:22mm;flex-shrink:0;display:flex;flex-direction:column;' +
+    'align-items:flex-start;justify-content:center;padding:2mm 3mm;' +
+    'background:' + STAGING_BG + ';line-height:1.3;gap:1mm;">' +
+      '<div style="font-size:9pt;font-weight:800;font-family:Arial,sans-serif;' +
+      'color:#003d5c;letter-spacing:0.3pt;white-space:nowrap;">' + (lbl.line1 || '') + '</div>' +
+      '<div style="font-size:11pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;' +
+      'color:#001f2e;letter-spacing:0.5pt;white-space:nowrap;">' + (lbl.line2 || '') + '</div>' +
+    '</div>' +
+    // CENTER: arrow only (no big ID text — matches photo style)
+    '<div style="flex:1;display:flex;align-items:center;justify-content:center;' +
+    'padding:0 4mm;background:' + STAGING_BG + ';">' +
+      '<span style="font-size:26pt;font-weight:900;color:#001f2e;line-height:1;">' +
+      (lbl.dir || '↑') + '</span>' +
+    '</div>' +
+    // RIGHT: white, QR code
+    '<div class="locid-right">' +
+      '<div id="stg-qr-' + idx + '"></div>' +
+    '</div>' +
+    '</div>';
+}
+
+// ── Print staging ─────────────────────────────────────────────
+function stgPrint() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) {
+    showToast('Generate labels first'); return;
+  }
+  printEl.style.display = 'block';
+  window.print();
+  setTimeout(function() { printEl.style.display = 'none'; }, 800);
+}
+
+// ── Export PDF (reuse locidExportPDF) ────────────────────────
+async function stgExportPDF() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) { showToast('Generate labels first'); return; }
+  showToast('⏳ Building PDF…');
+  try {
+    printEl.style.display = 'block';
+    printEl.style.position = 'fixed';
+    printEl.style.left = '0'; printEl.style.top = '0';
+    printEl.style.width = '794px'; printEl.style.zIndex = '-1';
+    printEl.style.background = '#fff';
+
+    var { jsPDF } = window.jspdf;
+    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pgW = pdf.internal.pageSize.getWidth();
+    var pgH = pdf.internal.pageSize.getHeight();
+    var sheets = printEl.querySelectorAll('.locid-sheet');
+    if (!sheets.length) sheets = [printEl];
+
+    for (var pi = 0; pi < sheets.length; pi++) {
+      var canvas = await html2canvas(sheets[pi], {
+        scale: 3, useCORS: true, backgroundColor: '#ffffff',
+        logging: false, width: 794, windowWidth: 794
+      });
+      var imgW = pgW;
+      var imgH = (canvas.height * imgW) / canvas.width;
+      if (imgH > pgH) { var sc = pgH/imgH; imgW*=sc; imgH=pgH; }
+      if (pi > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, imgW, imgH);
+    }
+
+    printEl.style.display = 'none';
+    printEl.style.position = '';
+    printEl.style.left = ''; printEl.style.top = '';
+    printEl.style.width = ''; printEl.style.zIndex = '';
+
+    pdf.save('StagingLabels_' + new Date().toISOString().split('T')[0] + '.pdf');
+    showToast('✅ PDF exported!');
+  } catch(err) {
+    document.getElementById('locid-print-area').style.display = 'none';
+    showToast('PDF error: ' + err.message);
+  }
+}
+
+// Init preview on load
+(function() {
+  function initStg() { if (document.getElementById('stg-preview-text')) stgPreview(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initStg);
+  else initStg();
 })();
 
 </script>
