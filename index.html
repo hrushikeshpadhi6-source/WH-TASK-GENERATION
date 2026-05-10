@@ -561,6 +561,162 @@ footer span { color:var(--accent); }
 .mp-progress-fill { height:100%; width:45%; background:linear-gradient(90deg,#6366f1,#a5b4fc); border-radius:4px; animation:mpBar 2s ease-in-out infinite alternate; }
 @keyframes mpBar { from{width:30%;} to{width:65%;} }
 
+
+/* ── LOCATION ID MAKER ── */
+#page-locid { background: #f8f7ff; min-height: 100vh; }
+#page-locid .task-page {
+  --border:#d5d2f0; --text:#1a1830; --text2:#3d3a6b;
+  --muted:#7b78a8; --accent:#16a34a; color:#1a1830;
+}
+#page-locid .back-btn { background:#fff; border-color:#d5d2f0; color:#3d3a6b; }
+#page-locid .back-btn:hover { background:#16a34a; color:#fff; border-color:#16a34a; }
+#page-locid .task-header h2 {
+  background:linear-gradient(135deg,#1a1830,#16a34a);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+#page-locid .task-header { border-bottom-color:#d5d2f0 !important; }
+#page-locid .upload-zone { background:#fff; border-color:#d5d2f0; }
+#page-locid .upload-zone h3 { color:#1a1830; }
+#page-locid .select-field, #page-locid .input-field {
+  background:#fff; border-color:#d5d2f0; color:#1a1830;
+}
+#page-locid .alert-info { background:rgba(22,163,74,0.07); color:#14532d; border:1px solid #86efac; }
+
+/* ── Label print sheet ── */
+.locid-sheet {
+  background: #fff;
+  padding: 10mm;
+  width: 210mm;
+  box-sizing: border-box;
+}
+.locid-page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3mm 4mm;
+}
+.locid-label {
+  width: 95mm;
+  height: 20mm;
+  display: flex;
+  align-items: stretch;
+  border-radius: 2mm;
+  overflow: hidden;
+  border: 0.3mm solid rgba(0,0,0,0.15);
+  box-sizing: border-box;
+  page-break-inside: avoid;
+}
+/* Left colored section */
+.locid-left {
+  width: 18mm;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1mm 2mm;
+  line-height: 1.2;
+}
+.locid-left .lil-top {
+  font-size: 5pt;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+  color: rgba(0,0,0,0.75);
+  text-align: center;
+  letter-spacing: 0.2pt;
+}
+.locid-left .lil-bot {
+  font-size: 7pt;
+  font-weight: 900;
+  font-family: Arial, sans-serif;
+  color: rgba(0,0,0,0.75);
+  text-align: center;
+}
+/* Center main section */
+.locid-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2mm;
+  padding: 0 3mm;
+}
+.locid-center .lc-id {
+  font-size: 22pt;
+  font-weight: 900;
+  font-family: Arial Black, Arial, sans-serif;
+  color: #111;
+  letter-spacing: -0.5pt;
+  line-height: 1;
+  white-space: nowrap;
+}
+.locid-center .lc-arrow {
+  font-size: 20pt;
+  font-weight: 900;
+  color: #111;
+  line-height: 1;
+}
+/* Right QR section */
+.locid-right {
+  width: 18mm;
+  flex-shrink: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1mm;
+}
+.locid-right canvas,
+.locid-right img { width: 16mm !important; height: 16mm !important; }
+
+/* Color map */
+.locid-color-red    { background: #e63329; }
+.locid-color-orange { background: #e8500a; }
+.locid-color-yellow { background: #f5c200; }
+.locid-color-gold   { background: #d4a017; }
+.locid-color-green  { background: #4caf50; }
+.locid-color-blue   { background: #5aabdb; }
+.locid-color-purple { background: #9c27b0; }
+.locid-color-gray   { background: #9e9e9e; }
+.locid-color-teal   { background: #009688; }
+.locid-color-pink   { background: #e91e63; }
+.locid-color-white  { background: #fff; border-right: 0.3mm solid #ddd; }
+.locid-color-dark   { background: #37474f; }
+
+.locid-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.locid-preview-item {
+  background: #fff;
+  border: 1px solid #d5d2f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #1a1830;
+  font-family: monospace;
+}
+.locid-color-dot {
+  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  #locid-print-area, #locid-print-area * { visibility: visible !important; }
+  #locid-print-area {
+    position: fixed !important;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #fff;
+  }
+  .locid-sheet { padding: 8mm; }
+  .locid-label { border: 0.3mm solid rgba(0,0,0,0.2) !important; }
+  @page { size: A4 portrait; margin: 0; }
+}
+
 @media print {
   .pdf-signature-bar { display: flex !important; }
 }
@@ -705,6 +861,13 @@ footer span { color:var(--accent); }
       <h3>Manpower Allocation</h3>
       <p>Smart manpower planning & shift allocation tool.</p>
       <div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;color:#818cf8;letter-spacing:1px;">⚙️ UNDER PROCESS</div>
+    </div>
+    <div class="task-card" style="--card-color:#16a34a" onclick="openTask('locid')">
+      <div class="card-num">Task 11</div>
+      <span class="card-icon">🏷️</span>
+      <h3>Location ID Maker</h3>
+      <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
+      <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
       <span class="card-icon">💬</span>
@@ -1319,6 +1482,7 @@ footer span { color:var(--accent); }
       ☁️ Fetch & Match from Google Sheet
     </button>
     <button class="btn btn-accent" onclick="siPrintBarcodes()" id="si-print-btn" style="display:none">🖨️ Print Barcode Labels</button>
+    <button class="btn btn-primary" onclick="siExportWord()" id="si-word-btn" style="display:none">⬇ Export Word (.docx)</button>
     <button class="btn btn-green" onclick="ciExportExcel('scanning')" id="si-excel-btn" style="display:none">⬇ Export Excel</button>
   </div>
   <div id="si-fetch-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
@@ -1354,6 +1518,143 @@ footer span { color:var(--accent); }
     <div class="mp-progress-bar"><div class="mp-progress-fill"></div></div>
     <div style="margin-top:16px;font-size:12px;color:#a5b4fc;font-family:'DM Mono',monospace;letter-spacing:1px;">BUILDING IN PROGRESS — STAY TUNED</div>
   </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TASK 11: LOCATION ID MAKER (v2 — auto-split)
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-locid">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon" style="font-size:36px;flex-shrink:0;">🏷️</span>
+    <div>
+      <h2>Location ID Maker</h2>
+      <p>Enter full location IDs like <strong>P-1-A116F182</strong> — auto-splits into label sections, assigns color by bay letter, generates scannable QR. A4 · 20 labels/page.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-info" style="margin-bottom:16px;">
+    ℹ️ <strong>Auto-split:</strong> <code style="background:#d1fae5;padding:2px 6px;border-radius:4px;font-family:monospace;">P-1-A116F182</code>
+    → Left: <strong>P-1-A / 116</strong> · Center: <strong>F182 ↑</strong> · Color: <strong>Red</strong> (F=Red)
+  </div>
+
+  <!-- Input tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <button id="locid-tab-manual" onclick="locidSetTab('manual')"
+      style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;border:none;cursor:pointer;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;box-shadow:0 4px 16px rgba(22,163,74,0.35);">
+      ✏️ Manual Entry</button>
+    <button id="locid-tab-upload" onclick="locidSetTab('upload')"
+      style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;background:transparent;color:#3d3a6b;border:1px solid #d5d2f0;">
+      📂 Upload File</button>
+    <button id="locid-tab-bulk" onclick="locidSetTab('bulk')"
+      style="padding:10px 20px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px;cursor:pointer;background:transparent;color:#3d3a6b;border:1px solid #d5d2f0;">
+      📋 Bulk Paste</button>
+  </div>
+
+  <!-- MANUAL ENTRY -->
+  <div id="locid-panel-manual">
+    <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">Add Location Label</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+        <div>
+          <div class="ctrl-label">Full Location ID *</div>
+          <input class="input-field" id="locid-input-full" type="text"
+            placeholder="e.g. P-1-A116F182" style="width:100%;text-transform:uppercase;font-family:'DM Mono',monospace;letter-spacing:1px;"
+            oninput="this.value=this.value.toUpperCase();locidPreviewSplit()"
+            onkeydown="if(event.key==='Enter')locidAddManual()">
+          <div id="locid-split-preview" style="font-size:11px;color:#16a34a;margin-top:4px;font-family:'DM Mono',monospace;min-height:16px;"></div>
+        </div>
+        <div>
+          <div class="ctrl-label">Direction</div>
+          <select class="select-field" id="locid-input-dir" style="width:100%;">
+            <option value="↑">↑ Up</option>
+            <option value="↓">↓ Down</option>
+            <option value="→">→ Right</option>
+            <option value="←">← Left</option>
+          </select>
+        </div>
+        <div>
+          <div class="ctrl-label">Color Override</div>
+          <select class="select-field" id="locid-input-color" style="width:100%;">
+            <option value="auto">🎨 Auto (by letter)</option>
+            <option value="red">🔴 Red</option>
+            <option value="orange">🟠 Orange</option>
+            <option value="yellow">🟡 Yellow</option>
+            <option value="gold">🟤 Gold</option>
+            <option value="green">🟢 Green</option>
+            <option value="blue">🔵 Blue</option>
+            <option value="purple">🟣 Purple</option>
+            <option value="gray">⬛ Gray</option>
+            <option value="teal">🩵 Teal</option>
+            <option value="pink">🩷 Pink</option>
+            <option value="white">⬜ White</option>
+            <option value="dark">🖤 Dark</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button onclick="locidAddManual()"
+            style="width:100%;padding:11px 16px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">
+            + Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD FILE -->
+  <div id="locid-panel-upload" style="display:none;">
+    <div class="upload-zone" id="uz-locid" onclick="document.getElementById('f-locid').click()">
+      <input type="file" id="f-locid" accept=".xlsx,.xls,.csv" style="display:none" onchange="locidHandleUpload(this)">
+      <div class="u-icon">📂</div>
+      <h3>Upload Location List</h3>
+      <p>Column A = Full Location ID (e.g. P-1-A116F182) · Column B = Direction (↑) · Column C = Color (optional)</p>
+      <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+    </div>
+  </div>
+
+  <!-- BULK PASTE -->
+  <div id="locid-panel-bulk" style="display:none;">
+    <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:18px 20px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:10px;">Paste Full Location IDs (one per line)</div>
+      <textarea id="locid-bulk-text"
+        style="width:100%;height:140px;border:1px solid #d5d2f0;border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:13px;color:#1a1830;resize:vertical;outline:none;background:#f8f7ff;text-transform:uppercase;letter-spacing:0.5px;"
+        placeholder="P-1-A116F182&#10;P-1-A116E103&#10;P-1-A128D103&#10;P-1-A116C103"
+        oninput="this.value=this.value.toUpperCase()"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:11px;font-weight:700;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;">Direction</label>
+          <select class="select-field" id="locid-bulk-dir" style="width:90px;">
+            <option value="↑">↑ Up</option><option value="↓">↓ Down</option>
+            <option value="→">→ Right</option><option value="←">← Left</option>
+          </select>
+        </div>
+        <button onclick="locidAddBulk()"
+          style="padding:10px 20px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+          + Add All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queue -->
+  <div id="locid-queue-wrap" style="display:none;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="font-weight:700;font-size:14px;color:#1a1830;">
+        Queue &nbsp;<span id="locid-queue-count" style="background:#16a34a;color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;">0</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="locidClearAll()"
+          style="padding:8px 16px;border-radius:8px;background:transparent;border:1px solid #d5d2f0;color:#3d3a6b;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">✕ Clear All</button>
+        <button onclick="locidGenerate()"
+          style="padding:10px 22px;border-radius:8px;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(67,97,238,0.4);">⚡ Generate Labels</button>
+      </div>
+    </div>
+    <div id="locid-queue-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;"></div>
+  </div>
+
+  <div class="loading" id="load-locid"><div class="spinner"></div><div>Generating labels…</div></div>
+  <div id="locid-print-area" style="display:none;"></div>
+  <div id="out-locid"></div>
 </div>
 </div>
 
@@ -3479,9 +3780,11 @@ function ciMatchAndRender(mode, asins) {
     if (pBtn) pBtn.style.display = 'inline-flex';
     if (eBtn) eBtn.style.display = 'inline-flex';
   } else {
-    var sBtn = document.getElementById('si-print-btn');
+    var sBtn  = document.getElementById('si-print-btn');
+    var swBtn = document.getElementById('si-word-btn');
     var seBtn = document.getElementById('si-excel-btn');
-    if (sBtn) sBtn.style.display = 'inline-flex';
+    if (sBtn)  sBtn.style.display  = 'inline-flex';
+    if (swBtn) swBtn.style.display = 'inline-flex';
     if (seBtn) seBtn.style.display = 'inline-flex';
   }
 
@@ -3635,8 +3938,12 @@ async function ciExportPDF(mode) {
   var el = document.getElementById(mode === 'catalog' ? 'out-catalog' : 'out-scanning');
   if (!el || !el.innerHTML.trim()) { showToast('Generate results first'); return; }
   showToast('⏳ Building PDF…');
-  try { await exportA4PDF(el, mode === 'catalog' ? 'Catalog Issue Items' : 'Scanning Issue Items'); }
-  catch(err) { showToast('PDF error: ' + err.message); }
+  try {
+    await exportA4PDF(el, mode === 'catalog' ? 'Catalog Issue Items' : 'Scanning Issue Items');
+  } catch(err) {
+    showToast('PDF error: ' + err.message);
+    console.error(err);
+  }
 }
 
 // ── Export Excel (both modes) ─────────────────────────────────
@@ -3699,6 +4006,206 @@ function siPrintBarcodes() {
   }, 200);
 }
 
+// ── Export Scanning Issue barcodes as Word (.docx) ───────────
+// Same format as YSM Word export: 1 label per page, CODE128 barcode + ASIN + location info
+async function siExportWord() {
+  var list = ciState['scanning'].matched;
+  if (!list || !list.length) { showToast('Generate results first'); return; }
+
+  // Build flat label list: one entry per ASIN per location
+  var labels = [];
+  list.forEach(function(item) {
+    item.locs.forEach(function(l) {
+      labels.push({
+        asin:    item.asin,
+        loc:     l.loc,
+        qty:     Math.round(l.qty),
+        zone:    l.zone
+      });
+    });
+  });
+
+  if (!labels.length) { showToast('No labels to export'); return; }
+  showToast('⏳ Building Word file…');
+
+  try {
+    // Load JSZip if not already loaded
+    if (!window.JSZip) {
+      await new Promise(function(res, rej) {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    // CODE128 bar patterns (same lookup table as YSM)
+    var P128 = ['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
+
+    // Draw one label PNG per label entry
+    // Canvas: 406×244px  same as YSM
+    function makeSILabelPNG(asin, line2) {
+      var W=406, H=244, ML=37, MT=20, CW=349, BAR_H=116;
+      var cvs = document.createElement('canvas');
+      cvs.width = W; cvs.height = H;
+      var ctx = cvs.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+
+      // Draw CODE128 barcode
+      var vals = {};
+      for (var ci=0; ci<95; ci++) vals[String.fromCharCode(ci+32)] = ci;
+      var codes = [104], chk = 104;
+      for (var ci2=0; ci2<asin.length; ci2++) {
+        var v = vals[asin[ci2]] || 0;
+        codes.push(v); chk += v*(ci2+1);
+      }
+      codes.push(chk % 103); codes.push(106);
+      var bars = codes.map(function(c) { return P128[Math.min(c,106)]; }).join('');
+      var bu = Math.max(1, Math.floor(CW / bars.length));
+      var x  = ML + Math.floor((CW - bu*bars.length) / 2);
+      ctx.fillStyle = '#000';
+      for (var bi=0; bi<bars.length; bi++) {
+        if (bars[bi] === '1') ctx.fillRect(x, MT, bu, BAR_H);
+        x += bu;
+      }
+
+      // ASIN text
+      ctx.font = 'bold 16px "Courier New",monospace';
+      ctx.textAlign = 'center'; ctx.fillStyle = '#000';
+      ctx.fillText(asin, W/2, MT+BAR_H+22);
+
+      // Location + qty + zone text
+      ctx.font = 'bold 13px Arial,sans-serif';
+      ctx.fillStyle = '#333';
+      // Wrap line2 if too long
+      var words = line2.split(' '), l1='', l2='';
+      for (var wi=0; wi<words.length; wi++) {
+        var t = (l1+' '+words[wi]).trim();
+        if (ctx.measureText(t).width <= CW) l1 = t;
+        else l2 = (l2+' '+words[wi]).trim();
+      }
+      if (l1) ctx.fillText(l1, W/2, MT+BAR_H+40);
+      if (l2) ctx.fillText(l2, W/2, MT+BAR_H+56);
+
+      var b64 = cvs.toDataURL('image/png').split(',')[1];
+      var bin = atob(b64);
+      var arr = new Uint8Array(bin.length);
+      for (var pi=0; pi<bin.length; pi++) arr[pi] = bin.charCodeAt(pi);
+      return arr;
+    }
+
+    // Generate all PNGs
+    var pngs = [];
+    labels.forEach(function(lbl) {
+      var line2 = lbl.loc + '  ·  ' + lbl.qty + ' units  ·  ' + lbl.zone;
+      pngs.push(makeSILabelPNG(lbl.asin, line2));
+    });
+
+    var n   = pngs.length;
+    var zip = new JSZip();
+
+    // Content types
+    zip.file('[Content_Types].xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Default Extension="png" ContentType="image/png"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>');
+
+    zip.file('_rels/.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>');
+
+    // Image relationships
+    var wRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    for (var ri=0; ri<n; ri++) {
+      wRels += '<Relationship Id="rId'+(9+ri)+'" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ' +
+        'Target="media/image'+(ri+1)+'.png"/>';
+    }
+    wRels += '</Relationships>';
+    zip.file('word/_rels/document.xml.rels', wRels);
+
+    // Add PNG images
+    for (var pi2=0; pi2<n; pi2++) {
+      zip.file('word/media/image'+(pi2+1)+'.png', pngs[pi2]);
+    }
+
+    // Build document body — one label per page, landscape 4"×2.4" page
+    var ANS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+              'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+    var body = '';
+    for (var li=0; li<n; li++) {
+      var isLast = (li === n-1);
+      var rId    = 'rId' + (9+li);
+      body += '<w:p>' +
+        '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>' +
+        '<w:r><w:drawing><wp:inline ' + ANS + '>' +
+        '<wp:extent cx="1828800" cy="1097280"/>' +
+        '<wp:docPr id="'+(li+1)+'" name="Label '+(li+1)+'"/>' +
+        '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+        '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+        '<pic:pic><pic:nvPicPr>' +
+        '<pic:cNvPr id="0" name="barcode.png"/><pic:cNvPicPr/>' +
+        '</pic:nvPicPr>' +
+        '<pic:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1097280"/></a:xfrm>' +
+        '<a:prstGeom prst="rect"/></pic:spPr>' +
+        '</pic:pic></a:graphicData></a:graphic>' +
+        '</wp:inline></w:drawing>' +
+        (isLast ? '' : '<w:br w:type="page"/>') +
+        '</w:r></w:p>';
+    }
+
+    var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ' +
+      'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+      'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+      'xmlns:v="urn:schemas-microsoft-com:vml" ' +
+      'xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+      'xmlns:w10="urn:schemas-microsoft-com:office:word" ' +
+      'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+      'mc:Ignorable="w14 wp14">' +
+      '<w:body>' + body +
+      '<w:sectPr>' +
+      '<w:pgSz w:w="2880" w:h="1728"/>' +
+      '<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" ' +
+      'w:header="144" w:footer="144" w:gutter="0"/>' +
+      '<w:cols w:space="720"/><w:docGrid w:linePitch="360"/>' +
+      '</w:sectPr>' +
+      '</w:body></w:document>';
+
+    zip.file('word/document.xml', docXml);
+
+    var blob = await zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'ScanningIssue_Barcodes_' + new Date().toISOString().split('T')[0] + '.docx';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ Word (.docx) ready — ' + n + ' barcode labels!');
+
+  } catch(err) {
+    console.error(err);
+    showToast('❌ Word export error: ' + err.message);
+  }
+}
+
 // ── Reset ─────────────────────────────────────────────────────
 function ciReset(mode) {
   ciState[mode] = { data: [], headers: [], matched: [], asins: [] };
@@ -3750,6 +4257,415 @@ function ciReset(mode) {
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// TASK 11 — LOCATION ID MAKER
+// Generates warehouse location labels matching the sample image:
+// [COLORED LEFT: code] [CENTER: LocationID + Arrow] [RIGHT: QR]
+// ═══════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════
+// TASK 11 — LOCATION ID MAKER  (v2 — full auto-split)
+//
+// Input:  P-1-A116F182  (full location ID)
+// Output label sections:
+//   Left colored strip → top: "P-1-A"  bottom: "116"
+//   Center             → main: "F182"  arrow: ↑
+//   Right white box    → QR of full ID "P-1-A116F182"
+//
+// Color assigned by the LETTER in main location (F→Red, A→Blue, etc.)
+// ═══════════════════════════════════════════════════════════════
+
+// Queue: array of { full, smallTop, smallBot, main, dir, color }
+var locidQueue = [];
+
+// ── Color map: bay letter → color name ─────────────────────────
+var LOCID_LETTER_COLOR = {
+  'A':'blue',   'B':'white',  'C':'orange', 'D':'white',
+  'E':'yellow', 'F':'red',    'G':'yellow', 'H':'green',
+  'I':'blue',   'J':'purple', 'K':'teal',   'L':'gold',
+  'M':'pink',   'N':'red',    'O':'gray',   'P':'green',
+  'Q':'blue',   'R':'orange', 'S':'yellow', 'T':'red',
+  'U':'purple', 'V':'teal',   'W':'gold',   'X':'gray',
+  'Y':'green',  'Z':'blue'
+};
+
+// Color name → background hex (matches sample image exactly)
+var LOCID_BG = {
+  'red':    '#e63329',
+  'orange': '#e8500a',
+  'yellow': '#f5c200',
+  'gold':   '#d4a017',
+  'green':  '#4caf50',
+  'blue':   '#5aabdb',
+  'purple': '#9c27b0',
+  'gray':   '#9e9e9e',
+  'teal':   '#009688',
+  'pink':   '#e91e63',
+  'white':  '#ffffff',
+  'dark':   '#37474f'
+};
+
+// ── Auto-split a full location ID ──────────────────────────────
+// "P-1-A116F182" → { smallTop:"P-1-A", smallBot:"116", main:"F182" }
+function locidSplit(fullId) {
+  var s = (fullId || '').trim().toUpperCase();
+  if (!s) return null;
+
+  // Step 1: Extract main = last uppercase-letter + digits at end
+  var m = s.match(/^(.*?)([A-Z]\d+)$/);
+  if (!m) {
+    // No recognizable main part — treat whole thing as main
+    return { smallTop: '', smallBot: '', main: s, colorLetter: s.charAt(0) };
+  }
+
+  var prefix = m[1];   // "P-1-A116"
+  var main   = m[2];   // "F182"
+
+  // Step 2: Split prefix into text and trailing number
+  var m2 = prefix.match(/^(.*?)(\d+)$/);
+  var smallTop, smallBot;
+  if (m2 && m2[1]) {
+    smallTop = m2[1].replace(/-+$/, '');  // "P-1-A" (strip trailing dash)
+    smallBot = m2[2];                      // "116"
+  } else {
+    smallTop = prefix.replace(/-+$/, '');
+    smallBot = '';
+  }
+
+  return {
+    full:        s,
+    smallTop:    smallTop,
+    smallBot:    smallBot,
+    main:        main,
+    colorLetter: main.charAt(0)
+  };
+}
+
+function locidGetBg(colorPref, colorLetter) {
+  var c = (colorPref && colorPref !== 'auto')
+    ? colorPref
+    : (LOCID_LETTER_COLOR[colorLetter] || 'white');
+  return { name: c, hex: LOCID_BG[c] || '#ffffff' };
+}
+
+// ── Split preview while typing ──────────────────────────────────
+function locidPreviewSplit() {
+  var val = document.getElementById('locid-input-full').value;
+  var pv  = document.getElementById('locid-split-preview');
+  if (!pv) return;
+  if (!val) { pv.textContent = ''; return; }
+  var r = locidSplit(val);
+  if (!r) { pv.textContent = ''; return; }
+  var bg  = locidGetBg('auto', r.colorLetter);
+  pv.innerHTML = '→ Left: <b>' + r.smallTop + ' / ' + r.smallBot + '</b>'
+               + ' · Center: <b>' + r.main + '</b>'
+               + ' · Color: <b style="color:' + bg.hex + ';background:#f0f0f0;padding:1px 6px;border-radius:3px;">' + bg.name + '</b>';
+}
+
+// ── Tab switcher ────────────────────────────────────────────────
+function locidSetTab(tab) {
+  ['manual','upload','bulk'].forEach(function(t) {
+    var panel = document.getElementById('locid-panel-' + t);
+    var btn   = document.getElementById('locid-tab-' + t);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    if (btn) {
+      if (t === tab) {
+        btn.style.background  = 'linear-gradient(135deg,#16a34a,#15803d)';
+        btn.style.color       = '#fff';
+        btn.style.border      = 'none';
+        btn.style.boxShadow   = '0 4px 16px rgba(22,163,74,0.35)';
+      } else {
+        btn.style.background  = 'transparent';
+        btn.style.color       = '#3d3a6b';
+        btn.style.border      = '1px solid #d5d2f0';
+        btn.style.boxShadow   = 'none';
+      }
+    }
+  });
+}
+
+// ── Add from manual input ───────────────────────────────────────
+function locidAddManual() {
+  var full  = (document.getElementById('locid-input-full').value  || '').trim().toUpperCase();
+  var dir   = document.getElementById('locid-input-dir').value    || '↑';
+  var color = document.getElementById('locid-input-color').value  || 'auto';
+  if (!full) { showToast('⚠️ Enter a Location ID'); return; }
+  var parts = locidSplit(full);
+  if (!parts) { showToast('⚠️ Cannot parse: ' + full); return; }
+  locidQueue.push({ full: full, smallTop: parts.smallTop, smallBot: parts.smallBot, main: parts.main, colorLetter: parts.colorLetter, dir: dir, color: color });
+  document.getElementById('locid-input-full').value = '';
+  document.getElementById('locid-split-preview').textContent = '';
+  locidRenderQueue();
+  showToast('✅ ' + full + ' added');
+  document.getElementById('locid-input-full').focus();
+}
+
+// ── Add from bulk paste ─────────────────────────────────────────
+function locidAddBulk() {
+  var text = (document.getElementById('locid-bulk-text').value || '').trim().toUpperCase();
+  var dir  = document.getElementById('locid-bulk-dir').value   || '↑';
+  if (!text) { showToast('⚠️ Paste location IDs first'); return; }
+  var lines = text.split(/[\n,;]+/).map(function(l) { return l.trim(); }).filter(Boolean);
+  var added = 0;
+  lines.forEach(function(full) {
+    var parts = locidSplit(full);
+    if (!parts) return;
+    locidQueue.push({ full: full, smallTop: parts.smallTop, smallBot: parts.smallBot, main: parts.main, colorLetter: parts.colorLetter, dir: dir, color: 'auto' });
+    added++;
+  });
+  document.getElementById('locid-bulk-text').value = '';
+  locidRenderQueue();
+  showToast('✅ ' + added + ' labels added');
+}
+
+// ── Upload Excel/CSV ────────────────────────────────────────────
+// Col A = Full ID (P-1-A116F182)  Col B = Direction  Col C = Color
+function locidHandleUpload(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb;
+      if (ext === 'csv') wb = XLSX.read(e.target.result, { type: 'string' });
+      else               wb = XLSX.read(e.target.result, { type: 'array' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { defval: '', header: 1 });
+      var count = 0;
+      rows.forEach(function(row, ri) {
+        if (ri === 0 && /id|location|loc/i.test(String(row[0]))) return; // skip header
+        var full  = String(row[0] || '').trim().toUpperCase();
+        var dir   = String(row[1] || '↑').trim() || '↑';
+        var color = String(row[2] || 'auto').trim().toLowerCase() || 'auto';
+        if (!full) return;
+        var parts = locidSplit(full);
+        if (!parts) return;
+        locidQueue.push({ full: full, smallTop: parts.smallTop, smallBot: parts.smallBot, main: parts.main, colorLetter: parts.colorLetter, dir: dir, color: color });
+        count++;
+      });
+      locidRenderQueue();
+      showToast('✅ ' + count + ' labels loaded');
+    } catch(err) {
+      showToast('❌ Cannot read file'); console.error(err);
+    }
+  };
+  if (ext === 'csv') reader.readAsText(file);
+  else               reader.readAsArrayBuffer(file);
+}
+
+// ── Render queue preview ────────────────────────────────────────
+function locidRenderQueue() {
+  var wrap = document.getElementById('locid-queue-wrap');
+  var list = document.getElementById('locid-queue-list');
+  var cnt  = document.getElementById('locid-queue-count');
+  if (!locidQueue.length) { if(wrap) wrap.style.display = 'none'; return; }
+  if (wrap) wrap.style.display = 'block';
+  if (cnt)  cnt.textContent = locidQueue.length;
+  if (!list) return;
+  list.innerHTML = locidQueue.map(function(lbl, i) {
+    var bg = locidGetBg(lbl.color, lbl.colorLetter);
+    return '<div style="background:#fff;border:1px solid #d5d2f0;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:12px;color:#1a1830;">' +
+      '<div style="width:14px;height:28px;border-radius:3px;background:' + bg.hex + ';border:1px solid #ccc;flex-shrink:0;"></div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-family:\'DM Mono\',monospace;font-weight:700;font-size:11px;">' + lbl.full + '</div>' +
+        '<div style="color:#7b78a8;font-size:10px;">' + lbl.main + ' ' + lbl.dir + ' · ' + bg.name + '</div>' +
+      '</div>' +
+      '<button onclick="locidRemove(' + i + ')" style="background:none;border:none;color:#e11d48;font-size:14px;cursor:pointer;padding:0 2px;font-weight:700;line-height:1;">✕</button>' +
+      '</div>';
+  }).join('');
+}
+
+function locidRemove(idx) {
+  locidQueue.splice(idx, 1);
+  locidRenderQueue();
+  if (document.getElementById('out-locid').innerHTML.trim()) locidGenerate();
+}
+
+function locidClearAll() {
+  locidQueue = [];
+  locidRenderQueue();
+  document.getElementById('out-locid').innerHTML = '';
+  document.getElementById('locid-print-area').innerHTML = '';
+}
+
+// ── Build one label's HTML ──────────────────────────────────────
+function locidBuildLabel(lbl, idx) {
+  var bg       = locidGetBg(lbl.color, lbl.colorLetter);
+  var isDark   = ['red','orange','green','teal','purple','dark','pink'].indexOf(bg.name) >= 0;
+  var textClr  = isDark ? 'rgba(0,0,0,0.82)' : '#111111';
+
+  return '<div class="locid-label" id="lbl-' + idx + '">' +
+    // LEFT colored strip
+    '<div class="locid-left" style="background:' + bg.hex + ';">' +
+      '<div class="lil-top" style="color:' + textClr + ';">' + (lbl.smallTop || 'P-1-A') + '</div>' +
+      '<div class="lil-bot" style="color:' + textClr + ';">' + (lbl.smallBot || '') + '</div>' +
+    '</div>' +
+    // CENTER: main ID + arrow
+    '<div class="locid-center">' +
+      '<span class="lc-id">' + (lbl.main || lbl.full) + '</span>' +
+      '<span class="lc-arrow">' + (lbl.dir || '↑') + '</span>' +
+    '</div>' +
+    // RIGHT: QR code
+    '<div class="locid-right">' +
+      '<div id="locid-qr-' + idx + '"></div>' +
+    '</div>' +
+    '</div>';
+}
+
+// ── Generate all label sheets ───────────────────────────────────
+function locidGenerate() {
+  if (!locidQueue.length) { showToast('⚠️ Add labels first'); return; }
+  showLoading('locid', true);
+  document.getElementById('out-locid').innerHTML = '';
+
+  setTimeout(function() {
+    var PER_PAGE = 20;
+    var totalPages = Math.ceil(locidQueue.length / PER_PAGE);
+    var sheetHTML = '';
+
+    for (var pg = 0; pg < totalPages; pg++) {
+      var slice = locidQueue.slice(pg * PER_PAGE, (pg + 1) * PER_PAGE);
+      sheetHTML += '<div class="locid-sheet"' + (pg > 0 ? ' style="page-break-before:always;"' : '') + '>';
+      if (totalPages > 1) {
+        sheetHTML += '<div style="font-size:8pt;color:#aaa;font-family:Arial;text-align:right;margin-bottom:2mm;">Page ' + (pg+1) + ' / ' + totalPages + '</div>';
+      }
+      sheetHTML += '<div class="locid-page-grid">';
+      slice.forEach(function(lbl, li) {
+        sheetHTML += locidBuildLabel(lbl, pg * PER_PAGE + li);
+      });
+      sheetHTML += '</div></div>';
+    }
+
+    // Preview (scaled down to fit screen)
+    document.getElementById('out-locid').innerHTML =
+      '<div style="margin-top:16px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">' +
+          '<div style="font-weight:700;font-size:14px;color:#1a1830;">' +
+            'Preview — ' + locidQueue.length + ' labels · ' + totalPages + ' page(s)' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button onclick="locidPrint()" style="padding:12px 24px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(22,163,74,0.35);">🖨️ Print</button>' +
+            '<button onclick="locidExportPDF()" style="padding:12px 20px;border-radius:8px;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;border:none;font-family:\'Syne\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">⬇ PDF</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="background:#6b7280;padding:12px;border-radius:10px;overflow:hidden;">' +
+          '<div id="locid-preview-inner" style="transform-origin:top left;transform:scale(0.65);width:153.8%;background:#fff;">' +
+            sheetHTML +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    // Print area (full resolution, hidden)
+    var printEl = document.getElementById('locid-print-area');
+    printEl.innerHTML = sheetHTML;
+
+    // Generate QR codes in BOTH areas
+    setTimeout(function() {
+      locidQueue.forEach(function(lbl, globalIdx) {
+        var qrText = lbl.full; // QR encodes FULL location ID (e.g. P-1-A116F182)
+
+        // Preview QR
+        var pvEl = document.getElementById('locid-qr-' + globalIdx);
+        if (pvEl && !pvEl.hasChildNodes()) {
+          try {
+            new QRCode(pvEl, { text: qrText, width: 56, height: 56,
+              colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+          } catch(e) {}
+        }
+
+        // Print QR (higher resolution)
+        var prEl = printEl.querySelector('#locid-qr-' + globalIdx);
+        if (prEl && !prEl.hasChildNodes()) {
+          try {
+            new QRCode(prEl, { text: qrText, width: 90, height: 90,
+              colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+          } catch(e) {}
+        }
+      });
+
+      showLoading('locid', false);
+      showToast('✅ ' + locidQueue.length + ' labels ready!');
+    }, 250);
+  }, 100);
+}
+
+// ── Print ───────────────────────────────────────────────────────
+function locidPrint() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) {
+    locidGenerate();
+    setTimeout(locidPrint, 2000);
+    return;
+  }
+  printEl.style.display = 'block';
+  window.print();
+  setTimeout(function() { printEl.style.display = 'none'; }, 800);
+}
+
+// ── Export PDF ──────────────────────────────────────────────────
+async function locidExportPDF() {
+  var printEl = document.getElementById('locid-print-area');
+  if (!printEl || !printEl.innerHTML.trim()) { showToast('Generate labels first'); return; }
+  showToast('⏳ Building PDF…');
+  try {
+    printEl.style.display = 'block';
+    // A4 at 96dpi = 794px wide
+    var canvas = await html2canvas(printEl, {
+      scale: 3, useCORS: true, backgroundColor: '#ffffff',
+      logging: false, width: 794, windowWidth: 794
+    });
+    printEl.style.display = 'none';
+
+    var { jsPDF } = window.jspdf;
+    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pgW = pdf.internal.pageSize.getWidth();
+    var pgH = pdf.internal.pageSize.getHeight();
+    var totalH = (canvas.height * pgW) / canvas.width;
+    var srcY = 0, remaining = totalH, pageNum = 0;
+
+    while (remaining > 0) {
+      var slH = Math.min(pgH, remaining);
+      var sc  = document.createElement('canvas');
+      sc.width  = canvas.width;
+      sc.height = Math.round((slH / pgW) * canvas.width);
+      sc.getContext('2d').drawImage(canvas,
+        0, Math.round(srcY * canvas.width / pgW),
+        canvas.width, sc.height,
+        0, 0, canvas.width, sc.height);
+      if (pageNum > 0) pdf.addPage();
+      pdf.addImage(sc.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, pgW, slH);
+      srcY += slH; remaining -= slH; pageNum++;
+    }
+    pdf.save('LocationIDs_' + new Date().toISOString().split('T')[0] + '.pdf');
+    showToast('✅ PDF — ' + locidQueue.length + ' labels, ' + pageNum + ' page(s)');
+  } catch(err) {
+    document.getElementById('locid-print-area').style.display = 'none';
+    showToast('PDF error: ' + err.message); console.error(err);
+  }
+}
+
+// ── Drag & drop for upload zone ─────────────────────────────────
+(function() {
+  function locidDragSetup() {
+    var zone = document.getElementById('uz-locid');
+    if (!zone) return;
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('drag'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault(); zone.classList.remove('drag');
+      var file = e.dataTransfer.files[0]; if (!file) return;
+      var dt = new DataTransfer(); dt.items.add(file);
+      var inp = document.getElementById('f-locid');
+      if (inp) { inp.files = dt.files; locidHandleUpload(inp); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', locidDragSetup);
+  else locidDragSetup();
 })();
 
 </script>
