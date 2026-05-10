@@ -607,28 +607,29 @@ footer span { color:var(--accent); }
 }
 /* Left colored section */
 .locid-left {
-  width: 18mm;
+  width: 20mm;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 1mm 2mm;
-  line-height: 1.2;
+  line-height: 1.25;
+  gap: 0.5mm;
 }
 .locid-left .lil-top {
-  font-size: 5pt;
+  font-size: 7pt;
   font-weight: 700;
   font-family: Arial, sans-serif;
-  color: rgba(0,0,0,0.75);
+  color: rgba(0,0,0,0.82);
   text-align: center;
-  letter-spacing: 0.2pt;
+  letter-spacing: 0pt;
 }
 .locid-left .lil-bot {
-  font-size: 7pt;
+  font-size: 10pt;
   font-weight: 900;
   font-family: Arial, sans-serif;
-  color: rgba(0,0,0,0.75);
+  color: rgba(0,0,0,0.82);
   text-align: center;
 }
 /* Center main section */
@@ -4611,41 +4612,78 @@ function locidPrint() {
 async function locidExportPDF() {
   var printEl = document.getElementById('locid-print-area');
   if (!printEl || !printEl.innerHTML.trim()) { showToast('Generate labels first'); return; }
-  showToast('⏳ Building PDF…');
+  showToast('⏳ Building PDF — each page rendered separately…');
   try {
     printEl.style.display = 'block';
-    // A4 at 96dpi = 794px wide
-    var canvas = await html2canvas(printEl, {
-      scale: 3, useCORS: true, backgroundColor: '#ffffff',
-      logging: false, width: 794, windowWidth: 794
-    });
-    printEl.style.display = 'none';
+    printEl.style.position = 'fixed';
+    printEl.style.left = '0';
+    printEl.style.top = '0';
+    printEl.style.width = '794px';
+    printEl.style.zIndex = '-1';
+    printEl.style.background = '#fff';
 
     var { jsPDF } = window.jspdf;
-    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    var pgW = pdf.internal.pageSize.getWidth();
-    var pgH = pdf.internal.pageSize.getHeight();
-    var totalH = (canvas.height * pgW) / canvas.width;
-    var srcY = 0, remaining = totalH, pageNum = 0;
+    var pdf     = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pgW     = pdf.internal.pageSize.getWidth();   // 210mm
+    var pgH     = pdf.internal.pageSize.getHeight();  // 297mm
 
-    while (remaining > 0) {
-      var slH = Math.min(pgH, remaining);
-      var sc  = document.createElement('canvas');
-      sc.width  = canvas.width;
-      sc.height = Math.round((slH / pgW) * canvas.width);
-      sc.getContext('2d').drawImage(canvas,
-        0, Math.round(srcY * canvas.width / pgW),
-        canvas.width, sc.height,
-        0, 0, canvas.width, sc.height);
-      if (pageNum > 0) pdf.addPage();
-      pdf.addImage(sc.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, pgW, slH);
-      srcY += slH; remaining -= slH; pageNum++;
+    // Render EACH .locid-sheet div as a separate PDF page
+    // This prevents any label from being cut between pages
+    var sheets = printEl.querySelectorAll('.locid-sheet');
+    if (!sheets.length) sheets = [printEl]; // fallback
+
+    for (var pi = 0; pi < sheets.length; pi++) {
+      var sheet = sheets[pi];
+      // Temporarily remove page-break style so html2canvas captures correctly
+      var origStyle = sheet.style.pageBreakBefore;
+      sheet.style.pageBreakBefore = 'auto';
+
+      var canvas = await html2canvas(sheet, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: 794,
+        windowWidth: 794,
+        x: 0,
+        y: 0
+      });
+
+      sheet.style.pageBreakBefore = origStyle;
+
+      // Add to PDF — fit sheet canvas to A4 page width, keep aspect ratio
+      var imgW = pgW;
+      var imgH = (canvas.height * imgW) / canvas.width;
+
+      if (pi > 0) pdf.addPage();
+
+      // If content is taller than A4 (shouldn't be with 20 labels), scale to fit
+      if (imgH > pgH) {
+        var scale = pgH / imgH;
+        imgW *= scale;
+        imgH  = pgH;
+      }
+
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.97),
+        'JPEG', 0, 0, imgW, imgH
+      );
     }
+
+    printEl.style.display   = 'none';
+    printEl.style.position  = '';
+    printEl.style.left      = '';
+    printEl.style.top       = '';
+    printEl.style.width     = '';
+    printEl.style.zIndex    = '';
+
     pdf.save('LocationIDs_' + new Date().toISOString().split('T')[0] + '.pdf');
-    showToast('✅ PDF — ' + locidQueue.length + ' labels, ' + pageNum + ' page(s)');
+    showToast('✅ PDF — ' + locidQueue.length + ' labels, ' + sheets.length + ' page(s)');
   } catch(err) {
-    document.getElementById('locid-print-area').style.display = 'none';
-    showToast('PDF error: ' + err.message); console.error(err);
+    var pe = document.getElementById('locid-print-area');
+    if (pe) { pe.style.display = 'none'; pe.style.position = ''; }
+    showToast('PDF error: ' + err.message);
+    console.error(err);
   }
 }
 
