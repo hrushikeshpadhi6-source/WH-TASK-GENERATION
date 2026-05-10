@@ -641,15 +641,7 @@ footer span { color:var(--accent); }
   gap: 2mm;
   padding: 0 3mm;
 }
-.locid-center .lc-id {
-  font-size: 22pt;
-  font-weight: 900;
-  font-family: Arial Black, Arial, sans-serif;
-  color: #111;
-  letter-spacing: -0.5pt;
-  line-height: 1;
-  white-space: nowrap;
-}
+/* lc-id now inline in locidBuildLabel */
 .locid-center .lc-arrow {
   font-size: 20pt;
   font-weight: 900;
@@ -876,18 +868,55 @@ footer span { color:var(--accent); }
     <div class="hero-tag">⚡ HP World · Dark Store Task Pro</div>
     <h1>Dark Store<br>Task Pro</h1>
     <p>Upload your inventory, select a task, generate print-ready sheets for your warehouse team — instantly.</p>
-    <div id="live-clock" style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:28px;">
-      <!-- Analog Clock -->
-      <div style="position:relative;width:160px;height:160px;">
-        <canvas id="analog-clock" width="160" height="160" style="display:block;"></canvas>
+    <div id="live-clock" style="display:flex;align-items:center;gap:16px;margin-bottom:28px;width:100%;max-width:640px;">
+
+      <!-- LEFT: Safety + Quality Tips -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <!-- Safety Tip -->
+        <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);
+          border-radius:12px;padding:12px 14px;text-align:left;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+            color:#ff6b35;margin-bottom:5px;font-family:'Syne',sans-serif;">🦺 Safety Tip</div>
+          <div id="daily-safety" style="font-size:12px;color:rgba(255,255,255,0.88);
+            line-height:1.5;font-family:'Syne',sans-serif;"></div>
+        </div>
+        <!-- Quality Tip -->
+        <div style="background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.2);
+          border-radius:12px;padding:12px 14px;text-align:left;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+            color:#06d6a0;margin-bottom:5px;font-family:'Syne',sans-serif;">✅ Quality Tip</div>
+          <div id="daily-quality" style="font-size:12px;color:rgba(255,255,255,0.88);
+            line-height:1.5;font-family:'Syne',sans-serif;"></div>
+        </div>
       </div>
-      <!-- Digital time -->
-      <div id="digital-time" style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;
-        letter-spacing:4px;color:#fff;
-        text-shadow:0 0 18px rgba(255,107,53,0.9),0 0 36px rgba(255,107,53,0.5);"></div>
-      <!-- Date -->
-      <div id="digital-date" style="font-family:'DM Mono',monospace;font-size:13px;
-        letter-spacing:2px;color:rgba(255,107,53,0.85);font-weight:500;"></div>
+
+      <!-- CENTER: Analog Clock + Digital -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;">
+        <div style="position:relative;width:140px;height:140px;">
+          <canvas id="analog-clock" width="140" height="140" style="display:block;"></canvas>
+        </div>
+        <div id="digital-time" style="font-family:'DM Mono',monospace;font-size:22px;font-weight:500;
+          letter-spacing:3px;color:#fff;
+          text-shadow:0 0 18px rgba(255,107,53,0.9),0 0 36px rgba(255,107,53,0.5);"></div>
+        <div id="digital-date" style="font-family:'DM Mono',monospace;font-size:11px;
+          letter-spacing:2px;color:rgba(255,107,53,0.85);font-weight:500;text-align:center;"></div>
+      </div>
+
+      <!-- RIGHT: Today's Occasion / Positive Message -->
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+        <div id="daily-occasion-box" style="border-radius:12px;padding:14px 14px;text-align:left;
+          background:rgba(67,97,238,0.1);border:1px solid rgba(67,97,238,0.25);">
+          <div id="daily-occasion-label" style="font-size:9px;font-weight:800;letter-spacing:1.5px;
+            text-transform:uppercase;color:#4cc9f0;margin-bottom:6px;
+            font-family:'Syne',sans-serif;">📅 Today</div>
+          <div id="daily-occasion-icon" style="font-size:26px;margin-bottom:6px;line-height:1;"></div>
+          <div id="daily-occasion-title" style="font-size:13px;font-weight:700;color:#fff;
+            margin-bottom:4px;font-family:'Syne',sans-serif;"></div>
+          <div id="daily-occasion-msg" style="font-size:11px;color:rgba(255,255,255,0.7);
+            line-height:1.5;font-family:'Syne',sans-serif;"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -4859,25 +4888,44 @@ function locidClearAll() {
 
 // ── Build one label's HTML ──────────────────────────────────────
 function locidBuildLabel(lbl, idx) {
-  var bg       = locidGetBg(lbl.color, lbl.colorLetter);
-  var isDark   = ['red','orange','green','teal','purple','dark','pink'].indexOf(bg.name) >= 0;
-  var textClr  = isDark ? 'rgba(0,0,0,0.82)' : '#111111';
+  var bg      = locidGetBg(lbl.color, lbl.colorLetter);
+  // Dark text on light colors, slightly dark on all for contrast
+  var textClr = '#000000';
+  var idClr   = '#000000';
 
-  return '<div class="locid-label" id="lbl-' + idx + '">' +
-    // LEFT colored strip
-    '<div class="locid-left" style="background:' + bg.hex + ';">' +
-      '<div class="lil-top" style="color:' + textClr + ';">' + (lbl.smallTop || 'P-1-A') + '</div>' +
-      '<div class="lil-bot" style="color:' + textClr + ';">' + (lbl.smallBot || '') + '</div>' +
+  // Full colored background spans LEFT + CENTER + ARROW — only QR is white
+  return '<div class="locid-label" id="lbl-' + idx + '" style="background:' + bg.hex + ';">' +
+
+    // LEFT: wider, bigger text, same bg color
+    '<div style="width:26mm;flex-shrink:0;display:flex;flex-direction:column;' +
+    'align-items:center;justify-content:center;padding:1mm 2mm;' +
+    'background:' + bg.hex + ';line-height:1.3;gap:0.5mm;' +
+    'border-right:0.5mm solid rgba(0,0,0,0.15);">' +
+      '<div style="font-size:9pt;font-weight:800;font-family:Arial,sans-serif;' +
+      'color:' + textClr + ';text-align:center;letter-spacing:0.3pt;white-space:nowrap;">' +
+      (lbl.smallTop || 'P-1-A') + '</div>' +
+      '<div style="font-size:13pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;' +
+      'color:' + textClr + ';text-align:center;">' +
+      (lbl.smallBot || '') + '</div>' +
     '</div>' +
-    // CENTER: main ID + arrow
-    '<div class="locid-center">' +
-      '<span class="lc-id">' + (lbl.main || lbl.full) + '</span>' +
-      '<span class="lc-arrow">' + (lbl.dir || '↑') + '</span>' +
+
+    // CENTER: main ID bold + arrow — same bg color
+    '<div style="flex:1;display:flex;align-items:center;justify-content:center;' +
+    'gap:3mm;padding:0 3mm;background:' + bg.hex + ';">' +
+      '<span style="font-size:26pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;' +
+      'color:' + idClr + ';letter-spacing:-0.5pt;line-height:1;white-space:nowrap;">' +
+      (lbl.main || lbl.full) + '</span>' +
+      '<span style="font-size:22pt;font-weight:900;color:' + idClr + ';line-height:1;">' +
+      (lbl.dir || '↑') + '</span>' +
     '</div>' +
-    // RIGHT: QR code
-    '<div class="locid-right">' +
+
+    // RIGHT: white clean QR section
+    '<div style="width:20mm;flex-shrink:0;background:#ffffff;display:flex;' +
+    'align-items:center;justify-content:center;padding:1mm;' +
+    'border-left:0.5mm solid rgba(0,0,0,0.12);">' +
       '<div id="locid-qr-' + idx + '"></div>' +
     '</div>' +
+
     '</div>';
 }
 
@@ -5365,6 +5413,186 @@ async function stgExportPDF() {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initStg);
   else initStg();
 })();
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// DAILY TIPS + OCCASION ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+var SAFETY_TIPS = [
+  "Keep aisles clear at all times to prevent accidents.",
+  "Always wear proper PPE before entering cold zones.",
+  "Report damaged racking immediately — do not use.",
+  "Never overload trolleys beyond their weight limit.",
+  "Use step ladders correctly — never stand on the top step.",
+  "Keep emergency exits clear and unobstructed.",
+  "Lift with your legs, not your back — bend at the knees.",
+  "Report spills immediately to avoid slip hazards.",
+  "Always look before reversing a pallet truck.",
+  "Double-check barcode scanner settings before starting tasks.",
+  "Wear high-visibility vest in all active picking zones.",
+  "Do not block fire extinguisher access points.",
+  "Keep your work area clean and organised at all times.",
+  "Check equipment before use — report faults immediately.",
+  "Stay hydrated, especially in chiller and freezer zones.",
+  "Never leave elevated loads unsupported or unattended.",
+  "Ensure correct footwear — no open-toe shoes in warehouse.",
+  "Use the designated pedestrian walkways at all times.",
+  "Communicate clearly with forklift operators before crossing.",
+  "Take regular short breaks to maintain concentration.",
+  "Always stack boxes with heavier items at the bottom.",
+  "Secure loose items before moving pallet trucks.",
+  "Report near misses — every report prevents accidents.",
+  "Keep hands and fingers away from conveyor pinch points.",
+  "Ensure CCTV is functioning — report blind spots.",
+  "Never bypass safety sensors on automated equipment.",
+  "Check temperature logs before picking from cold zones.",
+  "Use two hands when handling oversized or heavy items.",
+  "Keep charging areas for scanners clear and ventilated.",
+  "Follow FIFO — rotate stock properly to prevent waste."
+];
+
+var QUALITY_TIPS = [
+  "Check expiry date before dispatch — no exceptions.",
+  "Verify ASIN barcode matches picklist before picking.",
+  "One ASIN per bin — avoid mixing to prevent wrong picks.",
+  "Damaged items must be flagged before they reach staging.",
+  "Double-scan every item — trust the system.",
+  "Check product seals are intact before dispatch.",
+  "Review tote contents match picklist before handover.",
+  "Report catalog issues immediately — do not guess.",
+  "Zero-tolerance for wrong items — recheck if unsure.",
+  "Ensure fragile items are correctly packaged before packing.",
+  "Cold chain items — check temperature on pickup and drop.",
+  "Clean scanner lenses daily for accurate barcode reads.",
+  "Verify quantity matches order before closing tote.",
+  "Stow items face-forward for faster and accurate picking.",
+  "Flag duplicate ASINs in the system to avoid confusion.",
+  "Never partially fill a tote — complete one tote at a time.",
+  "Cross-check scanning issue items before moving to dispatch.",
+  "Capture bin location accurately — mislocation causes VOC.",
+  "Ensure product labels are visible before shelving.",
+  "Log every catalog discrepancy immediately for VOC tracking.",
+  "Quality starts with you — one mistake = one unhappy customer.",
+  "Pack heavy items first — prevents damage to lighter goods.",
+  "Check for item substitutions before accepting into tote.",
+  "Maintain bin accuracy — audit your own area weekly.",
+  "Report broken seals even if item appears undamaged.",
+  "Always confirm staging location before leaving items.",
+  "Scan confirmation is mandatory — verbal confirmation is not.",
+  "Zero-defect mindset: right item, right quantity, right time.",
+  "Keep catalog issue list updated — don't rely on memory.",
+  "Every correct pick builds customer trust."
+];
+
+var OCCASIONS = [
+  // Format: { m:month(1-12), d:day, icon, title, msg, color }
+  // January
+  { m:1,  d:1,  icon:'🎆', title:"New Year's Day", msg:"Wishing you a fresh, successful year ahead!", color:'rgba(255,215,0,0.15)', border:'rgba(255,215,0,0.4)' },
+  // February
+  { m:2,  d:14, icon:'❤️', title:"Valentine's Day", msg:"Spread kindness and warmth in the warehouse today.", color:'rgba(255,105,180,0.12)', border:'rgba(255,105,180,0.35)' },
+  // March
+  { m:3,  d:8,  icon:'👩', title:"International Women's Day", msg:"Celebrating the incredible women on our team!", color:'rgba(255,107,53,0.12)', border:'rgba(255,107,53,0.35)' },
+  // April
+  { m:4,  d:22, icon:'🌍', title:"Earth Day", msg:"Think sustainably — reduce waste in every task.", color:'rgba(6,214,160,0.12)', border:'rgba(6,214,160,0.35)' },
+  // May — Mother's Day (2nd Sunday, approx 12-14)
+  { m:5,  d:11, icon:'💐', title:"Mother's Day", msg:"To all the amazing mums on the team — you are superheroes!", color:'rgba(255,105,180,0.12)', border:'rgba(255,105,180,0.35)' },
+  { m:5,  d:12, icon:'💐', title:"Mother's Day", msg:"To all the amazing mums on the team — you are superheroes!", color:'rgba(255,105,180,0.12)', border:'rgba(255,105,180,0.35)' },
+  { m:5,  d:1,  icon:'👷', title:"International Workers Day", msg:"Your hard work powers HP World every single day. Thank you!", color:'rgba(255,107,53,0.12)', border:'rgba(255,107,53,0.35)' },
+  // June
+  { m:6,  d:21, icon:'☀️', title:"Summer Solstice", msg:"Longest day of the year — stay energised and hydrated!", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
+  // September
+  { m:9,  d:5,  icon:'👩‍🏫', title:"International Teachers' Day", msg:"Knowledge shared is knowledge doubled. Mentor someone today.", color:'rgba(67,97,238,0.12)', border:'rgba(67,97,238,0.35)' },
+  // October
+  { m:10, d:31, icon:'🎃', title:"Halloween", msg:"Stay safe, no tricks — only treats today!", color:'rgba(255,107,53,0.15)', border:'rgba(255,107,53,0.4)' },
+  // November
+  { m:11, d:11, icon:'🕊️', title:"Remembrance Day", msg:"We honour those who served. Work with purpose today.", color:'rgba(139,138,173,0.12)', border:'rgba(139,138,173,0.35)' },
+  // December
+  { m:12, d:25, icon:'🎄', title:"Christmas Day", msg:"Wishing you joy, peace, and great picks today!", color:'rgba(6,214,160,0.12)', border:'rgba(6,214,160,0.35)' },
+  { m:12, d:26, icon:'🎁', title:"Boxing Day", msg:"The gift of great service continues!", color:'rgba(6,214,160,0.12)', border:'rgba(6,214,160,0.35)' },
+  { m:12, d:31, icon:'🎆', title:"New Year's Eve", msg:"What a year! Finish strong — one last great shift!", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
+  // UAE / Qatar National Days (common in Amazon Gulf sites)
+  { m:12, d:2,  icon:'🇦🇪', title:"UAE National Day", msg:"Proud to serve in this great nation. Happy National Day!", color:'rgba(0,100,0,0.12)', border:'rgba(0,200,0,0.35)' },
+  { m:12, d:18, icon:'🇶🇦', title:"Qatar National Day", msg:"Celebrating Qatar's great journey. Happy National Day!", color:'rgba(139,0,0,0.12)', border:'rgba(200,0,0,0.35)' },
+  // Eid (approximate - changes yearly, these are placeholders)
+  { m:3,  d:30, icon:'🌙', title:"Eid Mubarak", msg:"Wishing everyone a blessed and joyful Eid!", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
+  { m:6,  d:6,  icon:'🌙', title:"Eid Mubarak", msg:"Eid Mubarak! May this day bring peace and happiness.", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
+];
+
+var POSITIVE_MSGS = [
+  { icon:'💪', title:"You've Got This!", msg:"Every task completed is a step toward excellence.", color:'rgba(67,97,238,0.1)', border:'rgba(67,97,238,0.25)' },
+  { icon:'🚀', title:"Stay Sharp!", msg:"Accuracy today prevents VOC tomorrow. Focus!", color:'rgba(255,107,53,0.1)', border:'rgba(255,107,53,0.25)' },
+  { icon:'🌟', title:"Great Work!", msg:"Your effort makes HP World the best it can be.", color:'rgba(255,215,0,0.1)', border:'rgba(255,215,0,0.25)' },
+  { icon:'🎯', title:"Precision Matters!", msg:"Right item, right bin, right time — every time.", color:'rgba(6,214,160,0.1)', border:'rgba(6,214,160,0.25)' },
+  { icon:'🤝', title:"Team Strong!", msg:"A great team lifts everyone higher. Support each other.", color:'rgba(76,201,240,0.1)', border:'rgba(76,201,240,0.25)' },
+  { icon:'⚡', title:"Energy Up!", msg:"Start your shift strong — your energy sets the tone.", color:'rgba(255,107,53,0.1)', border:'rgba(255,107,53,0.25)' },
+  { icon:'🏆', title:"Champion Mindset!", msg:"Champions are made in the daily grind. Today counts.", color:'rgba(255,215,0,0.1)', border:'rgba(255,215,0,0.25)' },
+  { icon:'🔥', title:"On Fire!", msg:"High performance is a habit. Keep it going!", color:'rgba(255,107,53,0.1)', border:'rgba(255,107,53,0.25)' },
+  { icon:'💡', title:"Stay Curious!", msg:"Learn something new today — every shift is a chance to grow.", color:'rgba(67,97,238,0.1)', border:'rgba(67,97,238,0.25)' },
+  { icon:'😊', title:"Good Vibes Only!", msg:"A positive attitude is the best tool in the warehouse.", color:'rgba(6,214,160,0.1)', border:'rgba(6,214,160,0.25)' },
+  { icon:'🛡️', title:"Safety First!", msg:"Everyone goes home safe — that is non-negotiable.", color:'rgba(255,107,53,0.1)', border:'rgba(255,107,53,0.25)' },
+  { icon:'🌈', title:"New Day, New Win!", msg:"Yesterday's challenges build today's strength.", color:'rgba(76,201,240,0.1)', border:'rgba(76,201,240,0.25)' },
+  { icon:'📦', title:"Perfect Picks!", msg:"Every perfect pick is a promise kept to a customer.", color:'rgba(255,215,0,0.1)', border:'rgba(255,215,0,0.25)' },
+  { icon:'🙌', title:"Appreciate You!", msg:"Your work here matters more than you know.", color:'rgba(6,214,160,0.1)', border:'rgba(6,214,160,0.25)' },
+];
+
+// ── Initialise tips and occasion on dashboard load ─────────────
+function initDailyWidgets() {
+  var now       = new Date();
+  var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  var month     = now.getMonth() + 1;
+  var day       = now.getDate();
+
+  // Safety tip — rotates daily
+  var safetyEl = document.getElementById('daily-safety');
+  if (safetyEl) {
+    safetyEl.textContent = SAFETY_TIPS[dayOfYear % SAFETY_TIPS.length];
+  }
+
+  // Quality tip — rotates daily (offset from safety)
+  var qualityEl = document.getElementById('daily-quality');
+  if (qualityEl) {
+    qualityEl.textContent = QUALITY_TIPS[(dayOfYear + 15) % QUALITY_TIPS.length];
+  }
+
+  // Occasion — check today's date
+  var occasion = null;
+  for (var i = 0; i < OCCASIONS.length; i++) {
+    if (OCCASIONS[i].m === month && OCCASIONS[i].d === day) {
+      occasion = OCCASIONS[i];
+      break;
+    }
+  }
+
+  // If no occasion, pick a positive message (rotates daily)
+  if (!occasion) {
+    occasion = POSITIVE_MSGS[dayOfYear % POSITIVE_MSGS.length];
+  }
+
+  // Render occasion box
+  var box   = document.getElementById('daily-occasion-box');
+  var icon  = document.getElementById('daily-occasion-icon');
+  var title = document.getElementById('daily-occasion-title');
+  var msg   = document.getElementById('daily-occasion-msg');
+  var lbl   = document.getElementById('daily-occasion-label');
+
+  if (box && occasion) {
+    box.style.background = occasion.color || 'rgba(67,97,238,0.1)';
+    box.style.border     = '1px solid ' + (occasion.border || 'rgba(67,97,238,0.25)');
+    if (icon)  icon.textContent  = occasion.icon  || '💡';
+    if (title) title.textContent = occasion.title || '';
+    if (msg)   msg.textContent   = occasion.msg   || '';
+    if (lbl)   lbl.textContent   = occasion.title ? '📅 Today — ' + now.toLocaleDateString('en-GB', {weekday:'long'}) : '💬 Daily Boost';
+  }
+}
+
+// Call on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDailyWidgets);
+} else {
+  initDailyWidgets();
+}
 
 </script>
 </div><!-- /app-shell -->
