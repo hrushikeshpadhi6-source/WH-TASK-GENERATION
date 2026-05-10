@@ -3126,10 +3126,10 @@ function lsBuildMapper() {
       pats: [/^order_id$/i, /order.?id/i, /^id$/i] },
     // Actual seconds from picklist create to stage
     { id: 'ls-col-stage',
-      pats: [/^pl_create_to_stage$/i, /pl.?create.?to.?stage/i, /create.?to.?stage/i, /actual.?secs?/i, /stage.?secs?/i, /timetostage/i] },
+      pats: [/^pl_create_to_stage$/i, /pl.?create.?to.?stage/i, /create.?to.?stage/i, /actual.?secs?/i, /stage.?secs?/i, /timetostage/i, /picklist.?to.?stage/i, /pl.?stage/i] },
     // SLA / Promise seconds
     { id: 'ls-col-promise',
-      pats: [/^promise_utr$/i, /promise.?utr/i, /promise.?secs?/i, /sla.?secs?/i, /^sla$/i, /^promise$/i, /utr$/i] },
+      pats: [/^promise_utr$/i, /promise.?utr/i, /promise.?secs?/i, /sla.?secs?/i, /^sla$/i, /^promise$/i, /utr$/i, /sla.?time/i, /promised.?time/i] },
     // Units
     { id: 'ls-col-units',
       pats: [/^units_picked$/i, /units.?picked/i, /^unit/i, /qty/i, /quantity/i] },
@@ -3280,8 +3280,21 @@ function lsGenerate() {
   var storeFilt = document.getElementById('ls-store-filter').value;
   var dateVal   = document.getElementById('ls-date').value;
 
-  if (!slotCol)  { showToast('⚠️ Map the Slot Time column (picklist_created_time)'); return; }
-  if (!stageCol) { showToast('⚠️ Map the Actual Secs column (pl_create_to_stage)');  return; }
+  if (!slotCol)  { showToast('⚠️ Map the Slot Time column'); return; }
+  if (!stageCol) { showToast('⚠️ Map the Actual Secs column (pl_create_to_stage)'); return; }
+  if (!promCol)  { showToast('⚠️ Map the SLA Secs column (promise_utr) — required for Late Slam'); return; }
+
+  // Show column mapping debug info in UI
+  var dbgEl = document.getElementById('ls-col-info');
+  if (dbgEl && lsData.length) {
+    var sampleRow = lsData[0];
+    dbgEl.style.display = 'block';
+    dbgEl.innerHTML =
+      '📋 Slot: <b>' + slotCol  + '</b> = ' + JSON.stringify(sampleRow[slotCol])  + ' &nbsp;|&nbsp; ' +
+      'Actual: <b>'  + stageCol + '</b> = ' + JSON.stringify(sampleRow[stageCol]) + ' &nbsp;|&nbsp; ' +
+      'SLA: <b>'     + promCol  + '</b> = ' + JSON.stringify(sampleRow[promCol])  + ' &nbsp;|&nbsp; ' +
+      'LS check: <b>' + JSON.stringify(sampleRow[stageCol]) + ' &gt; ' + JSON.stringify(sampleRow[promCol]) + '</b>';
+  }
 
   showLoading('lateslam', true);
   document.getElementById('out-lateslam').innerHTML = '';
@@ -3353,13 +3366,19 @@ function lsGenerate() {
         if (slot && slots[slot]) {
           slots[slot].orders++;
           slots[slot].units += unitVal;
-          // Lateslam: blank promise → NOT lateslam
-          // pl_create_to_stage > promise_utr → LATESLAM
-          var actualSecs  = parseFloat(String(plToStage).trim());
-          var promiseSecs = parseFloat(String(promUtr).trim());
-          var isLS = !isNaN(actualSecs) && !isNaN(promiseSecs) &&
-                     promiseSecs > 0 && actualSecs > promiseSecs;
+          // LATESLAM = pl_create_to_stage > promise_utr (both in seconds)
+          // promise_utr blank/0/NaN → NOT lateslam
+          var _ps = plToStage === undefined || plToStage === null || plToStage === '' ? '' : String(plToStage).trim();
+          var _pr = promUtr   === undefined || promUtr   === null || promUtr   === '' ? '' : String(promUtr).trim();
+          var actualSecs  = _ps === '' ? NaN : parseFloat(_ps);
+          var promiseSecs = _pr === '' ? NaN : parseFloat(_pr);
+          var isLS = isFinite(actualSecs) && isFinite(promiseSecs) && promiseSecs > 0 && actualSecs > promiseSecs;
           if (isLS) slots[slot].lateslam++;
+          // Debug: log first lateslam found
+          if (isLS && !slots['__lsDebug']) {
+            slots['__lsDebug'] = true;
+            console.log('[LS] First lateslam found → actual=' + actualSecs + 's, promise=' + promiseSecs + 's, slot=' + slot);
+          }
         }
       });
 
