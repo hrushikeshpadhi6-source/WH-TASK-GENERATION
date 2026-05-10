@@ -3124,12 +3124,12 @@ function lsBuildMapper() {
     // Order ID
     { id: 'ls-col-orderid',
       pats: [/^order_id$/i, /order.?id/i, /^id$/i] },
-    // Stage time col (pl_create_to_stage) — seconds, numeric
+    // Actual seconds from picklist create to stage
     { id: 'ls-col-stage',
-      pats: [/^pl_create_to_stage$/i, /pl.?create.?to.?stage/i, /create.?to.?stage/i] },
-    // Promise seconds (promise_utr)
+      pats: [/^pl_create_to_stage$/i, /pl.?create.?to.?stage/i, /create.?to.?stage/i, /actual.?secs?/i, /stage.?secs?/i, /timetostage/i] },
+    // SLA / Promise seconds
     { id: 'ls-col-promise',
-      pats: [/^promise_utr$/i, /promise.?utr/i, /promise.?secs?/i, /sla.?secs?/i] },
+      pats: [/^promise_utr$/i, /promise.?utr/i, /promise.?secs?/i, /sla.?secs?/i, /^sla$/i, /^promise$/i, /utr$/i] },
     // Units
     { id: 'ls-col-units',
       pats: [/^units_picked$/i, /units.?picked/i, /^unit/i, /qty/i, /quantity/i] },
@@ -3328,6 +3328,15 @@ function lsGenerate() {
         // pl_create_to_stage (actual seconds) and promise_utr (SLA seconds)
         var plToStage = row[stageCol];
         var promUtr   = row[promCol];
+        // Debug first 3 rows (check browser console F12)
+        if (!slots['__debugCount']) slots['__debugCount'] = 0;
+        if (slots['__debugCount'] < 3) {
+          console.log('[LS] Row', slots['__debugCount'],
+            '| slotCol:', slotCol, '→', slotTime,
+            '| stageCol:', stageCol, '→', plToStage,
+            '| promCol:', promCol, '→', promUtr);
+          slots['__debugCount']++;
+        }
         var unitVal   = parseFloat(row[unitsCol]) || 1;
 
         // Parse timestamp to 30-min slot key
@@ -3402,9 +3411,11 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
     exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, lsPct:lsPct, fcVar:fcVar });
   });
 
-  // Only render slots with actual activity or forecast
-  var active = exportRows.filter(function(r) { return r.ao > 0 || r.fo > 0; });
-  var toRender = active.length > 0 ? active : exportRows.slice(0, 6); // show first 6 if empty
+  // Only render slots that have ACTUAL orders (not empty FC-only rows)
+  // This prevents showing hour 00-07 when all real orders are in 10:00-23:30
+  var toRender = exportRows.filter(function(r) { return r.ao > 0 || r.fo > 0; });
+  if (!toRender.length) toRender = exportRows.filter(function(r){ return r.fo>0; });
+  if (!toRender.length) toRender = exportRows.slice(0,4);
 
   toRender.forEach(function(r) {
     var curHr = r.slot.split(':')[0];
@@ -4819,9 +4830,12 @@ async function locidExportPDF() {
 </script>
 </div><!-- /app-shell -->
 <script>
-// ── SIMPLE PASSWORD LOGIN ──────────────────────────────────────
+// ── SIMPLE PASSWORD LOGIN + 15-MIN IDLE TIMEOUT ───────────────
 var CORRECT_PASSWORD = 'Darkstore@123';
 var SESSION_KEY      = 'hp_auth_session';
+var IDLE_TIMEOUT_MS  = 15 * 60 * 1000; // 15 minutes
+var _idleTimer       = null;
+var _lastActivity    = Date.now();
 
 function authMsg(id, text, type) {
   var el = document.getElementById(id);
@@ -4830,12 +4844,15 @@ function authMsg(id, text, type) {
   el.className     = 'login-msg ' + (type || 'info');
   el.style.display = text ? 'block' : 'none';
 }
+
 function authShowApp() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app-shell').style.display     = 'block';
   document.getElementById('session-badge').style.display = 'flex';
-  try { sessionStorage.setItem(SESSION_KEY,'1'); } catch(e) {}
+  try { sessionStorage.setItem(SESSION_KEY, String(Date.now())); } catch(e) {}
+  authResetIdleTimer();
 }
+
 function authShowLogin() {
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('app-shell').style.display     = 'none';
@@ -4843,40 +4860,79 @@ function authShowLogin() {
   var m = document.getElementById('logout-menu');
   if (m) m.style.display = 'none';
   try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  clearTimeout(_idleTimer);
+  // Focus password field
+  setTimeout(function() {
+    var p = document.getElementById('login-pass');
+    if (p) { p.value = ''; p.focus(); }
+  }, 300);
 }
+
 function authLogin() {
   var pass = (document.getElementById('login-pass').value || '').trim();
-  if (!pass) { authMsg('login-msg','⚠️ Enter the password.','error'); return; }
+  if (!pass) { authMsg('login-msg', '⚠️ Enter the password.', 'error'); return; }
   if (pass === CORRECT_PASSWORD) {
-    authMsg('login-msg','✅ Welcome to HP World!','success');
+    authMsg('login-msg', '✅ Welcome to HP World!', 'success');
     setTimeout(authShowApp, 600);
   } else {
-    authMsg('login-msg','❌ Incorrect password. Try again.','error');
+    authMsg('login-msg', '❌ Incorrect password. Try again.', 'error');
     document.getElementById('login-pass').value = '';
     document.getElementById('login-pass').focus();
   }
 }
+
 function authShowLogout() {
   var m = document.getElementById('logout-menu');
   if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
 }
+
 function authLogout() {
   var m = document.getElementById('logout-menu');
   if (m) m.style.display = 'none';
   authShowLogin();
   showToast('👋 Signed out');
 }
+
+// ── Idle timeout ───────────────────────────────────────────────
+function authResetIdleTimer() {
+  clearTimeout(_idleTimer);
+  _lastActivity = Date.now();
+  _idleTimer = setTimeout(function() {
+    // Check app-shell is visible (user is logged in)
+    var shell = document.getElementById('app-shell');
+    if (shell && shell.style.display !== 'none') {
+      authShowLogin();
+      // Show a brief toast before login overlay appears
+      showToast('🔒 Session expired after 15 min idle — please login again');
+    }
+  }, IDLE_TIMEOUT_MS);
+}
+
+// Track any user activity
+['mousemove','keydown','mousedown','touchstart','scroll','click'].forEach(function(evt) {
+  document.addEventListener(evt, function() {
+    var shell = document.getElementById('app-shell');
+    if (shell && shell.style.display !== 'none') {
+      authResetIdleTimer();
+    }
+  }, { passive: true });
+});
+
 document.addEventListener('click', function(e) {
   var menu  = document.getElementById('logout-menu');
   var badge = document.getElementById('session-badge');
   if (menu && badge && !badge.contains(e.target) && !menu.contains(e.target))
     menu.style.display = 'none';
 });
-// Boot
+
+// ── Boot: restore session or show login ────────────────────────
 (function() {
   document.getElementById('app-shell').style.display = 'none';
   var ok = false;
-  try { ok = sessionStorage.getItem(SESSION_KEY) === '1'; } catch(e) {}
+  try {
+    var ts = parseInt(sessionStorage.getItem(SESSION_KEY));
+    if (ts && (Date.now() - ts) < IDLE_TIMEOUT_MS) ok = true;
+  } catch(e) {}
   if (ok) authShowApp(); else authShowLogin();
 })();
 </script>
