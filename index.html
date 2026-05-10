@@ -4012,93 +4012,110 @@ function ciRenderResults(mode, list) {
     return;
   }
 
-  var nowStr = getNowString();
+  var nowStr    = getNowString();
   var isCatalog = mode === 'catalog';
+  var accentClr = isCatalog ? '#d97706' : '#0284c7';
 
-  var html = '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;margin-top:4px;">' +
-    '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
-    '<h3>' + (isCatalog ? '📋 Catalog Issue Items' : '🔬 Scanning Issue Items') + '</h3>' +
-    '<span class="results-count">' + list.length + ' ASINs · ' + nowStr + '</span>' +
-    '</div><div class="results-body" style="background:#fff;">';
-
-  // Stats row
-  var totalLocs = list.reduce(function(s, item) { return s + item.locs.length; }, 0);
-  var totalQty  = list.reduce(function(s, item) {
-    return s + item.locs.reduce(function(q, l) { return q + l.qty; }, 0);
-  }, 0);
-
-  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;">' +
-    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:' + (isCatalog ? '#d97706':'#0284c7') + ';">' + list.length + '</div><div class="sl">Matched ASINs</div></div>' +
-    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#374151;">' + totalLocs + '</div><div class="sl">Locations</div></div>' +
-    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#059669;">' + Math.round(totalQty) + '</div><div class="sl">Total Units</div></div>' +
+  // ── Stats bar ──────────────────────────────────────────────
+  var statsHTML =
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;">' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:' + accentClr + ';">' + list.length + '</div><div class="sl">Matched ASINs</div></div>' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#374151;">' +
+      list.reduce(function(s,i){ return s+i.locs.length; }, 0) +
+    '</div><div class="sl">Locations</div></div>' +
+    '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#059669;">' +
+      Math.round(list.reduce(function(s,i){ return s+i.locs.reduce(function(q,l){ return q+l.qty; },0); }, 0)) +
+    '</div><div class="sl">Total Units</div></div>' +
     '</div>';
 
-  // Item cards
-  html += '<div id="' + (isCatalog?'ci':'si') + '-results-inner">';
-
-  list.forEach(function(item, idx) {
-    var cardClass = isCatalog ? 'ci-item-card' : 'ci-item-card si-item-card';
-    var badgeClass = isCatalog ? 'ci-asin-badge' : 'ci-asin-badge si-asin-badge';
-    var locChipClass = isCatalog ? 'ci-loc-chip' : 'ci-loc-chip si-loc-chip';
-    var qtyColor = isCatalog ? '#d97706' : '#0284c7';
-
-    html += '<div class="' + cardClass + '" data-asin="' + item.asin + '">';
-
-    // ASIN badge
-    html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">';
-    html += '<span class="' + badgeClass + '">' + item.asin + '</span>';
-    if (isCatalog && item.title) {
-      html += '<span class="ci-title" style="flex:1;margin:0;">' + item.title + '</span>';
-    }
-    html += '</div>';
-
-    // Location grid with QR (catalog) or barcode chips (scanning)
-    html += '<div class="ci-loc-grid">';
-
-    item.locs.forEach(function(l, li) {
-      html += '<div class="' + locChipClass + '">';
-
-      if (isCatalog) {
-        // QR code for location
-        html += '<div id="ci-qr-' + idx + '-' + li + '" style="display:flex;justify-content:center;margin-bottom:4px;"></div>';
-      } else {
-        // Barcode for ASIN per location
-        html += '<svg id="si-bc-' + idx + '-' + li + '" style="width:100%;max-width:130px;display:block;margin:0 auto 4px;"></svg>';
-      }
-
-      html += '<div class="loc-name">' + l.loc + '</div>';
-      html += '<div class="loc-qty" style="color:' + qtyColor + ';">' + Math.round(l.qty) + ' units</div>';
-      html += '<div class="loc-zone">' + l.zone + '</div>';
-      html += '</div>';
+  if (isCatalog) {
+    // ── CATALOG: compact print-ready QR grid ──────────────────
+    // Each item = ASIN badge + QR codes for each location
+    // Compact cards, 3-col grid, no item name text, page-break-inside:avoid
+    var cardsHTML = '';
+    list.forEach(function(item, idx) {
+      item.locs.forEach(function(l, li) {
+        var globalId = 'ci-qr-' + idx + '-' + li;
+        cardsHTML +=
+          '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 8px;' +
+          'text-align:center;background:#fff;page-break-inside:avoid;break-inside:avoid;">' +
+          // ASIN badge
+          '<div style="display:inline-block;background:#fff7ed;border:1px solid #fed7aa;' +
+          'border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace;font-size:11px;' +
+          'font-weight:700;color:#c2410c;margin-bottom:6px;">' + item.asin + '</div>' +
+          // QR code
+          '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>' +
+          // Location
+          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;color:#1a1830;margin-top:4px;">' + l.loc + '</div>' +
+          '<div style="font-size:9px;color:#d97706;font-weight:700;">' + Math.round(l.qty) + ' units</div>' +
+          '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">' + l.zone + '</div>' +
+          '</div>';
+      });
     });
 
-    html += '</div></div>'; // close loc-grid + item-card
-  });
+    var innerHTML =
+      '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;margin-top:4px;">' +
+      '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
+      '<h3>📋 Catalog Issue Items</h3>' +
+      '<span class="results-count">' + list.length + ' ASINs · ' + nowStr + '</span>' +
+      '</div>' +
+      '<div class="results-body" style="background:#fff;">' +
+      statsHTML +
+      '<div id="ci-results-inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">' +
+      cardsHTML +
+      '</div>' +
+      '</div></div>';
 
-  html += '</div>'; // close results-inner
-  html += '</div></div>'; // close results-body + results-panel
+    outEl.innerHTML = innerHTML;
 
-  outEl.innerHTML = html;
+  } else {
+    // ── SCANNING: barcode per ASIN (unchanged style) ──────────
+    var html2 =
+      '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;margin-top:4px;">' +
+      '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
+      '<h3>🔬 Scanning Issue Items</h3>' +
+      '<span class="results-count">' + list.length + ' ASINs · ' + nowStr + '</span>' +
+      '</div><div class="results-body" style="background:#fff;">' +
+      statsHTML + '<div id="si-results-inner">';
 
-  // Generate QR codes (catalog) or barcodes (scanning) after DOM update
+    list.forEach(function(item, idx) {
+      item.locs.forEach(function(l, li) {
+        html2 +=
+          '<div class="ci-item-card si-item-card" data-asin="' + item.asin + '">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">' +
+          '<span class="ci-asin-badge si-asin-badge">' + item.asin + '</span>' +
+          '</div>' +
+          '<div class="ci-loc-grid">' +
+          '<div class="ci-loc-chip si-loc-chip">' +
+          '<svg id="si-bc-' + idx + '-' + li + '" style="width:100%;max-width:130px;display:block;margin:0 auto 4px;"></svg>' +
+          '<div class="loc-name">' + l.loc + '</div>' +
+          '<div class="loc-qty" style="color:#0284c7;">' + Math.round(l.qty) + ' units</div>' +
+          '<div class="loc-zone">' + l.zone + '</div>' +
+          '</div></div></div>';
+      });
+    });
+
+    html2 += '</div></div></div>';
+    outEl.innerHTML = html2;
+  }
+
+  // ── Generate QR / barcodes after DOM update ────────────────
   setTimeout(function() {
     list.forEach(function(item, idx) {
       item.locs.forEach(function(l, li) {
         if (isCatalog) {
-          // QR for location
           var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
-          if (qrEl) {
+          if (qrEl && !qrEl.hasChildNodes()) {
             try {
               new QRCode(qrEl, {
                 text: l.loc || item.asin,
-                width: 100, height: 100,
+                width: 90, height: 90,
                 colorDark: '#000000', colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
+                correctLevel: QRCode.CorrectLevel.H
               });
             } catch(e) {}
           }
         } else {
-          // Barcode for ASIN
           var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
           if (bcEl) {
             try {
@@ -4145,12 +4162,115 @@ function ciFilterResults(mode) {
 
 // ── Export PDF (catalog) ──────────────────────────────────────
 async function ciExportPDF(mode) {
-  var el = document.getElementById(mode === 'catalog' ? 'out-catalog' : 'out-scanning');
-  if (!el || !el.innerHTML.trim()) { showToast('Generate results first'); return; }
+  var outEl = document.getElementById(mode === 'catalog' ? 'out-catalog' : 'out-scanning');
+  if (!outEl || !outEl.innerHTML.trim()) { showToast('Generate results first'); return; }
   showToast('⏳ Building PDF…');
+
   try {
-    await exportA4PDF(el, mode === 'catalog' ? 'Catalog Issue Items' : 'Scanning Issue Items');
+    // Build a clean print-only container with proper page breaks
+    var printDiv = document.createElement('div');
+    printDiv.style.cssText = 'position:fixed;left:0;top:0;width:794px;background:#fff;z-index:-999;';
+    printDiv.id = 'ci-pdf-print-' + mode;
+
+    var title  = mode === 'catalog' ? 'Catalog Issue Items' : 'Scanning Issue Items';
+    var nowStr = getNowString();
+    var COLS_PER_ROW = 5;   // 5 QR cards per row
+    var ROWS_PER_PAGE = 6;  // 6 rows per A4 page = 30 cards/page
+    var CARDS_PER_PAGE = COLS_PER_ROW * ROWS_PER_PAGE;
+
+    // Collect all QR card elements from the rendered output
+    var inner = outEl.querySelector('#ci-results-inner') || outEl.querySelector('#si-results-inner');
+    if (!inner) {
+      // Fallback: use exportA4PDF
+      await exportA4PDF(outEl, title);
+      return;
+    }
+
+    var cards = Array.from(inner.children);
+    var pages  = [];
+    for (var pi = 0; pi < cards.length; pi += CARDS_PER_PAGE) {
+      pages.push(cards.slice(pi, pi + CARDS_PER_PAGE));
+    }
+    if (!pages.length) { showToast('No cards to export'); return; }
+
+    // Build page divs
+    pages.forEach(function(pageCards, pi) {
+      var pageDiv = document.createElement('div');
+      pageDiv.style.cssText =
+        'width:794px;min-height:1123px;background:#fff;padding:20px 24px;box-sizing:border-box;' +
+        (pi > 0 ? 'page-break-before:always;' : '');
+
+      // Header
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;justify-content:space-between;align-items:center;' +
+        'margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #e5e7eb;';
+      hdr.innerHTML =
+        '<span style="font-family:Arial;font-size:13px;font-weight:700;color:#374151;">' + title + '</span>' +
+        '<span style="font-family:Arial;font-size:11px;color:#9ca3af;">' + nowStr + ' · Page ' + (pi+1) + ' of ' + pages.length + '</span>';
+      pageDiv.appendChild(hdr);
+
+      // Card grid
+      var grid = document.createElement('div');
+      grid.style.cssText =
+        'display:grid;grid-template-columns:repeat(' + COLS_PER_ROW + ',1fr);' +
+        'gap:8px;align-items:start;';
+
+      pageCards.forEach(function(card) {
+        var clone = card.cloneNode(true);
+        clone.style.pageBreakInside = 'avoid';
+        grid.appendChild(clone);
+      });
+      pageDiv.appendChild(grid);
+      printDiv.appendChild(pageDiv);
+    });
+
+    document.body.appendChild(printDiv);
+
+    // Re-render QR codes inside the print div
+    var qrDivs = printDiv.querySelectorAll('[id^="ci-qr-"]');
+    qrDivs.forEach(function(qrEl) {
+      // Get the location text from sibling elements
+      var locEl = qrEl.parentElement.querySelector('[style*="DM Mono"]');
+      var locText = locEl ? locEl.textContent.trim() : '';
+      if (locText && !qrEl.hasChildNodes()) {
+        try {
+          new QRCode(qrEl, { text: locText, width: 80, height: 80,
+            colorDark: '#000000', colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H });
+        } catch(e) {}
+      }
+    });
+
+    // Wait for QR rendering then capture
+    await new Promise(function(r) { setTimeout(r, 600); });
+
+    var { jsPDF } = window.jspdf;
+    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pgW = pdf.internal.pageSize.getWidth();
+    var pgH = pdf.internal.pageSize.getHeight();
+
+    var pageEls = printDiv.querySelectorAll('div[style*="min-height:1123px"]');
+    if (!pageEls.length) pageEls = [printDiv];
+
+    for (var pi2 = 0; pi2 < pageEls.length; pi2++) {
+      var canvas = await html2canvas(pageEls[pi2], {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff',
+        logging: false, width: 794, windowWidth: 794
+      });
+      var imgW = pgW;
+      var imgH = (canvas.height * imgW) / canvas.width;
+      if (imgH > pgH) { var sc = pgH/imgH; imgW*=sc; imgH=pgH; }
+      if (pi2 > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW, imgH);
+    }
+
+    document.body.removeChild(printDiv);
+    pdf.save((mode==='catalog'?'CatalogIssue':'ScanningIssue') + '_' + new Date().toISOString().split('T')[0] + '.pdf');
+    showToast('✅ PDF exported — ' + pages.length + ' page(s)!');
+
   } catch(err) {
+    var tmp = document.getElementById('ci-pdf-print-' + mode);
+    if (tmp) document.body.removeChild(tmp);
     showToast('PDF error: ' + err.message);
     console.error(err);
   }
