@@ -1130,7 +1130,7 @@ footer span { color:var(--accent); }
   </div>
 
   <!-- Hidden API URL (hardcoded) -->
-  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbxQwdQvLAjjvJC8ktht36-d1XLPEE-CSRgk8CcBx8a221oO24b9g8rLPZM8GRXz1VzjnQ/exec">
+  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbweOlI68zZlPG7DyHEWR6DXTUUzpNBh3Z53HWXaPEodq-GF1V9h3ZAAUtwgtqzqANMjFw/exec">
 
   <!-- Controls row -->
   <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
@@ -3147,12 +3147,9 @@ function lsExportExcel() {
       [],
       ['30 MIN','TIME SLOT','FC ORDERS','FC UNITS','ACT ORDERS','ACT UNITS','LATESLAM','LS %','FC VAR %']
     ];
-    var prevHr = '';
     d.rows.forEach(function(r) {
       if (r.ao === 0 && r.fo === 0) return; // skip empty slots
-      var hr = r.slot.split(':')[0];
-      if (hr !== prevHr) { sheetRows.push([hr+':00 HOUR','','','','','','','','']); prevHr = hr; }
-      var lsPct = r.ao > 0 ? (r.ls/r.ao*100).toFixed(1)+'%' : '—';
+      var lsPct = r.ao > 0 ? (r.ls/r.ao*100).toFixed(1)+'%' : '0.0%';
       var vS = r.fcVar > 0 ? '+' : '';
       sheetRows.push([r.slot, lsSlotLabel(r.slot), r.fo, r.fu, r.ao, r.au, r.ls, lsPct, vS+r.fcVar.toFixed(1)+'%']);
     });
@@ -3295,9 +3292,10 @@ function ciHandleUpload(input, mode) {
 
 // ── Fetch ASINs from Google Sheet via JSONP then match ────────
 function ciFetchAndMatch(mode) {
-  var tabName   = CI_TABS[mode];
-  var statusId  = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
-  var statusEl  = document.getElementById(statusId);
+  var tabName  = CI_TABS[mode];
+  var loadId   = 'load-' + mode;    // load-catalog or load-scanning
+  var statusId = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
+  var statusEl = document.getElementById(statusId);
 
   if (!ciState[mode].data.length) {
     showToast('⚠️ Upload inventory file first');
@@ -3306,46 +3304,93 @@ function ciFetchAndMatch(mode) {
 
   function setStatus(msg, type) {
     if (!statusEl) return;
-    statusEl.style.display     = 'block';
-    statusEl.style.background  = type==='ok' ? '#f0fdf4' : type==='warn' ? '#fff3cd' : '#fff0f0';
-    statusEl.style.color       = type==='ok' ? '#166534' : type==='warn' ? '#856404' : '#c00';
-    statusEl.style.border      = '1px solid ' + (type==='ok' ? '#86efac' : type==='warn' ? '#fde68a' : '#fca5a5');
+    statusEl.style.display    = 'block';
+    statusEl.style.background = type==='ok'  ? '#f0fdf4' : type==='warn' ? '#fff3cd' : '#fff0f0';
+    statusEl.style.color      = type==='ok'  ? '#166534' : type==='warn' ? '#856404' : '#c00';
+    statusEl.style.border     = '1px solid ' + (type==='ok' ? '#86efac' : type==='warn' ? '#fde68a' : '#fca5a5');
+    statusEl.style.padding    = '11px 16px';
+    statusEl.style.borderRadius = '8px';
     statusEl.innerHTML = msg;
   }
 
   setStatus('⏳ Fetching ' + tabName + ' from Google Sheet…', 'warn');
-  showLoading(mode === 'catalog' ? 'catalog' : 'scanning', true);
+  showLoading(loadId.replace('load-',''), true);
 
-  // JSONP approach — works from file:// and any browser
+  // ── Strategy 1: Apps Script Web App (same URL used for LS forecast) ──
+  // The Apps Script is already deployed and works from file://
+  // We extended it to serve CATALOG ISSUE ASIN and SCANNING ISSUE ASIN tabs
+  var apiInput = document.getElementById('ls-api-url');
+  var apiBase  = apiInput ? apiInput.value.trim() : '';
+
+  if (apiBase) {
+    // Use Apps Script: ?tab=catalog_asin or ?tab=scanning_asin
+    var tabParam = mode === 'catalog' ? 'catalog_asin' : 'scanning_asin';
+    var url = apiBase + (apiBase.indexOf('?') >= 0 ? '&' : '?') + 'tab=' + tabParam;
+    fetch(url)
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(json) {
+        if (json.status !== 'ok') throw new Error(json.message || 'API error');
+        // Apps Script returns { status:'ok', asins: ['B001...', 'B002...'] }
+        var asins = Array.isArray(json.asins) ? json.asins : [];
+        if (!asins.length) {
+          setStatus('⚠️ No ASINs found in tab: ' + tabName, 'warn');
+          showLoading(loadId.replace('load-',''), false);
+          return;
+        }
+        ciState[mode].asins = asins;
+        setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching…', 'ok');
+        ciMatchAndRender(mode, asins);
+      })
+      .catch(function(err) {
+        console.warn('Apps Script fetch failed, trying JSONP fallback:', err.message);
+        // Fall through to JSONP
+        ciFetchViaJSONP(mode, tabName, setStatus, loadId);
+      });
+    return;
+  }
+
+  // ── Strategy 2: JSONP (requires sheet published to web) ──────
+  ciFetchViaJSONP(mode, tabName, setStatus, loadId);
+}
+
+// JSONP fetch for tabs that are published to web
+function ciFetchViaJSONP(mode, tabName, setStatus, loadId) {
   var cbName = 'ciGvizCb_' + mode + '_' + Date.now();
+
   var timeout = setTimeout(function() {
     delete window[cbName];
     var old = document.getElementById('jsonp-' + cbName);
     if (old) old.parentNode.removeChild(old);
-    setStatus('❌ Fetch timed out. Check internet connection.', 'err');
-    showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
-  }, 15000);
+    setStatus(
+      '❌ <strong>Could not fetch from Google Sheet.</strong><br>' +
+      '• Make sure your Apps Script URL is set (same one used for Late Slam).<br>' +
+      '• Or publish the sheet tabs to web: <em>File → Share → Publish to web → select tab → CSV</em>.',
+      'err'
+    );
+    showLoading(mode, false);
+  }, 12000);
 
   window[cbName] = function(response) {
     clearTimeout(timeout);
     delete window[cbName];
     var old = document.getElementById('jsonp-' + cbName);
     if (old) old.parentNode.removeChild(old);
-
     try {
       var asins = ciParseGvizASINs(response);
       if (!asins.length) {
         setStatus('⚠️ No ASINs found in tab: ' + tabName, 'warn');
-        showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+        showLoading(mode, false);
         return;
       }
       ciState[mode].asins = asins;
-      setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching with inventory…', 'ok');
-      // Match and render
+      setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching…', 'ok');
       ciMatchAndRender(mode, asins);
     } catch(err) {
       setStatus('❌ Parse error: ' + err.message, 'err');
-      showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+      showLoading(mode, false);
     }
   };
 
@@ -3358,8 +3403,8 @@ function ciFetchAndMatch(mode) {
   script.onerror = function() {
     clearTimeout(timeout);
     delete window[cbName];
-    setStatus('❌ Could not reach Google Sheet. Check your internet.', 'err');
-    showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
+    setStatus('❌ Sheet not reachable. Ensure Apps Script URL is configured.', 'err');
+    showLoading(mode, false);
   };
   document.head.appendChild(script);
 }
