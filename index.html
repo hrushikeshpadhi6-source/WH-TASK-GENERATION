@@ -1130,7 +1130,7 @@ footer span { color:var(--accent); }
   </div>
 
   <!-- Hidden API URL (hardcoded) -->
-  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbweOlI68zZlPG7DyHEWR6DXTUUzpNBh3Z53HWXaPEodq-GF1V9h3ZAAUtwgtqzqANMjFw/exec">
+  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbyxFVniP1WcEsdMyQuoCw_Bkkq_hZtCNQUk-FykfBIEa3xJNTJDjA0IydXiph1QGXIp/exec">
 
   <!-- Controls row -->
   <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
@@ -2785,6 +2785,43 @@ function lsBuildStoreFilter() {
 }
 
 // ── Fetch Forecast ───────────────────────────────────────────
+// ── Shared JSONP caller for Apps Script ─────────────────────
+// Apps Script supports ?callback=funcName natively
+// Script tag injection bypasses CORS + host allowlist from file://
+function appsScriptJSONP(params, onSuccess, onError) {
+  var API = document.getElementById('ls-api-url');
+  var base = (API ? API.value.trim() : '') || 'https://script.google.com/macros/s/AKfycbyxFVniP1WcEsdMyQuoCw_Bkkq_hZtCNQUk-FykfBIEa3xJNTJDjA0IydXiph1QGXIp/exec';
+  var cbName = 'asJSONP_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+  var qs = Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  var url = base + '?' + qs + '&callback=' + cbName;
+
+  var timer = setTimeout(function() {
+    cleanup();
+    onError(new Error('Timeout — check internet connection'));
+  }, 20000);
+
+  function cleanup() {
+    delete window[cbName];
+    var s = document.getElementById('jsonp-' + cbName);
+    if (s) s.parentNode.removeChild(s);
+    clearTimeout(timer);
+  }
+
+  window[cbName] = function(data) {
+    cleanup();
+    if (data && data.status === 'error') onError(new Error(data.message || 'API error'));
+    else onSuccess(data);
+  };
+
+  var script = document.createElement('script');
+  script.id  = 'jsonp-' + cbName;
+  script.src = url;
+  script.onerror = function() { cleanup(); onError(new Error('Script load error')); };
+  document.head.appendChild(script);
+}
+
 function lsFetchForecast() {
   var statusEl = document.getElementById('ls-forecast-status');
   function setStatus(msg, type) {
@@ -2795,36 +2832,32 @@ function lsFetchForecast() {
     statusEl.style.padding = '12px 16px'; statusEl.style.borderRadius = '8px';
     statusEl.innerHTML = msg;
   }
-  var urlInput = document.getElementById('ls-api-url');
-  var apiBase  = urlInput ? urlInput.value.trim() : '';
-  if (!apiBase) { setStatus('⚠️ No API URL configured.', 'warn'); return; }
   var dateVal = document.getElementById('ls-date').value;
   if (!dateVal) { setStatus('⚠️ Select a Report Date first.', 'warn'); return; }
-  setStatus('⏳ Fetching forecast…', 'warn');
+  setStatus('⏳ Fetching forecast from Google Sheet…', 'warn');
 
-  function fetchTab(tab) {
-    var url = apiBase + (apiBase.indexOf('?') >= 0 ? '&' : '?') +
-              'tab=' + tab + '&date=' + dateVal + '&store=ALL';
-    return fetch(url).then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function(j) {
-      if (j.status !== 'ok') throw new Error(j.message || 'API error');
-      return j.data;
-    });
+  var ordersLoaded = false, unitsLoaded = false;
+  var ordersData = {}, unitsData = {};
+
+  function tryFinish() {
+    if (!ordersLoaded || !unitsLoaded) return;
+    lsFcOrders = ordersData;
+    lsFcUnits  = unitsData;
+    var n = Object.keys(lsFcOrders).length;
+    setStatus('✅ Forecast loaded! ' + n + ' store(s) · Date: ' + dateVal, 'ok');
+    showToast('☁️ Forecast ready — ' + n + ' store(s)');
   }
 
-  Promise.all([fetchTab('orders'), fetchTab('units')])
-    .then(function(results) {
-      lsFcOrders = results[0];
-      lsFcUnits  = results[1];
-      var n = Object.keys(lsFcOrders).length;
-      setStatus('✅ Forecast loaded! ' + n + ' store(s) · Date: ' + dateVal, 'ok');
-      showToast('☁️ Forecast loaded — ' + n + ' store(s)');
-    })
-    .catch(function(err) {
-      setStatus('❌ Fetch failed: ' + err.message, 'err');
-    });
+  appsScriptJSONP(
+    { tab: 'orders', date: dateVal, store: 'ALL' },
+    function(json) { ordersData = json.data || {}; ordersLoaded = true; tryFinish(); },
+    function(err)  { setStatus('❌ Orders fetch failed: ' + err.message, 'err'); }
+  );
+  appsScriptJSONP(
+    { tab: 'units', date: dateVal, store: 'ALL' },
+    function(json) { unitsData = json.data || {}; unitsLoaded = true; tryFinish(); },
+    function(err)  { setStatus('❌ Units fetch failed: ' + err.message, 'err'); }
+  );
 }
 
 function parseGvizTable(r) { return {}; }
@@ -3292,8 +3325,8 @@ function ciHandleUpload(input, mode) {
 
 // ── Fetch ASINs from Google Sheet via JSONP then match ────────
 function ciFetchAndMatch(mode) {
-  var tabName  = CI_TABS[mode];
-  var loadId   = 'load-' + mode;    // load-catalog or load-scanning
+  var tabParam = mode === 'catalog' ? 'catalog_asin' : 'scanning_asin';
+  var tabName  = mode === 'catalog' ? 'CATALOG ISSUE ASIN' : 'SCANNING ISSUE ASIN';
   var statusId = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
   var statusEl = document.getElementById(statusId);
 
@@ -3314,100 +3347,34 @@ function ciFetchAndMatch(mode) {
   }
 
   setStatus('⏳ Fetching ' + tabName + ' from Google Sheet…', 'warn');
-  showLoading(loadId.replace('load-',''), true);
+  showLoading(mode, true);
 
-  // ── Strategy 1: Apps Script Web App (same URL used for LS forecast) ──
-  // The Apps Script is already deployed and works from file://
-  // We extended it to serve CATALOG ISSUE ASIN and SCANNING ISSUE ASIN tabs
-  var apiInput = document.getElementById('ls-api-url');
-  var apiBase  = apiInput ? apiInput.value.trim() : '';
-
-  if (apiBase) {
-    // Use Apps Script: ?tab=catalog_asin or ?tab=scanning_asin
-    var tabParam = mode === 'catalog' ? 'catalog_asin' : 'scanning_asin';
-    var url = apiBase + (apiBase.indexOf('?') >= 0 ? '&' : '?') + 'tab=' + tabParam;
-    fetch(url)
-      .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function(json) {
-        if (json.status !== 'ok') throw new Error(json.message || 'API error');
-        // Apps Script returns { status:'ok', asins: ['B001...', 'B002...'] }
-        var asins = Array.isArray(json.asins) ? json.asins : [];
-        if (!asins.length) {
-          setStatus('⚠️ No ASINs found in tab: ' + tabName, 'warn');
-          showLoading(loadId.replace('load-',''), false);
-          return;
-        }
-        ciState[mode].asins = asins;
-        setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching…', 'ok');
-        ciMatchAndRender(mode, asins);
-      })
-      .catch(function(err) {
-        console.warn('Apps Script fetch failed, trying JSONP fallback:', err.message);
-        // Fall through to JSONP
-        ciFetchViaJSONP(mode, tabName, setStatus, loadId);
-      });
-    return;
-  }
-
-  // ── Strategy 2: JSONP (requires sheet published to web) ──────
-  ciFetchViaJSONP(mode, tabName, setStatus, loadId);
-}
-
-// JSONP fetch for tabs that are published to web
-function ciFetchViaJSONP(mode, tabName, setStatus, loadId) {
-  var cbName = 'ciGvizCb_' + mode + '_' + Date.now();
-
-  var timeout = setTimeout(function() {
-    delete window[cbName];
-    var old = document.getElementById('jsonp-' + cbName);
-    if (old) old.parentNode.removeChild(old);
-    setStatus(
-      '❌ <strong>Could not fetch from Google Sheet.</strong><br>' +
-      '• Make sure your Apps Script URL is set (same one used for Late Slam).<br>' +
-      '• Or publish the sheet tabs to web: <em>File → Share → Publish to web → select tab → CSV</em>.',
-      'err'
-    );
-    showLoading(mode, false);
-  }, 12000);
-
-  window[cbName] = function(response) {
-    clearTimeout(timeout);
-    delete window[cbName];
-    var old = document.getElementById('jsonp-' + cbName);
-    if (old) old.parentNode.removeChild(old);
-    try {
-      var asins = ciParseGvizASINs(response);
+  // Use shared JSONP caller — works from file://, bypasses CORS + host allowlist
+  appsScriptJSONP(
+    { tab: tabParam },
+    function(json) {
+      showLoading(mode, false);
+      var asins = Array.isArray(json.asins) ? json.asins : [];
       if (!asins.length) {
-        setStatus('⚠️ No ASINs found in tab: ' + tabName, 'warn');
-        showLoading(mode, false);
+        setStatus('⚠️ No ASINs found in tab: ' + tabName + '. Check tab name in sheet.', 'warn');
         return;
       }
       ciState[mode].asins = asins;
-      setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching…', 'ok');
+      setStatus('✅ Fetched <strong>' + asins.length + ' ASINs</strong> from <em>' + tabName + '</em>. Matching with inventory…', 'ok');
       ciMatchAndRender(mode, asins);
-    } catch(err) {
-      setStatus('❌ Parse error: ' + err.message, 'err');
+    },
+    function(err) {
       showLoading(mode, false);
+      setStatus(
+        '❌ <strong>Fetch failed:</strong> ' + err.message + '<br>' +
+        'Make sure your Apps Script is deployed as <em>Execute as: Me · Who has access: Anyone</em>.',
+        'err'
+      );
     }
-  };
-
-  var url = 'https://docs.google.com/spreadsheets/d/' + CI_SHEET_ID +
-            '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tabName) +
-            '&callback=' + cbName;
-  var script = document.createElement('script');
-  script.id  = 'jsonp-' + cbName;
-  script.src = url;
-  script.onerror = function() {
-    clearTimeout(timeout);
-    delete window[cbName];
-    setStatus('❌ Sheet not reachable. Ensure Apps Script URL is configured.', 'err');
-    showLoading(mode, false);
-  };
-  document.head.appendChild(script);
+  );
 }
+
+function ciFetchViaJSONP(mode, tabName, setStatus, loadId) { /* legacy stub — unused */ }
 
 // ── Parse ASIN list from gviz JSON response ──────────────────
 // Column A contains ASINs
