@@ -4250,7 +4250,7 @@ function ciRenderResults(mode, list) {
           if (qrEl && !qrEl.hasChildNodes()) {
             try {
               new QRCode(qrEl, {
-                text: l.loc || item.asin,
+                text: item.asin,
                 width: 90, height: 90,
                 colorDark: '#000000', colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
