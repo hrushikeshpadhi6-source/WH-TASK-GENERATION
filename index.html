@@ -1286,7 +1286,7 @@ footer span { color:var(--accent); }
   <div class="loading" id="load-slow-moving"><div class="spinner"></div><div>Filtering...</div></div>
   <div id="out-slow-moving"></div>
   <div class="btn-row" id="export-slow-moving" style="display:none">
-    <button class="btn btn-accent" onclick="exportPDF('out-slow-moving','Slow Moving Items')">⬇ Export PDF</button>
+    
     <button class="btn btn-green" onclick="exportXLSX('slow-moving')">⬇ Export Excel</button>
   </div>
 </div>
@@ -1383,7 +1383,7 @@ footer span { color:var(--accent); }
   <div class="task-header">
     <span class="task-header-icon">📊</span>
     <div>
-      <h2>Inventory Audit Report</h2>
+      <h2>Fresh Store Activity Report</h2>
       <p>Generate a professional report from your inventory audit file.</p>
     </div>
   </div>
@@ -1405,6 +1405,42 @@ footer span { color:var(--accent); }
       <label style="font-weight:700;color:#1e293b;display:block;margin-bottom:6px;font-size:13px;">👤 Report Prepared By</label>
       <input id="report-by-input" type="text" placeholder="Enter your name"
         style="width:100%;padding:11px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;box-sizing:border-box;">
+    </div>
+  </div>
+  <!-- Manual KPI Inputs -->
+  <div style="background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:20px;border:2px solid #e2e8f0;">
+    <div style="font-weight:800;color:#1e293b;font-size:13px;margin-bottom:14px;letter-spacing:0.5px;">📊 Manual KPIs</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Late Slam</label>
+        <input id="rpt-lateslam" type="number" min="0" placeholder="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">IB TPH</label>
+        <input id="rpt-ibtph" type="number" min="0" placeholder="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">OB TPH</label>
+        <input id="rpt-obtph" type="number" min="0" placeholder="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">IB SLA AVG</label>
+        <input id="rpt-ibsla" type="number" min="0" step="0.1" placeholder="0.0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Skip</label>
+        <input id="rpt-skip" type="number" min="0" placeholder="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-weight:700;color:#64748b;display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Short</label>
+        <input id="rpt-short" type="number" min="0" placeholder="0"
+          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:700;color:#1e293b;box-sizing:border-box;">
+      </div>
     </div>
   </div>
   <div class="upload-zone" id="uz-report" onclick="triggerUpload('f-report')">
@@ -2252,7 +2288,7 @@ function getNowString() {
   return days[now.getDay()] + ', ' + String(now.getDate()).padStart(2,'0') + ' ' + months[now.getMonth()] + ' ' + now.getFullYear() + ' · ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 }
 function signatureBarHTML() {
-  return '<div class="pdf-signature-bar"><div class="sig-line"><span style="font-weight:700;color:#1e293b;">Checked By AA:</span><span class="sig-underline">&nbsp;</span></div><div class="sig-line"><span style="font-weight:700;color:#1e293b;">Verified By TL/Supervisor:</span><span class="sig-underline">&nbsp;</span></div></div>';
+  return '<div class="pdf-signature-bar"><div class="sig-line"><span style="font-weight:700;color:#1e293b;">Checked By AA:</span><span class="sig-underline">&nbsp;</span></div><div class="sig-line"><span style="font-weight:700;color:#1e293b;">Short Remove Supervisor:</span><span class="sig-underline">&nbsp;</span></div></div>';
 }
 
 // TASK 1: CONSOLIDATION
@@ -2905,7 +2941,68 @@ function generateReport() {
   const medals=['🥇','🥈','🥉'];
   const mkBadge=(i,bg)=>'<span style="background:'+bg+';color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px;">'+medals[i]+'</span>';
   const nowStr = getNowString();
-  const html='<div style="font-family:Arial,sans-serif;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);" id="report-printable"><div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f766e 100%);padding:28px 36px;color:#fff;"><div style="font-size:11px;letter-spacing:3px;opacity:0.7;text-transform:uppercase;margin-bottom:6px;">Dark Store Task Pro</div><div style="font-size:28px;font-weight:900;margin-bottom:8px;">Inventory Audit Report</div><div style="font-size:15px;opacity:0.9;">Store: <strong>'+storeId+'</strong> &nbsp;|&nbsp; Date: <strong>'+dateStr+'</strong> &nbsp;|&nbsp; Prepared by: <strong>'+reportBy+'</strong> &nbsp;|&nbsp; Generated: <strong>'+nowStr+'</strong></div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:20px 28px;background:#f8fafc;">'+[{i:'📋',l:'Unique Orders',v:uniqueOrdersCount.toLocaleString(),s:'Outbound Pick',c:'#e8500a'},{i:'📦',l:'Outbound Units',v:Math.round(obUnits).toLocaleString(),s:'Outbound Pick units',c:'#0891b2'},{i:'⚡',l:'UPO',v:upo,s:'Units Per Order',c:'#f59e0b'},{i:'🏭',l:'Stow Total',v:totalStowUnits.toLocaleString(),s:'Vendor + TS',c:'#7c3aed'},{i:'⚠️',l:'Destroyed Units',v:Math.round(destroyUnits).toLocaleString(),s:'All Destroy types',c:'#dc2626'}].map(k=>'<div style="background:#fff;border-radius:12px;padding:14px 10px;text-align:center;border-top:4px solid '+k.c+';box-shadow:0 2px 8px rgba(0,0,0,0.06);"><div style="font-size:22px;">'+k.i+'</div><div style="font-size:22px;font-weight:900;color:'+k.c+';">'+k.v.toLocaleString()+'</div><div style="font-size:11px;font-weight:700;color:#1e293b;margin-top:4px;">'+k.l+'</div><div style="font-size:10px;color:#94a3b8;">'+k.s+'</div></div>').join('')+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid #f1f5f9;"><div style="padding:20px 28px;border-right:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:12px;">🚚 Top Pickers — Unique Outbound Orders</div>'+top3Pick.map((a,i)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:'+(i===0?'#fff7ed':'#f8fafc')+';border:1px solid '+(i===0?'#fdba74':'#e2e8f0')+';">'+mkBadge(i,['#f59e0b','#94a3b8','#b45309'][i])+'<strong style="color:#0f172a;flex:1;">'+a.name+'</strong><div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:#e8500a;">'+a.orders+' orders</div><div style="font-size:11px;color:#64748b;">'+Math.round(a.picks)+' units</div></div></div>').join('')+'</div><div style="padding:20px 28px;"><div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:12px;">📥 Top Stowers — Units Stowed</div>'+top3Stow.map((a,i)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:'+(i===0?'#f0fdf4':'#f8fafc')+';border:1px solid '+(i===0?'#86efac':'#e2e8f0')+';">'+mkBadge(i,['#16a34a','#94a3b8','#166534'][i])+'<strong style="color:#0f172a;flex:1;">'+a.name+'</strong><div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:#0f766e;">'+Math.round(a.stow)+' units</div><div style="font-size:11px;color:#64748b;">'+a.mins+' mins active</div></div></div>').join('')+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid #f1f5f9;"><div style="padding:20px 28px;border-right:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">📋 Process Breakdown</div><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">Process</th><th style="padding:8px;text-align:right;border-bottom:2px solid #e2e8f0;color:#64748b;">Count</th></tr>'+Object.entries(procMap).sort((a,b)=>b[1]-a[1]).map(([p,n],i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:7px 8px;color:#334155;">'+p+'</td><td style="padding:7px 8px;text-align:right;font-weight:700;color:#0f766e;">'+n.toLocaleString()+'</td></tr>').join('')+'</table></div><div style="padding:20px 28px;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">🏆 Top 10 Picked ASINs</div><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="background:#f8fafc;"><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">#</th><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">ASIN</th><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">Product</th><th style="padding:7px;text-align:right;border-bottom:2px solid #e2e8f0;color:#64748b;">Picks</th></tr>'+topASINs.map(([a,d],i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:6px 7px;font-weight:700;color:#94a3b8;">'+(i+1)+'</td><td style="padding:6px 7px;font-family:monospace;font-weight:700;color:#e8500a;font-size:11px;">'+a+'</td><td style="padding:6px 7px;color:#475569;font-size:11px;">'+(d.title||'').slice(0,30)+(d.title&&d.title.length>30?'...':'')+'</td><td style="padding:6px 7px;text-align:right;font-weight:700;">'+d.count+'</td></tr>').join('')+'</table></div></div><div style="padding:20px 28px;border-top:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">👥 All Associates Performance</div><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#0f172a;color:#fff;"><th style="padding:10px 12px;text-align:left;">Associate</th><th style="padding:10px;text-align:right;">Active (min)</th><th style="padding:10px;text-align:right;color:#fdba74;">Outbound Orders</th><th style="padding:10px;text-align:right;color:#fdba74;">Pick Units</th><th style="padding:10px;text-align:right;color:#6ee7b7;">Vendor Stow</th><th style="padding:10px;text-align:right;color:#7dd3fc;">TS Recv</th><th style="padding:10px;text-align:right;color:#fca5a5;">Destroy</th></tr>'+assocRows.map((a,i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:9px 12px;font-weight:700;color:#1e293b;">'+a.name+'</td><td style="padding:9px;text-align:right;color:#64748b;">'+a.mins+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+a.orders+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+Math.round(a.picks)+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0f766e;">'+(Math.round(a.stow)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0891b2;">'+(Math.round(a.tsRecv)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:'+(a.destroy>0?'#dc2626':'#94a3b8')+'">'+(Math.round(a.destroy)||'-')+'</td></tr>').join('')+'</table></div><div style="padding:20px 28px;border-top:2px solid #f1f5f9;background:#f8fafc;"><div style="display:flex;gap:40px;flex-wrap:wrap;font-size:13px;color:#334155;"><div style="display:flex;align-items:center;gap:10px;"><strong>Checked By AA:</strong><span style="display:inline-block;width:220px;border-bottom:1.5px solid #555;">&nbsp;</span></div><div style="display:flex;align-items:center;gap:10px;"><strong>Verified By TL/Supervisor:</strong><span style="display:inline-block;width:220px;border-bottom:1.5px solid #555;">&nbsp;</span></div></div></div><div style="padding:12px 28px;background:#0f172a;color:#475569;font-size:12px;display:flex;justify-content:space-between;"><span>Prepared by: <strong style="color:#e2e8f0;">'+reportBy+'</strong> · Store: '+storeId+' · '+dateStr+'</span><span>Dark Store Task Pro</span></div></div>';
+  // Read manual KPIs
+  const manLS   = document.getElementById('rpt-lateslam').value || '—';
+  const manIBT  = document.getElementById('rpt-ibtph').value    || '—';
+  const manOBT  = document.getElementById('rpt-obtph').value    || '—';
+  const manSLA  = document.getElementById('rpt-ibsla').value    || '—';
+  const manSkip  = document.getElementById('rpt-skip').value    || '—';
+  const manShort = document.getElementById('rpt-short').value   || '—';
+
+  // Removal logic
+  // Flexible removal matching (handles underscores, spaces, case variations)
+  function matchProc(p, keywords) {
+    const clean = p.toLowerCase().replace(/[_\s-]/g,'');
+    return keywords.every(k => clean.includes(k.toLowerCase().replace(/[_\s-]/g,'')));
+  }
+
+  const culQualUnits = storeRows.filter(r => {
+    const p = String(r[cProc]||'');
+    return matchProc(p,['culqual','rotten']) || matchProc(p,['culqual','damage']) ||
+           matchProc(p,['quality','destroy']) || matchProc(p,['culqual','destroy']);
+  }).reduce((s,r) => s + Math.abs(Number(r[cQty]||0)), 0);
+
+  const damagedUnits = storeRows.filter(r => {
+    const p   = String(r[cProc]||'');
+    const loc = String(r[cLoc]||'').toUpperCase();
+    if (!matchProc(p,['damage','destroy']) && !matchProc(p,['damaged','remove'])) return false;
+    if (matchProc(p,['culqual'])) return false; // already counted in quality
+    if (loc.includes('TS') || loc.includes('TEMP') || loc.includes('STAGING') || loc === '') return false;
+    return true;
+  }).reduce((s,r) => s + Math.abs(Number(r[cQty]||0)), 0);
+
+  const expiredUnits = storeRows.filter(r => {
+    const p = String(r[cProc]||'');
+    return matchProc(p,['expired','destroy']) || matchProc(p,['expiry','destroy']) ||
+           matchProc(p,['expire','remove']) || matchProc(p,['expired','remove']);
+  }).reduce((s,r) => s + Math.abs(Number(r[cQty]||0)), 0);
+
+  // Summary KPI block (7 metrics)
+  const summaryKPIs = [
+    { icon:'🚛', label:'Transshipment Units', value: Math.round(transStowUnits).toLocaleString(), color:'#0891b2' },
+    { icon:'🏭', label:'Vendor Units',         value: Math.round(vendorUnits).toLocaleString(),    color:'#7c3aed' },
+    { icon:'📦', label:'Total Orders',         value: uniqueOrdersCount.toLocaleString(),           color:'#e8500a' },
+    { icon:'📤', label:'Total Units',          value: Math.round(obUnits).toLocaleString(),         color:'#f59e0b' },
+    { icon:'🔬', label:'Quality Removal',      value: Math.round(culQualUnits).toLocaleString(),    color:'#dc2626' },
+    { icon:'⚠️', label:'Damaged Removal',      value: Math.round(damagedUnits).toLocaleString(),   color:'#ea580c' },
+    { icon:'🗓️', label:'Expired Removal',      value: Math.round(expiredUnits).toLocaleString(),   color:'#be123c' },
+  ];
+
+  const html='<div style="font-family:Arial,sans-serif;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);" id="report-printable"><div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f766e 100%);padding:28px 36px;color:#fff;"><div style="font-size:11px;letter-spacing:3px;opacity:0.7;text-transform:uppercase;margin-bottom:6px;">Dark Store Task Pro</div><div style="font-size:28px;font-weight:900;margin-bottom:8px;">Fresh Store Activity Report</div><div style="font-size:15px;opacity:0.9;">Store: <strong>'+storeId+'</strong> &nbsp;|&nbsp; Date: <strong>'+dateStr+'</strong> &nbsp;|&nbsp; By: <strong>'+reportBy+'</strong> &nbsp;|&nbsp; '+nowStr+'</div></div>' +
+  // Manual KPIs bar
+  '<div style="background:#f8fafc;padding:12px 28px;border-bottom:1px solid #e2e8f0;display:flex;gap:24px;flex-wrap:wrap;font-size:12px;font-weight:700;color:#1e293b;">' +
+  '<span>⏱ Late Slam: <strong style="color:#e8500a;">'+manLS+'</strong></span>' +
+  '<span>📥 IB TPH: <strong style="color:#0891b2;">'+manIBT+'</strong></span>' +
+  '<span>📤 OB TPH: <strong style="color:#7c3aed;">'+manOBT+'</strong></span>' +
+  '<span>📊 IB SLA AVG: <strong style="color:#16a34a;">'+manSLA+'</strong></span>' +
+  '<span>⏭ Skip: <strong style="color:#94a3b8;">'+manSkip+'</strong></span>' +
+  '<span>⚡ Short: <strong style="color:#dc2626;">'+manShort+'</strong></span>' +
+  '</div>' +
+  // Summary table (7 KPIs — main section)
+  '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:22px 28px;background:#f8fafc;">' +
+  summaryKPIs.map(function(k){ return '<div style="background:#fff;border-radius:14px;padding:18px 12px;text-align:center;border-top:4px solid '+k.color+';box-shadow:0 2px 10px rgba(0,0,0,0.07);transition:all 0.2s;"><div style="font-size:28px;margin-bottom:6px;">'+k.icon+'</div><div style="font-size:26px;font-weight:900;color:'+k.color+';line-height:1.1;">'+k.value+'</div><div style="font-size:12px;font-weight:700;color:#1e293b;margin-top:6px;">'+k.label+'</div></div>'; }).join('') +
+  '</div>' +
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid #f1f5f9;"><div style="padding:20px 28px;border-right:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:12px;">🚚 Top Pickers — Unique Outbound Orders</div>'+top3Pick.map((a,i)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:'+(i===0?'#fff7ed':'#f8fafc')+';border:1px solid '+(i===0?'#fdba74':'#e2e8f0')+';">'+mkBadge(i,['#f59e0b','#94a3b8','#b45309'][i])+'<strong style="color:#0f172a;flex:1;">'+a.name+'</strong><div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:#e8500a;">'+a.orders+' orders</div><div style="font-size:11px;color:#64748b;">'+Math.round(a.picks)+' units</div></div></div>').join('')+'</div><div style="padding:20px 28px;"><div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:12px;">📥 Top Stowers — Units Stowed</div>'+top3Stow.map((a,i)=>'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:8px;background:'+(i===0?'#f0fdf4':'#f8fafc')+';border:1px solid '+(i===0?'#86efac':'#e2e8f0')+';">'+mkBadge(i,['#16a34a','#94a3b8','#166534'][i])+'<strong style="color:#0f172a;flex:1;">'+a.name+'</strong><div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:#0f766e;">'+Math.round(a.stow)+' units</div><div style="font-size:11px;color:#64748b;">'+a.mins+' mins active</div></div></div>').join('')+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid #f1f5f9;"><div style="padding:20px 28px;border-right:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">📋 Process Breakdown</div><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">Process</th><th style="padding:8px;text-align:right;border-bottom:2px solid #e2e8f0;color:#64748b;">Count</th></tr>'+Object.entries(procMap).sort((a,b)=>b[1]-a[1]).map(([p,n],i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:7px 8px;color:#334155;">'+p+'</td><td style="padding:7px 8px;text-align:right;font-weight:700;color:#0f766e;">'+n.toLocaleString()+'</td></tr>').join('')+'</table></div><div style="padding:20px 28px;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">🏆 Top 10 Picked ASINs</div><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="background:#f8fafc;"><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">#</th><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">ASIN</th><th style="padding:7px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;">Product</th><th style="padding:7px;text-align:right;border-bottom:2px solid #e2e8f0;color:#64748b;">Picks</th></tr>'+topASINs.map(([a,d],i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:6px 7px;font-weight:700;color:#94a3b8;">'+(i+1)+'</td><td style="padding:6px 7px;font-family:monospace;font-weight:700;color:#e8500a;font-size:11px;">'+a+'</td><td style="padding:6px 7px;color:#475569;font-size:11px;">'+(d.title||'').slice(0,30)+(d.title&&d.title.length>30?'...':'')+'</td><td style="padding:6px 7px;text-align:right;font-weight:700;">'+d.count+'</td></tr>').join('')+'</table></div></div><div style="padding:20px 28px;border-top:2px solid #f1f5f9;"><div style="font-weight:800;font-size:14px;margin-bottom:12px;">👥 All Associates Performance</div><table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#0f172a;color:#fff;"><th style="padding:10px 12px;text-align:left;">Associate</th><th style="padding:10px;text-align:right;">Active (min)</th><th style="padding:10px;text-align:right;color:#fdba74;">Outbound Orders</th><th style="padding:10px;text-align:right;color:#fdba74;">Pick Units</th><th style="padding:10px;text-align:right;color:#6ee7b7;">Vendor Stow</th><th style="padding:10px;text-align:right;color:#7dd3fc;">TS Recv</th><th style="padding:10px;text-align:right;color:#fca5a5;">Destroy</th></tr>'+assocRows.map((a,i)=>'<tr style="border-bottom:1px solid #f1f5f9;background:'+(i%2?'#fff':'#fafafe')+'"><td style="padding:9px 12px;font-weight:700;color:#1e293b;">'+a.name+'</td><td style="padding:9px;text-align:right;color:#64748b;">'+a.mins+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+a.orders+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#e8500a;">'+Math.round(a.picks)+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0f766e;">'+(Math.round(a.stow)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:#0891b2;">'+(Math.round(a.tsRecv)||'-')+'</td><td style="padding:9px;text-align:right;font-weight:700;color:'+(a.destroy>0?'#dc2626':'#94a3b8')+'">'+(Math.round(a.destroy)||'-')+'</td></tr>').join('')+'</table></div><div style="padding:12px 28px;background:#0f172a;color:#475569;font-size:12px;display:flex;justify-content:space-between;"><span>Prepared by: <strong style="color:#e2e8f0;">'+reportBy+'</strong> · Store: '+storeId+' · '+dateStr+'</span><span>Dark Store Task Pro</span></div></div>';
   document.getElementById('out-report').innerHTML = html;
   document.getElementById('report-export-btns').style.display = 'flex';
   showToast('Report generated! ' + storeRows.length.toLocaleString() + ' rows processed');
@@ -2979,7 +3076,7 @@ async function exportReportExcel() {
     ['Associates Active', new Set(reportData.map(r=>r.User)).size, 'Unique users'],
     [],
     ['Checked By AA:', '___________________'],
-    ['Verified By TL/Supervisor:', '___________________'],
+    ['Short Remove Supervisor:', '___________________'],
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), 'KPI Summary');
   const procMap = {};
@@ -3046,7 +3143,7 @@ async function exportA4PDF(el, title) {
     if (remaining <= usableH) {
       pdf.setFontSize(8); pdf.setTextColor(50);
       pdf.text('Checked By AA: ________________________________', margin, footerY + 6);
-      pdf.text('Verified By TL/Supervisor: ________________________________', pageW/2 + 5, footerY + 6);
+      pdf.text('Short Remove Supervisor: ________________________________', pageW/2 + 5, footerY + 6);
     }
     srcY += slH; remaining -= slH;
   }
@@ -3089,7 +3186,7 @@ async function exportAuditAsinPDF(title) {
     if (p === totalPages-1) {
       pdf.setFontSize(7); pdf.setTextColor(50);
       pdf.text('Checked By AA: ______________________', margin, footerY - 5);
-      pdf.text('Verified By TL/Supervisor: ______________________', pageW/2, footerY - 5);
+      pdf.text('Short Remove Supervisor: ______________________', pageW/2, footerY - 5);
     }
   }
   pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
@@ -3133,7 +3230,7 @@ async function exportConsolidationPDF(title) {
     if (p === totalPages-1) {
       pdf.setFontSize(7); pdf.setTextColor(50);
       pdf.text('Checked By AA: ______________________', margin, footerY - 5);
-      pdf.text('Verified By TL/Supervisor: ______________________', pageW/2, footerY - 5);
+      pdf.text('Short Remove Supervisor: ______________________', pageW/2, footerY - 5);
     }
   }
   pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
@@ -4352,7 +4449,7 @@ async function ciExportPDF(mode) {
       else { var sc=usableH/ih; pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',margin,margin,usableW*sc,usableH); }
       var fy=pageH-7; pdf.setFontSize(6); pdf.setTextColor(120);
       pdf.text(title+' · Page '+(p+1)+'/'+pages.length+' · '+nowStr,margin,fy);
-      if (p===pages.length-1){pdf.setFontSize(7);pdf.setTextColor(50);pdf.text('Checked By AA: ______________________',margin,fy-5);pdf.text('Verified By TL/Supervisor: ______________________',pageW/2,fy-5);}
+      if (p===pages.length-1){pdf.setFontSize(7);pdf.setTextColor(50);pdf.text('Checked By AA: ______________________',margin,fy-5);pdf.text('Short Remove Supervisor: ______________________',pageW/2,fy-5);}
       cv.width=1;cv.height=1;
     }
     pdf.save(filename);
