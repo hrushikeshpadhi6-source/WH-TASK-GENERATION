@@ -1583,6 +1583,18 @@ footer span { color:var(--accent); }
         <option value="ALL">All Stores</option>
       </select>
     </div>
+    <div style="grid-column:1/-1;">
+      <div class="ctrl-label">Forecast Google Sheet ID</div>
+      <input class="input-field" type="text" id="ls-gsheet-id" style="width:100%;font-size:12px;font-family:monospace;" placeholder="Paste Google Sheet ID (from the URL between /d/ and /edit)">
+    </div>
+    <div>
+      <div class="ctrl-label">Forecast Orders Tab Name</div>
+      <input class="input-field" type="text" id="ls-tab-orders" style="width:100%;" placeholder="e.g. Forecast Orders">
+    </div>
+    <div>
+      <div class="ctrl-label">Forecast Units Tab Name</div>
+      <input class="input-field" type="text" id="ls-tab-units" style="width:100%;" placeholder="e.g. Forecast Units">
+    </div>
     <div>
       <button class="btn btn-primary" style="width:100%;margin-top:2px;" onclick="lsFetchForecast()">☁️ Fetch Forecast</button>
     </div>
@@ -3539,10 +3551,203 @@ function lsFetchForecast() {
     statusEl.style.padding = '12px 16px'; statusEl.style.borderRadius = '8px';
     statusEl.innerHTML = msg;
   }
-  var dateVal = document.getElementById('ls-date').value;
-  if (!dateVal) { setStatus('⚠️ Select a Report Date first.', 'warn'); return; }
-  setStatus('⏳ Fetching forecast from Google Sheet…', 'warn');
 
+  var dateVal    = document.getElementById('ls-date').value;
+  var sheetId    = (document.getElementById('ls-gsheet-id')   || {value:''}).value.trim();
+  var tabOrders  = (document.getElementById('ls-tab-orders')  || {value:''}).value.trim() || 'Forecast Orders';
+  var tabUnits   = (document.getElementById('ls-tab-units')   || {value:''}).value.trim() || 'Forecast Units';
+
+  if (!dateVal)  { setStatus('\u26a0\ufe0f Select a Report Date first.', 'warn'); return; }
+  if (!sheetId)  { setStatus('\u26a0\ufe0f Paste your Google Sheet ID above first.', 'warn'); return; }
+
+  setStatus('\u23f3 Fetching forecast from Google Sheet\u2026', 'warn');
+
+  // ── Normalise a cell value to a plain string ──────────────
+  function cellStr(cell) {
+    if (!cell) return '';
+    if (cell.f) return String(cell.f).trim();   // formatted value preferred
+    if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+    return '';
+  }
+
+  // ── Parse date from various formats into YYYY-MM-DD ───────
+  function normDate(raw) {
+    if (!raw) return '';
+    raw = String(raw).trim();
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    // DD/MM/YYYY or D/M/YYYY
+    var m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+    // MM/DD/YYYY
+    var m2 = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m2) {
+      var yr = m2[3].length === 2 ? '20' + m2[3] : m2[3];
+      return yr + '-' + m2[1].padStart(2,'0') + '-' + m2[2].padStart(2,'0');
+    }
+    // Google Sheets serial date  (days since 30-Dec-1899)
+    if (/^\d+$/.test(raw)) {
+      var serial = parseInt(raw);
+      var d = new Date(Date.UTC(1899,11,30) + serial * 86400000);
+      return d.getUTCFullYear() + '-' +
+             String(d.getUTCMonth()+1).padStart(2,'0') + '-' +
+             String(d.getUTCDate()).padStart(2,'0');
+    }
+    // Fallback: try native parse
+    var nd = new Date(raw);
+    if (!isNaN(nd)) return nd.getFullYear() + '-' +
+      String(nd.getMonth()+1).padStart(2,'0') + '-' +
+      String(nd.getDate()).padStart(2,'0');
+    return raw;
+  }
+
+  // ── Parse time slot from Col B (e.g. "01:30", "1:30 AM", "01:30:00") ──
+  function normSlot(raw) {
+    if (!raw) return null;
+    var s = String(raw).trim();
+    // HH:MM or H:MM (24h)
+    var m = s.match(/^(\d{1,2}):(\d{2})/);
+    if (m) {
+      var hh = parseInt(m[1]), mn = parseInt(m[2]);
+      mn = Math.floor(mn / 30) * 30; // floor to 30-min bucket
+      return (hh < 10 ? '0' : '') + hh + ':' + (mn === 0 ? '00' : '30');
+    }
+    return null;
+  }
+
+  // ── Check if a row is a Total row (Col A or B contains "total") ────
+  function isTotalRow(storeVal, slotVal) {
+    var combined = (storeVal + ' ' + slotVal).toLowerCase();
+    return combined.indexOf('total') >= 0;
+  }
+
+  // ── Fetch one sheet tab via gviz and return parsed rows ───────────
+  function fetchTab(tabName, callback) {
+    var cbName = 'lsGviz_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    var url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(sheetId) +
+              '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tabName) +
+              '&callback=' + cbName;
+
+    var timer = setTimeout(function() {
+      cleanup();
+      callback(new Error('Timeout fetching tab: ' + tabName), null);
+    }, 25000);
+
+    function cleanup() {
+      delete window[cbName];
+      var s = document.getElementById('gviz-' + cbName);
+      if (s) s.parentNode.removeChild(s);
+      clearTimeout(timer);
+    }
+
+    window[cbName] = function(raw) {
+      cleanup();
+      try { callback(null, raw); }
+      catch(e) { callback(e, null); }
+    };
+
+    var script = document.createElement('script');
+    script.id  = 'gviz-' + cbName;
+    script.src = url;
+    script.onerror = function() { cleanup(); callback(new Error('Failed to load tab: ' + tabName), null); };
+    document.head.appendChild(script);
+  }
+
+  // ── Parse gviz response: find date column, extract store/slot/value ──
+  function parseGvizForecast(gvizData, targetDate) {
+    // gvizData.table.cols  → column headers (row 0 = header row in sheet)
+    // gvizData.table.rows  → data rows
+    // Col A (index 0) = Store name
+    // Col B (index 1) = Time slot
+    // Col C+ (index 2+) = Date columns
+    var result = {};  // { storeName: { "HH:MM": value, ... } }
+
+    if (!gvizData || !gvizData.table) return result;
+    var cols = gvizData.table.cols || [];
+    var rows = gvizData.table.rows || [];
+
+    // Step 1: Find which column index matches targetDate (YYYY-MM-DD)
+    var dateColIdx = -1;
+    for (var ci = 2; ci < cols.length; ci++) {
+      var colLabel = cols[ci] ? cellStr(cols[ci]) : '';
+      if (!colLabel && rows.length > 0) {
+        // Try reading header from first row if cols don't have labels
+        var firstRow = rows[0].c || [];
+        colLabel = firstRow[ci] ? cellStr(firstRow[ci]) : '';
+      }
+      if (normDate(colLabel) === targetDate) {
+        dateColIdx = ci;
+        break;
+      }
+    }
+
+    // Step 1b: If not found in col headers, scan the very first data row
+    // (some gviz exports put date headers as row 0)
+    if (dateColIdx === -1 && rows.length > 0) {
+      var hdrRow = rows[0].c || [];
+      for (var hi = 2; hi < hdrRow.length; hi++) {
+        var hdrVal = hdrRow[hi] ? cellStr(hdrRow[hi]) : '';
+        if (normDate(hdrVal) === targetDate) {
+          dateColIdx = hi;
+          break;
+        }
+      }
+    }
+
+    if (dateColIdx === -1) {
+      console.warn('[LS Forecast] Date column not found for:', targetDate,
+        '| Available cols:', cols.map(function(c){ return cellStr(c); }));
+      return result;
+    }
+
+    // Step 2: Walk rows — track current store, skip Total rows
+    var currentStore = '';
+    var startRow = 0;
+
+    // If header was in row 0, start from row 1
+    if (rows.length > 0) {
+      var r0cells = rows[0].c || [];
+      var r0a = r0cells[0] ? cellStr(r0cells[0]) : '';
+      var r0b = r0cells[1] ? cellStr(r0cells[1]) : '';
+      // If row 0 col B looks like a date header rather than a time slot, skip it
+      if (!normSlot(r0b) && (normDate(r0a) || normDate(r0b))) startRow = 1;
+    }
+
+    for (var ri = startRow; ri < rows.length; ri++) {
+      var cells = rows[ri].c || [];
+      var colA  = cells[0] ? cellStr(cells[0]) : '';
+      var colB  = cells[1] ? cellStr(cells[1]) : '';
+
+      // Update current store when Col A is non-empty and not a slot time
+      if (colA && !normSlot(colA)) {
+        // Could be a store name or a Total row header
+        if (!isTotalRow(colA, colB)) {
+          currentStore = colA.trim();
+        }
+      }
+
+      // Skip Total rows entirely
+      if (isTotalRow(colA, colB)) continue;
+
+      // Skip rows with no slot in Col B
+      var slot = normSlot(colB);
+      if (!slot) continue;
+
+      // Skip rows with no store context
+      if (!currentStore) continue;
+
+      // Read the value for the matched date column
+      var rawVal = cells[dateColIdx] ? cellStr(cells[dateColIdx]) : '0';
+      var numVal = parseFloat(rawVal) || 0;
+
+      if (!result[currentStore]) result[currentStore] = {};
+      result[currentStore][slot] = numVal;
+    }
+
+    return result;
+  }
+
+  // ── Orchestrate: fetch both tabs then finish ─────────────────
   var ordersLoaded = false, unitsLoaded = false;
   var ordersData = {}, unitsData = {};
 
@@ -3551,22 +3756,31 @@ function lsFetchForecast() {
     lsFcOrders = ordersData;
     lsFcUnits  = unitsData;
     var n = Object.keys(lsFcOrders).length;
-    setStatus('✅ Forecast loaded! ' + n + ' store(s) · Date: ' + dateVal, 'ok');
-    showToast('☁️ Forecast ready — ' + n + ' store(s)');
+    if (n === 0) {
+      setStatus('\u26a0\ufe0f Forecast fetched but no matching date column found for <strong>' + dateVal +
+        '</strong>. Check the tab names and that the date exists in Col C onward.', 'warn');
+    } else {
+      setStatus('\u2705 Forecast loaded! <strong>' + n + '</strong> store(s) found \u00b7 Date: <strong>' + dateVal + '</strong>', 'ok');
+      showToast('\u2601\ufe0f Forecast ready \u2014 ' + n + ' store(s)');
+    }
   }
 
-  appsScriptJSONP(
-    { tab: 'orders', date: dateVal, store: 'ALL' },
-    function(json) { ordersData = json.data || {}; ordersLoaded = true; tryFinish(); },
-    function(err)  { setStatus('❌ Orders fetch failed: ' + err.message, 'err'); }
-  );
-  appsScriptJSONP(
-    { tab: 'units', date: dateVal, store: 'ALL' },
-    function(json) { unitsData = json.data || {}; unitsLoaded = true; tryFinish(); },
-    function(err)  { setStatus('❌ Units fetch failed: ' + err.message, 'err'); }
-  );
+  fetchTab(tabOrders, function(err, raw) {
+    if (err) { setStatus('\u274c Orders tab error: ' + err.message, 'err'); return; }
+    ordersData   = parseGvizForecast(raw, dateVal);
+    ordersLoaded = true;
+    tryFinish();
+  });
+
+  fetchTab(tabUnits, function(err, raw) {
+    if (err) { setStatus('\u274c Units tab error: ' + err.message, 'err'); return; }
+    unitsData   = parseGvizForecast(raw, dateVal);
+    unitsLoaded = true;
+    tryFinish();
+  });
 }
 
+// ── Legacy stubs (no longer used but kept for safety) ─────────
 function parseGvizTable(r) { return {}; }
 function lsParseSlotFromRange(s) { return null; }
 
