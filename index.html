@@ -1583,18 +1583,6 @@ footer span { color:var(--accent); }
         <option value="ALL">All Stores</option>
       </select>
     </div>
-    <div style="grid-column:1/-1;">
-      <div class="ctrl-label">Forecast Google Sheet ID</div>
-      <input class="input-field" type="text" id="ls-gsheet-id" style="width:100%;font-size:12px;font-family:monospace;" placeholder="Paste Google Sheet ID (from the URL between /d/ and /edit)">
-    </div>
-    <div>
-      <div class="ctrl-label">Forecast Orders Tab Name</div>
-      <input class="input-field" type="text" id="ls-tab-orders" style="width:100%;" placeholder="e.g. Forecast Orders">
-    </div>
-    <div>
-      <div class="ctrl-label">Forecast Units Tab Name</div>
-      <input class="input-field" type="text" id="ls-tab-units" style="width:100%;" placeholder="e.g. Forecast Units">
-    </div>
     <div>
       <button class="btn btn-primary" style="width:100%;margin-top:2px;" onclick="lsFetchForecast()">☁️ Fetch Forecast</button>
     </div>
@@ -3553,9 +3541,9 @@ function lsFetchForecast() {
   }
 
   var dateVal    = document.getElementById('ls-date').value;
-  var sheetId    = (document.getElementById('ls-gsheet-id')   || {value:''}).value.trim();
-  var tabOrders  = (document.getElementById('ls-tab-orders')  || {value:''}).value.trim() || 'Forecast Orders';
-  var tabUnits   = (document.getElementById('ls-tab-units')   || {value:''}).value.trim() || 'Forecast Units';
+  var sheetId   = LS_SHEET_ID;
+  var tabOrders = LS_TAB_ORDERS;
+  var tabUnits  = LS_TAB_UNITS;
 
   if (!dateVal)  { setStatus('\u26a0\ufe0f Select a Report Date first.', 'warn'); return; }
   if (!sheetId)  { setStatus('\u26a0\ufe0f Paste your Google Sheet ID above first.', 'warn'); return; }
@@ -3622,35 +3610,51 @@ function lsFetchForecast() {
   }
 
   // ── Fetch one sheet tab via gviz and return parsed rows ───────────
+  // ── Fetch one sheet tab via gviz using fetch() — handles CORS + errors properly ───
+  // NOTE: Sheet must be shared as "Anyone with the link can view"
   function fetchTab(tabName, callback) {
-    var cbName = 'lsGviz_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-    var url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(sheetId) +
-              '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tabName) +
-              '&callback=' + cbName;
+    var url = 'https://docs.google.com/spreadsheets/d/' + sheetId +
+              '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tabName);
 
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var timer = setTimeout(function() {
-      cleanup();
-      callback(new Error('Timeout fetching tab: ' + tabName), null);
-    }, 25000);
+      if (controller) controller.abort();
+      callback(new Error(
+        'Timeout for tab \"' + tabName + '\"\n' +
+        'Check: (1) Sheet is shared \"Anyone with link can view\"  ' +
+        '(2) Tab name matches exactly  (3) Internet connection OK'
+      ), null);
+    }, 30000);
 
-    function cleanup() {
-      delete window[cbName];
-      var s = document.getElementById('gviz-' + cbName);
-      if (s) s.parentNode.removeChild(s);
-      clearTimeout(timer);
-    }
-
-    window[cbName] = function(raw) {
-      cleanup();
-      try { callback(null, raw); }
-      catch(e) { callback(e, null); }
-    };
-
-    var script = document.createElement('script');
-    script.id  = 'gviz-' + cbName;
-    script.src = url;
-    script.onerror = function() { cleanup(); callback(new Error('Failed to load tab: ' + tabName), null); };
-    document.head.appendChild(script);
+    fetch(url, controller ? { signal: controller.signal } : {})
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' for tab: ' + tabName);
+        return res.text();
+      })
+      .then(function(text) {
+        clearTimeout(timer);
+        // gviz returns: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+        // Strip wrapper to get plain JSON
+        var json = text
+          .replace(/^\/\*[\s\S]*?\*\/\s*/,'')   // remove /*O_o*/ comment
+          .replace(/^[^{]*/,'')              // remove everything before first {
+          .replace(/\);?\s*$/,'');          // remove trailing );
+        var data = JSON.parse(json);
+        callback(null, data);
+      })
+      .catch(function(err) {
+        clearTimeout(timer);
+        if (err.name === 'AbortError') return; // already handled by timer
+        // Provide a helpful error message
+        var msg = err.message || String(err);
+        if (msg.toLowerCase().indexOf('failed to fetch') >= 0 ||
+            msg.toLowerCase().indexOf('networkerror') >= 0 ||
+            msg.toLowerCase().indexOf('load') >= 0) {
+          msg = 'Cannot reach Google Sheets for tab \"' + tabName + '\". ' +
+                'Make sure the sheet is shared as \"Anyone with link can view\" and the Sheet ID is correct.';
+        }
+        callback(new Error(msg), null);
+      });
   }
 
   // ── Parse gviz response: find date column, extract store/slot/value ──
@@ -3765,15 +3769,23 @@ function lsFetchForecast() {
     }
   }
 
+  var ACCESS_HINT = '<br><small style="font-weight:500;opacity:.85;">\u2139\ufe0f Make sure the Google Sheet is shared as <b>Anyone with the link can view</b> and the tab name matches exactly (case-sensitive).</small>';
+
   fetchTab(tabOrders, function(err, raw) {
-    if (err) { setStatus('\u274c Orders tab error: ' + err.message, 'err'); return; }
+    if (err) {
+      setStatus('\u274c <b>Orders tab</b> failed \u2014 ' + err.message + ACCESS_HINT, 'err');
+      return;
+    }
     ordersData   = parseGvizForecast(raw, dateVal);
     ordersLoaded = true;
     tryFinish();
   });
 
   fetchTab(tabUnits, function(err, raw) {
-    if (err) { setStatus('\u274c Units tab error: ' + err.message, 'err'); return; }
+    if (err) {
+      setStatus('\u274c <b>Units tab</b> failed \u2014 ' + err.message + ACCESS_HINT, 'err');
+      return;
+    }
     unitsData   = parseGvizForecast(raw, dateVal);
     unitsLoaded = true;
     tryFinish();
@@ -4234,6 +4246,11 @@ var ciState = {
 
 // ── Google Sheet tab names ───────────────────────────────────
 var CI_SHEET_ID  = '1iBkvzRQumEAKZlx7kV-oS3KyLaybLkhwgy8Z2rErBsA';
+
+// ── Late Slam Forecast Sheet config (hardcoded) ──────────────────
+var LS_SHEET_ID    = '1iBkvzRQumEAKZlx7kV-oS3KyLaybLkhwgy8Z2rErBsA';
+var LS_TAB_ORDERS  = 'OB FORECAST ORDERS';
+var LS_TAB_UNITS   = 'OB FORECAST UNITS';
 var CI_TABS = {
   catalog:  'CATALOG ISSUE ASIN',
   scanning: 'SCANNING ISSUE ASIN'
