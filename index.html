@@ -3559,29 +3559,41 @@ function lsFetchForecast() {
   }
 
   // ── Parse date from various formats into YYYY-MM-DD ───────
+  // Parse date headers like "10-May", "10-May-2026", "13/05/2026", "2026-05-13", serial numbers
+  var MONTH_MAP = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
   function normDate(raw) {
     if (!raw) return '';
     raw = String(raw).trim();
     // Already YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-    // DD/MM/YYYY or D/M/YYYY
+    // "10-May" or "10-May-2026" or "10 May" or "10 May 2026" -- sheet format
+    var mMon = raw.match(/^(\d{1,2})[\-\s]([A-Za-z]{3,9})(?:[\-\s](\d{2,4}))?$/);
+    if (mMon) {
+      var day  = parseInt(mMon[1]);
+      var mon  = MONTH_MAP[mMon[2].toLowerCase().slice(0,3)];
+      var yr1  = mMon[3] ? (mMon[3].length===2 ? 2000+parseInt(mMon[3]) : parseInt(mMon[3])) : new Date().getFullYear();
+      if (mon) return yr1 + '-' + String(mon).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    }
+    // "May-10" or "May 10" or "May-10-2026"
+    var mMon2 = raw.match(/^([A-Za-z]{3,9})[\-\s](\d{1,2})(?:[\-\s](\d{2,4}))?$/);
+    if (mMon2) {
+      var mon2 = MONTH_MAP[mMon2[1].toLowerCase().slice(0,3)];
+      var day2 = parseInt(mMon2[2]);
+      var yr2  = mMon2[3] ? (mMon2[3].length===2 ? 2000+parseInt(mMon2[3]) : parseInt(mMon2[3])) : new Date().getFullYear();
+      if (mon2) return yr2 + '-' + String(mon2).padStart(2,'0') + '-' + String(day2).padStart(2,'0');
+    }
+    // DD/MM/YYYY
     var m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
     if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
-    // MM/DD/YYYY
-    var m2 = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-    if (m2) {
-      var yr = m2[3].length === 2 ? '20' + m2[3] : m2[3];
-      return yr + '-' + m2[1].padStart(2,'0') + '-' + m2[2].padStart(2,'0');
-    }
-    // Google Sheets serial date  (days since 30-Dec-1899)
-    if (/^\d+$/.test(raw)) {
+    // Google Sheets serial date (days since 30-Dec-1899)
+    if (/^\d{5,}$/.test(raw)) {
       var serial = parseInt(raw);
       var d = new Date(Date.UTC(1899,11,30) + serial * 86400000);
       return d.getUTCFullYear() + '-' +
              String(d.getUTCMonth()+1).padStart(2,'0') + '-' +
              String(d.getUTCDate()).padStart(2,'0');
     }
-    // Fallback: try native parse
+    // Fallback: native Date parse
     var nd = new Date(raw);
     if (!isNaN(nd)) return nd.getFullYear() + '-' +
       String(nd.getMonth()+1).padStart(2,'0') + '-' +
@@ -3589,20 +3601,27 @@ function lsFetchForecast() {
     return raw;
   }
 
-  // ── Parse time slot from Col B (e.g. "01:30", "1:30 AM", "01:30:00") ──
+  // Parse time slot from Col B
+  // Handles: "00:00 - 00:30", "00:00-00:30", "00:00", "0:00 - 0:30" -- takes START time
   function normSlot(raw) {
     if (!raw) return null;
     var s = String(raw).trim();
-    // HH:MM or H:MM (24h)
-    var m = s.match(/^(\d{1,2}):(\d{2})/);
-    if (m) {
-      var hh = parseInt(m[1]), mn = parseInt(m[2]);
-      mn = Math.floor(mn / 30) * 30; // floor to 30-min bucket
+    // Range "HH:MM - HH:MM" or "HH:MM-HH:MM" (with regular or en-dash)
+    var mRange = s.match(/^(\d{1,2}):(\d{2})\s*[\-\u2013]\s*\d{1,2}:\d{2}/);
+    if (mRange) {
+      var hh = parseInt(mRange[1]), mn = parseInt(mRange[2]);
+      mn = Math.floor(mn / 30) * 30;
       return (hh < 10 ? '0' : '') + hh + ':' + (mn === 0 ? '00' : '30');
+    }
+    // Plain HH:MM
+    var mPlain = s.match(/^(\d{1,2}):(\d{2})/);
+    if (mPlain) {
+      var hh2 = parseInt(mPlain[1]), mn2 = parseInt(mPlain[2]);
+      mn2 = Math.floor(mn2 / 30) * 30;
+      return (hh2 < 10 ? '0' : '') + hh2 + ':' + (mn2 === 0 ? '00' : '30');
     }
     return null;
   }
-
   // ── Check if a row is a Total row (Col A or B contains "total") ────
   function isTotalRow(storeVal, slotVal) {
     var combined = (storeVal + ' ' + slotVal).toLowerCase();
