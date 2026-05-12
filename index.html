@@ -1366,7 +1366,7 @@ footer span { color:var(--accent); }
   .ysm-label-print svg { width: 100% !important; height: 1.2in !important; }
   .ysm-label-print .lp-asin {
     font-family: "Courier New", monospace;
-    font-size: 14pt; font-weight: bold;
+    font-size: 16pt; font-weight: bold;
     margin-top: 6pt; letter-spacing: 1pt;
   }
   .ysm-label-print .lp-name {
@@ -2635,7 +2635,7 @@ function generateYSM() {
       const wrapper = document.createElement('div');
       wrapper.style.cssText = 'background:#fff;border:2px solid #222;border-radius:6px;padding:12px 16px 10px 16px;display:flex;flex-direction:column;align-items:center;width:100%;box-sizing:border-box;';
       const svgId = 'ysm-bc-' + idx;
-      wrapper.innerHTML = '<svg id="' + svgId + '" style="width:100%;display:block"></svg><div style="font-family:\'Courier New\',monospace;font-weight:900;font-size:17px;margin-top:8px;letter-spacing:2px;color:#000">' + lbl.asin + '</div>' + (lbl.itemName ? '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#444;margin-top:4px;text-align:center"><span style="color:#c43d04;font-size:13px;font-weight:800">Reduced Shelf Life</span> — ' + lbl.itemName + '</div>' : '');
+      wrapper.innerHTML = '<svg id="' + svgId + '" style="width:100%;display:block"></svg><div style="font-family:\'Courier New\',monospace;font-weight:900;font-size:17px;margin-top:8px;letter-spacing:2px;color:#000">' + lbl.asin + '</div>' + (lbl.itemName ? '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#444;margin-top:4px;text-align:center"><span style="color:#c43d04;font-size:13px;font-weight:800">(R.S.L)</span> — ' + lbl.itemName + '</div>' : '');
       stack.appendChild(wrapper);
       try {
         JsBarcode('#' + svgId, lbl.asin, { format: 'CODE128', width: 3, height: 100, displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 10, marginTop: 8, marginBottom: 8, marginLeft: 14, marginRight: 14 });
@@ -2688,7 +2688,7 @@ async function exportYSMPDF() {
     pdf.setFont('helvetica','bold');
     pdf.setFontSize(10);
     pdf.setTextColor(196,61,4);
-    pdf.text('Reduced Shelf Life', W_mm/2, 43, {align:'center'});
+    pdf.text('(R.S.L)', W_mm/2, 43, {align:'center'});
     if (name) {
       pdf.setFont('helvetica','bold');
       pdf.setFontSize(9);
@@ -2751,7 +2751,7 @@ async function exportYSMWord() {
     for(const lbl of ysmLabels){
       const asin=lbl.asin.trim();
       const name=lbl.itemName||'';
-      const combined=name?'Reduced Shelf Life \u2014 '+name:'Reduced Shelf Life';
+      const combined=name?'(R.S.L) \u2014 '+name:'(R.S.L)';
       pngs.push(makeLabelPNG(asin,combined));
     }
     const n=pngs.length;
@@ -2792,7 +2792,7 @@ function buildZPL(labels) {
     zpl+='^XA\n^MMT\n^PW406\n^LL203\n^LS0\n^CI28\n';
     zpl+='^FO10,5^BY2,3^BCN,100,N,N^FD'+asin+'^FS\n';
     zpl+='^FO10,112^A0N,18,18^FB386,1,0,C^FD'+asin+'^FS\n';
-    zpl+='^FO10,133^A0N,14,14^FB386,1,0,C^FR^FDReduced Shelf Life^FS\n';
+    zpl+='^FO10,133^A0N,14,14^FB386,1,0,C^FR^FD(R.S.L)^FS\n';
     zpl+='^FO10,150^A0N,13,13^FB386,1,0,C^FD'+name1+'^FS\n';
     if(name2) zpl+='^FO10,165^A0N,12,12^FB386,1,0,C^FD'+name2+'^FS\n';
     zpl+='^PQ1,0,1,Y\n^XZ\n';
@@ -4091,15 +4091,24 @@ function ciMatchAndRender(mode, asins) {
     matched[asin].locations[loc].qty += qty;
   });
 
+  // Filter: only valid locations (not Other/N/A/empty, qty > 0)
+  function isValidLoc(loc, zone, qty) {
+    if (!loc || loc === '—' || loc === '' || loc === 'N/A') return false;
+    if (zone === 'Other') return false;
+    if (qty <= 0) return false;
+    return true;
+  }
+
   var matchedList = Object.keys(matched).map(function(asin) {
-    return {
-      asin:  asin,
-      title: matched[asin].title,
-      locs:  Object.keys(matched[asin].locations).map(function(l) {
+    var validLocs = Object.keys(matched[asin].locations)
+      .map(function(l) {
         return { loc: l, qty: matched[asin].locations[l].qty, zone: matched[asin].locations[l].zone };
       })
-    };
-  }).sort(function(a,b) { return a.asin.localeCompare(b.asin); });
+      .filter(function(l) { return isValidLoc(l.loc, l.zone, l.qty); });
+    return { asin: asin, title: matched[asin].title, locs: validLocs };
+  })
+  .filter(function(item) { return item.locs.length > 0; }) // skip ASINs with no valid loc
+  .sort(function(a,b) { return a.asin.localeCompare(b.asin); });
 
   ciState[mode].matched = matchedList;
   showLoading(mode === 'catalog' ? 'catalog' : 'scanning', false);
@@ -4185,10 +4194,8 @@ function ciRenderResults(mode, list) {
           '<div style="display:inline-block;background:#fff7ed;border:1px solid #fed7aa;' +
           'border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace;font-size:11px;' +
           'font-weight:700;color:#c2410c;margin-bottom:6px;">' + item.asin + '</div>' +
-          // QR code — only if location is valid (not N/A or empty)
-          (l.loc && l.loc !== '—' && l.loc !== 'N/A' && l.loc !== '' && l.qty > 0
-            ? '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>'
-            : '<div style="height:50px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:10px;margin:4px 0;">No QR</div>') +
+          // QR code (location already validated — always show)
+          '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>' +
           // Location
           '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;color:#1a1830;margin-top:4px;">' + l.loc + '</div>' +
           '<div style="font-size:9px;color:#d97706;font-weight:700;">' + Math.round(l.qty) + ' units</div>' +
@@ -4248,33 +4255,27 @@ function ciRenderResults(mode, list) {
     list.forEach(function(item, idx) {
       item.locs.forEach(function(l, li) {
         if (isCatalog) {
-          // Only render QR if this location is valid
-          if (l.loc && l.loc !== '—' && l.loc !== 'N/A' && l.loc !== '' && l.qty > 0) {
-            var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
-            if (qrEl && !qrEl.hasChildNodes()) {
-              try {
-                new QRCode(qrEl, {
-                  text: item.asin,
-                  width: 90, height: 90,
-                  colorDark: '#000000', colorLight: '#ffffff',
-                  correctLevel: QRCode.CorrectLevel.H
-                });
-              } catch(e) {}
-            }
+          var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
+          if (qrEl && !qrEl.hasChildNodes()) {
+            try {
+              new QRCode(qrEl, {
+                text: item.asin,
+                width: 90, height: 90,
+                colorDark: '#000000', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+              });
+            } catch(e) {}
           }
         } else {
-          // Only render barcode if location is valid
-          if (l.loc && l.loc !== '—' && l.loc !== 'N/A' && l.loc !== '' && l.qty > 0) {
-            var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
-            if (bcEl) {
-              try {
-                JsBarcode('#si-bc-' + idx + '-' + li, item.asin, {
-                  format: 'CODE128', width: 2, height: 60,
-                  displayValue: false, background: '#ffffff',
-                  lineColor: '#000000', margin: 5
-                });
-              } catch(e) {}
-            }
+          var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
+          if (bcEl) {
+            try {
+              JsBarcode('#si-bc-' + idx + '-' + li, item.asin, {
+                format: 'CODE128', width: 2, height: 60,
+                displayValue: false, background: '#ffffff',
+                lineColor: '#000000', margin: 5
+              });
+            } catch(e) {}
           }
         }
       });
