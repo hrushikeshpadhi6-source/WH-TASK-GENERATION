@@ -4280,17 +4280,17 @@ function ciRenderResults(mode, list) {
       item.locs.forEach(function(l, li) {
         var globalId = 'ci-qr-' + idx + '-' + li;
         cardsHTML +=
-          '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 8px;' +
-          'text-align:center;background:#fff;page-break-inside:avoid;break-inside:avoid;">' +
+          '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 6px;' +
+          'text-align:center;background:#fff;page-break-inside:avoid;break-inside:avoid;min-width:0;overflow:hidden;">' +
           // ASIN badge
-          '<div style="display:inline-block;background:#fff7ed;border:1px solid #fed7aa;' +
-          'border-radius:6px;padding:2px 8px;font-family:\'DM Mono\',monospace;font-size:11px;' +
-          'font-weight:700;color:#c2410c;margin-bottom:6px;">' + item.asin + '</div>' +
+          '<div style="display:block;background:#fff7ed;border:1px solid #fed7aa;' +
+          'border-radius:6px;padding:2px 6px;font-family:\'DM Mono\',monospace;font-size:10px;' +
+          'font-weight:700;color:#c2410c;margin-bottom:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;">' + item.asin + '</div>' +
           // QR code (location already validated — always show)
           '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>' +
           // Location
-          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:700;color:#1a1830;margin-top:4px;word-break:break-all;line-height:1.3;white-space:normal;overflow-wrap:break-word;">' + l.loc + '</div>' +
-          '<div style="font-size:9px;color:#d97706;font-weight:700;">' + Math.round(l.qty) + ' units</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:800;color:#1a1830;margin-top:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;line-height:1.4;padding:0 2px;">' + l.loc + '</div>' +
+          '<div style="font-size:9px;color:#d97706;font-weight:700;margin-top:2px;">' + Math.round(l.qty) + ' units</div>' +
           '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">' + l.zone + '</div>' +
           '</div>';
       });
@@ -4304,7 +4304,7 @@ function ciRenderResults(mode, list) {
       '</div>' +
       '<div class="results-body" style="background:#fff;">' +
       statsHTML +
-      '<div id="ci-results-inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">' +
+      '<div id="ci-results-inner" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">' +
       cardsHTML +
       '</div>' +
       '</div></div>';
@@ -4352,10 +4352,12 @@ function ciRenderResults(mode, list) {
             try {
               new QRCode(qrEl, {
                 text: item.asin,
-                width: 90, height: 90,
+                width: 110, height: 110,
                 colorDark: '#000000', colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
               });
+              var img = qrEl.querySelector('img');
+              if (img) { img.style.maxWidth = '100%'; img.style.height = 'auto'; img.style.display = 'block'; img.style.margin = '0 auto'; }
             } catch(e) {}
           }
         } else {
