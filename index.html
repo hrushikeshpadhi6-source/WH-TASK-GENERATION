@@ -6663,14 +6663,40 @@ if (document.readyState === 'loading') {
 
     <!-- ORDERS FETCH FROM STORE METRIC SHEET -->
     <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:14px;padding:16px 20px;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);">📊 Orders — Store Metric Sheet</span>
-        <!-- Week filter: Week 14, 15, 16... -->
-        <select id="voc-week-filter" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:140px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);white-space:nowrap;">📊 Orders — Store Metric Sheet</span>
+
+        <!-- Mode toggle tabs -->
+        <div style="display:flex;gap:4px;background:rgba(67,97,238,0.08);border-radius:8px;padding:3px;">
+          <button id="ord-tab-week"  onclick="vocOrdersSetMode('week')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;transition:all 0.15s;">Week</button>
+          <button id="ord-tab-month" onclick="vocOrdersSetMode('month')" style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Month</button>
+          <button id="ord-tab-year"  onclick="vocOrdersSetMode('year')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Year</button>
+        </div>
+
+        <!-- Week filter -->
+        <select id="voc-week-filter" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:150px;">
           <option value="">— Select Week —</option>
         </select>
-        <button onclick="vocFetchOrders()" style="padding:8px 16px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;">📥 Fetch Orders</button>
+
+        <!-- Month filter (hidden by default) -->
+        <select id="voc-month-filter" style="display:none;background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:160px;">
+          <option value="">— Select Month —</option>
+        </select>
+
+        <!-- Year filter (hidden by default) -->
+        <select id="voc-year-filter" style="display:none;background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:130px;">
+          <option value="">— Select Year —</option>
+        </select>
+
+        <button onclick="vocFetchOrders()" style="padding:8px 18px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;box-shadow:0 3px 12px rgba(67,97,238,0.35);white-space:nowrap;">📥 Fetch Orders</button>
+        <button onclick="vocShowDebugURL()" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(67,97,238,0.3);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);white-space:nowrap;" title="Show exact URL being sent to Apps Script">🔗 Debug URL</button>
         <div id="voc-orders-status" style="display:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;"></div>
+      </div>
+      <!-- Apps Script fix notice -->
+      <div id="voc-orders-appsscript-notice" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(181,134,13,0.1);border:1px solid rgba(181,134,13,0.35);border-radius:8px;">
+        <div style="font-size:11px;font-weight:700;color:#b5860d;margin-bottom:6px;">⚙️ Apps Script — add this handler for month filtering:</div>
+        <pre id="voc-appsscript-snippet" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--voc-text,#1a1830);background:rgba(0,0,0,0.06);padding:8px 10px;border-radius:6px;overflow-x:auto;white-space:pre;margin:0;line-height:1.6;"></pre>
+        <button onclick="document.getElementById('voc-orders-appsscript-notice').style.display='none'" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid rgba(181,134,13,0.3);background:transparent;color:#b5860d;font-size:11px;font-weight:600;cursor:pointer;">Close</button>
       </div>
     </div>
 
@@ -6985,7 +7011,7 @@ if (document.readyState === 'loading') {
 // VOC ANALYSIS ENGINE v2 — matches screenshot design
 // ═══════════════════════════════════════════════════════
 
-var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1','Atef01'];
+var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1'];
 var VOC_UTR_TARGET = 0.10; // 0.10% target
 
 // ── CENTRAL APPS SCRIPT URL — used by all features ──────────────
@@ -7117,10 +7143,109 @@ function vocFetchData() {
 }
 
 // ── ORDERS FETCH — week-based from Store Metric sheet ───────────
-function vocFetchOrders() {
-  var weekVal  = (document.getElementById('voc-week-filter') || {}).value || '';
-  var statusEl = document.getElementById('voc-orders-status');
+// ── Debug: show exact URL being sent to Apps Script ──────────────
+function vocShowDebugURL() {
+  var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var params = { action: 'orders' };
+  var sheetMonthLabel = '';
 
+  if (_vocOrdersMode === 'week') {
+    var wv = (document.getElementById('voc-week-filter')||{}).value || '';
+    var im = wv.match(/^(\d{4})-W(\d{1,2})$/);
+    if (im) { params.week = parseInt(im[2],10).toString(); params.isoWeek = wv; }
+  } else if (_vocOrdersMode === 'month') {
+    var mv = (document.getElementById('voc-month-filter')||{}).value || '';
+    if (mv) {
+      var mp2 = mv.split('-');
+      var mn = MONTHS_FULL[parseInt(mp2[1],10)-1];
+      sheetMonthLabel = mn + ' - ' + mp2[0];
+      params.month = mp2[1]; params.monthName = mn; params.year = mp2[0];
+      params.isoMonth = mv; params.monthLabel = sheetMonthLabel;
+    }
+  } else if (_vocOrdersMode === 'year') {
+    var yv = (document.getElementById('voc-year-filter')||{}).value || '';
+    if (yv) { params.year = yv; }
+  }
+
+  var qs = Object.keys(params).map(function(k){ return k+'='+encodeURIComponent(params[k]); }).join('&');
+  var url = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec?' + qs + '&callback=test';
+
+  var snippet = '// In your Apps Script doGet(e) — action === "orders" handler:\n' +
+'var action = e.parameter.action; // "orders"\n' +
+'if (action === "orders") {\n' +
+'  var sheet = ss.getSheetByName("Store Metric"); // your sheet name\n' +
+'  var data  = sheet.getDataRange().getValues();\n' +
+'  var headers = data[0];\n' +
+'  var monthCol = headers.indexOf("Month"); // find column index\n' +
+'\n' +
+'  // Read the filter params\n' +
+'  var filterMonth = e.parameter.monthLabel || ""; // e.g. "April - 2026"\n' +
+'  var filterWeek  = e.parameter.week || "";       // e.g. "19"\n' +
+'  var filterYear  = e.parameter.year || "";       // e.g. "2026"\n' +
+'\n' +
+'  var totalOrders = 0, outboundUnits = 0;\n' +
+'  for (var i = 1; i < data.length; i++) {\n' +
+'    var row = data[i];\n' +
+'    var rowMonth = String(row[monthCol] || "").trim();\n' +
+'\n' +
+'    // Filter by whichever mode was selected\n' +
+'    var include = false;\n' +
+'    if (filterMonth && rowMonth === filterMonth) include = true;\n' +
+'    else if (filterWeek && String(row[weekCol]) === filterWeek) include = true;\n' +
+'    else if (filterYear && !filterMonth && !filterWeek && rowMonth.indexOf(filterYear) > -1) include = true;\n' +
+'\n' +
+'    if (include) {\n' +
+'      totalOrders   += Number(row[ordersCol])  || 0;\n' +
+'      outboundUnits += Number(row[unitsCol])   || 0;\n' +
+'    }\n' +
+'  }\n' +
+'\n' +
+'  return ContentService.createTextOutput(\n' +
+'    e.parameter.callback + "(" + JSON.stringify({\n' +
+'      totalOrders: totalOrders,\n' +
+'      outboundUnits: outboundUnits,\n' +
+'      monthLabel: filterMonth || filterWeek || filterYear,\n' +
+'      weekLabel: "Week " + filterWeek\n' +
+'    }) + ")"\n' +
+'  ).setMimeType(ContentService.MimeType.JAVASCRIPT);\n' +
+'}';
+
+  var notice = document.getElementById('voc-orders-appsscript-notice');
+  var pre    = document.getElementById('voc-appsscript-snippet');
+  if (notice && pre) {
+    pre.textContent = 'EXACT URL BEING SENT:\n' + url + '\n\nKey param: monthLabel = "' + sheetMonthLabel + '"\n\n─────────────────────────────\nAPPS SCRIPT FIX (add to your doGet):\n─────────────────────────────\n' + snippet;
+    notice.style.display = 'block';
+  }
+}
+
+// ── Orders fetch mode (week / month / year) ──────────────────────
+var _vocOrdersMode = 'week'; // 'week' | 'month' | 'year'
+
+function vocOrdersSetMode(mode) {
+  _vocOrdersMode = mode;
+  // Show/hide the right dropdown
+  var wf = document.getElementById('voc-week-filter');
+  var mf = document.getElementById('voc-month-filter');
+  var yf = document.getElementById('voc-year-filter');
+  if (wf) wf.style.display = mode === 'week'  ? '' : 'none';
+  if (mf) mf.style.display = mode === 'month' ? '' : 'none';
+  if (yf) yf.style.display = mode === 'year'  ? '' : 'none';
+  // Style active tab
+  ['week','month','year'].forEach(function(m) {
+    var btn = document.getElementById('ord-tab-' + m);
+    if (!btn) return;
+    if (m === mode) {
+      btn.style.background = 'linear-gradient(135deg,#4361ee,#2f4bd4)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--voc-muted,#7b78a8)';
+    }
+  });
+}
+
+function vocFetchOrders() {
+  var statusEl = document.getElementById('voc-orders-status');
   function setOS(msg, type) {
     if (!statusEl) return;
     statusEl.style.display = 'block';
@@ -7133,23 +7258,61 @@ function vocFetchOrders() {
     statusEl.innerHTML = msg;
   }
 
-  if (!weekVal) { setOS('⚠️ Select a week first from the dropdown.', 'err'); return; }
-  setOS('⏳ Fetching orders for ' + weekVal + '…', 'info');
+  var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var params = { action: 'orders' };
+  var displayLabel = '';
 
-  // Extract plain week number from ISO string "2026-W15" → 15
-  var weekNum = weekVal;
-  var isoMatch = weekVal.match(/^(\d{4})-W(\d{1,2})$/);
-  if (isoMatch) weekNum = parseInt(isoMatch[2], 10).toString();
+  if (_vocOrdersMode === 'week') {
+    var weekVal = (document.getElementById('voc-week-filter') || {}).value || '';
+    if (!weekVal) { setOS('⚠️ Select a week first.', 'err'); return; }
+    var isoMatch = weekVal.match(/^(\d{4})-W(\d{1,2})$/);
+    var weekNum = isoMatch ? parseInt(isoMatch[2], 10).toString() : weekVal;
+    params.week    = weekNum;
+    params.isoWeek = weekVal;
+    displayLabel   = 'Week ' + weekNum + ' (' + (isoMatch ? isoMatch[1] : '') + ')';
+    setOS('⏳ Fetching orders for ' + displayLabel + '…', 'info');
 
+  } else if (_vocOrdersMode === 'month') {
+    var monthVal = (document.getElementById('voc-month-filter') || {}).value || '';
+    if (!monthVal) { setOS('⚠️ Select a month first.', 'err'); return; }
+    // monthVal = "2026-05"
+    var mp = monthVal.split('-');
+    var monthName = MONTHS_FULL[parseInt(mp[1],10)-1];  // "May"
+    var sheetMonthLabel = monthName + ' - ' + mp[0];    // "May - 2026" ← exact sheet format
+
+    // Send ALL formats — Apps Script should use 'monthLabel' which matches "April - 2026"
+    params.action      = 'orders';
+    params.month       = mp[1];              // "05"
+    params.monthNum    = String(parseInt(mp[1],10)); // "5"
+    params.monthName   = monthName;          // "May"
+    params.year        = mp[0];             // "2026"
+    params.isoMonth    = monthVal;           // "2026-05"
+    params.monthLabel  = sheetMonthLabel;    // "May - 2026"  ← PRIMARY: matches your sheet column
+    displayLabel = sheetMonthLabel;
+    setOS('⏳ Fetching orders for <strong>' + sheetMonthLabel + '</strong>…', 'info');
+
+  } else if (_vocOrdersMode === 'year') {
+    var yearVal = (document.getElementById('voc-year-filter') || {}).value || '';
+    if (!yearVal) { setOS('⚠️ Select a year first.', 'err'); return; }
+    params.year    = yearVal;
+    params.isoYear = yearVal;
+    displayLabel   = yearVal;
+    setOS('⏳ Fetching orders for ' + yearVal + '…', 'info');
+  }
+
+  startTopLoader();
   appsScriptJSONP(
-    { action: 'orders', week: weekNum, isoWeek: weekVal },
+    params,
     function(data) {
+      finishTopLoader();
       if (data && data.status === 'error') { setOS('❌ ' + (data.message || 'Script error'), 'err'); return; }
       vocMatrixOrders = data;
       var total = (data && data.totalOrders)   || 0;
       var units = (data && data.outboundUnits) || 0;
-      var label = (data && data.weekLabel)     || ('Week ' + weekNum);
+      var label = (data && (data.monthLabel || data.weekLabel || data.yearLabel || data.label)) || displayLabel;
 
+      // If Apps Script returned all orders (not filtered), warn the user
+      var isMonthMode = _vocOrdersMode === 'month';
       var banner = document.getElementById('voc-orders-banner-row');
       var co = document.getElementById('voc-chip-orders');
       var cu = document.getElementById('voc-chip-units');
@@ -7159,22 +7322,30 @@ function vocFetchOrders() {
       if (cu) cu.textContent = '📤 ' + units.toLocaleString() + ' OB Units';
       if (cd) cd.textContent = '📅 ' + label;
 
-      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label, 'ok');
+      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label +
+        (isMonthMode ? '<br><small style="opacity:0.7;">Apps Script param sent: monthLabel = "' + params.monthLabel + '"</small>' : ''), 'ok');
+      showToast('📦 Orders loaded: ' + total.toLocaleString() + ' · ' + label);
 
-      // Sync VOC period filter to the same week
-      var isoW = isoMatch ? isoMatch[0] : null;
-      if (!isoW && weekNum) {
-        // Build ISO week string from plain number — use current year
-        var yr = new Date().getFullYear();
-        isoW = yr + '-W' + String(weekNum).padStart(2, '0');
-      }
-      if (isoW) {
-        vocSetWeek(isoW);
-      } else if (vocRawData.length) {
-        vocRender();
+      // Sync VOC analysis period filter to match
+      if (_vocOrdersMode === 'week') {
+        var isoW = params.isoWeek || null;
+        if (!isoW && params.week) isoW = (new Date().getFullYear()) + '-W' + String(params.week).padStart(2,'0');
+        if (isoW) vocSetWeek(isoW);
+        else if (vocRawData.length) vocRender();
+
+      } else if (_vocOrdersMode === 'month') {
+        if (params.isoMonth) vocSetMonth(params.isoMonth);
+        else if (vocRawData.length) vocRender();
+
+      } else if (_vocOrdersMode === 'year') {
+        vocSetPeriod('yearly', null);
+        var pl = document.getElementById('voc-period-label');
+        if (pl) pl.textContent = params.year;
+        if (vocRawData.length) vocRender();
       }
     },
     function(err) {
+      finishTopLoader();
       setOS('❌ Orders fetch failed: ' + err.message, 'err');
     }
   );
@@ -7282,7 +7453,7 @@ function vocFilterByPeriod(rows) {
 
 // Build week and month dropdowns from actual VOC data dates
 function vocBuildPeriodDropdowns() {
-  var weekSet = {}, monthSet = {};
+  var weekSet = {}, monthSet = {}, yearSet = {};
   vocRawData.forEach(function(r) {
     var d = r.date instanceof Date ? r.date : new Date(r.date);
     if (isNaN(d.getTime())) return;
@@ -7292,12 +7463,14 @@ function vocBuildPeriodDropdowns() {
     // Month: key = "YYYY-MM" (1-indexed month)
     var mk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     monthSet[mk] = true;
+    // Year
+    yearSet[d.getFullYear()] = true;
   });
 
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var MONTHSFULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // Week dropdowns (both the filter bar one and the orders one)
+  // ── Week dropdowns (analysis filter + orders filter) ──────────────
   var wKeys = Object.keys(weekSet).sort();
   var wOpts = '<option value="">— Week —</option>';
   wKeys.forEach(function(k) {
@@ -7307,11 +7480,10 @@ function vocBuildPeriodDropdowns() {
   });
   var wSel = document.getElementById('voc-week-select');
   if (wSel) { wSel.innerHTML = wOpts; if (vocSelectedWeek) wSel.value = vocSelectedWeek; }
-
   var wFil = document.getElementById('voc-week-filter');
   if (wFil) { wFil.innerHTML = wOpts.replace('— Week —', '— Select Week —'); if (vocSelectedWeek) wFil.value = vocSelectedWeek; }
 
-  // Month dropdown
+  // ── Month dropdowns (analysis filter + orders filter) ─────────────
   var mKeys = Object.keys(monthSet).sort();
   var mOpts = '<option value="">— Month —</option>';
   mKeys.forEach(function(k) {
@@ -7321,6 +7493,21 @@ function vocBuildPeriodDropdowns() {
   });
   var mSel = document.getElementById('voc-month-select');
   if (mSel) { mSel.innerHTML = mOpts; if (vocSelectedMonth) mSel.value = vocSelectedMonth; }
+  // Orders month filter
+  var mFil = document.getElementById('voc-month-filter');
+  if (mFil) {
+    mFil.innerHTML = mOpts.replace('— Month —', '— Select Month —');
+    if (vocSelectedMonth) mFil.value = vocSelectedMonth;
+  }
+
+  // ── Year dropdown (orders filter only) ───────────────────────────
+  var yKeys = Object.keys(yearSet).sort().reverse(); // newest first
+  var yOpts = '<option value="">— Select Year —</option>';
+  yKeys.forEach(function(y) {
+    yOpts += '<option value="' + y + '">' + y + '</option>';
+  });
+  var yFil = document.getElementById('voc-year-filter');
+  if (yFil) yFil.innerHTML = yOpts;
 }
 
 function vocSetWeek(val) {
