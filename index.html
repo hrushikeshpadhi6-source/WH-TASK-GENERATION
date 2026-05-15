@@ -9123,10 +9123,34 @@ function handleForecast(e) {
       return { data: result, datesAvail: datesAvail };
     }
 
+    // ── normalise slot cell → "HH:MM" start key ──────────────────────
+    // Sheet Col B can be "00:00-00:30", "00:00 - 00:30", "00:30", etc.
+    // The HTML table uses "HH:MM" keys (floor to 30-min boundary).
+    function normSlotKey(raw) {
+      if (!raw) return null;
+      var s = String(raw).trim();
+      // Range "HH:MM - HH:MM" or "HH:MM-HH:MM" — take start part
+      var mr = s.match(/^(\d{1,2}):(\d{2})\s*[-\u2013]\s*\d/);
+      if (mr) {
+        var hh = parseInt(mr[1], 10);
+        var mm = Math.floor(parseInt(mr[2], 10) / 30) * 30;
+        return (hh < 10 ? '0' : '') + hh + ':' + (mm === 0 ? '00' : '30');
+      }
+      // Plain "HH:MM"
+      var mp = s.match(/^(\d{1,2}):(\d{2})/);
+      if (mp) {
+        var hh2 = parseInt(mp[1], 10);
+        var mm2 = Math.floor(parseInt(mp[2], 10) / 30) * 30;
+        return (hh2 < 10 ? '0' : '') + hh2 + ':' + (mm2 === 0 ? '00' : '30');
+      }
+      return null;
+    }
+
     for (var i = 1; i < data.length; i++) {
       var row   = data[i];
       var store = String(row[0] || '').trim();
-      var slot  = String(row[1] || '').trim();
+      var rawSlot = String(row[1] || '').trim();
+      var slot  = normSlotKey(rawSlot);   // normalised "HH:MM" key
       if (!store || !slot) continue;
 
       var val = Number(row[dateColIdx]) || 0;
