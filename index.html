@@ -6643,6 +6643,11 @@ if (document.readyState === 'loading') {
       <div>
         <div style="font-size:26px;font-weight:800;color:var(--voc-text,#1a1830);letter-spacing:-0.5px;">VOC Operations Dashboard</div>
         <div style="font-size:13px;color:var(--voc-muted,#7b78a8);margin-top:3px;"><span id="voc-period-label">All Data</span></div>
+        <!-- Last updated timestamp -->
+        <div id="voc-last-updated" style="display:none;margin-top:6px;align-items:center;gap:6px;background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.2);border-radius:20px;padding:4px 12px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          <span style="font-size:11px;font-weight:600;color:#06d6a0;font-family:'DM Mono',monospace;" id="voc-last-updated-text">—</span>
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:6px;background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);padding:6px 14px;border-radius:20px;">
@@ -7120,6 +7125,27 @@ function vocFetchData() {
         finishTopLoader();
         vocShowStatus('✅ Live data loaded — ' + vocRawData.length + ' records.', 'ok');
         showToast('📊 VOC data ready — ' + vocRawData.length + ' records');
+
+        // ── Show sheet last modified time ──────────────────────────
+        var badge = document.getElementById('voc-last-updated');
+        var txt   = document.getElementById('voc-last-updated-text');
+        if (badge && txt && data.sheetLastModified) {
+          // data.sheetLastModified is ISO string from Apps Script
+          var modDate = new Date(data.sheetLastModified);
+          if (!isNaN(modDate.getTime())) {
+            var days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var d = modDate;
+            var timeStr = days[d.getDay()] + ', ' +
+              String(d.getDate()).padStart(2,'0') + ' ' +
+              months[d.getMonth()] + ' ' + d.getFullYear() + ' · ' +
+              String(d.getHours()).padStart(2,'0') + ':' +
+              String(d.getMinutes()).padStart(2,'0');
+            txt.textContent = 'Sheet last updated: ' + timeStr;
+            badge.style.display = 'inline-flex';
+          }
+        }
+
       } else if (data && Array.isArray(data.rows) && data.rows.length === 0) {
         finishTopLoader();
         vocShowStatus('⚠️ Connected — 0 records returned. Check "voc analysis" sheet tab name.', 'info');
