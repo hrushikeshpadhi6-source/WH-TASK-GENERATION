@@ -4431,7 +4431,7 @@ function lsFetchForecast() {
   appsScriptJSONP(
     { action: 'forecast', date: dateVal },
     function(data) {
-      // data = { status:'ok', date, orders:{store:{slot:val}}, units:{...}, stores:[] }
+      // data = { status:'ok', date, orders:{store:{slot:val}}, units:{...}, stores:[], datesAvailable:[] }
       if (!data || data.status === 'error') {
         setStatus('❌ Apps Script error: ' + (data ? data.message : 'No response'), 'err');
         return;
@@ -4439,10 +4439,19 @@ function lsFetchForecast() {
       lsFcOrders = data.orders || {};
       lsFcUnits  = data.units  || {};
 
-      var n = (data.stores || Object.keys(lsFcOrders)).length;
+      // stores = array of store names that have data for this date
+      var storeNames = data.stores || Object.keys(lsFcOrders);
+      var n = Array.isArray(storeNames) ? storeNames.length : Object.keys(storeNames).length;
+
+      // datesAvailable = actual date strings from the sheet
+      var datesAvail = Array.isArray(data.datesAvailable) ? data.datesAvailable : [];
+
       if (n === 0) {
-        setStatus('⚠️ Forecast fetched but no matching date found for <strong>' + dateVal +
-          '</strong>. Available dates: ' + (data.datesAvailable || []).slice(0,5).join(', '), 'warn');
+        var datesMsg = datesAvail.length > 0
+          ? 'Available dates: ' + datesAvail.slice(0,5).join(', ') + (datesAvail.length > 5 ? '…' : '')
+          : 'No forecast data found in sheet.';
+        setStatus('⚠️ Forecast fetched but no data for date <strong>' + dateVal +
+          '</strong>. ' + datesMsg, 'warn');
       } else {
         setStatus('✅ Forecast loaded! <strong>' + n + '</strong> store(s) · Date: <strong>' + dateVal + '</strong>', 'ok');
         showToast('☁️ Forecast ready — ' + n + ' store(s)');
@@ -6644,7 +6653,7 @@ if (document.readyState === 'loading') {
         <div style="font-size:26px;font-weight:800;color:var(--voc-text,#1a1830);letter-spacing:-0.5px;">VOC Operations Dashboard</div>
         <div style="font-size:13px;color:var(--voc-muted,#7b78a8);margin-top:3px;"><span id="voc-period-label">All Data</span></div>
         <!-- Last updated timestamp -->
-        <div id="voc-last-updated" style="display:none;margin-top:6px;align-items:center;gap:6px;background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.2);border-radius:20px;padding:4px 12px;">
+        <div id="voc-last-updated" style="display:none;margin-top:6px;align-items:center;gap:6px;background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.2);border-radius:20px;padding:4px 12px;flex-wrap:wrap;">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           <span style="font-size:11px;font-weight:600;color:#06d6a0;font-family:'DM Mono',monospace;" id="voc-last-updated-text">—</span>
         </div>
@@ -7129,21 +7138,26 @@ function vocFetchData() {
         // ── Show sheet last modified time ──────────────────────────
         var badge = document.getElementById('voc-last-updated');
         var txt   = document.getElementById('voc-last-updated-text');
-        if (badge && txt && data.sheetLastModified) {
-          // data.sheetLastModified is ISO string from Apps Script
-          var modDate = new Date(data.sheetLastModified);
-          if (!isNaN(modDate.getTime())) {
-            var days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            var d = modDate;
-            var timeStr = days[d.getDay()] + ', ' +
-              String(d.getDate()).padStart(2,'0') + ' ' +
-              months[d.getMonth()] + ' ' + d.getFullYear() + ' · ' +
-              String(d.getHours()).padStart(2,'0') + ':' +
-              String(d.getMinutes()).padStart(2,'0');
-            txt.textContent = 'Sheet last updated: ' + timeStr;
-            badge.style.display = 'inline-flex';
+        if (badge && txt) {
+          var displayDate = null;
+          // Prefer actual sheet last-modified time from Apps Script
+          if (data.sheetLastModified) {
+            var modDate = new Date(data.sheetLastModified);
+            if (!isNaN(modDate.getTime())) displayDate = modDate;
           }
+          // Fallback: use current fetch time if Apps Script doesn't return it yet
+          if (!displayDate) displayDate = new Date();
+
+          var days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var prefix = data.sheetLastModified ? 'Sheet last updated: ' : 'Last fetched: ';
+          var timeStr = days[displayDate.getDay()] + ', ' +
+            String(displayDate.getDate()).padStart(2,'0') + ' ' +
+            months[displayDate.getMonth()] + ' ' + displayDate.getFullYear() + ' · ' +
+            String(displayDate.getHours()).padStart(2,'0') + ':' +
+            String(displayDate.getMinutes()).padStart(2,'0');
+          txt.textContent = prefix + timeStr;
+          badge.style.display = 'inline-flex';
         }
 
       } else if (data && Array.isArray(data.rows) && data.rows.length === 0) {
