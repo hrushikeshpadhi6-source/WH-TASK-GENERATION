@@ -77,7 +77,7 @@ body::before {
 }
 .page { display: none; position: relative; z-index: 1; }
 .page.active { display: block; }
-.dashboard { max-width: 1200px; margin: 0 auto; padding: 60px 24px 100px; }
+.dashboard { max-width: 1200px; margin: 0 auto; padding: 60px 24px 40px; }
 .dash-hero { text-align: center; margin-bottom: 48px; }
 .dash-hero .hero-tag {
   display:inline-flex; align-items:center; gap:6px;
@@ -424,18 +424,23 @@ footer {
   border-top:1px solid var(--border);
   color:var(--muted);
   text-align:center;
-  padding:22px 20px;
+  padding:18px 20px;
   font-size:12px;
   font-family:'DM Mono',monospace;
   letter-spacing:0.5px;
-  position:relative;
-  z-index:1;
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
   align-items:center;
-  gap:14px;
+  justify-content:center;
+  gap:24px;
+  flex-wrap:wrap;
+  margin-top:auto;
 }
+.page { padding-bottom: 0; }
+.task-page { padding-bottom: 0 !important; }
 footer span { color:var(--accent); }
+#page-home { padding-bottom: 0; }
+#page-voc  { padding-bottom: 0; }
 .filter-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
 .ftab { padding:8px 18px; border-radius:40px; border:1px solid var(--border); background:var(--surface2); font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.18s; color:var(--text2); }
 .ftab.active,.ftab:hover { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 4px 16px rgba(255,107,53,0.35); }
@@ -1078,6 +1083,23 @@ footer span { color:var(--accent); }
       <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
       <span class="card-arrow">→</span>
     </div>
+    <div class="task-card" style="--card-color:#06d6a0" onclick="openTask('voc')">
+      <div class="card-num">Task 12</div>
+      <span class="card-icon">📉</span>
+      <h3>VOC Analysis</h3>
+      <p>Live Voice of Customer analytics — UTR, OTR, Non-Ops breakdown, picker contribution & deep dive by store.</p>
+      <span class="card-arrow">→</span>
+    </div>
+    <div class="task-card" style="--card-color:#7b78a8;cursor:not-allowed;opacity:0.7;" title="Under development">
+      <div class="card-num" style="color:#7b78a8;">Task 13</div>
+      <span class="card-icon">🏪</span>
+      <h3 style="color:#b8b6d9;">Store Metrics</h3>
+      <p>Store-wise KPIs — orders, units, VOC rate, trends and performance benchmarking across all stores.</p>
+      <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(123,120,173,0.15);border:1px solid rgba(123,120,173,0.3);padding:5px 12px;border-radius:20px;margin-top:10px;">
+        <span style="display:inline-block;width:10px;height:10px;border:2px solid #8b8aad;border-top-color:#ff6b35;border-radius:50%;animation:spin 0.9s linear infinite;"></span>
+        <span style="font-size:11px;font-weight:700;color:#8b8aad;letter-spacing:1px;">UNDER DEVELOPMENT</span>
+      </div>
+    </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
       <span class="card-icon">💬</span>
       <h3>Feedback</h3>
@@ -1094,6 +1116,16 @@ footer span { color:var(--accent); }
 
   </div>
 </div>
+
+<!-- Home page footer -->
+<footer>
+  <div>Copyright &copy; 2026 <span>HP WORLD</span> &nbsp;&middot;&nbsp; Hrushikesh Padhi &nbsp;&middot;&nbsp; <span>ENWPP9081D/2019</span></div>
+  <a href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#0077b5;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;" onmouseover="this.style.background='#005885'" onmouseout="this.style.background='#0077b5'">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    Connect on LinkedIn
+  </a>
+</footer>
+
 </div>
 
 <!-- CONSOLIDATION -->
@@ -1569,7 +1601,7 @@ footer span { color:var(--accent); }
   </div>
 
   <!-- Hidden API URL (hardcoded) -->
-  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbyxFVniP1WcEsdMyQuoCw_Bkkq_hZtCNQUk-FykfBIEa3xJNTJDjA0IydXiph1QGXIp/exec">
+  <input id="ls-api-url" type="hidden" value="https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec">
 
   <!-- Controls row -->
   <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 24px;margin-bottom:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
@@ -2004,21 +2036,6 @@ footer span { color:var(--accent); }
   <div id="out-locid"></div>
 </div>
 </div>
-
-<footer>
-  <div>Copyright © 2026 <span>HP WORLD</span> &nbsp;·&nbsp; Hrushikesh Padhi &nbsp;·&nbsp; <span>ENWPP9081D/2019</span></div>
-  <a href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/"
-     target="_blank" rel="noopener noreferrer"
-     title="Hrushikesh Padhi on LinkedIn"
-     style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#0077b5;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:0.5px;transition:background 0.2s;font-family:'Syne',sans-serif;"
-     onmouseover="this.style.background='#005885'"
-     onmouseout="this.style.background='#0077b5'">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-    </svg>
-    Connect on LinkedIn
-  </a>
-</footer>
 
 <div class="toast" id="toast"></div>
 
@@ -3496,18 +3513,25 @@ function lsBuildStoreFilter() {
 // Apps Script supports ?callback=funcName natively
 // Script tag injection bypasses CORS + host allowlist from file://
 function appsScriptJSONP(params, onSuccess, onError) {
-  var API = document.getElementById('ls-api-url');
-  var base = (API ? API.value.trim() : '') || 'https://script.google.com/macros/s/AKfycbyxFVniP1WcEsdMyQuoCw_Bkkq_hZtCNQUk-FykfBIEa3xJNTJDjA0IydXiph1QGXIp/exec';
+  var base = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
   var cbName = 'asJSONP_' + Date.now() + '_' + Math.floor(Math.random()*9999);
-  var qs = Object.keys(params).map(function(k) {
-    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+
+  // Map legacy 'tab' param to 'action' param that the Apps Script expects
+  var finalParams = Object.assign({}, params);
+  if (finalParams.tab && !finalParams.action) {
+    finalParams.action = finalParams.tab;
+    delete finalParams.tab;
+  }
+
+  var qs = Object.keys(finalParams).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(finalParams[k]);
   }).join('&');
   var url = base + '?' + qs + '&callback=' + cbName;
 
   var timer = setTimeout(function() {
     cleanup();
     onError(new Error('Timeout — check internet connection'));
-  }, 20000);
+  }, 25000);
 
   function cleanup() {
     delete window[cbName];
@@ -3525,7 +3549,7 @@ function appsScriptJSONP(params, onSuccess, onError) {
   var script = document.createElement('script');
   script.id  = 'jsonp-' + cbName;
   script.src = url;
-  script.onerror = function() { cleanup(); onError(new Error('Script load error')); };
+  script.onerror = function() { cleanup(); onError(new Error('Script load error — check Apps Script deployment')); };
   document.head.appendChild(script);
 }
 
@@ -3770,45 +3794,35 @@ function lsFetchForecast() {
     return result;
   }
 
-  // ── Orchestrate: fetch both tabs then finish ─────────────────
-  var ordersLoaded = false, unitsLoaded = false;
-  var ordersData = {}, unitsData = {};
+  // ── Fetch forecast via Apps Script (no public sheet required) ─────
+  // Apps Script action=forecast returns { orders:{store:{slot:val}}, units:{...} }
+  setStatus('⏳ Fetching forecast from Apps Script…', 'warn');
 
-  function tryFinish() {
-    if (!ordersLoaded || !unitsLoaded) return;
-    lsFcOrders = ordersData;
-    lsFcUnits  = unitsData;
-    var n = Object.keys(lsFcOrders).length;
-    if (n === 0) {
-      setStatus('\u26a0\ufe0f Forecast fetched but no matching date column found for <strong>' + dateVal +
-        '</strong>. Check the tab names and that the date exists in Col C onward.', 'warn');
-    } else {
-      setStatus('\u2705 Forecast loaded! <strong>' + n + '</strong> store(s) found \u00b7 Date: <strong>' + dateVal + '</strong>', 'ok');
-      showToast('\u2601\ufe0f Forecast ready \u2014 ' + n + ' store(s)');
+  appsScriptJSONP(
+    { action: 'forecast', date: dateVal },
+    function(data) {
+      // data = { status:'ok', date, orders:{store:{slot:val}}, units:{...}, stores:[] }
+      if (!data || data.status === 'error') {
+        setStatus('❌ Apps Script error: ' + (data ? data.message : 'No response'), 'err');
+        return;
+      }
+      lsFcOrders = data.orders || {};
+      lsFcUnits  = data.units  || {};
+
+      var n = (data.stores || Object.keys(lsFcOrders)).length;
+      if (n === 0) {
+        setStatus('⚠️ Forecast fetched but no matching date found for <strong>' + dateVal +
+          '</strong>. Available dates: ' + (data.datesAvailable || []).slice(0,5).join(', '), 'warn');
+      } else {
+        setStatus('✅ Forecast loaded! <strong>' + n + '</strong> store(s) · Date: <strong>' + dateVal + '</strong>', 'ok');
+        showToast('☁️ Forecast ready — ' + n + ' store(s)');
+      }
+    },
+    function(err) {
+      setStatus('❌ Forecast fetch failed: ' + err.message +
+        '<br><small>Check Apps Script is deployed as <b>Execute as: Me · Anyone can access</b></small>', 'err');
     }
-  }
-
-  var ACCESS_HINT = '<br><small style="font-weight:500;opacity:.85;">\u2139\ufe0f Make sure the Google Sheet is shared as <b>Anyone with the link can view</b> and the tab name matches exactly (case-sensitive).</small>';
-
-  fetchTab(tabOrders, function(err, raw) {
-    if (err) {
-      setStatus('\u274c <b>Orders tab</b> failed \u2014 ' + err.message + ACCESS_HINT, 'err');
-      return;
-    }
-    ordersData   = parseGvizForecast(raw, dateVal);
-    ordersLoaded = true;
-    tryFinish();
-  });
-
-  fetchTab(tabUnits, function(err, raw) {
-    if (err) {
-      setStatus('\u274c <b>Units tab</b> failed \u2014 ' + err.message + ACCESS_HINT, 'err');
-      return;
-    }
-    unitsData   = parseGvizForecast(raw, dateVal);
-    unitsLoaded = true;
-    tryFinish();
-  });
+  );
 }
 
 // ── Legacy stubs (no longer used but kept for safety) ─────────
@@ -4320,7 +4334,7 @@ function ciHandleUpload(input, mode) {
 
 // ── Fetch ASINs from Google Sheet via JSONP then match ────────
 function ciFetchAndMatch(mode) {
-  var tabParam = mode === 'catalog' ? 'catalog_asin' : 'scanning_asin';
+  var action   = mode === 'catalog' ? 'catalog_asin' : 'scanning_asin';
   var tabName  = mode === 'catalog' ? 'CATALOG ISSUE ASIN' : 'SCANNING ISSUE ASIN';
   var statusId = mode === 'catalog' ? 'ci-fetch-status' : 'si-fetch-status';
   var statusEl = document.getElementById(statusId);
@@ -4341,17 +4355,22 @@ function ciFetchAndMatch(mode) {
     statusEl.innerHTML = msg;
   }
 
-  setStatus('⏳ Fetching ' + tabName + ' from Google Sheet…', 'warn');
+  setStatus('⏳ Fetching ' + tabName + ' from Apps Script…', 'warn');
   showLoading(mode, true);
 
-  // Use shared JSONP caller — works from file://, bypasses CORS + host allowlist
   appsScriptJSONP(
-    { tab: tabParam },
+    { action: action },
     function(json) {
       showLoading(mode, false);
-      var asins = Array.isArray(json.asins) ? json.asins : [];
+      // Apps Script returns { asins: [...plain strings...], items: [{asin,title,...}], count: N }
+      var asins = [];
+      if (Array.isArray(json.asins) && json.asins.length) {
+        asins = json.asins;
+      } else if (Array.isArray(json.items) && json.items.length) {
+        asins = json.items.map(function(it) { return it.asin || String(it); });
+      }
       if (!asins.length) {
-        setStatus('⚠️ No ASINs found in tab: ' + tabName + '. Check tab name in sheet.', 'warn');
+        setStatus('⚠️ No ASINs found in tab: <b>' + tabName + '</b>. Check tab name in Apps Script config.', 'warn');
         return;
       }
       ciState[mode].asins = asins;
@@ -4362,7 +4381,7 @@ function ciFetchAndMatch(mode) {
       showLoading(mode, false);
       setStatus(
         '❌ <strong>Fetch failed:</strong> ' + err.message + '<br>' +
-        'Make sure your Apps Script is deployed as <em>Execute as: Me · Who has access: Anyone</em>.',
+        'Make sure Apps Script is deployed as <em>Execute as: Me · Who has access: Anyone</em>.',
         'err'
       );
     }
@@ -5960,6 +5979,1628 @@ if (document.readyState === 'loading') {
 }
 
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- VOC ANALYSIS PAGE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-voc" style="background:#0a0914;min-height:100vh;" data-theme="dark">
+<div style="max-width:1200px;margin:0 auto;padding:32px 24px 80px;position:relative;z-index:1;">
+
+  <!-- BACK BUTTON — TOP FIXED -->
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;margin-bottom:28px;">← Back</button>
+
+  <!-- USERNAME ACCESS GATE -->
+  <div id="voc-gate" style="display:block;">
+    <div style="max-width:420px;margin:40px auto 0;background:#fff;border:1px solid #d5d2f0;border-radius:20px;padding:40px 36px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+      <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:6px;color:#1a1830;">VOC Access Required</div>
+      <div style="font-size:13px;color:#7b78a8;margin-bottom:28px;">Enter your username to access VOC Analytics</div>
+      <div id="voc-gate-msg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
+      <input type="text" id="voc-username-input" placeholder="Enter your username"
+        style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:13px 16px;font-family:'Syne',sans-serif;font-size:14px;color:#1a1830;outline:none;margin-bottom:14px;box-sizing:border-box;transition:border-color 0.2s;"
+        onkeydown="if(event.key==='Enter')vocCheckAccess()"
+        onfocus="this.style.borderColor='#06d6a0'" onblur="this.style.borderColor='#d5d2f0'">
+      <button onclick="vocCheckAccess()" style="width:100%;padding:14px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ff6b35,#c43d04);color:#fff;box-shadow:0 4px 20px rgba(255,107,53,0.35);transition:all 0.2s;">Access VOC Dashboard →</button>
+      <div style="font-size:11px;color:#7b78a8;margin-top:14px;font-family:'DM Mono',monospace;">Authorised personnel only · HP World</div>
+    </div>
+  </div>
+
+  <!-- VOC DASHBOARD -->
+  <div id="voc-dashboard" style="display:none;">
+
+    <!-- HEADER ROW -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+      <div>
+        <div style="font-size:26px;font-weight:800;color:var(--voc-text,#1a1830);letter-spacing:-0.5px;">VOC Operations Dashboard</div>
+        <div style="font-size:13px;color:var(--voc-muted,#7b78a8);margin-top:3px;"><span id="voc-period-label">All Data</span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);padding:6px 14px;border-radius:20px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#06d6a0;animation:pulse 2s infinite;"></div>
+          <span id="voc-user-label" style="font-size:12px;font-weight:600;color:#06d6a0;font-family:'DM Mono',monospace;"></span>
+        </div>
+        <!-- Theme Toggle -->
+        <button class="voc-theme-toggle" id="voc-theme-btn" onclick="vocToggleTheme()" title="Toggle dark/light theme">
+          <span id="voc-theme-icon">☀️</span> <span id="voc-theme-label">Light</span>
+        </button>
+        <!-- Live Fetch button — URL is hardcoded internally -->
+        <button onclick="vocFetchData()" style="padding:8px 18px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ff6b35,#c43d04);color:#fff;display:flex;align-items:center;gap:6px;">⟳ Load Live Data</button>
+        <!-- Export buttons -->
+        <button onclick="vocExportPDF()" style="padding:8px 16px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#c0392b,#922B21);color:#fff;">⬇ PDF</button>
+        <button onclick="vocExportExcel()" style="padding:8px 16px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#1a7a4a,#14532d);color:#fff;">⬇ Excel</button>
+      </div>
+    </div>
+
+    <!-- ORDERS FETCH FROM STORE METRIC SHEET -->
+    <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:14px;padding:16px 20px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);">📊 Orders — Store Metric Sheet</span>
+        <!-- Week filter: Week 14, 15, 16... -->
+        <select id="voc-week-filter" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:140px;">
+          <option value="">— Select Week —</option>
+        </select>
+        <button onclick="vocFetchOrders()" style="padding:8px 16px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;">📥 Fetch Orders</button>
+        <div id="voc-orders-status" style="display:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;"></div>
+      </div>
+    </div>
+
+    <!-- ORDERS BANNER — shows after fetch -->
+    <div id="voc-orders-banner-row" style="display:none;" class="voc-orders-banner">
+      <span style="font-size:12px;font-weight:700;color:var(--voc-muted,#7b78a8);">📦 Store Metric Orders:</span>
+      <span class="voc-orders-chip" style="background:rgba(67,97,238,0.15);color:#4361ee;" id="voc-chip-orders">—</span>
+      <span class="voc-orders-chip" style="background:rgba(6,214,160,0.15);color:#06d6a0;" id="voc-chip-units">—</span>
+      <span style="font-size:11px;color:var(--voc-muted,#7b78a8);" id="voc-chip-date"></span>
+    </div>
+
+    <!-- STATUS -->
+    <div id="voc-status" style="display:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:18px;"></div>
+
+    <!-- UTR TARGET BANNER -->
+    <div id="voc-utr-banner" style="display:none;margin-bottom:18px;"></div>
+
+    <!-- DEEP DIVE FILTERS -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:22px;padding:14px 18px;background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:12px;" class="voc-filter-bar">
+      <span style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-right:4px;">Period</span>
+      <!-- Weekly: dropdown for Week 1–53 -->
+      <select id="voc-week-select" onchange="vocSetWeek(this.value)" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;">
+        <option value="">— Week —</option>
+      </select>
+      <!-- Monthly: dropdown for months -->
+      <select id="voc-month-select" onchange="vocSetMonth(this.value)" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;">
+        <option value="">— Month —</option>
+      </select>
+      <button class="voc-tab" onclick="vocSetPeriod('yearly',this)" id="voc-tab-yearly">This Year</button>
+      <div style="width:1px;height:20px;background:var(--voc-border,#d5d2f0);margin:0 4px;"></div>
+      <select id="voc-store-filter" onchange="vocRender()" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:6px 12px;font-family:'Syne',sans-serif;font-size:12px;color:var(--voc-text,#1a1830);outline:none;">
+        <option value="all">All Stores</option>
+      </select>
+    </div>
+
+    <!-- ── SECTION: OVERALL METRICS ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">Overall Metrics</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:24px;" id="voc-metric-cards"></div>
+
+    <!-- ── SECTION: UTR vs OTR SPLIT ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">UTR vs OTR — Ops Controllable Split</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:24px;" id="voc-utr-otr-cards"></div>
+
+    <!-- ── SECTION: UTR TARGET ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">UTR Target Analysis <span style="color:#ff6b35;">Target: 0.10%</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:24px;" id="voc-target-cards"></div>
+
+    <!-- ── SECTION: STORE PERFORMANCE ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">Store Performance</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:24px;" id="voc-store-cards"></div>
+
+    <!-- ── CHARTS ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:20px;" class="voc-chart-box">
+        <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:14px;" class="voc-section-label">Issue Category Breakdown</div>
+        <div style="height:270px;position:relative;"><canvas id="voc-chart-issues"></canvas></div>
+      </div>
+      <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:20px;" class="voc-chart-box">
+        <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:14px;" class="voc-section-label">Store VOC % Comparison</div>
+        <div style="height:270px;position:relative;"><canvas id="voc-chart-stores"></canvas></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:24px;">
+      <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:20px;" class="voc-chart-box">
+        <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:14px;" class="voc-section-label">UTR · OTR · Non-Ops</div>
+        <div style="height:230px;position:relative;"><canvas id="voc-chart-split"></canvas></div>
+      </div>
+      <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:20px;" class="voc-chart-box">
+        <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:14px;" class="voc-section-label">VOC Rate Trend</div>
+        <div style="height:230px;position:relative;"><canvas id="voc-chart-trend"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ── TOP 15 PICKERS ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">🏆 Top 15 Pickers by VOC Contribution</div>
+    <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;overflow:hidden;margin-bottom:24px;" class="voc-tbl-wrap">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--voc-border,#d5d2f0);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:13px;color:var(--voc-muted,#7b78a8);">Filter by Store</div>
+        <select id="voc-picker-store" onchange="vocRenderPickerFiltered()" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:6px 14px;font-family:'Syne',sans-serif;font-size:13px;color:var(--voc-text,#1a1830);outline:none;min-width:160px;">
+          <option value="all">All stores</option>
+        </select>
+        <div id="voc-picker-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-muted,#7b78a8);"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:var(--voc-thead,#f8f7ff);">
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">#</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Picker ID</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Store</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Total Orders</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Mistakes</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">% of Orders</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Risk</th>
+          </tr></thead>
+          <tbody id="voc-picker-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TOP VOC PRODUCTS ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" id="voc-prod-title" class="voc-section-label">Top VOC Products (15 Products = 21% of Total VOC)</div>
+    <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;overflow:hidden;margin-bottom:24px;" class="voc-tbl-wrap">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:var(--voc-thead,#f8f7ff);">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Product</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Total VOC</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Contrib %</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Primary Issue</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--voc-muted,#7b78a8);border-bottom:1px solid var(--voc-border,#d5d2f0);">Type</th>
+          </tr></thead>
+          <tbody id="voc-product-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── METRIC FORMULAS — hidden, logic kept internally ── -->
+    <div style="display:none;" id="voc-formulas-hidden"></div>
+
+    <!-- ── SHEET HEALTH ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">🔍 Sheet Health Monitor</div>
+    <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:18px;margin-bottom:24px;" class="voc-health-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:13px;color:var(--voc-text2,#3d3a6b);">Scan for blank cells, duplicates & data issues</div>
+        <div id="voc-health-badge"></div>
+      </div>
+      <div id="voc-health-content"><div style="color:var(--voc-muted,#7b78a8);font-size:13px;">Load data to run health check...</div></div>
+    </div>
+
+    <!-- ── RCA PENDING ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">⏳ RCA Pending Tracker</div>
+    <div style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:18px;margin-bottom:24px;" class="voc-rca-box" id="voc-rca-content">
+      <div style="color:var(--voc-muted,#7b78a8);font-size:13px;">Load data to see RCA status...</div>
+    </div>
+
+    <!-- ── EXPORT ROW ── -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:20px 0 10px;">
+      <button onclick="vocExportPDF()" style="padding:12px 28px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#c0392b,#922B21);color:#fff;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(192,57,43,0.35);">📄 Export PDF Report</button>
+      <button onclick="vocExportExcel()" style="padding:12px 28px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#1a7a4a,#14532d);color:#fff;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(26,122,74,0.35);">📊 Export Excel Report</button>
+    </div>
+</div><!-- /container -->
+</div><!-- /page-voc -->
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- STORE METRICS PAGE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-store-metrics">
+<div class="task-page" style="max-width:1200px;">
+  <button class="back-btn" onclick="goHome()">← Back</button>
+  <div class="task-header">
+    <div class="task-header-icon">🏪</div>
+    <div>
+      <h2>Store Metrics</h2>
+      <p>Store-wise KPIs · Orders · Units · VOC Rate · Trends · Performance benchmarking</p>
+    </div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🚧</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;">Store Metrics</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:20px;">Share your Store Metrics Google Sheet URL and design screenshot.<br>This module will be fully configured with your exact KPI columns.</div>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(247,37,133,0.1);border:1px solid rgba(247,37,133,0.3);padding:8px 18px;border-radius:20px;font-size:12px;color:var(--pink);font-weight:700;letter-spacing:1px;">⚙️ AWAITING YOUR SHEET + SCREENSHOT</div>
+  </div>
+</div>
+</div>
+
+<style>
+/* ─── VOC THEME VARIABLES ───────────────────────────────── */
+#page-voc[data-theme="dark"] {
+  --voc-bg:         #0a0914;
+  --voc-surface:    #13121f;
+  --voc-surface2:   #1a1928;
+  --voc-surface3:   #222136;
+  --voc-border:     #2e2c45;
+  --voc-text:       #e8e6ff;
+  --voc-text2:      #b8b6d9;
+  --voc-muted:      #8b8aad;
+  --voc-label:      #b8b6d9;
+  --voc-val:        #ffffff;
+  --voc-thead:      #1a1928;
+  --voc-row-alt:    #161525;
+  --voc-input-bg:   #13121f;
+}
+#page-voc[data-theme="light"] {
+  --voc-bg:         #f8f7ff;
+  --voc-surface:    #ffffff;
+  --voc-surface2:   #f0effe;
+  --voc-surface3:   #e8e6fd;
+  --voc-border:     #d5d2f0;
+  --voc-text:       #1a1830;
+  --voc-text2:      #3d3a6b;
+  --voc-muted:      #7b78a8;
+  --voc-label:      #7b78a8;
+  --voc-val:        #1a1830;
+  --voc-thead:      #f8f7ff;
+  --voc-row-alt:    #f8f7ff;
+  --voc-input-bg:   #ffffff;
+}
+
+/* Roman serif font for VOC page */
+#page-voc, #page-voc * { font-family: Georgia, 'Times New Roman', Palatino, serif !important; }
+#page-voc input, #page-voc select, #page-voc button { font-family: Georgia, serif !important; }
+#page-voc #voc-user-label { font-family: 'Courier New', monospace !important; }
+/* Apply theme to the page */
+#page-voc { background: var(--voc-bg) !important; color: var(--voc-text); transition: background 0.3s, color 0.3s; }
+
+/* Dark theme: gate box */
+#page-voc[data-theme="dark"] #voc-gate > div { background:#13121f !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] #voc-gate .voc-gate-title { color:#e8e6ff !important; }
+#page-voc[data-theme="dark"] #voc-gate .voc-gate-sub { color:#8b8aad !important; }
+#page-voc[data-theme="dark"] #voc-username-input { background:#1a1928 !important; border-color:#2e2c45 !important; color:#e8e6ff !important; }
+
+/* Section labels */
+#page-voc[data-theme="dark"] .voc-section-label { color:#8b8aad !important; }
+
+/* Cards: overall and UTR/OTR */
+#page-voc[data-theme="dark"] .voc-dyn-card { background:#1a1928 !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] .voc-dyn-card .voc-card-label { color:#8b8aad !important; }
+#page-voc[data-theme="dark"] .voc-dyn-card .voc-card-val { color:#ffffff !important; }
+#page-voc[data-theme="dark"] .voc-dyn-card .voc-card-sub { color:#8b8aad !important; }
+
+/* Chart containers */
+#page-voc[data-theme="dark"] .voc-chart-box { background:#13121f !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] .voc-chart-box .voc-section-label { color:#8b8aad !important; }
+
+/* Filter bar */
+#page-voc[data-theme="dark"] .voc-filter-bar { background:#13121f !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] #voc-store-filter { background:#1a1928 !important; border-color:#2e2c45 !important; color:#e8e6ff !important; }
+#page-voc[data-theme="dark"] #voc-picker-store { background:#1a1928 !important; border-color:#2e2c45 !important; color:#e8e6ff !important; }
+
+/* URL input */
+#page-voc[data-theme="dark"] #voc-sheet-url { background:#1a1928 !important; border-color:#2e2c45 !important; color:#e8e6ff !important; }
+
+/* Tables */
+#page-voc[data-theme="dark"] .voc-tbl-wrap { background:#13121f !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] .voc-tbl-wrap table thead tr { background:#1a1928 !important; }
+#page-voc[data-theme="dark"] .voc-tbl-wrap table th { color:#8b8aad !important; border-bottom-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] .voc-tbl-wrap table td { color:#b8b6d9 !important; border-bottom-color:#1e1d30 !important; }
+#page-voc[data-theme="dark"] .voc-tbl-wrap table tr:nth-child(even) td { background:#161525 !important; }
+
+/* Health & RCA */
+#page-voc[data-theme="dark"] .voc-health-box { background:#13121f !important; border-color:#2e2c45 !important; }
+#page-voc[data-theme="dark"] .voc-rca-box { background:#13121f !important; border-color:#2e2c45 !important; }
+
+/* Target cards */
+#page-voc[data-theme="dark"] .voc-target-card { background:#1a1928 !important; }
+
+/* VOC Tab styles */
+.voc-tab {
+  padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--muted);
+  font-family:'Syne',sans-serif;font-weight:600;transition:all 0.2s;
+}
+.voc-tab:hover { border-color:#06d6a0;color:#06d6a0; }
+.voc-tab-act { background:#06d6a0 !important;color:#000 !important;border-color:#06d6a0 !important; }
+.voc-metric-card {
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;
+}
+.voc-metric-card .vml { font-size:11px;color:var(--muted);margin-bottom:4px; }
+.voc-metric-card .vmv { font-size:22px;font-weight:700;color:#fff; }
+.voc-metric-card .vms { font-size:11px;margin-top:2px; }
+.voc-section-card {
+  border-radius:var(--radius);padding:16px 18px;
+}
+.voc-risk-high { background:rgba(247,37,133,0.12);border:1px solid rgba(247,37,133,0.35);color:#f72585;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700; }
+.voc-risk-med  { background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);color:#ffd60a;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700; }
+.voc-risk-low  { background:rgba(6,214,160,0.12);border:1px solid rgba(6,214,160,0.3);color:#06d6a0;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700; }
+.voc-health-row { display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:13px; }
+.voc-health-row .vhr-label { color:var(--text2); }
+.voc-health-row .vhr-val { font-family:'DM Mono',monospace;font-weight:600; }
+.voc-rca-store { display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px; }
+
+/* Theme toggle button */
+.voc-theme-toggle {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);
+  background:rgba(255,255,255,0.08);color:#e8e6ff;
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;backdrop-filter:blur(4px);
+}
+.voc-theme-toggle:hover { background:rgba(255,255,255,0.15); }
+#page-voc[data-theme="light"] .voc-theme-toggle {
+  border-color:#d5d2f0;background:#fff;color:#3d3a6b;
+}
+#page-voc[data-theme="light"] .voc-theme-toggle:hover { background:#f0effe; }
+
+/* Orders banner */
+.voc-orders-banner {
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  padding:12px 18px;border-radius:12px;margin-bottom:18px;
+  background:rgba(67,97,238,0.12);border:1px solid rgba(67,97,238,0.3);
+  font-size:13px;
+}
+#page-voc[data-theme="dark"] .voc-orders-banner { background:rgba(67,97,238,0.15);border-color:rgba(67,97,238,0.35); }
+#page-voc[data-theme="light"] .voc-orders-banner { background:rgba(67,97,238,0.06);border-color:rgba(67,97,238,0.2); }
+.voc-orders-chip {
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:20px;font-weight:700;font-family:'DM Mono',monospace;font-size:12px;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// VOC ANALYSIS ENGINE v2 — matches screenshot design
+// ═══════════════════════════════════════════════════════
+
+var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1'];
+var VOC_UTR_TARGET = 0.10; // 0.10% target
+
+// ── CENTRAL APPS SCRIPT URL — used by all features ──────────────
+var VOC_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec'; // updated
+
+var vocCurrentUser = '';
+var vocPeriod = 'monthly';
+var vocRawData = [];
+var vocCharts = {};
+var vocPrevPeriodData = [];
+var vocMatrixOrders = null;
+
+var VOC_UTR = [
+  'Ops Controllable - QC Issue',
+  'Ops Controllable - Picker Mistake',
+  'Ops Controllable - Expiry Breach',
+  'Ops Controllable - Wrong Barcode Pasted',
+  'Ops Controllable - No Gelpacks added',
+  'Ops Controllable - No Bubble Bag used',
+  'Ops Controllable - Partly Open',
+  'Ops Controllable - Temp. Abuse'
+];
+var VOC_OTR = [
+  'Ops Controllable - OTR to check',
+  'Ops Controllable - DA picked the wrong bag',
+  'Ops Controllable - DA picked incomplete bags'
+];
+var VOC_NON_OPS = [
+  'Non Ops Controllable - Catalog Issue',
+  'Non Ops Controllable - PAD Time',
+  'Non Ops Controllable - Vendor to check',
+  'Non Ops Controllable - Change of mind',
+  'Non Ops Controllable - Customer confused',
+  'Non Ops Controllable - More details required',
+  'Non Ops Controllable - promo/ refund issue'
+];
+var VOC_NOT_STORE = ['NOT for our store'];
+
+// ── AUTH ─────────────────────────────────────────────
+function vocCheckAccess() {
+  var uname = (document.getElementById('voc-username-input').value||'').trim().toLowerCase();
+  var el = document.getElementById('voc-gate-msg');
+  if (!uname) { el.textContent='⚠️ Please enter your username.'; el.style.display='block'; el.style.background='rgba(247,37,133,0.1)'; el.style.border='1px solid rgba(247,37,133,0.3)'; el.style.color='#c0392b'; return; }
+  if (VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname)===-1) {
+    el.textContent='❌ Access denied. Username not authorised.'; el.style.display='block'; el.style.background='rgba(247,37,133,0.1)'; el.style.border='1px solid rgba(247,37,133,0.3)'; el.style.color='#c0392b'; return;
+  }
+  vocCurrentUser = uname;
+  document.getElementById('voc-gate').style.display='none';
+  document.getElementById('voc-dashboard').style.display='block';
+  document.getElementById('voc-user-label').textContent=uname.toUpperCase();
+  vocFetchData();
+}
+
+// ── STATUS DISPLAY ───────────────────────────────────────────────
+function vocShowStatus(msg, type) {
+  var el = document.getElementById('voc-status');
+  if (!el) return;
+  el.innerHTML = msg; el.style.display = 'block';
+  var map = {
+    ok:   ['rgba(6,214,160,0.08)','rgba(6,214,160,0.3)','#06d6a0'],
+    err:  ['rgba(220,53,69,0.08)','rgba(220,53,69,0.3)','#c0392b'],
+    info: ['rgba(67,97,238,0.08)','rgba(67,97,238,0.3)','#4361ee']
+  };
+  var s = map[type] || map.info;
+  el.style.background = s[0]; el.style.border = '1px solid ' + s[1]; el.style.color = s[2];
+}
+
+// ── UPDATE STORE FILTER DROPDOWNS ───────────────────────────────
+function vocUpdateFilters() {
+  var stores = [...new Set(vocRawData.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var sf = document.getElementById('voc-store-filter');
+  if (sf) { sf.innerHTML = '<option value="all">All Stores</option>'; stores.forEach(function(s){ sf.innerHTML += '<option value="'+s+'">'+s+'</option>'; }); }
+  var ps = document.getElementById('voc-picker-store');
+  if (ps) { ps.innerHTML = '<option value="all">All stores</option>'; stores.forEach(function(s){ ps.innerHTML += '<option value="'+s+'">'+s+'</option>'; }); }
+  vocBuildPeriodDropdowns();
+}
+
+// ── LIVE DATA FETCH — from Apps Script ──────────────────────────
+function vocFetchData() {
+  vocShowStatus('⏳ Loading live VOC data…', 'info');
+  appsScriptJSONP(
+    { action: 'voc' },
+    function(data) {
+      if (data && Array.isArray(data.rows) && data.rows.length) {
+        vocRawData = data.rows.map(function(r) {
+          return {
+            store:       String(r.store       || '').trim(),
+            date:        r.date ? (function(){ var d = new Date(r.date); return isNaN(d.getTime()) ? r.date : d; })() : '',
+            orderId:     String(r.orderId     || '').trim(),
+            asin:        String(r.asin        || '').trim(),
+            issue:       String(r.issue       || '').trim(),
+            rcaCategory: String(r.rcaCategory || '').trim(),
+            rca:         String(r.rca         || '').trim(),
+            picker:      String(r.picker      || '').trim(),
+            product:     String(r.product     || '').trim(),
+            productType: String(r.productType || '').trim(),
+            week:        String(r.week        || '').trim(),
+            comment:     String(r.comment     || '').trim()
+          };
+        }).filter(function(r){ return r.store; });
+        vocUpdateFilters();
+        vocRender();
+        vocShowStatus('✅ Live data loaded — ' + vocRawData.length + ' records.', 'ok');
+      } else if (data && Array.isArray(data.rows) && data.rows.length === 0) {
+        vocShowStatus('⚠️ Connected — 0 records returned. Check "voc analysis" sheet tab name.', 'info');
+      } else {
+        vocShowStatus('❌ Invalid response from Apps Script. Re-deploy as "New version".', 'err');
+      }
+    },
+    function(err) {
+      vocShowStatus('❌ Fetch failed: ' + err.message, 'err');
+    }
+  );
+}
+
+// ── ORDERS FETCH — week-based from Store Metric sheet ───────────
+function vocFetchOrders() {
+  var weekVal  = (document.getElementById('voc-week-filter') || {}).value || '';
+  var statusEl = document.getElementById('voc-orders-status');
+
+  function setOS(msg, type) {
+    if (!statusEl) return;
+    statusEl.style.display = 'block';
+    var cols = {
+      ok:   ['rgba(6,214,160,0.1)','rgba(6,214,160,0.3)','#06d6a0'],
+      err:  ['rgba(220,53,69,0.1)','rgba(220,53,69,0.3)','#c0392b'],
+      info: ['rgba(67,97,238,0.1)','rgba(67,97,238,0.3)','#4361ee']
+    }[type] || [];
+    statusEl.style.background = cols[0]; statusEl.style.border = '1px solid '+cols[1]; statusEl.style.color = cols[2];
+    statusEl.innerHTML = msg;
+  }
+
+  if (!weekVal) { setOS('⚠️ Select a week first from the dropdown.', 'err'); return; }
+  setOS('⏳ Fetching orders for ' + weekVal + '…', 'info');
+
+  // Extract plain week number from ISO string "2026-W15" → 15
+  var weekNum = weekVal;
+  var isoMatch = weekVal.match(/^(\d{4})-W(\d{1,2})$/);
+  if (isoMatch) weekNum = parseInt(isoMatch[2], 10).toString();
+
+  appsScriptJSONP(
+    { action: 'orders', week: weekNum, isoWeek: weekVal },
+    function(data) {
+      if (data && data.status === 'error') { setOS('❌ ' + (data.message || 'Script error'), 'err'); return; }
+      vocMatrixOrders = data;
+      var total = (data && data.totalOrders)   || 0;
+      var units = (data && data.outboundUnits) || 0;
+      var label = (data && data.weekLabel)     || ('Week ' + weekNum);
+
+      var banner = document.getElementById('voc-orders-banner-row');
+      var co = document.getElementById('voc-chip-orders');
+      var cu = document.getElementById('voc-chip-units');
+      var cd = document.getElementById('voc-chip-date');
+      if (banner) banner.style.display = 'flex';
+      if (co) co.textContent = '📦 ' + total.toLocaleString() + ' Orders';
+      if (cu) cu.textContent = '📤 ' + units.toLocaleString() + ' OB Units';
+      if (cd) cd.textContent = '📅 ' + label;
+
+      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label, 'ok');
+
+      // Sync VOC period filter to the same week
+      var isoW = isoMatch ? isoMatch[0] : null;
+      if (!isoW && weekNum) {
+        // Build ISO week string from plain number — use current year
+        var yr = new Date().getFullYear();
+        isoW = yr + '-W' + String(weekNum).padStart(2, '0');
+      }
+      if (isoW) {
+        vocSetWeek(isoW);
+      } else if (vocRawData.length) {
+        vocRender();
+      }
+    },
+    function(err) {
+      setOS('❌ Orders fetch failed: ' + err.message, 'err');
+    }
+  );
+}
+
+// ── THEME TOGGLE ────────────────────────────────────────
+function vocToggleTheme() {
+  var page = document.getElementById('page-voc');
+  var isDark = page.getAttribute('data-theme') === 'dark';
+  var newTheme = isDark ? 'light' : 'dark';
+  page.setAttribute('data-theme', newTheme);
+  page.style.background = newTheme === 'dark' ? '#0a0914' : '#f8f7ff';
+  var icon  = document.getElementById('voc-theme-icon');
+  var label = document.getElementById('voc-theme-label');
+  if (icon)  icon.textContent  = newTheme === 'dark' ? '☀️' : '🌙';
+  if (label) label.textContent = newTheme === 'dark' ? 'Light' : 'Dark';
+  // Re-render charts so colors update
+  if (vocRawData.length) {
+    setTimeout(function() { vocRender(); }, 50);
+  }
+}
+
+// ── PERIOD / WEEK / MONTH SELECTION ──────────────────────────────
+var vocSelectedWeek  = null;   // "2026-W15"
+var vocSelectedMonth = null;   // "2026-04"  (YYYY-MM, month 0-indexed stored separately)
+var vocSelectedYear  = null;
+
+// ISO week number helper — returns {week, year}
+function vocISOWeek(d) {
+  var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var day  = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  var week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  return { week: week, year: date.getUTCFullYear() };
+}
+
+// ISO week string from a Date: "2026-W15"
+function vocISOWeekStr(d) {
+  var w = vocISOWeek(d);
+  return w.year + '-W' + String(w.week).padStart(2, '0');
+}
+
+// Monday–Sunday bounds of an ISO week string "2026-W15"
+function vocWeekBounds(str) {
+  var m = String(str || '').match(/^(\d{4})-W(\d{1,2})$/);
+  if (!m) return null;
+  var year = parseInt(m[1], 10), week = parseInt(m[2], 10);
+  var jan4 = new Date(Date.UTC(year, 0, 4));
+  var mon  = new Date(jan4);
+  mon.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (week - 1) * 7);
+  var sun = new Date(mon);
+  sun.setUTCDate(mon.getUTCDate() + 6);
+  return {
+    from: new Date(mon.getUTCFullYear(), mon.getUTCMonth(), mon.getUTCDate(), 0, 0, 0),
+    to:   new Date(sun.getUTCFullYear(), sun.getUTCMonth(), sun.getUTCDate(), 23, 59, 59)
+  };
+}
+
+// Core filter — matches VOC rows to selected period using ISO week or calendar month
+function vocFilterByPeriod(rows) {
+  if (!rows || !rows.length) return rows;
+
+  if (vocPeriod === 'week' && vocSelectedWeek) {
+    // VOC sheet Week col = plain number (14, 15, 45...)
+    // Extract week number from selected ISO week "2026-W15" → 15
+    var isoMatch = vocSelectedWeek.match(/W(\d{1,2})$/);
+    var targetWeekNum = isoMatch ? parseInt(isoMatch[1], 10) : null;
+
+    return rows.filter(function(r) {
+      // Primary: match by week number field from sheet (most accurate)
+      if (r.week && targetWeekNum) {
+        return parseInt(r.week, 10) === targetWeekNum;
+      }
+      // Fallback: derive ISO week from date
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      return vocISOWeekStr(d) === vocSelectedWeek;
+    });
+  }
+
+  if (vocPeriod === 'monthly' && vocSelectedMonth) {
+    // vocSelectedMonth = "2026-04" (year-month, month is 1-indexed)
+    var parts = vocSelectedMonth.split('-');
+    var y = parseInt(parts[0], 10), mo = parseInt(parts[1], 10) - 1; // 0-indexed
+    return rows.filter(function(r) {
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === y && d.getMonth() === mo;
+    });
+  }
+
+  if (vocPeriod === 'yearly') {
+    var yr = new Date().getFullYear();
+    return rows.filter(function(r) {
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === yr;
+    });
+  }
+
+  // Default: all data
+  return rows;
+}
+
+// Build week and month dropdowns from actual VOC data dates
+function vocBuildPeriodDropdowns() {
+  var weekSet = {}, monthSet = {};
+  vocRawData.forEach(function(r) {
+    var d = r.date instanceof Date ? r.date : new Date(r.date);
+    if (isNaN(d.getTime())) return;
+    // Week
+    var wk = vocISOWeekStr(d);
+    weekSet[wk] = true;
+    // Month: key = "YYYY-MM" (1-indexed month)
+    var mk = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    monthSet[mk] = true;
+  });
+
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var MONTHSFULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Week dropdowns (both the filter bar one and the orders one)
+  var wKeys = Object.keys(weekSet).sort();
+  var wOpts = '<option value="">— Week —</option>';
+  wKeys.forEach(function(k) {
+    var m2 = k.match(/^(\d{4})-W(\d{1,2})$/);
+    if (!m2) return;
+    wOpts += '<option value="' + k + '">Week ' + parseInt(m2[2]) + ' (' + m2[1] + ')</option>';
+  });
+  var wSel = document.getElementById('voc-week-select');
+  if (wSel) { wSel.innerHTML = wOpts; if (vocSelectedWeek) wSel.value = vocSelectedWeek; }
+
+  var wFil = document.getElementById('voc-week-filter');
+  if (wFil) { wFil.innerHTML = wOpts.replace('— Week —', '— Select Week —'); if (vocSelectedWeek) wFil.value = vocSelectedWeek; }
+
+  // Month dropdown
+  var mKeys = Object.keys(monthSet).sort();
+  var mOpts = '<option value="">— Month —</option>';
+  mKeys.forEach(function(k) {
+    var mp = k.split('-');
+    var mIdx = parseInt(mp[1], 10) - 1;
+    mOpts += '<option value="' + k + '">' + MONTHSFULL[mIdx] + ' ' + mp[0] + '</option>';
+  });
+  var mSel = document.getElementById('voc-month-select');
+  if (mSel) { mSel.innerHTML = mOpts; if (vocSelectedMonth) mSel.value = vocSelectedMonth; }
+}
+
+function vocSetWeek(val) {
+  vocSelectedWeek  = val || null;
+  vocSelectedMonth = null;
+  vocPeriod = val ? 'week' : 'yearly';
+  var mSel = document.getElementById('voc-month-select');
+  if (mSel) mSel.value = '';
+  var pl = document.getElementById('voc-period-label');
+  if (pl && val) {
+    var m2 = val.match(/^(\d{4})-W(\d{1,2})$/);
+    pl.textContent = m2 ? 'Week ' + parseInt(m2[2]) + ' · ' + m2[1] : val;
+  }
+  // Sync orders week filter too
+  var wFil = document.getElementById('voc-week-filter');
+  if (wFil && val) wFil.value = val;
+  vocRender();
+}
+
+function vocSetMonth(val) {
+  vocSelectedMonth = val || null;
+  vocSelectedWeek  = null;
+  vocPeriod = val ? 'monthly' : 'yearly';
+  var wSel = document.getElementById('voc-week-select');
+  if (wSel) wSel.value = '';
+  if (val) {
+    var MONTHSFULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var mp = val.split('-');
+    var pl = document.getElementById('voc-period-label');
+    if (pl) pl.textContent = MONTHSFULL[parseInt(mp[1], 10) - 1] + ' ' + mp[0];
+  }
+  vocRender();
+}
+
+function vocSetPeriod(p, btn) {
+  vocPeriod = p;
+  vocSelectedWeek  = null;
+  vocSelectedMonth = null;
+  var wSel = document.getElementById('voc-week-select');
+  var mSel = document.getElementById('voc-month-select');
+  if (wSel) wSel.value = '';
+  if (mSel) mSel.value = '';
+  var pl = document.getElementById('voc-period-label');
+  if (pl) pl.textContent = 'This Year';
+  vocRender();
+}
+
+// Legacy - kept for compatibility
+function vocGetPeriodBounds(offset) {
+  var now = new Date();
+  if (vocPeriod === 'week' && vocSelectedWeek) {
+    var b = vocWeekBounds(vocSelectedWeek);
+    if (offset && b) {
+      b.from = new Date(b.from.getTime() - offset * 7 * 86400000);
+      b.to   = new Date(b.to.getTime()   - offset * 7 * 86400000);
+    }
+    return b || { from: new Date(0), to: new Date() };
+  }
+  if (vocPeriod === 'monthly' && vocSelectedMonth) {
+    var mp = vocSelectedMonth.split('-');
+    var y = parseInt(mp[0], 10), mo = parseInt(mp[1], 10) - 1 - (offset || 0);
+    while (mo < 0) { mo += 12; y--; }
+    return { from: new Date(y, mo, 1), to: new Date(y, mo + 1, 0, 23, 59, 59) };
+  }
+  var yr = now.getFullYear() - (offset || 0);
+  return { from: new Date(yr, 0, 1), to: new Date(yr, 11, 31, 23, 59, 59) };
+}
+
+function vocFilterRows(rows, bounds) {
+  // Use period-aware filter for current period (offset=0), fallback to bounds for prev
+  return rows.filter(function(r) {
+    var d = r.date instanceof Date ? r.date : new Date(r.date);
+    if (isNaN(d.getTime())) return true;
+    return d >= bounds.from && d <= bounds.to;
+  });
+}
+
+function vocDedup(rows) {
+  // Only deduplicate truly identical rows:
+  // same orderId + same ASIN + same store + same date + same RCA category
+  // This preserves multiple VOC entries for same order (different ASINs)
+  // and same ASIN ordered multiple times on different dates
+  var seen = {};
+  return rows.filter(function(r) {
+    var dateStr = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date || '');
+    var k = [
+      r.orderId     || '',
+      r.asin        || '',
+      r.store       || '',
+      dateStr,
+      r.rcaCategory || ''
+    ].join('||');
+    if (seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+}
+
+function vocRender() {
+  if (!vocRawData.length) return;
+  var sf = document.getElementById('voc-store-filter').value;
+
+  // ── Period filter: always apply. Default = this month if nothing selected ──
+  if (!vocSelectedWeek && !vocSelectedMonth && vocPeriod !== 'yearly') {
+    // Auto-select current month on first render
+    var now = new Date();
+    vocSelectedMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    vocPeriod = 'monthly';
+    var MONTHSFULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var pl = document.getElementById('voc-period-label');
+    if (pl) pl.textContent = MONTHSFULL[now.getMonth()] + ' ' + now.getFullYear();
+    var mSel = document.getElementById('voc-month-select');
+    if (mSel) mSel.value = vocSelectedMonth;
+  }
+
+  // Apply period filter to raw VOC data (from VOC sheet only)
+  var periodRows = vocFilterByPeriod(vocRawData);
+  // Deduplicate by orderId+asin
+  var curr = vocDedup(periodRows);
+  // Apply store filter
+  if (sf && sf !== 'all') curr = curr.filter(function(r) { return r.store === sf; });
+
+  // Previous period comparison
+  var prevBounds = vocGetPeriodBounds(1);
+  var prev = vocDedup(vocFilterRows(vocRawData, prevBounds));
+  if (sf && sf !== 'all') prev = prev.filter(function(r) { return r.store === sf; });
+
+  // Store-specific order count from Store Metric (fetched separately)
+  var storeOrders = vocMatrixOrders ? getStoreOrders(sf) : 0;
+
+  vocRenderMetrics(curr, prev, storeOrders);
+  vocRenderUTROTR(curr, prev);
+  vocRenderTargetCards(curr, storeOrders, sf);
+  vocRenderStoreCards(curr, sf);
+  vocRenderIssueChart(curr);
+  vocRenderStoreChart(curr);
+  vocRenderSplitChart(curr);
+  vocRenderTrendChart();
+  vocRenderPickerFiltered();
+  vocRenderProducts(curr);
+  vocRunHealthCheck();
+  vocRenderRCA();
+}
+
+// Get orders for a specific store (or total) from vocMatrixOrders
+function getStoreOrders(storeFilter) {
+  if (!vocMatrixOrders) return 0;
+  var total = vocMatrixOrders.totalOrders || 0;
+  if (storeFilter === 'all' || !storeFilter) return total;
+  // vocMatrixOrders.stores is an object: { "QAA1": 1200, "QAA6": 980, ... }
+  var stores = vocMatrixOrders.stores || {};
+  if (typeof stores === 'object' && !Array.isArray(stores)) {
+    // Find case-insensitive match
+    var keys = Object.keys(stores);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === storeFilter.toLowerCase()) {
+        return stores[keys[i]] || 0;
+      }
+    }
+    return 0; // store not in orders — don't fall back to total
+  }
+  // Legacy array format
+  if (Array.isArray(stores)) {
+    var match = stores.find(function(s) { return s.store === storeFilter; });
+    return match ? (match.orders || 0) : 0;
+  }
+  return 0;
+}
+
+// ── PICKER RENDER — Top 15, store-filtered orders, correct % ─────────────
+function vocRenderPickerFiltered() {
+  var sf = document.getElementById('voc-picker-store').value;
+
+  // Filter VOC data by period first, then by picker-store filter
+  var periodData = vocDedup(vocFilterByPeriod(vocRawData));
+  // Main store filter (from the header dropdown) also applies
+  var mainSf = document.getElementById('voc-store-filter').value;
+  if (mainSf !== 'all') periodData = periodData.filter(function(r) { return r.store === mainSf; });
+  // Picker store filter (secondary)
+  var curr = sf !== 'all' ? periodData.filter(function(r) { return r.store === sf; }) : periodData;
+
+  var pickerRows = curr.filter(function(r) { return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
+
+  // Use STORE-SPECIFIC orders when a store is filtered, else total
+  var effectiveSf = sf !== 'all' ? sf : mainSf;
+  var realOrders = getStoreOrders(effectiveSf);
+  // If no orders fetched yet, show blank rather than wrong numbers
+  var ordersReady = realOrders > 0;
+
+  var mistakes = {}, pickerStoreMap = {};
+  pickerRows.forEach(function(r) {
+    if (!r.picker) return;
+    mistakes[r.picker] = (mistakes[r.picker] || 0) + 1;
+    pickerStoreMap[r.picker] = r.store;
+  });
+
+  var sorted = Object.keys(mistakes).sort(function(a, b) { return mistakes[b] - mistakes[a]; }).slice(0, 15);
+
+  var isDark = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var rowBg  = isDark ? ['#1a1928','#13121f'] : ['#ffffff','#f8f7ff'];
+  var txtCol = isDark ? '#e8e6ff' : '#1a1830';
+  var mutCol = isDark ? '#8b8aad' : '#7b78a8';
+  var brdCol = isDark ? '#2e2c45' : '#f0effe';
+  var periodLabel = (document.getElementById('voc-period-label') || {}).textContent || 'Period';
+
+  document.getElementById('voc-picker-count').textContent =
+    sorted.length + ' pickers · ' + pickerRows.length + ' mistakes' +
+    (ordersReady ? ' · ' + realOrders.toLocaleString() + ' orders (' + (effectiveSf !== 'all' ? effectiveSf : 'All Stores') + ')' : ' · Fetch orders for % data') +
+    ' · ' + periodLabel;
+
+  if (!sorted.length) {
+    document.getElementById('voc-picker-body').innerHTML =
+      '<tr><td colspan="7" style="padding:20px;text-align:center;color:' + mutCol + ';">No picker mistakes for this period / store</td></tr>';
+    return;
+  }
+
+  document.getElementById('voc-picker-body').innerHTML = sorted.map(function(p, i) {
+    var m = mistakes[p] || 0;
+    var pctOfOrders = ordersReady ? ((m / realOrders) * 100).toFixed(3) : '—';
+    var pctNum = ordersReady ? parseFloat(pctOfOrders) : 0;
+    var risk = !ordersReady ? '<span style="color:' + mutCol + ';font-size:10px;">—</span>'
+      : pctNum >= 0.5
+      ? '<span style="background:#FADBD8;color:#922B21;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🔴 High</span>'
+      : pctNum >= 0.2
+      ? '<span style="background:#FDEBD0;color:#784212;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🟡 Medium</span>'
+      : '<span style="background:#D5F5E3;color:#1A5C37;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🟢 Low</span>';
+    var bg = rowBg[i % 2];
+    var rankCol = i === 0 ? '#ff6b35' : i === 1 ? '#ffd60a' : i === 2 ? '#06d6a0' : mutCol;
+    return '<tr style="background:' + bg + '">' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:700;color:' + rankCol + ';">#' + (i+1) + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:600;color:' + txtCol + ';">' + p + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';color:' + mutCol + ';">' + (pickerStoreMap[p] || '–') + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:600;color:' + txtCol + ';">' + (ordersReady ? realOrders.toLocaleString() : '—') + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:700;color:#c0392b;">' + m + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-family:\'DM Mono\',monospace;font-size:12px;color:' + txtCol + ';">' + pctOfOrders + (ordersReady ? '%' : '') + '</td>' +
+      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';">' + risk + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+
+function vocPct(val,prev){
+  if(!prev||prev===0)return'';
+  var p=((val-prev)/prev*100).toFixed(1);
+  return p>0?'<span style="color:#c0392b;font-size:11px;">▲ '+p+'%</span>':'<span style="color:#1a7a4a;font-size:11px;">▼ '+Math.abs(p)+'%</span>';
+}
+
+function vocCard(label,val,sub,border){
+  var isDark = document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var bg  = isDark ? '#1a1928' : '#ffffff';
+  var brd = isDark ? '#2e2c45' : '#d5d2f0';
+  var lbl = isDark ? '#8b8aad' : '#7b78a8';
+  var txt = isDark ? '#ffffff' : '#1a1830';
+  var sub2 = isDark ? '#8b8aad' : '#7b78a8';
+  return '<div class="voc-dyn-card" style="background:'+bg+';border:1px solid '+brd+';border-radius:14px;padding:16px 18px;border-top:3px solid '+border+'">'+
+    '<div class="voc-card-label" style="font-size:11px;color:'+lbl+';margin-bottom:6px;">'+label+'</div>'+
+    '<div class="voc-card-val" style="font-size:22px;font-weight:700;color:'+txt+';margin-bottom:4px;">'+val+'</div>'+
+    '<div class="voc-card-sub" style="font-size:11px;color:'+sub2+';">'+sub+'</div></div>';
+}
+
+function vocRenderMetrics(curr, prev, storeOrders) {
+  var total = curr.length;
+  var ptotal = prev.length;
+  // storeOrders = orders for the selected store (or all stores) from Store Metric sheet
+  // Fall back to VOC row count if not fetched yet
+  // Orders ONLY from Store Metric sheet — never from VOC data
+  var realOrders = storeOrders > 0 ? storeOrders
+    : (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders
+    : 0;
+  var realOrdersLabel = realOrders > 0 ? 'Store Metric Sheet · ' + (new Date()).toLocaleDateString('en-GB') : '⬆ Fetch Orders to see UTR%';
+
+  var utr    = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
+  var picker = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
+  var qc     = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
+  var otr    = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; });
+
+  var pct = function(n) { return realOrders > 0 ? ((n / realOrders) * 100).toFixed(3) + '%' : '—'; };
+
+  var mc = document.getElementById('voc-metric-cards');
+  mc.innerHTML = [
+    vocCard('Total Orders', realOrders > 0 ? realOrders.toLocaleString() : '—', realOrdersLabel, '#4361ee'),
+    vocCard('Total VOC', total + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(total) + ')</small>' : ''), vocPct(total, ptotal) || 'All categories', '#3d3a6b'),
+    vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; }).length) || 'Store side', '#c0392b'),
+    vocCard('OTR Ops Controllable', otr.length, vocPct(otr.length, prev.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length) || 'Delivery side', '#e67e22'),
+    vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length) || 'Picker mistakes only', '#8e44ad'),
+    vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length) || 'Quality checks', '#2980b9'),
+    vocCard('NOT for Our Store', curr.filter(function(r){ return VOC_NOT_STORE.indexOf(r.rcaCategory) > -1; }).length, 'Flagged separately', '#ff6b35'),
+  ].join('');
+}
+
+function vocRenderUTROTR(curr, prev) {
+  var utrPM   = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length;
+  var utrQC   = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length;
+  var otrN    = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length;
+  var prevPM  = prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length;
+  var prevQC  = prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length;
+  var prevOtr = prev.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length;
+  var non     = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+  var el = document.getElementById('voc-utr-otr-cards');
+  el.innerHTML = [
+    vocCard('UTR Picker Mistakes (Prev)', prevPM, 'Picker-caused', '#c0392b'),
+    vocCard('UTR Picker Mistakes (Curr)', utrPM, vocPct(utrPM, prevPM) || '▲ vs prev period', '#c0392b'),
+    vocCard('UTR QC Issues (Prev)', prevQC, 'Quality-caused', '#e67e22'),
+    vocCard('UTR QC Issues (Curr)', utrQC, vocPct(utrQC, prevQC) || '▲ vs prev period', '#e67e22'),
+    vocCard('OTR Delivery (Prev)', prevOtr, 'Delivery side', '#2980b9'),
+    vocCard('OTR Delivery (Curr)', otrN, vocPct(otrN, prevOtr) || 'vs prev period', '#2980b9'),
+    vocCard('Non-Ops Controllable', non.length, 'Customer/Vendor/Catalog', '#7b78a8'),
+  ].join('');
+}
+
+function vocRenderTargetCards(curr, storeOrders, storeFilter) {
+  var isDark  = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var cardBg  = isDark ? '#1a1928' : '#ffffff';
+  var txtMain = isDark ? '#e8e6ff' : '#1a1830';
+  var txtMut  = isDark ? '#8b8aad' : '#7b78a8';
+  var barBg   = isDark ? '#2e2c45' : '#f0effe';
+
+  var stores = [...new Set(curr.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var el = document.getElementById('voc-target-cards');
+
+  if (!stores.length) {
+    el.innerHTML = '<div style="padding:16px;color:' + txtMut + ';font-size:13px;">No data for selected period/store.</div>';
+    return;
+  }
+
+  el.innerHTML = stores.map(function(s) {
+    var sRows   = curr.filter(function(r){ return r.store === s; });
+    var utrRows = sRows.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
+
+    // Get store-specific order count from fetched matrix data
+    var sOrders = getStoreOrders(s);  // per-store orders
+    var hasOrders = sOrders > 0;
+    var denom = hasOrders ? sOrders : 0;
+
+    var rate    = hasOrders ? ((utrRows.length / denom) * 100) : 0;
+    var rateStr = hasOrders ? rate.toFixed(3) + '%' : '— (fetch orders)';
+    var ok      = hasOrders ? (rate <= VOC_UTR_TARGET) : true; // can't determine without orders
+    var barW    = hasOrders ? Math.min((rate / (VOC_UTR_TARGET || 0.1)) * 100, 100) : 0;
+
+    return '<div style="background:' + cardBg + ';border:1.5px solid ' + (hasOrders ? (ok ? 'rgba(26,122,74,0.4)' : 'rgba(192,57,43,0.4)') : ('rgba(123,120,173,0.3)')) + ';border-radius:14px;padding:16px 18px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">' +
+      '<div style="font-size:15px;font-weight:800;color:' + txtMain + ';">' + s + '</div>' +
+      (hasOrders
+        ? '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:' + (ok ? 'rgba(26,122,74,0.12)' : 'rgba(192,57,43,0.12)') + ';color:' + (ok ? '#1a7a4a' : '#c0392b') + ';">' + (ok ? '✅ ON TARGET' : '⚠️ ABOVE TARGET') + '</span>'
+        : '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:rgba(123,120,173,0.15);color:' + txtMut + ';">📥 Fetch Orders</span>') +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">' +
+      '<span style="color:' + txtMut + ';">UTR Count</span><span style="font-weight:700;color:' + txtMain + ';">' + utrRows.length + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">' +
+      '<span style="color:' + txtMut + ';">UTR Rate</span><span style="font-weight:700;color:' + (hasOrders ? (ok ? '#1a7a4a' : '#c0392b') : txtMut) + ';">' + rateStr + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">' +
+      '<span style="color:' + txtMut + ';">Monthly Target</span><span style="font-weight:600;color:' + txtMain + ';">0.10%</span>' +
+      '</div>' +
+      (hasOrders ? '<div style="height:6px;background:' + barBg + ';border-radius:10px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + (ok ? '#1a7a4a' : '#c0392b') + ';border-radius:10px;transition:width 0.5s;"></div></div>' +
+      '<div style="font-size:10px;color:' + txtMut + ';margin-top:5px;">' + (ok ? 'Within 0.10% monthly target (' + denom.toLocaleString() + ' orders)' : 'Exceeds target by ' + (rate - VOC_UTR_TARGET).toFixed(3) + '% · ' + denom.toLocaleString() + ' orders') + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function vocRenderStoreCards(curr, storeFilter) {
+  var isDark = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var cardBg  = isDark ? '#1a1928' : '#ffffff';
+  var brd     = isDark ? '#2e2c45' : '#d5d2f0';
+  var brdLight = isDark ? '#1e1d30' : '#f0effe';
+  var txtMain = isDark ? '#e8e6ff' : '#1a1830';
+  var txtMut  = isDark ? '#8b8aad' : '#7b78a8';
+
+  var stores = [...new Set(curr.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var el = document.getElementById('voc-store-cards');
+
+  if (!stores.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = stores.map(function(s) {
+    var sRows    = curr.filter(function(r){ return r.store === s; });
+    var prevB    = vocGetPeriodBounds(1);
+    var prevRows = vocDedup(vocFilterRows(vocRawData, prevB)).filter(function(r){ return r.store === s; });
+    var pm = sRows.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
+    var qc = sRows.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
+    var pctChange = (sRows.length > 0 && prevRows.length > 0)
+      ? ((sRows.length - prevRows.length) / prevRows.length * 100).toFixed(0) : 0;
+    var trending = pctChange > 5
+      ? '<span style="background:#FADBD8;color:#922B21;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">▲ ' + pctChange + '%</span>'
+      : pctChange < -5
+      ? '<span style="background:#D5F5E3;color:#1A5C37;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">▼ ' + Math.abs(pctChange) + '%</span>'
+      : '<span style="background:' + (isDark?'rgba(123,120,173,0.2)':'#f0effe') + ';color:' + txtMut + ';font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">→ Stable</span>';
+    return '<div style="background:' + cardBg + ';border:1px solid ' + brd + ';border-radius:16px;padding:16px 18px;">' +
+      '<div style="font-size:15px;font-weight:800;color:' + txtMain + ';margin-bottom:10px;">' + s + '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">VOC Count</span><span style="font-weight:600;color:' + txtMain + ';">' + sRows.length + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">Trend</span><span>' + trending + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">Picker Err</span><span style="font-weight:600;color:' + (pm.length > 5 ? '#c0392b' : '#1a7a4a') + ';">' + pm.length + ' ' + (pm.length > 5 ? '🛑' : '✅') + '</span></div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;"><span style="color:' + txtMut + ';">QC Issue</span><span style="font-weight:600;color:' + (qc.length > 3 ? '#c0392b' : '#1a7a4a') + ';">' + qc.length + ' ' + (qc.length > 3 ? '🔴' : '✅') + '</span></div>' +
+      '</div>';
+  }).join('');
+}
+
+function vocRenderIssueChart(rows) {
+  var stores=[...new Set(rows.map(function(r){return r.store;}))].sort();
+  var allIssues=['Switcheroo','Product Missing','Poor Quality','DNR','Quantity Variance','Near Expiry/Expired','Damaged','Thawed','Others'];
+  var storeColors={'QAA1':'#4361ee','QAA6':'#06d6a0','QAA7':'#ffd60a','QDC6':'#ff6b35','QDG5':'#f72585'};
+  var datasets=stores.map(function(s){
+    return {label:s,data:allIssues.map(function(iss){return rows.filter(function(r){return r.store===s&&r.issue===iss;}).length;}),backgroundColor:storeColors[s]||'#8b8aad',borderRadius:3};
+  });
+  if(vocCharts.issues)vocCharts.issues.destroy();
+  vocCharts.issues=new Chart(document.getElementById('voc-chart-issues'),{
+    type:'bar',data:{labels:allIssues,datasets:datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10,color:'#3d3a6b'}}},
+      scales:{x:{stacked:true,ticks:{color:'#7b78a8',font:{size:10},autoSkip:false,maxRotation:30},grid:{display:false}},
+              y:{stacked:true,beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+
+function vocRenderStoreChart(rows) {
+  var stores=[...new Set(rows.map(function(r){return r.store;}))].sort();
+  var data=stores.map(function(s){return rows.filter(function(r){return r.store===s;}).length;});
+  var colors=['#4361ee','#06d6a0','#ffd60a','#ff6b35','#f72585'];
+  if(vocCharts.stores)vocCharts.stores.destroy();
+  vocCharts.stores=new Chart(document.getElementById('voc-chart-stores'),{
+    type:'bar',data:{labels:stores,datasets:[{data:data,backgroundColor:colors.slice(0,stores.length),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#7b78a8',font:{size:12}},grid:{display:false}},
+              y:{beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+
+function vocRenderSplitChart(rows) {
+  var utr=rows.filter(function(r){return VOC_UTR.indexOf(r.rcaCategory)>-1;}).length;
+  var otr=rows.filter(function(r){return VOC_OTR.indexOf(r.rcaCategory)>-1;}).length;
+  var non=rows.filter(function(r){return VOC_NON_OPS.indexOf(r.rcaCategory)>-1;}).length;
+  var notS=rows.filter(function(r){return VOC_NOT_STORE.indexOf(r.rcaCategory)>-1;}).length;
+  if(vocCharts.split)vocCharts.split.destroy();
+  vocCharts.split=new Chart(document.getElementById('voc-chart-split'),{
+    type:'doughnut',
+    data:{labels:['UTR','OTR','Non-Ops','Not for Store'],datasets:[{data:[utr,otr,non,notS],backgroundColor:['#c0392b','#e67e22','#8b8aad','#ff6b35'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#3d3a6b',font:{size:10},boxWidth:10}}}}
+  });
+}
+
+function vocRenderTrendChart() {
+  var groups={};
+  vocRawData.forEach(function(r){
+    var d=r.date instanceof Date?r.date:new Date(r.date);
+    if(isNaN(d))return;
+    var key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    groups[key]=(groups[key]||0)+1;
+  });
+  var keys=Object.keys(groups).sort();
+  if(vocCharts.trend)vocCharts.trend.destroy();
+  vocCharts.trend=new Chart(document.getElementById('voc-chart-trend'),{
+    type:'line',
+    data:{labels:keys,datasets:[{label:'VOC Count',data:keys.map(function(k){return groups[k];}),borderColor:'#4361ee',backgroundColor:'rgba(67,97,238,0.06)',tension:0.4,fill:true,pointBackgroundColor:'#4361ee',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#7b78a8',font:{size:10},maxRotation:40},grid:{color:'rgba(0,0,0,0.04)'}},
+              y:{beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+
+
+function vocRenderProducts(rows) {
+  var prods={},prodIssues={},prodTypes={};
+  rows.forEach(function(r){
+    var k=(r.asin||'')+'||'+(r.product||'Unknown');
+    prods[k]=(prods[k]||0)+1;
+    if(!prodIssues[k])prodIssues[k]={};
+    prodIssues[k][r.issue||'?']=(prodIssues[k][r.issue||'?']||0)+1;
+    prodTypes[k]=r.productType||'—';
+  });
+  var sorted=Object.keys(prods).sort(function(a,b){return prods[b]-prods[a];}).slice(0,15);
+  var totalVOC=rows.length||1;
+  var topContrib=sorted.slice(0,15).reduce(function(acc,k){return acc+prods[k];},0);
+  var contribPct=((topContrib/totalVOC)*100).toFixed(0);
+  var title=document.getElementById('voc-prod-title');
+  if(title)title.textContent='Top VOC Products ('+sorted.length+' Products = '+contribPct+'% of Total VOC)';
+  document.getElementById('voc-product-body').innerHTML=sorted.map(function(k,i){
+    var parts=k.split('||');
+    var topIssue=Object.keys(prodIssues[k]).sort(function(a,b){return prodIssues[k][b]-prodIssues[k][a];})[0];
+    var pct=((prods[k]/totalVOC)*100).toFixed(2);
+    var pill=pct>=3?'<span style="background:#FADBD8;color:#922B21;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>':pct>=1.5?'<span style="background:#FDEBD0;color:#784212;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>':'<span style="background:#D5F5E3;color:#1A5C37;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>';
+    var bg=i%2===0?'#fff':'#fafafa';
+    return '<tr style="background:'+bg+'"><td style="padding:10px 14px;border-bottom:1px solid #f0effe;font-weight:500;color:#1a1830;max-width:280px;">'+parts[1]+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;font-weight:700;color:#1a1830;">'+prods[k]+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;">'+pill+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;color:#3d3a6b;">'+topIssue+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;color:#7b78a8;">'+prodTypes[k]+'</td></tr>';
+  }).join('');
+}
+
+function vocRunHealthCheck() {
+  var all=vocRawData;
+  var seen={};var dupRows=[];
+  all.forEach(function(r,i){
+    var k=(r.orderId||'')+'||'+(r.asin||'');
+    if(seen[k]!==undefined)dupRows.push(i+2); else seen[k]=i;
+  });
+  var blankStore=[],blankIssue=[],blankRca=[],blankOrder=[];
+  all.forEach(function(r,i){
+    var n=i+2;
+    if(!r.store)blankStore.push(n);
+    if(!r.issue)blankIssue.push(n);
+    if(!r.rcaCategory)blankRca.push(n);
+    if(!r.orderId)blankOrder.push(n);
+  });
+  var issues=0,html='';
+  function row(label,count,rows){
+    if(!count)return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f7ff;border-radius:8px;margin-bottom:6px;"><span style="font-size:13px;color:#3d3a6b;">'+label+'</span><span style="font-size:12px;font-weight:600;color:#1a7a4a;">✅ Clean</span></div>';
+    issues+=count;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(192,57,43,0.05);border:1px solid rgba(192,57,43,0.15);border-radius:8px;margin-bottom:6px;"><span style="font-size:13px;color:#c0392b;">⚠️ '+label+'</span><span style="font-size:11px;font-weight:600;color:#c0392b;">'+count+' rows: '+rows.slice(0,5).join(', ')+(rows.length>5?' ...':'')+'</span></div>';
+  }
+  html+=row('Blank Store Name',blankStore.length,blankStore);
+  html+=row('Blank Issue Category',blankIssue.length,blankIssue);
+  html+=row('Blank RCA Category',blankRca.length,blankRca);
+  html+=row('Blank Order ID',blankOrder.length,blankOrder);
+  html+=row('Duplicate Order+ASIN',dupRows.length,dupRows);
+  var badge=document.getElementById('voc-health-badge');
+  if(!issues)badge.innerHTML='<span style="background:#D5F5E3;color:#1A5C37;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">✅ All Clean</span>';
+  else badge.innerHTML='<span style="background:#FADBD8;color:#922B21;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">⚠️ '+issues+' Issues Found</span>';
+  document.getElementById('voc-health-content').innerHTML=html;
+}
+
+// ── RCA pending drawer toggle ────────────────────────────────────
+function vocRCAToggle(el) {
+  var id = typeof el === 'string' ? el : el.getAttribute('data-drawer');
+  var d = document.getElementById(id);
+  if (!d) return;
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  // Toggle arrow indicator
+  var arrow = el.querySelector ? el.querySelector('[data-arrow]') : null;
+  if (arrow) arrow.textContent = d.style.display === 'none' ? '▼' : '▲';
+}
+
+function vocRenderRCA() {
+  var isDark  = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var rowBg   = isDark ? '#1a1928' : '#f8f7ff';
+  var txtMain = isDark ? '#e8e6ff' : '#1a1830';
+  var txtMut  = isDark ? '#8b8aad' : '#7b78a8';
+  var barBg   = isDark ? '#2e2c45' : '#d5d2f0';
+  var surfBg  = isDark ? '#13121f' : '#ffffff';
+  var brdCol  = isDark ? '#2e2c45' : '#d5d2f0';
+
+  var periodData  = vocDedup(vocFilterByPeriod(vocRawData));
+  var sf          = (document.getElementById('voc-store-filter') || {}).value || 'all';
+  if (sf && sf !== 'all') periodData = periodData.filter(function(r){ return r.store === sf; });
+
+  var stores      = [...new Set(vocRawData.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var periodLabel = (document.getElementById('voc-period-label') || {}).textContent || 'Current Period';
+
+  // ── Period summary banner ──
+  var pPend = periodData.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
+  var pDone = periodData.length - pPend;
+  var summaryHtml = '';
+  if (periodData.length > 0) {
+    summaryHtml = '<div style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:' +
+      (isDark?'rgba(67,97,238,0.12)':'rgba(67,97,238,0.06)') +
+      ';border:1px solid rgba(67,97,238,0.25);border-radius:12px;margin-bottom:14px;">' +
+      '<span style="font-size:13px;font-weight:700;color:' + txtMain + ';">📅 ' + periodLabel + '</span>' +
+      '<span style="padding:4px 12px;border-radius:20px;background:rgba(67,97,238,0.15);color:#4361ee;font-size:12px;font-weight:700;">📋 ' + periodData.length + ' VOC</span>' +
+      '<span style="padding:4px 12px;border-radius:20px;background:' + (pPend>0?'rgba(192,57,43,0.15)':'rgba(26,122,74,0.15)') + ';color:' + (pPend>0?'#c0392b':'#1a7a4a') + ';font-size:12px;font-weight:700;">⏳ ' + pPend + ' RCA Pending</span>' +
+      '<span style="padding:4px 12px;border-radius:20px;background:rgba(6,214,160,0.12);color:#06d6a0;font-size:12px;font-weight:700;">✅ ' + pDone + ' Done</span>' +
+      '</div>';
+  }
+
+  // ── WhatsApp reminder button ──
+  var waHtml = '<div style="display:flex;justify-content:flex-end;margin-bottom:12px;">' +
+    '<button onclick="vocWhatsAppReminder()" style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font-size:13px;font-weight:700;box-shadow:0 3px 10px rgba(37,211,102,0.3);">' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
+    'WhatsApp RCA Reminder</button></div>';
+
+  // ── Store rows — all-time pending + this-period pending + clickable drawer ──
+  var totalPend = 0, html = '';
+  stores.forEach(function(s, si) {
+    var srAll    = vocRawData.filter(function(r){ return r.store === s; });
+    var pendRows = srAll.filter(function(r){ return !r.rca || r.rca.trim() === ''; });
+    var pend     = pendRows.length;
+    var comp     = srAll.length - pend;
+    totalPend   += pend;
+    var pct      = srAll.length > 0 ? Math.round((comp / srAll.length) * 100) : 0;
+    var barCol   = pct >= 80 ? '#1a7a4a' : pct >= 50 ? '#b5860d' : '#c0392b';
+    var sPeriod  = periodData.filter(function(r){ return r.store === s; });
+    var sPend    = sPeriod.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
+    var drawerId = 'rca-drawer-' + si;
+
+    // Build pending rows drawer HTML
+    var drawerHtml = '';
+    if (pend > 0) {
+      // Sort by date descending (most recent first)
+      var sorted = pendRows.slice().sort(function(a, b) {
+        var da = a.date instanceof Date ? a.date : new Date(a.date);
+        var db = b.date instanceof Date ? b.date : new Date(b.date);
+        return db - da;
+      });
+      drawerHtml = '<div id="' + drawerId + '" style="display:none;margin-top:10px;border-top:1px solid ' + brdCol + ';padding-top:10px;">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:' + txtMut + ';margin-bottom:8px;">⏳ ' + pend + ' Pending RCA — click to expand</div>' +
+        '<div style="max-height:260px;overflow-y:auto;">';
+      sorted.forEach(function(r, ri) {
+        var dateStr = r.date instanceof Date
+          ? r.date.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})
+          : String(r.date || '—');
+        var issue   = r.issue       || r.rcaCategory || '—';
+        var orderId = r.orderId     || '—';
+        var asin    = r.asin        || '—';
+        var product = r.product     || '—';
+        var week    = r.week        ? 'Wk ' + r.week : '';
+        var rowBg2  = ri % 2 === 0 ? (isDark ? '#1e1d30' : '#f4f3ff') : (isDark ? '#1a1928' : '#ffffff');
+        drawerHtml +=
+          '<div style="padding:8px 10px;background:' + rowBg2 + ';border-radius:8px;margin-bottom:5px;border-left:3px solid #c0392b;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+              '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:12px;font-weight:700;color:' + txtMain + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (ri+1) + '. ' + product + '</div>' +
+                '<div style="font-size:11px;color:#c0392b;margin-top:2px;font-weight:600;">' + issue + '</div>' +
+                '<div style="font-size:10px;color:' + txtMut + ';margin-top:2px;font-family:Courier New,monospace;">' + orderId + '</div>' +
+                '<div style="font-size:10px;color:' + txtMut + ';margin-top:1px;">ASIN: ' + asin + '</div>' +
+              '</div>' +
+              '<div style="text-align:right;flex-shrink:0;">' +
+                '<div style="font-size:10px;color:' + txtMut + ';">' + dateStr + '</div>' +
+                (week ? '<div style="font-size:10px;color:' + txtMut + ';">' + week + '</div>' : '') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      });
+      drawerHtml += '</div></div>';
+    }
+
+    // Bar + toggle
+    var barClick = pend > 0
+      ? 'onclick="vocRCAToggle(this)" data-drawer="' + drawerId + '" style="cursor:pointer;" title="Click to see ' + pend + ' pending rows"'
+      : 'style="cursor:default;"';
+
+    html +=
+      '<div style="padding:12px 16px;background:' + rowBg + ';border-radius:10px;margin-bottom:8px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div>' +
+            '<div style="font-size:14px;font-weight:700;color:' + txtMain + ';">' + s + '</div>' +
+            '<div style="font-size:11px;color:' + txtMut + ';margin-top:2px;">' +
+              comp + ' done · ' + pend + ' pending (all time) &nbsp;|&nbsp; ' +
+              '<span style="color:' + (sPend>0?'#c0392b':'#06d6a0') + ';font-weight:600;">' +
+              sPeriod.length + ' VOC · ' + sPend + ' pending this period</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div ' + barClick + '>' +
+              '<div style="width:120px;height:8px;background:' + barBg + ';border-radius:10px;overflow:hidden;margin-bottom:4px;' + (pend>0?'box-shadow:0 0 0 2px rgba(192,57,43,0.2);':'') + '">' +
+                '<div style="height:100%;width:' + pct + '%;background:' + barCol + ';border-radius:10px;transition:width 0.4s;"></div>' +
+              '</div>' +
+              '<div style="font-size:11px;font-family:Courier New,monospace;color:' + (pend>0?'#c0392b':'#1a7a4a') + ';' + (pend>0?'text-decoration:underline dotted;':'') + '">' +
+                pct + '% · ' + (pend>0 ? '⏳ ' + pend + ' pending ▼' : '✅ Done') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        drawerHtml +
+      '</div>';
+  });
+
+  if (totalPend > 0) {
+    html = '<div style="padding:10px 14px;background:rgba(181,134,13,0.12);border:1px solid rgba(181,134,13,0.35);border-radius:8px;margin-bottom:12px;font-size:13px;color:#b5860d;font-weight:600;">⏳ ' + totalPend + ' VOC records missing RCA across all stores</div>' + html;
+  }
+  if (!html) html = '<div style="color:' + txtMut + ';font-size:13px;">No data loaded yet.</div>';
+
+  document.getElementById('voc-rca-content').innerHTML = summaryHtml + waHtml + html;
+}
+
+// ── WHATSAPP RCA REMINDER ────────────────────────────────────────
+function vocWhatsAppReminder() {
+  if (!vocRawData.length) { showToast('⚠️ Load VOC data first'); return; }
+  var periodLabel = (document.getElementById('voc-period-label') || {}).textContent || 'this period';
+  var periodData  = vocDedup(vocFilterByPeriod(vocRawData));
+  var stores = [...new Set(vocRawData.map(function(r){ return r.store; }))].filter(Boolean).sort();
+
+  var lines = [
+    '🔔 *RCA PENDING REMINDER — HP World VOC*',
+    '📅 Period: ' + periodLabel,
+    ''
+  ];
+
+  var anyPending = false;
+  stores.forEach(function(s) {
+    var srAll = vocRawData.filter(function(r){ return r.store === s; });
+    var pend  = srAll.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
+    var sPd   = periodData.filter(function(r){ return r.store === s; });
+    var sPend = sPd.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
+    if (pend > 0) {
+      anyPending = true;
+      lines.push('🏪 *' + s + '*');
+      lines.push('   ⏳ ' + pend + ' pending (all time) | ' + sPend + ' pending this period');
+    }
+  });
+
+  if (!anyPending) {
+    lines.push('✅ All RCA entries are complete!');
+  } else {
+    lines.push('');
+    lines.push('⚠️ Please complete RCA entries in the VOC sheet ASAP.');
+  }
+  lines.push('📊 HP World · Dark Store Task Pro · ' + new Date().toLocaleDateString('en-GB'));
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+  showToast('✅ WhatsApp RCA reminder opened!');
+}
+
+// ── PDF EXPORT ───────────────────────────────────────────────────────────
+async function vocExportPDF() {
+  if (!vocRawData.length) { showToast('⚠️ Load VOC data first'); return; }
+  showToast('⏳ Building PDF…');
+  try {
+    var dashboard = document.getElementById('voc-dashboard');
+    var {jsPDF} = window.jspdf;
+    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    var pageW = pdf.internal.pageSize.getWidth();
+    var pageH = pdf.internal.pageSize.getHeight();
+    var now = getNowString();
+    var period = (document.getElementById('voc-period-label')||{}).textContent || '';
+    var store  = (document.getElementById('voc-store-filter')||{}).value || 'all';
+
+    // Cover / header
+    pdf.setFillColor(10, 9, 20);
+    pdf.rect(0, 0, pageW, 30, 'F');
+    pdf.setTextColor(255, 107, 53);
+    pdf.setFontSize(16); pdf.setFont(undefined, 'bold');
+    pdf.text('VOC Operations Report', 14, 12);
+    pdf.setTextColor(184, 182, 217);
+    pdf.setFontSize(9); pdf.setFont(undefined, 'normal');
+    pdf.text('Period: ' + period + '   Store: ' + store + '   Generated: ' + now, 14, 20);
+    pdf.text('User: ' + (vocCurrentUser||'').toUpperCase(), 14, 26);
+
+    // Metrics summary table
+    var bounds = vocGetPeriodBounds(0);
+    var curr = vocDedup(vocFilterRows(vocRawData, bounds));
+    var sf = store;
+    if (sf !== 'all') curr = curr.filter(function(r){ return r.store === sf; });
+    var realOrders = (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders : curr.length;
+    var utr = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
+    var otr = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; });
+    var pm  = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
+    var qc  = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
+    var non = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+    var vocRate = realOrders > 0 ? ((curr.length/realOrders)*100).toFixed(3) : '—';
+    var utrRate = realOrders > 0 ? ((utr.length/realOrders)*100).toFixed(3) : '—';
+
+    var metrics = [
+      ['Metric', 'Count', 'Rate (%)'],
+      ['Total Orders (Store Metric)', realOrders.toLocaleString(), '—'],
+      ['Total VOC', curr.length, vocRate + '%'],
+      ['UTR Ops Controllable', utr.length, utrRate + '%'],
+      ['OTR Ops Controllable', otr.length, realOrders > 0 ? ((otr.length/realOrders)*100).toFixed(3)+'%' : '—'],
+      ['Picker Mistakes', pm.length,  realOrders > 0 ? ((pm.length/realOrders)*100).toFixed(3)+'%' : '—'],
+      ['QC Issues', qc.length, realOrders > 0 ? ((qc.length/realOrders)*100).toFixed(3)+'%' : '—'],
+      ['Non-Ops Controllable', non.length, '—'],
+    ];
+
+    var y = 36;
+    pdf.setFontSize(10); pdf.setFont(undefined, 'bold'); pdf.setTextColor(30,25,80);
+    pdf.text('Key Metrics', 14, y); y += 5;
+    metrics.forEach(function(row, i) {
+      var bg = i === 0 ? [26,25,40] : i % 2 === 0 ? [245,244,255] : [255,255,255];
+      pdf.setFillColor(bg[0], bg[1], bg[2]);
+      pdf.rect(14, y-4, pageW-28, 7, 'F');
+      var tc = i === 0 ? [255,255,255] : [30,24,48];
+      pdf.setTextColor(tc[0], tc[1], tc[2]);
+      pdf.setFontSize(9); pdf.setFont(undefined, i===0?'bold':'normal');
+      pdf.text(String(row[0]), 16, y); pdf.text(String(row[1]), 110, y); pdf.text(String(row[2]), 160, y);
+      y += 7;
+    });
+
+    // Store breakdown
+    y += 4;
+    var stores = [...new Set(curr.map(function(r){ return r.store; }))].sort();
+    pdf.setFontSize(10); pdf.setFont(undefined,'bold'); pdf.setTextColor(30,25,80);
+    pdf.text('Store Breakdown', 14, y); y += 5;
+    var stHdr = ['Store','VOC Count','Picker Err','QC Issues','UTR Rate'];
+    stHdr.forEach(function(h, ci) {
+      pdf.setFillColor(26,25,40); pdf.rect(14 + ci*38, y-4, 37, 7, 'F');
+      pdf.setTextColor(255,255,255); pdf.setFontSize(8); pdf.setFont(undefined,'bold');
+      pdf.text(h, 16 + ci*38, y);
+    });
+    y += 7;
+    stores.forEach(function(s, si) {
+      var sr = curr.filter(function(r){ return r.store === s; });
+      var spm = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; }).length;
+      var sqc = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; }).length;
+      var sutr = sr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; }).length;
+      var sRate = realOrders > 0 ? ((sutr/realOrders)*100).toFixed(3)+'%' : '—';
+      var bg = si%2===0?[245,244,255]:[255,255,255];
+      pdf.setFillColor(bg[0],bg[1],bg[2]); pdf.rect(14,y-4,pageW-28,7,'F');
+      pdf.setTextColor(30,24,48); pdf.setFontSize(9); pdf.setFont(undefined,'normal');
+      [s, sr.length, spm, sqc, sRate].forEach(function(v, ci){ pdf.text(String(v), 16+ci*38, y); });
+      y += 7;
+      if (y > pageH - 20) { pdf.addPage(); y = 14; }
+    });
+
+    // Picker table
+    if (y > pageH - 40) { pdf.addPage(); y = 14; }
+    y += 4;
+    pdf.setFontSize(10); pdf.setFont(undefined,'bold'); pdf.setTextColor(30,25,80);
+    pdf.text('Top Picker Mistakes', 14, y); y += 5;
+    var pickerMap = {};
+    curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake' && r.picker; })
+        .forEach(function(r){ pickerMap[r.picker]=(pickerMap[r.picker]||{count:0,store:r.store}); pickerMap[r.picker].count++; });
+    var pickerSorted = Object.keys(pickerMap).sort(function(a,b){ return pickerMap[b].count - pickerMap[a].count; }).slice(0,15);
+    ['Picker ID','Store','Mistakes','% of Orders'].forEach(function(h,ci){
+      pdf.setFillColor(26,25,40); pdf.rect(14+ci*46,y-4,45,7,'F');
+      pdf.setTextColor(255,255,255); pdf.setFontSize(8); pdf.setFont(undefined,'bold');
+      pdf.text(h, 16+ci*46, y);
+    });
+    y += 7;
+    pickerSorted.forEach(function(p, pi) {
+      var m = pickerMap[p].count;
+      var pct = realOrders > 0 ? ((m/realOrders)*100).toFixed(3)+'%' : '—';
+      var bg = pi%2===0?[245,244,255]:[255,255,255];
+      pdf.setFillColor(bg[0],bg[1],bg[2]); pdf.rect(14,y-4,pageW-28,7,'F');
+      pdf.setTextColor(30,24,48); pdf.setFontSize(9); pdf.setFont(undefined,'normal');
+      [p, pickerMap[p].store, m, pct].forEach(function(v,ci){ pdf.text(String(v), 16+ci*46, y); });
+      y += 7;
+      if (y > pageH - 15) { pdf.addPage(); y = 14; }
+    });
+
+    // Footer
+    var pages = pdf.getNumberOfPages();
+    for (var pg = 1; pg <= pages; pg++) {
+      pdf.setPage(pg);
+      pdf.setFontSize(7); pdf.setTextColor(150);
+      pdf.text('VOC Report · HP World · Page ' + pg + ' of ' + pages + ' · ' + now, 14, pageH - 6);
+      pdf.text('Checked By AA: ___________    TL/Supervisor: ___________', pageW/2, pageH-6, {align:'center'});
+    }
+    pdf.save('VOC_Report_' + new Date().toISOString().split('T')[0] + '.pdf');
+    showToast('✅ VOC PDF downloaded!');
+  } catch(e) { console.error(e); showToast('❌ PDF error: ' + e.message); }
+}
+
+// ── EXCEL EXPORT ─────────────────────────────────────────────────────────
+function vocExportExcel() {
+  if (!vocRawData.length) { showToast('⚠️ Load VOC data first'); return; }
+  showToast('⏳ Building Excel…');
+  try {
+    var bounds = vocGetPeriodBounds(0);
+    var curr = vocDedup(vocFilterRows(vocRawData, bounds));
+    var sf = document.getElementById('voc-store-filter').value;
+    if (sf !== 'all') curr = curr.filter(function(r){ return r.store === sf; });
+    var realOrders = (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders : curr.length;
+    var period = (document.getElementById('voc-period-label')||{}).textContent || 'All';
+    var now = new Date().toISOString().split('T')[0];
+    var wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Summary KPIs
+    var utr = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; });
+    var otr = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory)>-1; });
+    var pm  = curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; });
+    var qc  = curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; });
+    var non = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory)>-1; });
+    var pct = function(n){ return realOrders > 0 ? parseFloat(((n/realOrders)*100).toFixed(3)) : 'N/A'; };
+    var summary = [
+      ['VOC Report — HP World'],
+      ['Period', period, 'Store', sf, 'Generated', now],
+      ['User', vocCurrentUser.toUpperCase()],
+      [],
+      ['KPI', 'Count', 'Rate (%)'],
+      ['Total Orders (Store Metric)', realOrders, '—'],
+      ['Total VOC', curr.length, pct(curr.length)],
+      ['UTR Ops Controllable', utr.length, pct(utr.length)],
+      ['OTR Ops Controllable', otr.length, pct(otr.length)],
+      ['Picker Mistakes', pm.length, pct(pm.length)],
+      ['QC Issues', qc.length, pct(qc.length)],
+      ['Non-Ops Controllable', non.length, '—'],
+      [],
+      ['Checked By AA:', '___________________'],
+      ['TL / Supervisor:', '___________________'],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), 'KPI Summary');
+
+    // ── Sheet 2: Raw VOC Data
+    var rawRows = [['Store','Date','Order ID','ASIN','Issue','RCA Category','RCA','Picker','Product','Type']];
+    curr.forEach(function(r){
+      var d = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date||'');
+      rawRows.push([r.store||'',d,r.orderId||'',r.asin||'',r.issue||'',r.rcaCategory||'',r.rca||'',r.picker||'',r.product||'',r.productType||'']);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawRows), 'VOC Raw Data');
+
+    // ── Sheet 3: Store Breakdown
+    var stores = [...new Set(curr.map(function(r){ return r.store; }))].sort();
+    var storeRows = [['Store','VOC Count','Picker Mistakes','QC Issues','UTR','OTR','Non-Ops','UTR Rate %']];
+    stores.forEach(function(s){
+      var sr  = curr.filter(function(r){ return r.store===s; });
+      var spm = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; }).length;
+      var sqc = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; }).length;
+      var su  = sr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; }).length;
+      var so  = sr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory)>-1; }).length;
+      var sn  = sr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory)>-1; }).length;
+      storeRows.push([s, sr.length, spm, sqc, su, so, sn, pct(su)]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(storeRows), 'Store Breakdown');
+
+    // ── Sheet 4: Picker Analysis
+    var pickerMap = {};
+    curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake' && r.picker; })
+        .forEach(function(r){ if(!pickerMap[r.picker])pickerMap[r.picker]={count:0,store:r.store}; pickerMap[r.picker].count++; });
+    var pickerRows2 = [['Picker ID','Store','Total Orders','Mistakes','% of Orders','Risk']];
+    Object.keys(pickerMap).sort(function(a,b){ return pickerMap[b].count-pickerMap[a].count; }).forEach(function(p){
+      var m = pickerMap[p].count;
+      var po = realOrders > 0 ? parseFloat(((m/realOrders)*100).toFixed(3)) : 0;
+      var risk = po >= 0.5 ? 'High' : po >= 0.2 ? 'Medium' : 'Low';
+      pickerRows2.push([p, pickerMap[p].store, realOrders, m, po, risk]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(pickerRows2), 'Picker Analysis');
+
+    // ── Sheet 5: RCA Pending
+    var rcaRows = [['Store','Total Records','RCA Completed','RCA Pending','Completion %']];
+    stores.forEach(function(s){
+      var sr   = vocRawData.filter(function(r){ return r.store===s; });
+      var pend = sr.filter(function(r){ return !r.rca||r.rca.trim()===''; }).length;
+      var comp = sr.length - pend;
+      rcaRows.push([s, sr.length, comp, pend, sr.length>0 ? Math.round((comp/sr.length)*100) : 0]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rcaRows), 'RCA Pending');
+
+    XLSX.writeFile(wb, 'VOC_Report_' + now + '.xlsx');
+    showToast('✅ VOC Excel downloaded — 5 sheets!');
+  } catch(e) { console.error(e); showToast('❌ Excel error: ' + e.message); }
+}
+</script>
+
+<footer>
+  <div>Copyright © 2026 <span>HP WORLD</span> &nbsp;·&nbsp; Hrushikesh Padhi &nbsp;·&nbsp; <span>ENWPP9081D/2019</span></div>
+  <a href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/"
+     target="_blank" rel="noopener noreferrer"
+     title="Hrushikesh Padhi on LinkedIn"
+     style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#0077b5;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;letter-spacing:0.5px;transition:background 0.2s;font-family:'Syne',sans-serif;"
+     onmouseover="this.style.background='#005885'"
+     onmouseout="this.style.background='#0077b5'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+    Connect on LinkedIn
+  </a>
+</footer>
+
 </div><!-- /app-shell -->
 <script>
 // ── SIMPLE PASSWORD LOGIN + 15-MIN IDLE TIMEOUT ───────────────
@@ -6056,6 +7697,29 @@ document.addEventListener('click', function(e) {
   if (menu && badge && !badge.contains(e.target) && !menu.contains(e.target))
     menu.style.display = 'none';
 });
+
+
+// ── INJECT FOOTER INTO ALL TASK PAGES ──────────────────────────
+(function(){
+  var fHTML='<footer style="background:#0a0914;border-top:1px solid #2e2c45;color:#8b8aad;padding:18px 20px;font-size:12px;font-family:\'DM Mono\',monospace;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:40px;">' +
+    '<div>Copyright &copy; 2026 <span style="color:#ff6b35;">HP WORLD</span> &nbsp;&middot;&nbsp; Hrushikesh Padhi &nbsp;&middot;&nbsp; <span style="color:#ff6b35;">ENWPP9081D/2019</span></div>' +
+    '<a href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#0077b5;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:700;" onmouseover="this.style.background=\'#005885\'" onmouseout="this.style.background=\'#0077b5\'">' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>' +
+    'Connect on LinkedIn</a></footer>';
+  var ids=['page-consolidation','page-audit-loc','page-audit-asin','page-slow-moving','page-ysm',
+           'page-report','page-feedback','page-contact','page-lateslam','page-catalog-issue',
+           'page-scanning-issue','page-manpower','page-locid','page-store-metrics','page-voc'];
+  function inject(){
+    ids.forEach(function(id){
+      var pg=document.getElementById(id);
+      if(pg&&!pg.querySelector('.hp-footer-injected')){
+        var d=document.createElement('div'); d.className='hp-footer-injected'; d.innerHTML=fHTML;
+        pg.appendChild(d);
+      }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',inject); else inject();
+})();
 
 // ── Boot: restore session or show login ────────────────────────
 (function() {
