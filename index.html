@@ -413,12 +413,203 @@ tr:hover td { background:rgba(255,107,53,0.04); }
 .contact-card a { color:var(--accent); text-decoration:none; font-size:13px; font-family:'DM Mono',monospace; }
 .contact-card a:hover { text-decoration:underline; }
 .contact-card p { color:var(--muted); font-size:13px; }
-.toast { position:fixed; bottom:28px; right:28px; background:var(--surface2); border:1px solid var(--accent); color:var(--text); padding:14px 22px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transform:translateY(80px); opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); max-width:340px; box-shadow:var(--shadow-lg); }
-.toast.show { transform:translateY(0); opacity:1; }
+/* ── MODERN SHIMMER / SKELETON LOADERS ────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position:  800px 0; }
+}
+.shimmer-block {
+  background: linear-gradient(90deg, #2a2840 25%, #342f55 50%, #2a2840 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+  border-radius: 8px;
+}
+#page-voc .shimmer-block {
+  background: linear-gradient(90deg, #f0effe 25%, #e4e1fc 50%, #f0effe 75%);
+  background-size: 800px 100%;
+}
+#page-voc[data-theme="dark"] .shimmer-block {
+  background: linear-gradient(90deg, #1a1928 25%, #252340 50%, #1a1928 75%);
+  background-size: 800px 100%;
+}
+
+/* ── ANIMATED PROGRESS LOADING BAR (top of page) ───────────────── */
+#page-top-loader {
+  position: fixed; top: 68px; left: 0; right: 0; height: 3px; z-index: 999;
+  background: transparent; pointer-events: none;
+}
+#page-top-loader .loader-fill {
+  height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 0 2px 2px 0; transition: width 0.3s ease;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* ── LIVE FETCH INDICATOR ─────────────────────────────────────── */
+.fetch-indicator {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 10px;
+  background: rgba(67,97,238,0.1); border: 1px solid rgba(67,97,238,0.3);
+  font-size: 12px; font-weight: 700; color: #4361ee;
+  animation: fetchPulse 1.5s ease-in-out infinite;
+}
+@keyframes fetchPulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(0.98); }
+}
+.fetch-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4361ee;
+  animation: fetchDot 1.2s ease-in-out infinite;
+}
+@keyframes fetchDot {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.5); opacity: 0.5; }
+}
+
+/* ── ENHANCED LOADING (replaces old .loading) ───────────────────── */
 .loading { display:none; text-align:center; padding:48px; color:var(--muted); }
 .loading.show { display:block; }
-.spinner { width:38px; height:38px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto 14px; }
-@keyframes spin { to { transform:rotate(360deg); } }
+.loading-inner {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.spinner {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+  position: relative;
+}
+.spinner::after {
+  content: ''; position: absolute; inset: 4px; border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent2);
+  animation: spin 1.2s linear infinite reverse;
+}
+.loading-status-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.5px;
+}
+.loading-dots { display: flex; gap: 4px; justify-content: center; margin-top: 4px; }
+.loading-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  animation: ldot 1.2s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ldot {
+  0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+  40%          { transform: scale(1); opacity: 1; }
+}
+
+/* ── ANIMATED PROGRESS BAR (in results) ────────────────────────── */
+.anim-bar-fill {
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── MODERN CARD TRANSITIONS ────────────────────────────────────── */
+.task-card {
+  animation: cardEntrance 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.task-card:nth-child(1)  { animation-delay: 0.05s; }
+.task-card:nth-child(2)  { animation-delay: 0.10s; }
+.task-card:nth-child(3)  { animation-delay: 0.15s; }
+.task-card:nth-child(4)  { animation-delay: 0.20s; }
+.task-card:nth-child(5)  { animation-delay: 0.25s; }
+.task-card:nth-child(6)  { animation-delay: 0.30s; }
+.task-card:nth-child(7)  { animation-delay: 0.35s; }
+.task-card:nth-child(8)  { animation-delay: 0.40s; }
+.task-card:nth-child(9)  { animation-delay: 0.45s; }
+.task-card:nth-child(10) { animation-delay: 0.50s; }
+
+/* ── SMOOTH PAGE TRANSITIONS ────────────────────────────────────── */
+.page.active {
+  animation: pageIn 0.3s ease both;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── STAT CARD MODERN GLOW ──────────────────────────────────────── */
+.stat-card { transition: box-shadow 0.25s, transform 0.25s; }
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 0 1px var(--accent);
+}
+.stat-card .sv {
+  transition: transform 0.2s;
+}
+.stat-card:hover .sv { transform: scale(1.05); }
+
+/* ── BUTTON RIPPLE EFFECT ───────────────────────────────────────── */
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0); 
+  transition: background 0.15s;
+  pointer-events: none;
+}
+.btn:active::after { background: rgba(255,255,255,0.18); }
+
+/* ── UPLOAD ZONE ENHANCED ───────────────────────────────────────── */
+.upload-zone {
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.upload-zone:hover .u-icon {
+  animation: iconBounce 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes iconBounce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.2) rotate(-5deg); }
+  100% { transform: scale(1); }
+}
+
+/* ── VOC SECTION MODERN CARDS ───────────────────────────────────── */
+.voc-dyn-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.voc-dyn-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* ── RESULTS PANEL FADE-IN ──────────────────────────────────────── */
+.results-panel {
+  animation: resultIn 0.35s ease both;
+}
+@keyframes resultIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── MODERN TOAST UPGRADE ───────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: rgba(26,25,40,0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 14px 22px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  z-index: 9999; transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 340px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,107,53,0.2);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── HEADER LOGO PULSE ON HOVER ─────────────────────────────────── */
+.header-logo:hover .dot { animation: dotPulse 0.4s ease; }
+@keyframes dotPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
 footer {
   background:var(--dark);
   border-top:1px solid var(--border);
@@ -882,6 +1073,234 @@ footer span { color:var(--accent); }
   0%   { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
 }
+
+/* ── VOC DETAIL MODAL ──────────────────────────────────────────── */
+#voc-detail-modal.open {
+  display: flex !important;
+  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:scale(0.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+#voc-detail-modal-card {
+  animation: cardSlideUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+@keyframes cardSlideUp {
+  from { transform:translateY(24px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+/* Light-theme overrides for modal */
+#page-voc[data-theme="light"] #voc-detail-modal-card {
+  background: #ffffff;
+  border-color: #d5d2f0;
+}
+#page-voc[data-theme="light"] #voc-detail-modal-header {
+  background: linear-gradient(135deg,#f4f3ff,#ffffff);
+  border-bottom-color: #d5d2f0;
+}
+#page-voc[data-theme="light"] #voc-detail-modal-title { color: #1a1830 !important; }
+#page-voc[data-theme="light"] #voc-detail-modal-sub   { color: #7b78a8 !important; }
+#page-voc[data-theme="light"] #voc-detail-modal > div:first-child {
+  background: rgba(0,0,0,0.45);
+}
+#page-voc[data-theme="light"] #voc-detail-modal-card > div:last-child {
+  background: #f8f7ff;
+  border-top-color: #d5d2f0;
+}
+
+/* ── COMPREHENSIVE UI DEEP FIXES ──────────────────────────────── */
+
+/* Native tooltip enhancement */
+[title]:not([title=""]) {
+  cursor: help;
+}
+
+/* VOC table — dark mode fix for Product table */
+#page-voc[data-theme="dark"] .voc-tbl-wrap table thead tr {
+  background: #1a1928 !important;
+}
+#page-voc[data-theme="dark"] .voc-tbl-wrap table th {
+  color: #8b8aad !important;
+  border-bottom-color: #2e2c45 !important;
+  background: #1a1928 !important;
+}
+#page-voc[data-theme="dark"] .voc-tbl-wrap tbody tr:hover td {
+  background: rgba(67,97,238,0.08) !important;
+}
+
+/* Password eye toggle button — remove outline */
+.login-card button[onclick*="login-pass"] {
+  outline: none;
+}
+
+/* ── CHART DARK/LIGHT theme aware ──────────────────────────────── */
+#page-voc[data-theme="dark"] canvas {
+  filter: none;
+}
+
+/* ── METRIC CARD hover lift ─────────────────────────────────────── */
+.voc-dyn-card {
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, border-color 0.2s;
+}
+.voc-dyn-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* ── Section label with accent line ─────────────────────────────── */
+.voc-section-label {
+  position: relative;
+  padding-left: 12px;
+}
+.voc-section-label::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 14px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+}
+
+/* ── VOC filter bar improvements ─────────────────────────────────── */
+.voc-filter-bar {
+  gap: 10px;
+  background: var(--voc-surface, #fff) !important;
+}
+
+/* ── Fix VOC chart boxes in light mode ─────────────────────────── */
+#page-voc[data-theme="light"] .voc-chart-box {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── RCA tracker bars animated ──────────────────────────────────── */
+#voc-rca-content [style*="width:"] {
+  transition: width 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+/* ── Health monitor click rows ──────────────────────────────────── */
+#voc-health-content > div { cursor: pointer; }
+
+/* ── Picker table row expand indicator ──────────────────────────── */
+#voc-picker-body tr[onclick]:hover td:first-child::after {
+  content: ' ▾';
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* ── Skeleton shimmer for VOC section while loading ─────────────── */
+.voc-skeleton {
+  height: 60px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+#page-voc[data-theme="dark"] .voc-skeleton {
+  background: linear-gradient(90deg, #1a1928 25%, #222136 50%, #1a1928 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+#page-voc[data-theme="light"] .voc-skeleton {
+  background: linear-gradient(90deg, #f0effe 25%, #e4e1fc 50%, #f0effe 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+
+/* ── Store performance card enhanced ────────────────────────────── */
+#voc-store-cards > div {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#voc-store-cards > div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* ── UTR target cards ────────────────────────────────────────────── */
+#voc-target-cards > div {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#voc-target-cards > div:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* ── VOC Metric card text — RCA warning card ─────────────────────── */
+.voc-card-rca-warn {
+  background: rgba(181,134,13,0.08) !important;
+}
+
+/* ── Smooth scroll for VOC page ─────────────────────────────────── */
+#page-voc {
+  scroll-behavior: smooth;
+}
+
+/* ── VOC table th in light mode — proper contrast ───────────────── */
+#page-voc[data-theme="light"] .voc-tbl-wrap table th {
+  background: #f4f3ff;
+  color: #7b78a8 !important;
+}
+#page-voc[data-theme="light"] .voc-tbl-wrap table td {
+  color: #1a1830 !important;
+}
+
+/* ── Product table specific light mode fix ──────────────────────── */
+#page-voc[data-theme="light"] #voc-product-body td {
+  color: #1a1830 !important;
+}
+
+/* ── Picker detail expand styling ───────────────────────────────── */
+#voc-picker-body tbody[id^="pkr-det-"] {
+  border-left: 3px solid rgba(67,97,238,0.5);
+}
+
+/* ── Animated counter for stats ─────────────────────────────────── */
+.voc-card-val {
+  transition: color 0.3s;
+}
+
+/* ── Login card password field wrapper ───────────────────────────── */
+.login-pw-wrapper {
+  position: relative;
+}
+.login-pw-wrapper input {
+  width: 100%;
+  padding-right: 48px !important;
+}
+.login-pw-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 17px;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+.login-pw-toggle:hover { opacity: 0.7; }
+
+/* ── Shimmer pulse for metric cards during loading ───────────────── */
+.voc-metric-shimmer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px,1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.voc-metric-shimmer-item {
+  height: 85px;
+  border-radius: 14px;
+  animation: shimmer 1.4s infinite ease-in-out;
+}
+#page-voc[data-theme="dark"] .voc-metric-shimmer-item {
+  background: linear-gradient(90deg, #1a1928 25%, #222136 50%, #1a1928 75%);
+  background-size: 600px 100%;
+}
+#page-voc[data-theme="light"] .voc-metric-shimmer-item {
+  background: linear-gradient(90deg, #f0effe 25%, #e4e1fc 50%, #f0effe 75%);
+  background-size: 600px 100%;
+}
 </style>
 </head>
 <body>
@@ -896,8 +1315,8 @@ footer span { color:var(--accent); }
     <div class="login-msg" id="login-msg"></div>
     <div class="login-field">
       <label>Password</label>
-      <input type="password" id="login-pass" placeholder="Enter password"
-        autofocus onkeydown="if(event.key==='Enter')authLogin()">
+      <div style="position:relative;"><input type="password" id="login-pass" placeholder="Enter password"
+        autofocus onkeydown="if(event.key==='Enter')authLogin()"><button type="button" onclick="var i=document.getElementById('login-pass');var b=this;i.type=i.type==='password'?'text':'password';b.innerHTML=i.type==='password'?'👁':'🙈';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted);padding:0;line-height:1;">👁</button></div>
     </div>
     <button class="login-btn login-btn-primary" onclick="authLogin()">Sign In →</button>
     <div class="login-footer-text">© 2026 HP World · ENWPP9081D/2019</div>
@@ -927,7 +1346,7 @@ footer span { color:var(--accent); }
     <img src="data:image/png;base64,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" style="height:46px;width:46px;object-fit:contain;" alt="HP World Logo">
     Dark Store Task <span class="dot">Pro</span>
   </div>
-  <div class="header-badge">POWERED BY HP WORLD</div>
+
 </header>
 
 <!-- DASHBOARD -->
@@ -1190,7 +1609,17 @@ footer span { color:var(--accent); }
       </div>
     </div>
   </div>
-  <div class="loading" id="load-consolidation"><div class="spinner"></div><div>Processing...</div></div>
+  <div class="loading" id="load-consolidation">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-consolidation"></div>
   <div class="btn-row" id="export-consolidation" style="display:none">
     <button class="btn btn-accent" onclick="exportPDF('out-consolidation','Consolidation Task')">⬇ Export PDF</button>
@@ -1229,7 +1658,17 @@ footer span { color:var(--accent); }
   <div class="btn-row">
     <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 70 Locations</button>
   </div>
-  <div class="loading" id="load-audit-loc"><div class="spinner"></div><div>Selecting locations...</div></div>
+  <div class="loading" id="load-audit-loc">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-audit-loc"></div>
   <div class="btn-row" id="export-audit-loc" style="display:none">
     <button class="btn btn-accent" onclick="exportPDF('out-audit-loc','Audit by Location')">⬇ Export PDF</button>
@@ -1266,7 +1705,17 @@ footer span { color:var(--accent); }
   <div class="ctrl-row" id="ctrl-audit-asin" style="display:none">
     <button class="btn btn-primary" onclick="generateAuditAsin()">⚡ Pick Random ASINs</button>
   </div>
-  <div class="loading" id="load-audit-asin"><div class="spinner"></div><div>Selecting ASINs...</div></div>
+  <div class="loading" id="load-audit-asin">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-audit-asin"></div>
   <div class="btn-row" id="export-audit-asin" style="display:none">
     <button class="btn btn-accent" onclick="exportPDF('out-audit-asin','Audit by ASIN')">⬇ Export PDF</button>
@@ -1315,7 +1764,17 @@ footer span { color:var(--accent); }
     </div>
     <button class="btn btn-primary" onclick="generateSlowMoving()">⚡ Generate Task</button>
   </div>
-  <div class="loading" id="load-slow-moving"><div class="spinner"></div><div>Filtering...</div></div>
+  <div class="loading" id="load-slow-moving">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-slow-moving"></div>
   <div class="btn-row" id="export-slow-moving" style="display:none">
     
@@ -1365,7 +1824,17 @@ footer span { color:var(--accent); }
       <button class="btn btn-primary" onclick="generateYSM()">⚡ Generate Barcode Labels</button>
     </div>
   </div>
-  <div class="loading" id="load-ysm"><div class="spinner"></div><div>Generating labels...</div></div>
+  <div class="loading" id="load-ysm">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="ysm-print-area" style="display:none"></div>
   <div id="out-ysm"></div>
   <div class="btn-row" id="export-ysm" style="display:none">
@@ -1685,7 +2154,17 @@ footer span { color:var(--accent); }
     </div>
   </div>
 
-  <div class="loading" id="load-lateslam"><div class="spinner"></div><div>Processing…</div></div>
+  <div class="loading" id="load-lateslam">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-lateslam"></div>
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
@@ -1750,7 +2229,17 @@ footer span { color:var(--accent); }
     <span id="ci-match-count" style="font-size:12px;color:#7b78a8;white-space:nowrap;"></span>
   </div>
 
-  <div class="loading" id="load-catalog"><div class="spinner"></div><div>Fetching & matching…</div></div>
+  <div class="loading" id="load-catalog">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="out-catalog"></div>
 </div>
 </div>
@@ -1800,7 +2289,17 @@ footer span { color:var(--accent); }
     <span id="si-match-count" style="font-size:12px;color:#7b78a8;white-space:nowrap;"></span>
   </div>
 
-  <div class="loading" id="load-scanning"><div class="spinner"></div><div>Fetching & matching…</div></div>
+  <div class="loading" id="load-scanning">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="si-barcode-print-area" style="display:none"></div>
   <div id="out-scanning"></div>
 </div>
@@ -2031,13 +2530,49 @@ footer span { color:var(--accent); }
     <div id="locid-queue-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;"></div>
   </div>
 
-  <div class="loading" id="load-locid"><div class="spinner"></div><div>Generating labels…</div></div>
+  <div class="loading" id="load-locid">
+  <div class="loading-inner">
+    <div class="spinner"></div>
+    <div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+    <div class="loading-dots">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+  </div>
+</div>
   <div id="locid-print-area" style="display:none;"></div>
   <div id="out-locid"></div>
 </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── VOC DETAIL MODAL ─────────────────────────────────────── -->
+<div id="voc-detail-modal" style="display:none;position:fixed;inset:0;z-index:9000;align-items:center;justify-content:center;padding:20px;">
+  <!-- Backdrop -->
+  <div onclick="vocCloseModal()" style="position:absolute;inset:0;background:rgba(5,4,14,0.75);backdrop-filter:blur(6px);"></div>
+  <!-- Modal card -->
+  <div id="voc-detail-modal-card" style="position:relative;z-index:1;background:#1a1928;border:1px solid #2e2c45;border-radius:20px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,107,53,0.15);overflow:hidden;">
+    <!-- Header -->
+    <div id="voc-detail-modal-header" style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,#1e1d30,#1a1928);">
+      <div>
+        <div id="voc-detail-modal-title" style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.3px;"></div>
+        <div id="voc-detail-modal-sub" style="font-size:11px;color:#8b8aad;margin-top:3px;font-family:'DM Mono',monospace;"></div>
+      </div>
+      <button onclick="vocCloseModal()" style="background:rgba(255,255,255,0.06);border:1px solid #2e2c45;border-radius:8px;color:#8b8aad;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,107,53,0.15)';this.style.color='#ff6b35';" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='#8b8aad';">✕</button>
+    </div>
+    <!-- Scrollable body -->
+    <div id="voc-detail-modal-body" style="overflow-y:auto;flex:1;padding:0;"></div>
+    <!-- Footer -->
+    <div style="padding:12px 24px;border-top:1px solid #2e2c45;display:flex;justify-content:flex-end;flex-shrink:0;background:#161525;">
+      <button onclick="vocCloseModal()" style="padding:9px 24px;border-radius:10px;border:1px solid #2e2c45;background:transparent;color:#8b8aad;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#ff6b35';this.style.color='#ff6b35';" onmouseout="this.style.borderColor='#2e2c45';this.style.color='#8b8aad';">Close</button>
+    </div>
+  </div>
+</div>
+<div id="page-top-loader" style="opacity:0;transition:opacity 0.3s;">
+  <div class="loader-fill" id="top-loader-fill"></div>
+</div>
 
 <script>
 
@@ -2285,16 +2820,111 @@ function resetUpload(task) {
 }
 
 // UTILITIES
+// ── VOC DETAIL MODAL ─────────────────────────────────────────────
+function vocOpenModal(title, sub, bodyHtml) {
+  var m = document.getElementById('voc-detail-modal');
+  var t = document.getElementById('voc-detail-modal-title');
+  var s = document.getElementById('voc-detail-modal-sub');
+  var b = document.getElementById('voc-detail-modal-body');
+  if (!m) return;
+  t.textContent  = title;
+  s.textContent  = sub || '';
+  b.innerHTML    = bodyHtml;
+  m.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Apply light theme to modal card if VOC page is in light mode
+  var isDark = (document.getElementById('page-voc')||{getAttribute:function(){return'dark';}}).getAttribute('data-theme') !== 'light';
+  var card = document.getElementById('voc-detail-modal-card');
+  if (card) {
+    card.style.background    = isDark ? '#1a1928' : '#ffffff';
+    card.style.borderColor   = isDark ? '#2e2c45' : '#d5d2f0';
+  }
+}
+function vocCloseModal() {
+  var m = document.getElementById('voc-detail-modal');
+  if (!m) return;
+  m.classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') vocCloseModal();
+});
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ── Top progress loader bar ─────────────────────────────────────
+var _loaderTimer = null;
+function startTopLoader() {
+  var bar = document.getElementById('top-loader-fill');
+  if (!bar) return;
+  var w = 0;
+  clearInterval(_loaderTimer);
+  bar.style.width = '0%';
+  bar.parentElement.style.opacity = '1';
+  _loaderTimer = setInterval(function() {
+    if (w < 85) { w += (85 - w) * 0.08 + 0.5; bar.style.width = Math.min(w, 85) + '%'; }
+  }, 60);
+}
+function finishTopLoader() {
+  var bar = document.getElementById('top-loader-fill');
+  if (!bar) return;
+  clearInterval(_loaderTimer);
+  bar.style.width = '100%';
+  setTimeout(function() {
+    bar.parentElement.style.opacity = '0';
+    setTimeout(function() { bar.style.width = '0%'; bar.parentElement.style.opacity = '1'; }, 300);
+  }, 300);
+}
+
+// ── Loading status messages array ────────────────────────────────
+var _loadingMsgs = {
+  consolidation: ['Reading your data...', 'Grouping by bay...', 'Almost done...'],
+  'audit-loc':   ['Loading locations...', 'Sorting rows...', 'Building cards...'],
+  'audit-asin':  ['Scanning ASINs...', 'Matching records...', 'Preparing output...'],
+  'slow-moving': ['Fetching inventory...', 'Analysing movement...', 'Finalising...'],
+  lateslam:      ['Parsing orders...', 'Calculating slots...', 'Building report...'],
+  locid:         ['Generating labels...', 'Creating QR codes...', 'Rendering sheets...'],
+  catalog:       ['Fetching ASIN list...', 'Matching inventory...', 'Done soon...'],
+  scanning:      ['Fetching ASINs...', 'Comparing data...', 'Almost there...'],
+  voc:           ['Connecting to sheet...', 'Loading VOC records...', 'Processing data...'],
+  report:        ['Crunching numbers...', 'Building report...', 'Almost ready...'],
+};
+var _loadingMsgTimers = {};
+
 function showLoading(id, show) {
   const el = document.getElementById('load-' + id);
-  if (el) el.classList.toggle('show', show);
+  if (!el) return;
+  el.classList.toggle('show', show);
+  if (show) {
+    startTopLoader();
+    // Animate status text inside spinner
+    var statusEl = el.querySelector('.loading-status-text');
+    if (statusEl) {
+      var msgs = _loadingMsgs[id] || ['Processing...', 'Loading...', 'Almost done...'];
+      var idx = 0;
+      statusEl.textContent = msgs[0];
+      clearInterval(_loadingMsgTimers[id]);
+      _loadingMsgTimers[id] = setInterval(function() {
+        idx = (idx + 1) % msgs.length;
+        statusEl.style.opacity = '0';
+        setTimeout(function() {
+          statusEl.textContent = msgs[idx];
+          statusEl.style.opacity = '1';
+        }, 200);
+      }, 1500);
+    }
+  } else {
+    finishTopLoader();
+    clearInterval(_loadingMsgTimers[id]);
+  }
 }
+
 function findCol(headers, patterns) {
   return headers.find(h => patterns.some(p => new RegExp(p, 'i').test(h))) || '';
 }
@@ -5996,7 +6626,7 @@ if (document.readyState === 'loading') {
       <div style="font-size:20px;font-weight:800;margin-bottom:6px;color:#1a1830;">VOC Access Required</div>
       <div style="font-size:13px;color:#7b78a8;margin-bottom:28px;">Enter your username to access VOC Analytics</div>
       <div id="voc-gate-msg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
-      <input type="text" id="voc-username-input" placeholder="Enter your username"
+      <input type="password" id="voc-username-input" placeholder="Enter your username"
         style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:13px 16px;font-family:'Syne',sans-serif;font-size:14px;color:#1a1830;outline:none;margin-bottom:14px;box-sizing:border-box;transition:border-color 0.2s;"
         onkeydown="if(event.key==='Enter')vocCheckAccess()"
         onfocus="this.style.borderColor='#06d6a0'" onblur="this.style.borderColor='#d5d2f0'">
@@ -6082,7 +6712,13 @@ if (document.readyState === 'loading') {
 
     <!-- ── SECTION: UTR vs OTR SPLIT ── -->
     <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">UTR vs OTR — Ops Controllable Split</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:24px;" id="voc-utr-otr-cards"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:20px;" id="voc-utr-otr-cards"></div>
+
+    <!-- ── SECTION: NON-OPS BREAKDOWN ── -->
+    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">🔎 Non-Ops Controllable Breakdown</div>
+    <div id="voc-nonops-breakdown" style="background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:16px;padding:18px;margin-bottom:24px;">
+      <div style="color:var(--voc-muted,#7b78a8);font-size:13px;">Load data to see Non-Ops breakdown...</div>
+    </div>
 
     <!-- ── SECTION: UTR TARGET ── -->
     <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">UTR Target Analysis <span style="color:#ff6b35;">Target: 0.10%</span></div>
@@ -6349,7 +6985,7 @@ if (document.readyState === 'loading') {
 // VOC ANALYSIS ENGINE v2 — matches screenshot design
 // ═══════════════════════════════════════════════════════
 
-var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1'];
+var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1','Atef01'];
 var VOC_UTR_TARGET = 0.10; // 0.10% target
 
 // ── CENTRAL APPS SCRIPT URL — used by all features ──────────────
@@ -6429,7 +7065,17 @@ function vocUpdateFilters() {
 
 // ── LIVE DATA FETCH — from Apps Script ──────────────────────────
 function vocFetchData() {
-  vocShowStatus('⏳ Loading live VOC data…', 'info');
+  vocShowStatus('<span class="fetch-indicator"><span class="fetch-dot"></span> Connecting to Google Sheet and loading VOC data...</span>', 'info');
+  startTopLoader();
+
+  // Show skeleton shimmer in metric cards while loading
+  var mc = document.getElementById('voc-metric-cards');
+  if (mc) {
+    mc.innerHTML = Array(7).fill(0).map(function(){
+      return '<div class="voc-metric-shimmer-item shimmer-block" style="height:85px;border-radius:14px;"></div>';
+    }).join('');
+  }
+
   appsScriptJSONP(
     { action: 'voc' },
     function(data) {
@@ -6452,14 +7098,19 @@ function vocFetchData() {
         }).filter(function(r){ return r.store; });
         vocUpdateFilters();
         vocRender();
+        finishTopLoader();
         vocShowStatus('✅ Live data loaded — ' + vocRawData.length + ' records.', 'ok');
+        showToast('📊 VOC data ready — ' + vocRawData.length + ' records');
       } else if (data && Array.isArray(data.rows) && data.rows.length === 0) {
+        finishTopLoader();
         vocShowStatus('⚠️ Connected — 0 records returned. Check "voc analysis" sheet tab name.', 'info');
       } else {
+        finishTopLoader();
         vocShowStatus('❌ Invalid response from Apps Script. Re-deploy as "New version".', 'err');
       }
     },
     function(err) {
+      finishTopLoader();
       vocShowStatus('❌ Fetch failed: ' + err.message, 'err');
     }
   );
@@ -6802,6 +7453,7 @@ function vocRender() {
 
   vocRenderMetrics(curr, prev, storeOrders);
   vocRenderUTROTR(curr, prev);
+  vocRenderNonOpsBreakdown(curr);
   vocRenderTargetCards(curr, storeOrders, sf);
   vocRenderStoreCards(curr, sf);
   vocRenderIssueChart(curr);
@@ -6842,38 +7494,42 @@ function getStoreOrders(storeFilter) {
 // ── PICKER RENDER — Top 15, store-filtered orders, correct % ─────────────
 function vocRenderPickerFiltered() {
   var sf = document.getElementById('voc-picker-store').value;
-
-  // Filter VOC data by period first, then by picker-store filter
   var periodData = vocDedup(vocFilterByPeriod(vocRawData));
-  // Main store filter (from the header dropdown) also applies
   var mainSf = document.getElementById('voc-store-filter').value;
   if (mainSf !== 'all') periodData = periodData.filter(function(r) { return r.store === mainSf; });
-  // Picker store filter (secondary)
   var curr = sf !== 'all' ? periodData.filter(function(r) { return r.store === sf; }) : periodData;
-
   var pickerRows = curr.filter(function(r) { return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
-
-  // Use STORE-SPECIFIC orders when a store is filtered, else total
   var effectiveSf = sf !== 'all' ? sf : mainSf;
   var realOrders = getStoreOrders(effectiveSf);
-  // If no orders fetched yet, show blank rather than wrong numbers
   var ordersReady = realOrders > 0;
 
-  var mistakes = {}, pickerStoreMap = {};
+  var mistakes = {}, pickerStoreMap = {}, pickerDetails = {};
   pickerRows.forEach(function(r) {
     if (!r.picker) return;
     mistakes[r.picker] = (mistakes[r.picker] || 0) + 1;
     pickerStoreMap[r.picker] = r.store;
+    if (!pickerDetails[r.picker]) pickerDetails[r.picker] = [];
+    pickerDetails[r.picker].push({
+      orderId: r.orderId || '—',
+      rca:     r.rca || r.rcaCategory || '—',
+      issue:   r.issue || '—',
+      product: r.product || '—',
+      date:    r.date instanceof Date
+               ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+               : String(r.date||'—')
+    });
   });
 
-  var sorted = Object.keys(mistakes).sort(function(a, b) { return mistakes[b] - mistakes[a]; }).slice(0, 15);
+  var sorted = Object.keys(mistakes).sort(function(a,b){ return mistakes[b]-mistakes[a]; }).slice(0,15);
 
-  var isDark = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
-  var rowBg  = isDark ? ['#1a1928','#13121f'] : ['#ffffff','#f8f7ff'];
-  var txtCol = isDark ? '#e8e6ff' : '#1a1830';
-  var mutCol = isDark ? '#8b8aad' : '#7b78a8';
-  var brdCol = isDark ? '#2e2c45' : '#f0effe';
-  var periodLabel = (document.getElementById('voc-period-label') || {}).textContent || 'Period';
+  var isDark  = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var rowBg   = isDark ? ['#1a1928','#161525'] : ['#ffffff','#f8f7ff'];
+  var hoverBg = isDark ? '#222136' : '#eff0ff';
+  var txtCol  = isDark ? '#e8e6ff' : '#1a1830';
+  var mutCol  = isDark ? '#8b8aad' : '#7b78a8';
+  var brdCol  = isDark ? '#2e2c45' : '#f0effe';
+  var drawerBg = isDark ? '#13121f' : '#f4f3ff';
+  var periodLabel = (document.getElementById('voc-period-label')||{}).textContent || 'Period';
 
   document.getElementById('voc-picker-count').textContent =
     sorted.length + ' pickers · ' + pickerRows.length + ' mistakes' +
@@ -6886,28 +7542,68 @@ function vocRenderPickerFiltered() {
     return;
   }
 
-  document.getElementById('voc-picker-body').innerHTML = sorted.map(function(p, i) {
-    var m = mistakes[p] || 0;
+  var rows = [];
+  sorted.forEach(function(p, i) {
+    var m          = mistakes[p] || 0;
+    var details    = pickerDetails[p] || [];
     var pctOfOrders = ordersReady ? ((m / realOrders) * 100).toFixed(3) : '—';
-    var pctNum = ordersReady ? parseFloat(pctOfOrders) : 0;
-    var risk = !ordersReady ? '<span style="color:' + mutCol + ';font-size:10px;">—</span>'
+    var pctNum     = ordersReady ? parseFloat(pctOfOrders) : 0;
+    var bg         = rowBg[i % 2];
+    var rankCol    = i === 0 ? '#ff6b35' : i === 1 ? '#ffd60a' : i === 2 ? '#06d6a0' : mutCol;
+    var drawerId   = 'picker-drawer-' + i;
+
+    var risk = !ordersReady
+      ? '<span style="color:'+mutCol+';font-size:10px;">—</span>'
       : pctNum >= 0.5
-      ? '<span style="background:#FADBD8;color:#922B21;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🔴 High</span>'
-      : pctNum >= 0.2
-      ? '<span style="background:#FDEBD0;color:#784212;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🟡 Medium</span>'
-      : '<span style="background:#D5F5E3;color:#1A5C37;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">🟢 Low</span>';
-    var bg = rowBg[i % 2];
-    var rankCol = i === 0 ? '#ff6b35' : i === 1 ? '#ffd60a' : i === 2 ? '#06d6a0' : mutCol;
-    return '<tr style="background:' + bg + '">' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:700;color:' + rankCol + ';">#' + (i+1) + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:600;color:' + txtCol + ';">' + p + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';color:' + mutCol + ';">' + (pickerStoreMap[p] || '–') + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:600;color:' + txtCol + ';">' + (ordersReady ? realOrders.toLocaleString() : '—') + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-weight:700;color:#c0392b;">' + m + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';font-family:\'DM Mono\',monospace;font-size:12px;color:' + txtCol + ';">' + pctOfOrders + (ordersReady ? '%' : '') + '</td>' +
-      '<td style="padding:9px 14px;border-bottom:1px solid ' + brdCol + ';">' + risk + '</td>' +
-      '</tr>';
-  }).join('');
+        ? '<span style="background:rgba(192,57,43,0.2);color:'+(isDark?'#ff8a80':'#922B21')+';font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700;">🔴 High</span>'
+        : pctNum >= 0.2
+          ? '<span style="background:rgba(217,119,6,0.2);color:'+(isDark?'#ffb74d':'#784212')+';font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700;">🟡 Medium</span>'
+          : '<span style="background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.3);color:'+(isDark?'#06d6a0':'#1A5C37')+';font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:'+(isDark?'#06d6a0':'#1A5C37')+';display:inline-block;"></span>Low</span>';
+
+    // Main picker row
+    rows.push(
+      '<tr style="background:'+bg+';transition:background 0.15s;cursor:pointer;" '+
+        'onclick="var d=document.getElementById(\''+drawerId+'\');d.style.display=d.style.display===\'none\'?\'table-row\':\'none\';" '+
+        'onmouseover="this.style.background=\''+hoverBg+'\'" '+
+        'onmouseout="this.style.background=\''+bg+'\'" '+
+        'title="Click to see '+m+' mistake detail'+(m>1?'s':'')+'">' +
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+rankCol+';">#'+(i+1)+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+txtCol+';">'+p+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';color:'+mutCol+';">'+(pickerStoreMap[p]||'–')+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:600;color:'+txtCol+';">'+(ordersReady?realOrders.toLocaleString():'—')+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:800;color:#c0392b;">'+m+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-family:\'DM Mono\',monospace;font-size:12px;color:'+txtCol+';">'+(pctOfOrders!=='—'?pctOfOrders+'%':'—')+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';">'+risk+'</td>'+
+      '</tr>'
+    );
+
+    // Drawer row — hidden by default, expands below the picker row
+    var drawerItems = details.map(function(d, di) {
+      var rowBg2 = di%2===0 ? (isDark?'#1e1d30':'#f4f3ff') : (isDark?'#1a1928':'#ffffff');
+      return '<div style="padding:9px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:5px;border-left:3px solid #c0392b;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:12px;font-weight:700;color:'+txtCol+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(di+1)+'. '+d.product+'</div>'+
+          '<div style="font-size:11px;color:#c0392b;margin-top:2px;font-weight:600;">'+d.issue+'</div>'+
+          '<div style="font-size:10px;color:'+mutCol+';margin-top:2px;font-family:Courier New,monospace;">'+d.orderId+'</div>'+
+          '<div style="font-size:10px;color:'+mutCol+';margin-top:1px;font-style:italic;">'+d.rca+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;font-size:10px;color:'+mutCol+';">'+d.date+'</div>'+
+      '</div>';
+    }).join('');
+
+    rows.push(
+      '<tr id="'+drawerId+'" style="display:none;">'+
+        '<td colspan="7" style="padding:0;border-bottom:2px solid '+(isDark?'#4361ee':'#4361ee')+';background:'+(isDark?'rgba(67,97,238,0.05)':'rgba(67,97,238,0.03)'+';')+'">'+
+          '<div style="padding:10px 16px;">'+
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+(isDark?'#4cc9f0':'#4361ee')+';margin-bottom:8px;">📋 Mistake Details — '+p+'</div>'+
+            '<div style="max-height:280px;overflow-y:auto;">'+drawerItems+'</div>'+
+          '</div>'+
+        '</td>'+
+      '</tr>'
+    );
+  });
+
+  document.getElementById('voc-picker-body').innerHTML = rows.join('');
 }
 
 
@@ -6915,6 +7611,23 @@ function vocPct(val,prev){
   if(!prev||prev===0)return'';
   var p=((val-prev)/prev*100).toFixed(1);
   return p>0?'<span style="color:#c0392b;font-size:11px;">▲ '+p+'%</span>':'<span style="color:#1a7a4a;font-size:11px;">▼ '+Math.abs(p)+'%</span>';
+}
+
+function vocCardWarning(label,val,sub,accentColor){
+  var isDark = document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var bg  = isDark ? '#1a1928' : '#ffffff';
+  var brd = isDark ? '#2e2c45' : '#d5d2f0';
+  var lbl = isDark ? '#8b8aad' : '#7b78a8';
+  var txt = val > 0 ? accentColor : (isDark ? '#06d6a0' : '#1a7a4a');
+  var sub2 = isDark ? '#8b8aad' : '#7b78a8';
+  var warnBg = val > 0
+    ? (isDark ? 'rgba(181,134,13,0.15)' : 'rgba(181,134,13,0.08)')
+    : (isDark ? 'rgba(6,214,160,0.08)' : 'rgba(6,214,160,0.05)');
+  var warnBrd = val > 0 ? accentColor : (isDark ? '#06d6a0' : '#1a7a4a');
+  return '<div class="voc-dyn-card" style="background:'+bg+';border:1px solid '+brd+';border-radius:14px;padding:16px 18px;border-top:3px solid '+warnBrd+';background-image:linear-gradient(135deg,'+warnBg+',transparent 80%);">'+
+    '<div class="voc-card-label" style="font-size:11px;color:'+lbl+';margin-bottom:6px;">'+label+'</div>'+
+    '<div class="voc-card-val" style="font-size:22px;font-weight:700;color:'+txt+';margin-bottom:4px;">'+val+'</div>'+
+    '<div class="voc-card-sub" style="font-size:11px;color:'+sub2+';">'+sub+'</div></div>';
 }
 
 function vocCard(label,val,sub,border){
@@ -6933,9 +7646,6 @@ function vocCard(label,val,sub,border){
 function vocRenderMetrics(curr, prev, storeOrders) {
   var total = curr.length;
   var ptotal = prev.length;
-  // storeOrders = orders for the selected store (or all stores) from Store Metric sheet
-  // Fall back to VOC row count if not fetched yet
-  // Orders ONLY from Store Metric sheet — never from VOC data
   var realOrders = storeOrders > 0 ? storeOrders
     : (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders
     : 0;
@@ -6946,17 +7656,30 @@ function vocRenderMetrics(curr, prev, storeOrders) {
   var qc     = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
   var otr    = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; });
 
+  // RCA Not Filled — based on current filter
+  var rcaNotFilled = curr.filter(function(r){ return !r.rcaCategory || r.rcaCategory.trim() === ''; }).length;
+
   var pct = function(n) { return realOrders > 0 ? ((n / realOrders) * 100).toFixed(3) + '%' : '—'; };
+
+  // Build Total VOC sub-label with prev comparison
+  var totalVocPrevComp = vocPct(total, ptotal);
+  var totalVocSub = totalVocPrevComp
+    ? ('vs prev: ' + ptotal + ' ' + totalVocPrevComp)
+    : 'vs prev: ' + ptotal + ' cases';
 
   var mc = document.getElementById('voc-metric-cards');
   mc.innerHTML = [
     vocCard('Total Orders', realOrders > 0 ? realOrders.toLocaleString() : '—', realOrdersLabel, '#4361ee'),
-    vocCard('Total VOC', total + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(total) + ')</small>' : ''), vocPct(total, ptotal) || 'All categories', '#3d3a6b'),
+    vocCard('Total VOC',
+      total + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(total) + ')</small>' : ''),
+      totalVocSub,
+      '#3d3a6b'),
     vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; }).length) || 'Store side', '#c0392b'),
     vocCard('OTR Ops Controllable', otr.length, vocPct(otr.length, prev.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length) || 'Delivery side', '#e67e22'),
     vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length) || 'Picker mistakes only', '#8e44ad'),
     vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length) || 'Quality checks', '#2980b9'),
     vocCard('NOT for Our Store', curr.filter(function(r){ return VOC_NOT_STORE.indexOf(r.rcaCategory) > -1; }).length, 'Flagged separately', '#ff6b35'),
+    vocCardWarning('RCA Not Filled', rcaNotFilled, rcaNotFilled > 0 ? '⚠️ Missing RCA in current filter' : '✅ All RCA filled', rcaNotFilled > 0 ? '#b5860d' : '#1a7a4a'),
   ].join('');
 }
 
@@ -6978,6 +7701,71 @@ function vocRenderUTROTR(curr, prev) {
     vocCard('OTR Delivery (Curr)', otrN, vocPct(otrN, prevOtr) || 'vs prev period', '#2980b9'),
     vocCard('Non-Ops Controllable', non.length, 'Customer/Vendor/Catalog', '#7b78a8'),
   ].join('');
+}
+
+function vocRenderNonOpsBreakdown(curr) {
+  var el = document.getElementById('voc-nonops-breakdown');
+  if (!el) return;
+  var isDark  = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+  var txtMain = isDark ? '#e8e6ff' : '#1a1830';
+  var txtMut  = isDark ? '#8b8aad' : '#7b78a8';
+  var rowBg   = isDark ? '#1a1928' : '#f8f7ff';
+  var brd     = isDark ? '#2e2c45' : '#e8e6f5';
+
+  var nonRows = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+  var totalVOC = curr.length || 1;
+  var totalNon = nonRows.length;
+
+  if (!totalNon) {
+    el.innerHTML = '<div style="color:' + txtMut + ';font-size:13px;padding:10px;">No Non-Ops Controllable records in selected period.</div>';
+    return;
+  }
+
+  // Count each non-ops sub-category
+  var catCounts = {};
+  VOC_NON_OPS.forEach(function(cat) {
+    catCounts[cat] = nonRows.filter(function(r){ return r.rcaCategory === cat; }).length;
+  });
+
+  var sortedCats = VOC_NON_OPS.slice().sort(function(a,b){ return catCounts[b] - catCounts[a]; });
+
+  var colors = ['#7b78a8','#9c27b0','#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe'];
+
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding:12px 16px;background:' +
+    (isDark?'rgba(114,9,183,0.1)':'rgba(114,9,183,0.05)') +
+    ';border:1px solid rgba(114,9,183,0.25);border-radius:12px;align-items:center;">' +
+    '<span style="font-size:13px;font-weight:700;color:' + txtMain + ';">📊 Total Non-Ops: <span style="color:#9c27b0;">' + totalNon + '</span></span>' +
+    '<span style="padding:4px 12px;border-radius:20px;background:rgba(114,9,183,0.15);color:#9c27b0;font-size:12px;font-weight:700;">' +
+      ((totalNon/totalVOC*100).toFixed(1)) + '% of Total VOC (' + totalVOC + ')' +
+    '</span>' +
+  '</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+  sortedCats.forEach(function(cat, i) {
+    var count = catCounts[cat];
+    if (!count) return;
+    var pctOfNon = ((count/totalNon)*100).toFixed(1);
+    var pctOfVOC = ((count/totalVOC)*100).toFixed(2);
+    var barW = Math.round((count/totalNon)*100);
+    var col = colors[i % colors.length];
+    var shortLabel = cat.replace('Non Ops Controllable - ','').replace('Non-Ops Controllable - ','');
+    html +=
+      '<div style="padding:10px 14px;background:' + rowBg + ';border-radius:10px;border:1px solid ' + brd + ';">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">' +
+          '<span style="font-size:12px;font-weight:700;color:' + txtMain + ';">' + shortLabel + '</span>' +
+          '<div style="display:flex;gap:10px;align-items:center;">' +
+            '<span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:700;color:' + col + ';">' + count + '</span>' +
+            '<span style="background:rgba(114,9,183,0.12);color:#9c27b0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">' + pctOfNon + '% of Non-Ops</span>' +
+            '<span style="background:rgba(123,120,168,0.1);color:' + txtMut + ';font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;">' + pctOfVOC + '% of Total VOC</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="height:5px;background:' + (isDark?'#2e2c45':'#e8e6f5') + ';border-radius:10px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + barW + '%;background:' + col + ';border-radius:10px;transition:width 0.5s ease;"></div>' +
+        '</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function vocRenderTargetCards(curr, storeOrders, storeFilter) {
@@ -7068,6 +7856,10 @@ function vocRenderStoreCards(curr, storeFilter) {
 }
 
 function vocRenderIssueChart(rows) {
+  var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var tickColor = isDark ? '#8b8aad' : '#7b78a8';
+  var gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  var legendColor = isDark ? '#b8b6d9' : '#3d3a6b';
   var stores=[...new Set(rows.map(function(r){return r.store;}))].sort();
   var allIssues=['Switcheroo','Product Missing','Poor Quality','DNR','Quantity Variance','Near Expiry/Expired','Damaged','Thawed','Others'];
   var storeColors={'QAA1':'#4361ee','QAA6':'#06d6a0','QAA7':'#ffd60a','QDC6':'#ff6b35','QDG5':'#f72585'};
@@ -7077,13 +7869,16 @@ function vocRenderIssueChart(rows) {
   if(vocCharts.issues)vocCharts.issues.destroy();
   vocCharts.issues=new Chart(document.getElementById('voc-chart-issues'),{
     type:'bar',data:{labels:allIssues,datasets:datasets},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10,color:'#3d3a6b'}}},
-      scales:{x:{stacked:true,ticks:{color:'#7b78a8',font:{size:10},autoSkip:false,maxRotation:30},grid:{display:false}},
-              y:{stacked:true,beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:10},boxWidth:10,color:legendColor}}},
+      scales:{x:{stacked:true,ticks:{color:tickColor,font:{size:10},autoSkip:false,maxRotation:30},grid:{display:false}},
+              y:{stacked:true,beginAtZero:true,ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}}}}
   });
 }
 
 function vocRenderStoreChart(rows) {
+  var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var tickColor = isDark ? '#8b8aad' : '#7b78a8';
+  var gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
   var stores=[...new Set(rows.map(function(r){return r.store;}))].sort();
   var data=stores.map(function(s){return rows.filter(function(r){return r.store===s;}).length;});
   var colors=['#4361ee','#06d6a0','#ffd60a','#ff6b35','#f72585'];
@@ -7091,12 +7886,15 @@ function vocRenderStoreChart(rows) {
   vocCharts.stores=new Chart(document.getElementById('voc-chart-stores'),{
     type:'bar',data:{labels:stores,datasets:[{data:data,backgroundColor:colors.slice(0,stores.length),borderRadius:6}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#7b78a8',font:{size:12}},grid:{display:false}},
-              y:{beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+      scales:{x:{ticks:{color:tickColor,font:{size:12}},grid:{display:false}},
+              y:{beginAtZero:true,ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}}}}
   });
 }
 
 function vocRenderSplitChart(rows) {
+  var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var legendColor = isDark ? '#b8b6d9' : '#3d3a6b';
+  var borderColor = isDark ? '#1a1928' : '#ffffff';
   var utr=rows.filter(function(r){return VOC_UTR.indexOf(r.rcaCategory)>-1;}).length;
   var otr=rows.filter(function(r){return VOC_OTR.indexOf(r.rcaCategory)>-1;}).length;
   var non=rows.filter(function(r){return VOC_NON_OPS.indexOf(r.rcaCategory)>-1;}).length;
@@ -7104,12 +7902,15 @@ function vocRenderSplitChart(rows) {
   if(vocCharts.split)vocCharts.split.destroy();
   vocCharts.split=new Chart(document.getElementById('voc-chart-split'),{
     type:'doughnut',
-    data:{labels:['UTR','OTR','Non-Ops','Not for Store'],datasets:[{data:[utr,otr,non,notS],backgroundColor:['#c0392b','#e67e22','#8b8aad','#ff6b35'],borderWidth:2,borderColor:'#fff'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#3d3a6b',font:{size:10},boxWidth:10}}}}
+    data:{labels:['UTR','OTR','Non-Ops','Not for Store'],datasets:[{data:[utr,otr,non,notS],backgroundColor:['#c0392b','#e67e22','#8b8aad','#ff6b35'],borderWidth:2,borderColor:borderColor}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:legendColor,font:{size:10},boxWidth:10}}}}
   });
 }
 
 function vocRenderTrendChart() {
+  var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var tickColor = isDark ? '#8b8aad' : '#7b78a8';
+  var gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
   var groups={};
   vocRawData.forEach(function(r){
     var d=r.date instanceof Date?r.date:new Date(r.date);
@@ -7121,37 +7922,96 @@ function vocRenderTrendChart() {
   if(vocCharts.trend)vocCharts.trend.destroy();
   vocCharts.trend=new Chart(document.getElementById('voc-chart-trend'),{
     type:'line',
-    data:{labels:keys,datasets:[{label:'VOC Count',data:keys.map(function(k){return groups[k];}),borderColor:'#4361ee',backgroundColor:'rgba(67,97,238,0.06)',tension:0.4,fill:true,pointBackgroundColor:'#4361ee',pointRadius:4}]},
+    data:{labels:keys,datasets:[{label:'VOC Count',data:keys.map(function(k){return groups[k];}),borderColor:'#4361ee',backgroundColor:isDark?'rgba(67,97,238,0.12)':'rgba(67,97,238,0.06)',tension:0.4,fill:true,pointBackgroundColor:'#4361ee',pointRadius:4,pointHoverRadius:6}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#7b78a8',font:{size:10},maxRotation:40},grid:{color:'rgba(0,0,0,0.04)'}},
-              y:{beginAtZero:true,ticks:{color:'#7b78a8',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+      scales:{x:{ticks:{color:tickColor,font:{size:10},maxRotation:40},grid:{color:gridColor}},
+              y:{beginAtZero:true,ticks:{color:tickColor,font:{size:10}},grid:{color:gridColor}}}}
   });
 }
 
 
 function vocRenderProducts(rows) {
-  var prods={},prodIssues={},prodTypes={};
+  var prods={},prodIssues={},prodTypes={},prodOrderIds={};
   rows.forEach(function(r){
     var k=(r.asin||'')+'||'+(r.product||'Unknown');
     prods[k]=(prods[k]||0)+1;
     if(!prodIssues[k])prodIssues[k]={};
     prodIssues[k][r.issue||'?']=(prodIssues[k][r.issue||'?']||0)+1;
     prodTypes[k]=r.productType||'—';
+    if(!prodOrderIds[k])prodOrderIds[k]=[];
+    prodOrderIds[k].push({orderId:r.orderId||'—',rca:r.rcaCategory||r.rca||'—',issue:r.issue||'—'});
   });
   var sorted=Object.keys(prods).sort(function(a,b){return prods[b]-prods[a];}).slice(0,15);
   var totalVOC=rows.length||1;
-  var topContrib=sorted.slice(0,15).reduce(function(acc,k){return acc+prods[k];},0);
+  var topContrib=sorted.reduce(function(acc,k){return acc+prods[k];},0);
   var contribPct=((topContrib/totalVOC)*100).toFixed(0);
   var title=document.getElementById('voc-prod-title');
   if(title)title.textContent='Top VOC Products ('+sorted.length+' Products = '+contribPct+'% of Total VOC)';
-  document.getElementById('voc-product-body').innerHTML=sorted.map(function(k,i){
-    var parts=k.split('||');
-    var topIssue=Object.keys(prodIssues[k]).sort(function(a,b){return prodIssues[k][b]-prodIssues[k][a];})[0];
-    var pct=((prods[k]/totalVOC)*100).toFixed(2);
-    var pill=pct>=3?'<span style="background:#FADBD8;color:#922B21;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>':pct>=1.5?'<span style="background:#FDEBD0;color:#784212;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>':'<span style="background:#D5F5E3;color:#1A5C37;font-size:11px;padding:2px 8px;border-radius:10px;">'+pct+'%</span>';
-    var bg=i%2===0?'#fff':'#fafafa';
-    return '<tr style="background:'+bg+'"><td style="padding:10px 14px;border-bottom:1px solid #f0effe;font-weight:500;color:#1a1830;max-width:280px;">'+parts[1]+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;font-weight:700;color:#1a1830;">'+prods[k]+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;">'+pill+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;color:#3d3a6b;">'+topIssue+'</td><td style="padding:10px 14px;border-bottom:1px solid #f0effe;color:#7b78a8;">'+prodTypes[k]+'</td></tr>';
-  }).join('');
+
+  var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
+  var rowBgEven = isDark ? '#1a1928' : '#ffffff';
+  var rowBgOdd  = isDark ? '#161525' : '#f8f7ff';
+  var brdCol    = isDark ? '#2e2c45' : '#f0effe';
+  var txtMain   = isDark ? '#e8e6ff' : '#1a1830';
+  var txtMut    = isDark ? '#8b8aad' : '#7b78a8';
+  var txtSec    = isDark ? '#b8b6d9' : '#3d3a6b';
+  var hoverClr  = isDark ? '#222136' : '#eff0ff';
+  var drawerAccent = '#7209b7';
+
+  var tableRows = [];
+  sorted.forEach(function(k, i) {
+    var parts    = k.split('||');
+    var prodName = parts[1] || '—';
+    var topIssue = Object.keys(prodIssues[k]).sort(function(a,b){return prodIssues[k][b]-prodIssues[k][a];})[0];
+    var pct      = ((prods[k]/totalVOC)*100).toFixed(2);
+    var bg       = i%2===0 ? rowBgEven : rowBgOdd;
+    var drawerId = 'prod-drawer-' + i;
+
+    var pill;
+    if(pct>=3)        pill='<span style="background:rgba(192,57,43,0.15);color:'+(isDark?'#ff8a80':'#922B21')+';font-size:11px;padding:2px 9px;border-radius:10px;font-weight:700;">'+pct+'%</span>';
+    else if(pct>=1.5) pill='<span style="background:rgba(217,119,6,0.15);color:'+(isDark?'#ffb74d':'#784212')+';font-size:11px;padding:2px 9px;border-radius:10px;font-weight:700;">'+pct+'%</span>';
+    else              pill='<span style="background:rgba(6,214,160,0.12);color:'+(isDark?'#06d6a0':'#1A5C37')+';font-size:11px;padding:2px 9px;border-radius:10px;font-weight:700;">'+pct+'%</span>';
+
+    // Main product row — click to expand
+    tableRows.push(
+      '<tr style="background:'+bg+';transition:background 0.15s;cursor:pointer;" '+
+        'onclick="var d=document.getElementById(\''+drawerId+'\');d.style.display=d.style.display===\'none\'?\'table-row\':\'none\';" '+
+        'onmouseover="this.style.background=\''+hoverClr+'\'" '+
+        'onmouseout="this.style.background=\''+bg+'\'" '+
+        'title="Click to see all '+prods[k]+' VOC case(s) for this product">' +
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:500;color:'+txtMain+';max-width:260px;line-height:1.5;">'+prodName+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+txtMain+';">'+prods[k]+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';">'+pill+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';color:'+txtSec+';">'+topIssue+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';color:'+txtMut+';">'+prodTypes[k]+'</td>'+
+      '</tr>'
+    );
+
+    // Drawer row with order details, same style as RCA tracker
+    var orderItems = (prodOrderIds[k]||[]).map(function(o, oi) {
+      var rowBg2 = oi%2===0 ? (isDark?'#1e1d30':'#f4f3ff') : (isDark?'#1a1928':'#ffffff');
+      return '<div style="padding:9px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:5px;border-left:3px solid '+drawerAccent+';display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:2px;">'+o.issue+'</div>'+
+          '<div style="font-size:10px;color:'+(isDark?'#4cc9f0':'#4361ee')+';font-family:Courier New,monospace;margin-bottom:2px;">'+o.orderId+'</div>'+
+          '<div style="font-size:10px;color:'+txtMut+';font-style:italic;">'+o.rca+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    tableRows.push(
+      '<tr id="'+drawerId+'" style="display:none;">'+
+        '<td colspan="5" style="padding:0;border-bottom:2px solid '+drawerAccent+';background:'+(isDark?'rgba(114,9,183,0.05)':'rgba(114,9,183,0.03)')+';">'+
+          '<div style="padding:10px 16px;">'+
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+drawerAccent+';margin-bottom:8px;">📦 VOC Cases — '+prodName.substring(0,50)+(prodName.length>50?'…':'')+'</div>'+
+            '<div style="max-height:280px;overflow-y:auto;">'+orderItems+'</div>'+
+          '</div>'+
+        '</td>'+
+      '</tr>'
+    );
+  });
+
+  document.getElementById('voc-product-body').innerHTML = tableRows.join('');
 }
 
 function vocRunHealthCheck() {
@@ -7169,20 +8029,57 @@ function vocRunHealthCheck() {
     if(!r.rcaCategory)blankRca.push(n);
     if(!r.orderId)blankOrder.push(n);
   });
+
+  // Also check for RCA Not Filled vs total VOC mismatch
+  var rcaCategCount = all.filter(function(r){ return r.rcaCategory && r.rcaCategory.trim() !== ''; }).length;
+  var rcaMissing = all.length - rcaCategCount;
+
   var issues=0,html='';
-  function row(label,count,rows){
-    if(!count)return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8f7ff;border-radius:8px;margin-bottom:6px;"><span style="font-size:13px;color:#3d3a6b;">'+label+'</span><span style="font-size:12px;font-weight:600;color:#1a7a4a;">✅ Clean</span></div>';
+  function row(label,count,rows,detail){
+    var tooltipRows = rows.slice(0,20);
+    var tooltipText = count > 0
+      ? 'Rows with issues: ' + tooltipRows.join(', ') + (rows.length > 20 ? ' ... +' + (rows.length-20) + ' more' : '')
+        + '\n\nClick to expand details.'
+      : label + ' — All OK';
+    var titleAttr = tooltipText.replace(/"/g, "'");
+    if(!count)return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:' +
+      (document.getElementById('page-voc').getAttribute('data-theme')==='dark'?'#1a1928':'#f8f7ff') +
+      ';border-radius:8px;margin-bottom:6px;cursor:default;" title="' + label + ' — All clean ✅">' +
+      '<span style="font-size:13px;color:' + (document.getElementById('page-voc').getAttribute('data-theme')==='dark'?'#b8b6d9':'#3d3a6b') + ';">'+label+'</span>' +
+      '<span style="font-size:12px;font-weight:600;color:#1a7a4a;">✅ Clean</span></div>';
     issues+=count;
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(192,57,43,0.05);border:1px solid rgba(192,57,43,0.15);border-radius:8px;margin-bottom:6px;"><span style="font-size:13px;color:#c0392b;">⚠️ '+label+'</span><span style="font-size:11px;font-weight:600;color:#c0392b;">'+count+' rows: '+rows.slice(0,5).join(', ')+(rows.length>5?' ...':'')+'</span></div>';
+    var expandId = 'health-detail-' + Math.random().toString(36).substr(2,6);
+    return '<div style="border-radius:8px;margin-bottom:6px;overflow:hidden;border:1px solid rgba(192,57,43,0.2);">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(192,57,43,0.05);cursor:pointer;" ' +
+      'title="' + titleAttr + '" ' +
+      'onclick="var d=document.getElementById(\'' + expandId + '\');d.style.display=d.style.display===\'none\'?\'block\':\'none\';">' +
+      '<span style="font-size:13px;color:#c0392b;font-weight:600;">⚠️ ' + label + '</span>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<span style="font-size:11px;font-weight:600;color:#c0392b;">' + count + ' rows</span>' +
+      '<span style="font-size:10px;color:#c0392b;opacity:0.7;">▼ hover/click for rows</span>' +
+      '</div></div>' +
+      '<div id="' + expandId + '" style="display:none;padding:10px 14px;background:rgba(192,57,43,0.03);font-family:\'DM Mono\',monospace;font-size:11px;color:#c0392b;line-height:1.8;">' +
+      '<div style="font-weight:700;margin-bottom:4px;">📍 Affected rows (Sheet row numbers):</div>' +
+      rows.slice(0,30).map(function(rn,ri){ return '<span style="display:inline-block;padding:2px 8px;background:rgba(192,57,43,0.1);border-radius:4px;margin:2px;">' + rn + '</span>'; }).join('') +
+      (rows.length > 30 ? '<div style="margin-top:6px;color:#b5860d;">... and ' + (rows.length-30) + ' more rows</div>' : '') +
+      (detail ? '<div style="margin-top:8px;color:#7b78a8;">' + detail + '</div>' : '') +
+      '</div></div>';
   }
   html+=row('Blank Store Name',blankStore.length,blankStore);
   html+=row('Blank Issue Category',blankIssue.length,blankIssue);
-  html+=row('Blank RCA Category',blankRca.length,blankRca);
+  html+=row('Blank RCA Category',blankRca.length,blankRca,'These rows have no RCA category assigned yet.');
   html+=row('Blank Order ID',blankOrder.length,blankOrder);
-  html+=row('Duplicate Order+ASIN',dupRows.length,dupRows);
+  html+=row('Duplicate Order+ASIN',dupRows.length,dupRows,'Same Order ID + ASIN combination found in multiple rows.');
+
+  // Show RCA Not Filled banner if mismatch
+  if (rcaMissing > 0) {
+    html += '<div style="margin-top:10px;padding:11px 15px;background:rgba(181,134,13,0.12);border:1px solid rgba(181,134,13,0.35);border-radius:8px;font-size:12px;font-weight:700;color:#b5860d;">' +
+      '⚠️ <strong>RCA Not Filled / Missing RCA: ' + rcaMissing + ' records</strong> — RCA category is blank for these entries. Total VOC: ' + all.length + ', RCA filled: ' + rcaCategCount + '</div>';
+  }
+
   var badge=document.getElementById('voc-health-badge');
-  if(!issues)badge.innerHTML='<span style="background:#D5F5E3;color:#1A5C37;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">✅ All Clean</span>';
-  else badge.innerHTML='<span style="background:#FADBD8;color:#922B21;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">⚠️ '+issues+' Issues Found</span>';
+  if(!issues && !rcaMissing)badge.innerHTML='<span style="background:#D5F5E3;color:#1A5C37;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">✅ All Clean</span>';
+  else badge.innerHTML='<span style="background:#FADBD8;color:#922B21;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700;">⚠️ ' + (issues + rcaMissing) + ' Issues Found</span>';
   document.getElementById('voc-health-content').innerHTML=html;
 }
 
@@ -7488,7 +8385,6 @@ async function vocExportPDF() {
       pdf.setPage(pg);
       pdf.setFontSize(7); pdf.setTextColor(150);
       pdf.text('VOC Report · HP World · Page ' + pg + ' of ' + pages + ' · ' + now, 14, pageH - 6);
-      pdf.text('Checked By AA: ___________    TL/Supervisor: ___________', pageW/2, pageH-6, {align:'center'});
     }
     pdf.save('VOC_Report_' + new Date().toISOString().split('T')[0] + '.pdf');
     showToast('✅ VOC PDF downloaded!');
