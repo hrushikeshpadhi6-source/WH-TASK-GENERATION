@@ -6689,14 +6689,7 @@ if (document.readyState === 'loading') {
         </select>
 
         <button onclick="vocFetchOrders()" style="padding:8px 18px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;box-shadow:0 3px 12px rgba(67,97,238,0.35);white-space:nowrap;">📥 Fetch Orders</button>
-        <button onclick="vocShowDebugURL()" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(67,97,238,0.3);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);white-space:nowrap;" title="Show exact URL being sent to Apps Script">🔗 Debug URL</button>
         <div id="voc-orders-status" style="display:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;"></div>
-      </div>
-      <!-- Apps Script fix notice -->
-      <div id="voc-orders-appsscript-notice" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(181,134,13,0.1);border:1px solid rgba(181,134,13,0.35);border-radius:8px;">
-        <div style="font-size:11px;font-weight:700;color:#b5860d;margin-bottom:6px;">⚙️ Apps Script — add this handler for month filtering:</div>
-        <pre id="voc-appsscript-snippet" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--voc-text,#1a1830);background:rgba(0,0,0,0.06);padding:8px 10px;border-radius:6px;overflow-x:auto;white-space:pre;margin:0;line-height:1.6;"></pre>
-        <button onclick="document.getElementById('voc-orders-appsscript-notice').style.display='none'" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid rgba(181,134,13,0.3);background:transparent;color:#b5860d;font-size:11px;font-weight:600;cursor:pointer;">Close</button>
       </div>
     </div>
 
@@ -7143,81 +7136,6 @@ function vocFetchData() {
 }
 
 // ── ORDERS FETCH — week-based from Store Metric sheet ───────────
-// ── Debug: show exact URL being sent to Apps Script ──────────────
-function vocShowDebugURL() {
-  var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var params = { action: 'orders' };
-  var sheetMonthLabel = '';
-
-  if (_vocOrdersMode === 'week') {
-    var wv = (document.getElementById('voc-week-filter')||{}).value || '';
-    var im = wv.match(/^(\d{4})-W(\d{1,2})$/);
-    if (im) { params.week = parseInt(im[2],10).toString(); params.isoWeek = wv; }
-  } else if (_vocOrdersMode === 'month') {
-    var mv = (document.getElementById('voc-month-filter')||{}).value || '';
-    if (mv) {
-      var mp2 = mv.split('-');
-      var mn = MONTHS_FULL[parseInt(mp2[1],10)-1];
-      sheetMonthLabel = mn + ' - ' + mp2[0];
-      params.month = mp2[1]; params.monthName = mn; params.year = mp2[0];
-      params.isoMonth = mv; params.monthLabel = sheetMonthLabel;
-    }
-  } else if (_vocOrdersMode === 'year') {
-    var yv = (document.getElementById('voc-year-filter')||{}).value || '';
-    if (yv) { params.year = yv; }
-  }
-
-  var qs = Object.keys(params).map(function(k){ return k+'='+encodeURIComponent(params[k]); }).join('&');
-  var url = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec?' + qs + '&callback=test';
-
-  var snippet = '// In your Apps Script doGet(e) — action === "orders" handler:\n' +
-'var action = e.parameter.action; // "orders"\n' +
-'if (action === "orders") {\n' +
-'  var sheet = ss.getSheetByName("Store Metric"); // your sheet name\n' +
-'  var data  = sheet.getDataRange().getValues();\n' +
-'  var headers = data[0];\n' +
-'  var monthCol = headers.indexOf("Month"); // find column index\n' +
-'\n' +
-'  // Read the filter params\n' +
-'  var filterMonth = e.parameter.monthLabel || ""; // e.g. "April - 2026"\n' +
-'  var filterWeek  = e.parameter.week || "";       // e.g. "19"\n' +
-'  var filterYear  = e.parameter.year || "";       // e.g. "2026"\n' +
-'\n' +
-'  var totalOrders = 0, outboundUnits = 0;\n' +
-'  for (var i = 1; i < data.length; i++) {\n' +
-'    var row = data[i];\n' +
-'    var rowMonth = String(row[monthCol] || "").trim();\n' +
-'\n' +
-'    // Filter by whichever mode was selected\n' +
-'    var include = false;\n' +
-'    if (filterMonth && rowMonth === filterMonth) include = true;\n' +
-'    else if (filterWeek && String(row[weekCol]) === filterWeek) include = true;\n' +
-'    else if (filterYear && !filterMonth && !filterWeek && rowMonth.indexOf(filterYear) > -1) include = true;\n' +
-'\n' +
-'    if (include) {\n' +
-'      totalOrders   += Number(row[ordersCol])  || 0;\n' +
-'      outboundUnits += Number(row[unitsCol])   || 0;\n' +
-'    }\n' +
-'  }\n' +
-'\n' +
-'  return ContentService.createTextOutput(\n' +
-'    e.parameter.callback + "(" + JSON.stringify({\n' +
-'      totalOrders: totalOrders,\n' +
-'      outboundUnits: outboundUnits,\n' +
-'      monthLabel: filterMonth || filterWeek || filterYear,\n' +
-'      weekLabel: "Week " + filterWeek\n' +
-'    }) + ")"\n' +
-'  ).setMimeType(ContentService.MimeType.JAVASCRIPT);\n' +
-'}';
-
-  var notice = document.getElementById('voc-orders-appsscript-notice');
-  var pre    = document.getElementById('voc-appsscript-snippet');
-  if (notice && pre) {
-    pre.textContent = 'EXACT URL BEING SENT:\n' + url + '\n\nKey param: monthLabel = "' + sheetMonthLabel + '"\n\n─────────────────────────────\nAPPS SCRIPT FIX (add to your doGet):\n─────────────────────────────\n' + snippet;
-    notice.style.display = 'block';
-  }
-}
-
 // ── Orders fetch mode (week / month / year) ──────────────────────
 var _vocOrdersMode = 'week'; // 'week' | 'month' | 'year'
 
@@ -7312,7 +7230,6 @@ function vocFetchOrders() {
       var label = (data && (data.monthLabel || data.weekLabel || data.yearLabel || data.label)) || displayLabel;
 
       // If Apps Script returned all orders (not filtered), warn the user
-      var isMonthMode = _vocOrdersMode === 'month';
       var banner = document.getElementById('voc-orders-banner-row');
       var co = document.getElementById('voc-chip-orders');
       var cu = document.getElementById('voc-chip-units');
@@ -7322,8 +7239,7 @@ function vocFetchOrders() {
       if (cu) cu.textContent = '📤 ' + units.toLocaleString() + ' OB Units';
       if (cd) cd.textContent = '📅 ' + label;
 
-      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label +
-        (isMonthMode ? '<br><small style="opacity:0.7;">Apps Script param sent: monthLabel = "' + params.monthLabel + '"</small>' : ''), 'ok');
+      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label, 'ok');
       showToast('📦 Orders loaded: ' + total.toLocaleString() + ' · ' + label);
 
       // Sync VOC analysis period filter to match
