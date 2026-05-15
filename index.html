@@ -7120,7 +7120,7 @@ function vocFetchData() {
             orderId:     String(r.orderId     || '').trim(),
             asin:        String(r.asin        || '').trim(),
             issue:       String(r.issue       || '').trim(),
-            rcaCategory: String(r.rcaCategory || '').trim(),
+            rcaCategory: (function(v){ return v.replace(/\s*[\u2013\u2014\-]\s*/g,' - '); })(String(r.rcaCategory || '').trim()),
             rca:         String(r.rca         || '').trim(),
             picker:      String(r.picker      || '').trim(),
             product:     String(r.product     || '').trim(),
@@ -7634,6 +7634,21 @@ function getStoreOrders(storeFilter) {
   return 0;
 }
 
+// ── Normalise RCA category string for robust matching ────────────
+function normRca(s) {
+  if (!s) return '';
+  return String(s).trim()
+    .replace(/\s*[–—\-]+\s*/g, ' - ')  // normalise all dash types
+    .toLowerCase();
+}
+function rcaIs(val, target) {
+  return normRca(val) === normRca(target);
+}
+function rcaIn(val, arr) {
+  var n = normRca(val);
+  return arr.some(function(t){ return normRca(t) === n; });
+}
+
 // ── PICKER RENDER — Top 15, store-filtered orders, correct % ─────────────
 function vocRenderPickerFiltered() {
   var sf = document.getElementById('voc-picker-store').value;
@@ -7641,18 +7656,19 @@ function vocRenderPickerFiltered() {
   var mainSf = document.getElementById('voc-store-filter').value;
   if (mainSf !== 'all') periodData = periodData.filter(function(r) { return r.store === mainSf; });
   var curr = sf !== 'all' ? periodData.filter(function(r) { return r.store === sf; }) : periodData;
-  var pickerRows = curr.filter(function(r) { return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
+  var pickerRows = curr.filter(function(r) { return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
   var effectiveSf = sf !== 'all' ? sf : mainSf;
   var realOrders = getStoreOrders(effectiveSf);
   var ordersReady = realOrders > 0;
 
   var mistakes = {}, pickerStoreMap = {}, pickerDetails = {};
   pickerRows.forEach(function(r) {
-    if (!r.picker) return;
-    mistakes[r.picker] = (mistakes[r.picker] || 0) + 1;
-    pickerStoreMap[r.picker] = r.store;
-    if (!pickerDetails[r.picker]) pickerDetails[r.picker] = [];
-    pickerDetails[r.picker].push({
+    // Use picker value; fall back to orderId or "(Unknown Picker)" so mistakes still show
+    var pid = r.picker || (r.orderId ? '(Order: ' + r.orderId + ')' : '(Unknown Picker)');
+    mistakes[pid] = (mistakes[pid] || 0) + 1;
+    pickerStoreMap[pid] = r.store;
+    if (!pickerDetails[pid]) pickerDetails[pid] = [];
+    pickerDetails[pid].push({
       orderId: r.orderId || '—',
       rca:     r.rca || r.rcaCategory || '—',
       issue:   r.issue || '—',
@@ -7794,10 +7810,10 @@ function vocRenderMetrics(curr, prev, storeOrders) {
     : 0;
   var realOrdersLabel = realOrders > 0 ? 'Store Metric Sheet · ' + (new Date()).toLocaleDateString('en-GB') : '⬆ Fetch Orders to see UTR%';
 
-  var utr    = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
-  var picker = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
-  var qc     = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
-  var otr    = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; });
+  var utr    = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); });
+  var picker = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
+  var qc     = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); });
+  var otr    = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); });
 
   // RCA Not Filled — based on current filter
   var rcaNotFilled = curr.filter(function(r){ return !r.rcaCategory || r.rcaCategory.trim() === ''; }).length;
@@ -7817,23 +7833,23 @@ function vocRenderMetrics(curr, prev, storeOrders) {
       total + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(total) + ')</small>' : ''),
       totalVocSub,
       '#3d3a6b'),
-    vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; }).length) || 'Store side', '#c0392b'),
-    vocCard('OTR Ops Controllable', otr.length, vocPct(otr.length, prev.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length) || 'Delivery side', '#e67e22'),
-    vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length) || 'Picker mistakes only', '#8e44ad'),
-    vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length) || 'Quality checks', '#2980b9'),
-    vocCard('NOT for Our Store', curr.filter(function(r){ return VOC_NOT_STORE.indexOf(r.rcaCategory) > -1; }).length, 'Flagged separately', '#ff6b35'),
+    vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length) || 'Store side', '#c0392b'),
+    vocCard('OTR Ops Controllable', otr.length, vocPct(otr.length, prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length) || 'Delivery side', '#e67e22'),
+    vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length) || 'Picker mistakes only', '#8e44ad'),
+    vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length) || 'Quality checks', '#2980b9'),
+    vocCard('NOT for Our Store', curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NOT_STORE); }).length, 'Flagged separately', '#ff6b35'),
     vocCardWarning('RCA Not Filled', rcaNotFilled, rcaNotFilled > 0 ? '⚠️ Missing RCA in current filter' : '✅ All RCA filled', rcaNotFilled > 0 ? '#b5860d' : '#1a7a4a'),
   ].join('');
 }
 
 function vocRenderUTROTR(curr, prev) {
-  var utrPM   = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length;
-  var utrQC   = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length;
-  var otrN    = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length;
-  var prevPM  = prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; }).length;
-  var prevQC  = prev.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; }).length;
-  var prevOtr = prev.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; }).length;
-  var non     = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+  var utrPM   = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
+  var utrQC   = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length;
+  var otrN    = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length;
+  var prevPM  = prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
+  var prevQC  = prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length;
+  var prevOtr = prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length;
+  var non     = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NON_OPS); });
   var el = document.getElementById('voc-utr-otr-cards');
   el.innerHTML = [
     vocCard('UTR Picker Mistakes (Prev)', prevPM, 'Picker-caused', '#c0392b'),
@@ -7855,7 +7871,7 @@ function vocRenderNonOpsBreakdown(curr) {
   var rowBg   = isDark ? '#1a1928' : '#f8f7ff';
   var brd     = isDark ? '#2e2c45' : '#e8e6f5';
 
-  var nonRows = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+  var nonRows = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NON_OPS); });
   var totalVOC = curr.length || 1;
   var totalNon = nonRows.length;
 
@@ -7867,7 +7883,7 @@ function vocRenderNonOpsBreakdown(curr) {
   // Count each non-ops sub-category
   var catCounts = {};
   VOC_NON_OPS.forEach(function(cat) {
-    catCounts[cat] = nonRows.filter(function(r){ return r.rcaCategory === cat; }).length;
+    catCounts[cat] = nonRows.filter(function(r){ return rcaIs(r.rcaCategory, cat); }).length;
   });
 
   var sortedCats = VOC_NON_OPS.slice().sort(function(a,b){ return catCounts[b] - catCounts[a]; });
@@ -7928,7 +7944,7 @@ function vocRenderTargetCards(curr, storeOrders, storeFilter) {
 
   el.innerHTML = stores.map(function(s) {
     var sRows   = curr.filter(function(r){ return r.store === s; });
-    var utrRows = sRows.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
+    var utrRows = sRows.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); });
 
     // Get store-specific order count from fetched matrix data
     var sOrders = getStoreOrders(s);  // per-store orders
@@ -7979,8 +7995,8 @@ function vocRenderStoreCards(curr, storeFilter) {
     var sRows    = curr.filter(function(r){ return r.store === s; });
     var prevB    = vocGetPeriodBounds(1);
     var prevRows = vocDedup(vocFilterRows(vocRawData, prevB)).filter(function(r){ return r.store === s; });
-    var pm = sRows.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
-    var qc = sRows.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
+    var pm = sRows.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
+    var qc = sRows.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); });
     var pctChange = (sRows.length > 0 && prevRows.length > 0)
       ? ((sRows.length - prevRows.length) / prevRows.length * 100).toFixed(0) : 0;
     var trending = pctChange > 5
@@ -8038,10 +8054,10 @@ function vocRenderSplitChart(rows) {
   var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
   var legendColor = isDark ? '#b8b6d9' : '#3d3a6b';
   var borderColor = isDark ? '#1a1928' : '#ffffff';
-  var utr=rows.filter(function(r){return VOC_UTR.indexOf(r.rcaCategory)>-1;}).length;
-  var otr=rows.filter(function(r){return VOC_OTR.indexOf(r.rcaCategory)>-1;}).length;
-  var non=rows.filter(function(r){return VOC_NON_OPS.indexOf(r.rcaCategory)>-1;}).length;
-  var notS=rows.filter(function(r){return VOC_NOT_STORE.indexOf(r.rcaCategory)>-1;}).length;
+  var utr=rows.filter(function(r){return rcaIn(r.rcaCategory, VOC_UTR);}).length;
+  var otr=rows.filter(function(r){return rcaIn(r.rcaCategory, VOC_OTR);}).length;
+  var non=rows.filter(function(r){return rcaIn(r.rcaCategory, VOC_NON_OPS);}).length;
+  var notS=rows.filter(function(r){return rcaIn(r.rcaCategory, VOC_NOT_STORE);}).length;
   if(vocCharts.split)vocCharts.split.destroy();
   vocCharts.split=new Chart(document.getElementById('voc-chart-split'),{
     type:'doughnut',
@@ -8437,11 +8453,11 @@ async function vocExportPDF() {
     var sf = store;
     if (sf !== 'all') curr = curr.filter(function(r){ return r.store === sf; });
     var realOrders = (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders : curr.length;
-    var utr = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory) > -1; });
-    var otr = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory) > -1; });
-    var pm  = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - Picker Mistake'; });
-    var qc  = curr.filter(function(r){ return r.rcaCategory === 'Ops Controllable - QC Issue'; });
-    var non = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory) > -1; });
+    var utr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); });
+    var otr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); });
+    var pm  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
+    var qc  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); });
+    var non = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NON_OPS); });
     var vocRate = realOrders > 0 ? ((curr.length/realOrders)*100).toFixed(3) : '—';
     var utrRate = realOrders > 0 ? ((utr.length/realOrders)*100).toFixed(3) : '—';
 
@@ -8484,9 +8500,9 @@ async function vocExportPDF() {
     y += 7;
     stores.forEach(function(s, si) {
       var sr = curr.filter(function(r){ return r.store === s; });
-      var spm = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; }).length;
-      var sqc = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; }).length;
-      var sutr = sr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; }).length;
+      var spm = sr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
+      var sqc = sr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length;
+      var sutr = sr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length;
       var sRate = realOrders > 0 ? ((sutr/realOrders)*100).toFixed(3)+'%' : '—';
       var bg = si%2===0?[245,244,255]:[255,255,255];
       pdf.setFillColor(bg[0],bg[1],bg[2]); pdf.rect(14,y-4,pageW-28,7,'F');
@@ -8502,7 +8518,7 @@ async function vocExportPDF() {
     pdf.setFontSize(10); pdf.setFont(undefined,'bold'); pdf.setTextColor(30,25,80);
     pdf.text('Top Picker Mistakes', 14, y); y += 5;
     var pickerMap = {};
-    curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake' && r.picker; })
+    curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake') && r.picker; })
         .forEach(function(r){ pickerMap[r.picker]=(pickerMap[r.picker]||{count:0,store:r.store}); pickerMap[r.picker].count++; });
     var pickerSorted = Object.keys(pickerMap).sort(function(a,b){ return pickerMap[b].count - pickerMap[a].count; }).slice(0,15);
     ['Picker ID','Store','Mistakes','% of Orders'].forEach(function(h,ci){
@@ -8549,11 +8565,11 @@ function vocExportExcel() {
     var wb = XLSX.utils.book_new();
 
     // ── Sheet 1: Summary KPIs
-    var utr = curr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; });
-    var otr = curr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory)>-1; });
-    var pm  = curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; });
-    var qc  = curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; });
-    var non = curr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory)>-1; });
+    var utr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); });
+    var otr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); });
+    var pm  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
+    var qc  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); });
+    var non = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NON_OPS); });
     var pct = function(n){ return realOrders > 0 ? parseFloat(((n/realOrders)*100).toFixed(3)) : 'N/A'; };
     var summary = [
       ['VOC Report — HP World'],
@@ -8587,18 +8603,18 @@ function vocExportExcel() {
     var storeRows = [['Store','VOC Count','Picker Mistakes','QC Issues','UTR','OTR','Non-Ops','UTR Rate %']];
     stores.forEach(function(s){
       var sr  = curr.filter(function(r){ return r.store===s; });
-      var spm = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake'; }).length;
-      var sqc = sr.filter(function(r){ return r.rcaCategory==='Ops Controllable - QC Issue'; }).length;
-      var su  = sr.filter(function(r){ return VOC_UTR.indexOf(r.rcaCategory)>-1; }).length;
-      var so  = sr.filter(function(r){ return VOC_OTR.indexOf(r.rcaCategory)>-1; }).length;
-      var sn  = sr.filter(function(r){ return VOC_NON_OPS.indexOf(r.rcaCategory)>-1; }).length;
+      var spm = sr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
+      var sqc = sr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length;
+      var su  = sr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length;
+      var so  = sr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length;
+      var sn  = sr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NON_OPS); }).length;
       storeRows.push([s, sr.length, spm, sqc, su, so, sn, pct(su)]);
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(storeRows), 'Store Breakdown');
 
     // ── Sheet 4: Picker Analysis
     var pickerMap = {};
-    curr.filter(function(r){ return r.rcaCategory==='Ops Controllable - Picker Mistake' && r.picker; })
+    curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake') && r.picker; })
         .forEach(function(r){ if(!pickerMap[r.picker])pickerMap[r.picker]={count:0,store:r.store}; pickerMap[r.picker].count++; });
     var pickerRows2 = [['Picker ID','Store','Total Orders','Mistakes','% of Orders','Risk']];
     Object.keys(pickerMap).sort(function(a,b){ return pickerMap[b].count-pickerMap[a].count; }).forEach(function(p){
@@ -8886,7 +8902,7 @@ function handleVOC(e) {
   var iIssue    = col(['issue','issue type','complaint','issue category']);
   var iRcaCat   = col(['rca category','rca cat','root cause category','category']);
   var iRca      = col(['rca','root cause','root cause analysis']);
-  var iPicker   = col(['picker','picker id','picker name']);
+  var iPicker   = col(['picker','picker id','picker name','employee id','employee','emp id','associate id','associate','staff id','staff','user id','user','operator','operator id','agent','agent id','packed by','picked by','packer','picker no']);
   var iProduct  = col(['product','product name','item name','item']);
   var iProdType = col(['product type','type','category type']);
   var iWeek     = col(['week','week no','week number','wk']);
