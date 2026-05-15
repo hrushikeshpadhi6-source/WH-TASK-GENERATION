@@ -8770,6 +8770,418 @@ document.addEventListener('click', function(e) {
   } catch(e) {}
   if (ok) authShowApp(); else authShowLogin();
 })();
+
+
+
+</script>
+<!-- ═══════════════════════════════════════════════════════════════
+     EMBEDDED APPS SCRIPT — FIXED handleForecast (normHdr patch)
+     Copy everything inside this block and paste into your Google
+     Apps Script editor, then re-deploy as a new version.
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="text/plain" id="gas-code-block">
+// ═══════════════════════════════════════════════════════════════════
+// HP WORLD — DARK STORE TASK PRO — COMPLETE APPS SCRIPT
+// All 5 actions: voc | orders | forecast | catalog_asin | scanning_asin
+// ═══════════════════════════════════════════════════════════════════
+
+// ── YOUR SHEET TAB NAMES — edit these if different ─────────────────
+var SHEET_VOC             = 'voc analysis';
+var SHEET_STORE_METRIC    = 'Store Metric';
+var SHEET_FORECAST_ORDERS = 'OB FORECAST ORDERS';
+var SHEET_FORECAST_UNITS  = 'OB FORECAST UNITS';
+var SHEET_CATALOG         = 'CATALOG ISSUE ASIN';
+var SHEET_SCANNING        = 'SCANNING ISSUE ASIN';
+
+// ─────────────────────────────────────────────────────────────────
+function doGet(e) {
+  var action   = e.parameter.action   || '';
+  var callback = e.parameter.callback || 'callback';
+  var result;
+
+  try {
+    if      (action === 'voc')           result = handleVOC(e);
+    else if (action === 'orders')        result = handleOrders(e);
+    else if (action === 'forecast')      result = handleForecast(e);
+    else if (action === 'catalog_asin')  result = handleCatalogASIN(e);
+    else if (action === 'scanning_asin') result = handleScanningASIN(e);
+    else result = { status: 'error', message: 'Unknown action: ' + action };
+  } catch (err) {
+    result = { status: 'error', message: err.toString() };
+  }
+
+  return ContentService
+    .createTextOutput(callback + '(' + JSON.stringify(result) + ')')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function getSS() {
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+// ── Get the actual last-modified time of the Google Sheet file ──────
+function getSheetLastModified() {
+  try {
+    var ss   = getSS();
+    var file = DriveApp.getFileById(ss.getId());
+    return file.getLastUpdated().toISOString();
+  } catch(e) {
+    return '';
+  }
+}
+
+// ── Normalize month cell to "MonthName - YYYY" ──────────────────────
+var MONTH_NAMES_EN = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+function normalizeMonthCell(val) {
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) {
+    return MONTH_NAMES_EN[val.getMonth()] + ' - ' + val.getFullYear();
+  }
+  var s = String(val).trim();
+  if (!s) return '';
+  var m = s.match(/^([A-Za-z]+)\s*[-–—]\s*(\d{4})$/);
+  if (m) return capitalize(m[1]) + ' - ' + m[2];
+  m = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (m) return capitalize(m[1]) + ' - ' + m[2];
+  m = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) { var mi = parseInt(m[1],10)-1; if (mi>=0&&mi<12) return MONTH_NAMES_EN[mi]+' - '+m[2]; }
+  m = s.match(/^(\d{4})-(\d{1,2})$/);
+  if (m) { var mi2=parseInt(m[2],10)-1; if (mi2>=0&&mi2<12) return MONTH_NAMES_EN[mi2]+' - '+m[1]; }
+  m = s.match(/^(\d{1,2})-(\d{4})$/);
+  if (m) { var mi3=parseInt(m[1],10)-1; if (mi3>=0&&mi3<12) return MONTH_NAMES_EN[mi3]+' - '+m[2]; }
+  return s;
+}
+
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 1: VOC DATA
+// ═══════════════════════════════════════════════════════════════════
+function handleVOC(e) {
+  var sheet = getSS().getSheetByName(SHEET_VOC);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_VOC + '" not found' };
+
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
+
+  function col(names) {
+    for (var n = 0; n < names.length; n++) {
+      var idx = headers.indexOf(names[n].toLowerCase());
+      if (idx > -1) return idx;
+    }
+    return -1;
+  }
+
+  var iStore    = col(['store','store name','delivery station','station']);
+  var iDate     = col(['date','order date','complaint date']);
+  var iOrder    = col(['order id','orderid','order_id','order no','order number']);
+  var iAsin     = col(['asin','asin no']);
+  var iIssue    = col(['issue','issue type','complaint','issue category']);
+  var iRcaCat   = col(['rca category','rca cat','root cause category','category']);
+  var iRca      = col(['rca','root cause','root cause analysis']);
+  var iPicker   = col(['picker','picker id','picker name']);
+  var iProduct  = col(['product','product name','item name','item']);
+  var iProdType = col(['product type','type','category type']);
+  var iWeek     = col(['week','week no','week number','wk']);
+  var iComment  = col(['comment','comments','remarks','remark']);
+
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var r     = data[i];
+    var store = iStore >= 0 ? String(r[iStore] || '').trim() : '';
+    if (!store) continue;
+
+    var dateVal = '';
+    if (iDate >= 0 && r[iDate]) {
+      if (r[iDate] instanceof Date) {
+        dateVal = r[iDate].toISOString();
+      } else {
+        var d = new Date(r[iDate]);
+        dateVal = isNaN(d.getTime()) ? String(r[iDate]) : d.toISOString();
+      }
+    }
+
+    rows.push({
+      store:       store,
+      date:        dateVal,
+      orderId:     iOrder    >= 0 ? String(r[iOrder]    || '').trim() : '',
+      asin:        iAsin     >= 0 ? String(r[iAsin]     || '').trim() : '',
+      issue:       iIssue    >= 0 ? String(r[iIssue]    || '').trim() : '',
+      rcaCategory: iRcaCat   >= 0 ? String(r[iRcaCat]   || '').trim() : '',
+      rca:         iRca      >= 0 ? String(r[iRca]      || '').trim() : '',
+      picker:      iPicker   >= 0 ? String(r[iPicker]   || '').trim() : '',
+      product:     iProduct  >= 0 ? String(r[iProduct]  || '').trim() : '',
+      productType: iProdType >= 0 ? String(r[iProdType] || '').trim() : '',
+      week:        iWeek     >= 0 ? String(r[iWeek]     || '').trim() : '',
+      comment:     iComment  >= 0 ? String(r[iComment]  || '').trim() : ''
+    });
+  }
+
+  return {
+    status:            'ok',
+    rows:              rows,
+    count:             rows.length,
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 2: ORDERS — Store Metric sheet
+// ═══════════════════════════════════════════════════════════════════
+function handleOrders(e) {
+  var sheet = getSS().getSheetByName(SHEET_STORE_METRIC);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_STORE_METRIC + '" not found' };
+
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0];
+
+  var monthColIdx=-1, weekColIdx=-1, ordersColIdx=-1, unitsColIdx=-1, storeColIdx=-1;
+
+  for (var c = 0; c < headers.length; c++) {
+    var h  = String(headers[c]).trim();
+    var hl = h.toLowerCase();
+    if (h === 'W' || hl === 'month' || hl === 'month name')              monthColIdx  = c;
+    if (hl === 'week' || hl === 'week no' || hl === 'week number' ||
+        hl === 'wk'   || hl === 'week_no')                               weekColIdx   = c;
+    if (hl === 'orders' || hl === 'total orders' || hl === 'order count'||
+        hl === 'no of orders' || hl === 'total_orders' ||
+        hl === 'outbound orders' || hl === 'ob orders' || hl === 'order') ordersColIdx = c;
+    if (hl === 'ob units' || hl === 'outbound units' || hl === 'units'  ||
+        hl === 'total units' || hl === 'ob_units' || hl === 'unit'      ||
+        hl === 'ob unit')                                                 unitsColIdx  = c;
+    if (hl === 'store' || hl === 'station' || hl === 'delivery station'||
+        hl === 'store name' || hl === 'site')                            storeColIdx  = c;
+  }
+
+  var filterMonthLabel = String(e.parameter.monthLabel || '').trim();
+  var filterMonthName  = String(e.parameter.monthName  || '').trim();
+  var filterYear       = String(e.parameter.year       || '').trim();
+  var filterWeek       = String(e.parameter.week       || '').trim();
+  var filterNorm       = filterMonthLabel ? (filterMonthName + ' - ' + filterYear) : '';
+
+  var totalOrders = 0, totalUnits = 0, storeMap = {};
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var hasData = row.some(function(v){ return v !== '' && v !== null && v !== undefined; });
+    if (!hasData) continue;
+
+    var rawMonthCell = monthColIdx >= 0 ? row[monthColIdx] : '';
+    var rawWeekCell  = weekColIdx  >= 0 ? row[weekColIdx]  : '';
+    var rawStore     = storeColIdx >= 0 ? String(row[storeColIdx] || '').trim() : '';
+    var rowMonthNorm = normalizeMonthCell(rawMonthCell);
+
+    var include = false;
+    if (filterNorm) {
+      if (rowMonthNorm.toLowerCase() === filterNorm.toLowerCase()) include = true;
+    } else if (filterWeek) {
+      var rw = String(rawWeekCell).replace(/\D/g,'');
+      var fw = filterWeek.replace(/\D/g,'');
+      if (rw && rw === fw) include = true;
+    } else if (filterYear) {
+      if (rowMonthNorm.indexOf(filterYear) > -1) include = true;
+    }
+
+    if (include) {
+      var oVal = ordersColIdx >= 0 ? (Number(row[ordersColIdx]) || 0) : 0;
+      var uVal = unitsColIdx  >= 0 ? (Number(row[unitsColIdx])  || 0) : 0;
+      totalOrders += oVal;
+      totalUnits  += uVal;
+      if (rawStore) storeMap[rawStore] = (storeMap[rawStore] || 0) + oVal;
+    }
+  }
+
+  return {
+    status: 'ok', totalOrders: totalOrders, outboundUnits: totalUnits,
+    stores: storeMap, monthLabel: filterNorm,
+    weekLabel: filterWeek ? 'Week ' + filterWeek : '',
+    yearLabel: filterYear,
+    label: filterNorm || (filterWeek ? 'Week ' + filterWeek : filterYear)
+  };
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 3: FORECAST — OB FORECAST ORDERS + OB FORECAST UNITS
+// ── FIX: normHdr() handles Date objects AND all text formats so
+//    column headers like "16-May" always match even when Apps Script
+//    auto-converts them to JavaScript Date objects.
+// ═══════════════════════════════════════════════════════════════════
+function handleForecast(e) {
+  var ss      = getSS();
+  var dateStr = String(e.parameter.date || '').trim(); // "2026-05-15"
+  var sheetO  = ss.getSheetByName(SHEET_FORECAST_ORDERS);
+  var sheetU  = ss.getSheetByName(SHEET_FORECAST_UNITS);
+  if (!sheetO) return { status: 'error', message: 'Sheet "' + SHEET_FORECAST_ORDERS + '" not found' };
+  if (!sheetU) return { status: 'error', message: 'Sheet "' + SHEET_FORECAST_UNITS  + '" not found' };
+
+  var MONTHS_SH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Convert "2026-05-16" → "16-May" (the target header string)
+  function toSheetDateHeader(isoDate) {
+    if (!isoDate) return '';
+    var parts = isoDate.split('-');
+    if (parts.length !== 3) return '';
+    var day = parseInt(parts[2], 10);
+    var mon = parseInt(parts[1], 10) - 1;
+    if (mon < 0 || mon > 11) return '';
+    return day + '-' + MONTHS_SH[mon];
+  }
+
+  // ── KEY FIX: normalise ANY header cell → "D-Mon" ─────────────────
+  // Apps Script sometimes reads "16-May" header cells as Date objects.
+  // String(dateObj) = "Sat May 16 2026 ..." which never matched "16-May".
+  // This function handles Date objects + every text format correctly.
+  function normHdr(val) {
+    if (val === null || val === undefined || val === '') return '';
+
+    // Date object (Apps Script auto-parses date-looking header cells)
+    if (val instanceof Date) {
+      return val.getDate() + '-' + MONTHS_SH[val.getMonth()];
+    }
+
+    var s = String(val).trim();
+    if (!s) return '';
+
+    // "16-May" or "16-May-2026"
+    var m1 = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})(?:[-\s]\d{2,4})?$/);
+    if (m1) return parseInt(m1[1], 10) + '-' + capitalize(m1[2].slice(0, 3));
+
+    // "May-16" or "May 16" or "May-16-2026"
+    var m2 = s.match(/^([A-Za-z]{3,9})[-\s](\d{1,2})(?:[-\s]\d{2,4})?$/);
+    if (m2) return parseInt(m2[2], 10) + '-' + capitalize(m2[1].slice(0, 3));
+
+    // "16/05/2026" or "16-05-2026"
+    var m3 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m3) {
+      var mon3 = parseInt(m3[2], 10) - 1;
+      if (mon3 >= 0 && mon3 < 12) return parseInt(m3[1], 10) + '-' + MONTHS_SH[mon3];
+    }
+
+    // "2026-05-16"
+    var m4 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m4) {
+      var mon4 = parseInt(m4[2], 10) - 1;
+      if (mon4 >= 0 && mon4 < 12) return parseInt(m4[3], 10) + '-' + MONTHS_SH[mon4];
+    }
+
+    // Google Sheets serial date (e.g. 46157)
+    if (/^\d{5}$/.test(s)) {
+      var serial = parseInt(s, 10);
+      var dt = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+      return dt.getUTCDate() + '-' + MONTHS_SH[dt.getUTCMonth()];
+    }
+
+    return s;
+  }
+
+  // Convert any header value back to yyyy-MM-dd for datesAvailable list
+  function headerToISO(val, year) {
+    var norm = normHdr(val);
+    var m = norm.match(/^(\d{1,2})-([A-Za-z]{3})$/);
+    if (!m) return '';
+    var monIdx = MONTHS_SH.map(function(x){ return x.toLowerCase(); })
+                           .indexOf(m[2].toLowerCase());
+    if (monIdx < 0) return '';
+    var yr = year || new Date().getFullYear();
+    return yr + '-' + String(monIdx + 1).padStart(2, '0') + '-' + String(parseInt(m[1], 10)).padStart(2, '0');
+  }
+
+  var requestedYear = dateStr ? parseInt(dateStr.split('-')[0], 10) : new Date().getFullYear();
+  var targetHeader  = toSheetDateHeader(dateStr); // e.g. "16-May"
+
+  function parseSheet(sheet) {
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0]; // ["Store","Slots","10-May","11-May",...]
+
+    var dateColIdx  = -1;
+    var allDateCols = [];
+
+    for (var c = 2; c < headers.length; c++) {
+      var normH  = normHdr(headers[c]);
+      var isoHdr = headerToISO(headers[c], requestedYear);
+      if (isoHdr) allDateCols.push({ idx: c, header: normH, iso: isoHdr });
+
+      // Compare normalised forms — works whether cell is Date or text
+      if (targetHeader && normH.toLowerCase() === targetHeader.toLowerCase()) {
+        dateColIdx = c;
+      }
+    }
+
+    var datesAvail = allDateCols.map(function(d){ return d.iso; }).sort();
+    var result     = {};
+
+    if (dateColIdx < 0) {
+      return { data: result, datesAvail: datesAvail };
+    }
+
+    for (var i = 1; i < data.length; i++) {
+      var row   = data[i];
+      var store = String(row[0] || '').trim();
+      var slot  = String(row[1] || '').trim();
+      if (!store || !slot) continue;
+
+      var val = Number(row[dateColIdx]) || 0;
+      if (!result[store]) result[store] = {};
+      result[store][slot] = (result[store][slot] || 0) + val;
+    }
+
+    return { data: result, datesAvail: datesAvail };
+  }
+
+  var oRes = parseSheet(sheetO);
+  var uRes = parseSheet(sheetU);
+
+  return {
+    status:         'ok',
+    date:           dateStr,
+    targetHeader:   targetHeader,
+    orders:         oRes.data,
+    units:          uRes.data,
+    stores:         Object.keys(oRes.data),
+    datesAvailable: oRes.datesAvail
+  };
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 4: CATALOG ISSUE ASINs
+// ═══════════════════════════════════════════════════════════════════
+function handleCatalogASIN(e) {
+  var sheet = getSS().getSheetByName(SHEET_CATALOG);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_CATALOG + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  var asins = [];
+  for (var i = 0; i < data.length; i++) {
+    var v = String(data[i][0] || '').trim();
+    if (v && v.toLowerCase() !== 'asin') asins.push(v);
+  }
+  return { status: 'ok', asins: asins, count: asins.length };
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 5: SCANNING ISSUE ASINs
+// ═══════════════════════════════════════════════════════════════════
+function handleScanningASIN(e) {
+  var sheet = getSS().getSheetByName(SHEET_SCANNING);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_SCANNING + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  var asins = [];
+  for (var i = 0; i < data.length; i++) {
+    var v = String(data[i][0] || '').trim();
+    if (v && v.toLowerCase() !== 'asin') asins.push(v);
+  }
+  return { status: 'ok', asins: asins, count: asins.length };
+}
 </script>
 </body>
 </html>
