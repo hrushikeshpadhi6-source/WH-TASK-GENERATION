@@ -803,30 +803,32 @@ footer span { color:var(--accent); }
 }
 /* Left colored section */
 .locid-left {
-  width: 22mm;
+  width: 26mm;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1mm 2.5mm;
-  line-height: 1.25;
-  gap: 0.5mm;
+  padding: 0.5mm 1mm;
+  line-height: 1.1;
+  gap: 0mm;
 }
 .locid-left .lil-top {
-  font-size: 13pt;
+  font-size: 10pt;
   font-weight: 800;
   font-family: Arial, sans-serif;
   color: rgba(0,0,0,0.9);
   text-align: center;
   letter-spacing: 0pt;
+  white-space: nowrap;
 }
 .locid-left .lil-bot {
-  font-size: 18pt;
+  font-size: 24pt;
   font-weight: 900;
   font-family: Arial, sans-serif;
   color: rgba(0,0,0,0.9);
   text-align: center;
+  line-height: 1;
 }
 /* Center main section */
 .locid-center {
@@ -8630,14 +8632,16 @@ function vocRenderRCA() {
 
 // ── WHATSAPP RCA REMINDER ────────────────────────────────────────
 function vocWhatsAppReminder() {
-  if (!vocRawData.length) { showToast('⚠️ Load VOC data first'); return; }
+  if (!vocRawData.length) { showToast('Load VOC data first'); return; }
   var periodLabel = (document.getElementById('voc-period-label') || {}).textContent || 'this period';
   var periodData  = vocDedup(vocFilterByPeriod(vocRawData));
   var stores = [...new Set(vocRawData.map(function(r){ return r.store; }))].filter(Boolean).sort();
 
+  // WhatsApp-safe emoji only (supported universally):
+  // * (bold via *text*), checkmark unicode, store/bell/calendar
   var lines = [
-    '🔔 *RCA PENDING REMINDER — HP World VOC*',
-    '📅 Period: ' + periodLabel,
+    '\u{1F514} *RCA PENDING REMINDER \u2014 VOC*',
+    '\u{1F4C5} Period: ' + periodLabel,
     ''
   ];
 
@@ -8649,21 +8653,22 @@ function vocWhatsAppReminder() {
     var sPend = sPd.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
     if (pend > 0) {
       anyPending = true;
-      lines.push('🏪 *' + s + '*');
-      lines.push('   ⏳ ' + pend + ' pending (all time) | ' + sPend + ' pending this period');
+      lines.push('\u{1F3EA} *' + s + '*');
+      lines.push('   \u23F3 ' + pend + ' pending (all time) | ' + sPend + ' pending this period');
     }
   });
 
   if (!anyPending) {
-    lines.push('✅ All RCA entries are complete!');
+    lines.push('\u2705 All RCA entries are complete!');
   } else {
     lines.push('');
-    lines.push('⚠️ Please complete RCA entries in the VOC sheet ASAP.');
+    lines.push('\u26A0 Please complete RCA entries in the VOC sheet ASAP.');
   }
-  lines.push('📊 HP World · Dark Store Task Pro · ' + new Date().toLocaleDateString('en-GB'));
+  // Footer: only Dark Store Pro, no HP World
+  lines.push('\u{1F4CA} Dark Store Pro ' + new Date().toLocaleDateString('en-GB'));
 
   window.open('https://wa.me/?text=' + encodeURIComponent(lines.join('\n')), '_blank');
-  showToast('✅ WhatsApp RCA reminder opened!');
+  showToast('WhatsApp RCA reminder opened!');
 }
 
 // ── PDF EXPORT ───────────────────────────────────────────────────────────
@@ -8782,16 +8787,60 @@ async function vocExportPDF() {
       if (y > pageH - 15) { pdf.addPage(); y = 14; }
     });
 
-    // Footer
+    // ── CHARTS PAGE ────────────────────────────────────────────────
+    // Capture all 4 Chart.js canvases and add as a new page
+    var chartDefs = [
+      { id: 'voc-chart-issues', label: 'Issue Type Breakdown' },
+      { id: 'voc-chart-stores', label: 'VOC by Store' },
+      { id: 'voc-chart-split',  label: 'UTR / OTR / Non-Ops Split' },
+      { id: 'voc-chart-trend',  label: 'VOC Trend' }
+    ];
+
+    pdf.addPage();
+    var cy = 14;
+    pdf.setFillColor(10,9,20);
+    pdf.rect(0, 0, pageW, 14, 'F');
+    pdf.setTextColor(255,107,53); pdf.setFontSize(11); pdf.setFont(undefined,'bold');
+    pdf.text('VOC Charts', 14, 10);
+    cy = 18;
+
+    // 2 charts per row
+    var chartW = (pageW - 28 - 6) / 2;   // two columns with 6mm gap
+    var chartH = 60;                       // height of each chart image in mm
+    var col = 0;
+
+    for (var ci = 0; ci < chartDefs.length; ci++) {
+      var cd = chartDefs[ci];
+      var cvs = document.getElementById(cd.id);
+      if (!cvs) continue;
+      var imgData = cvs.toDataURL('image/png', 1.0);
+      var xPos = 14 + col * (chartW + 6);
+
+      // Section label
+      pdf.setFontSize(8); pdf.setFont(undefined,'bold'); pdf.setTextColor(80,80,120);
+      pdf.text(cd.label, xPos, cy + 4);
+
+      // Chart image
+      pdf.addImage(imgData, 'PNG', xPos, cy + 6, chartW, chartH);
+
+      col++;
+      if (col >= 2) {
+        col = 0;
+        cy += chartH + 16;
+        if (cy > pageH - chartH - 20) { pdf.addPage(); cy = 14; }
+      }
+    }
+
+    // Footer on all pages
     var pages = pdf.getNumberOfPages();
     for (var pg = 1; pg <= pages; pg++) {
       pdf.setPage(pg);
       pdf.setFontSize(7); pdf.setTextColor(150);
-      pdf.text('VOC Report · HP World · Page ' + pg + ' of ' + pages + ' · ' + now, 14, pageH - 6);
+      pdf.text('VOC Report · Dark Store Pro · Page ' + pg + ' of ' + pages + ' · ' + now, 14, pageH - 6);
     }
     pdf.save('VOC_Report_' + new Date().toISOString().split('T')[0] + '.pdf');
-    showToast('✅ VOC PDF downloaded!');
-  } catch(e) { console.error(e); showToast('❌ PDF error: ' + e.message); }
+    showToast('VOC PDF downloaded!');
+  } catch(e) { console.error(e); showToast('PDF error: ' + e.message); }
 }
 
 // ── EXCEL EXPORT ─────────────────────────────────────────────────────────
