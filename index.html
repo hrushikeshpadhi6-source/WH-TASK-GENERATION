@@ -9568,48 +9568,92 @@ function handleScanningASIN(e) {
     <span class="task-header-icon">🚀</span>
     <div>
       <h2 style="background:linear-gradient(135deg,#1a1830,#e8500a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Fast Moving ASIN</h2>
-      <p style="color:#3d3a6b;">Upload outbound file → rank top ASINs by pick frequency from H &amp; I locations.</p>
+      <p style="color:#3d3a6b;">Upload Outbound Pick data + Real-Time Inventory → find fast-moving ASINs in H &amp; I bins.</p>
     </div>
   </div>
-  <div class="upload-zone" id="dstpro-uz-fast" style="background:#fff;border-color:#d5d2f0;"
-    onclick="document.getElementById('dstpro-f-fast').click()"
-    ondragover="event.preventDefault();this.classList.add('drag')"
-    ondragleave="this.classList.remove('drag')"
-    ondrop="event.preventDefault();this.classList.remove('drag');dstproFastHandleDrop(event)">
-    <input type="file" id="dstpro-f-fast" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproFastHandleUpload(this)">
-    <div class="u-icon">📂</div>
-    <h3 style="color:#1a1830;">Upload Outbound File</h3>
-    <p style="color:#7b78a8;">Drag &amp; drop or click — XLSX, XLS, CSV</p>
-    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+
+  <!-- Two upload zones side by side -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px;">
+    <!-- File 1: Outbound Pick Data -->
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📤 Step 1 — Outbound Pick Data</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;"
+        onclick="document.getElementById('dstpro-f-fast').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');dstproFastHandleDrop(event)">
+        <input type="file" id="dstpro-f-fast" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproFastHandleUpload(this)">
+        <div class="u-icon" style="font-size:32px;">📤</div>
+        <h3 style="color:#1a1830;font-size:15px;">Outbound Pick File</h3>
+        <p style="color:#7b78a8;font-size:12px;">XLSX · XLS · CSV</p>
+      </div>
+      <div class="file-ok" id="dstpro-fo-fast">
+        <span>✅</span>
+        <div class="fi-info"><strong id="dstpro-fo-fast-name">—</strong><span id="dstpro-fo-fast-info">—</span></div>
+      </div>
+    </div>
+    <!-- File 2: Real-Time Inventory -->
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📦 Step 2 — Real-Time Inventory</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;"
+        onclick="document.getElementById('dstpro-f-fast-inv').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');dstproFastInvDrop(event)">
+        <input type="file" id="dstpro-f-fast-inv" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproFastInvUpload(this)">
+        <div class="u-icon" style="font-size:32px;">📦</div>
+        <h3 style="color:#1a1830;font-size:15px;">Real-Time Inventory File</h3>
+        <p style="color:#7b78a8;font-size:12px;">XLSX · XLS · CSV</p>
+      </div>
+      <div class="file-ok" id="dstpro-fo-fast-inv">
+        <span>✅</span>
+        <div class="fi-info"><strong id="dstpro-fo-fast-inv-name">—</strong><span id="dstpro-fo-fast-inv-info">—</span></div>
+      </div>
+    </div>
   </div>
-  <div class="file-ok" id="dstpro-fo-fast">
-    <span>✅</span>
-    <div class="fi-info"><strong id="dstpro-fo-fast-name">—</strong><span id="dstpro-fo-fast-info">—</span></div>
-    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="dstproFastReset()">✕</button>
-  </div>
+
+  <!-- Column Mapper — shown when both files loaded -->
   <div id="dstpro-fast-mapper" style="display:none;background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;">
-    <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">📋 Map Your Columns</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;align-items:end;">
+    <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">📋 Map Columns</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:14px;">
+      <!-- Outbound columns -->
       <div>
-        <div class="ctrl-label" style="color:#7b78a8;">ASIN Column</div>
-        <select class="select-field" id="dstpro-fast-col-asin" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+        <div style="font-size:11px;font-weight:700;color:#e8500a;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">📤 Outbound File</div>
+        <div style="display:grid;gap:10px;">
+          <div>
+            <div class="ctrl-label" style="color:#7b78a8;">ASIN Column</div>
+            <select class="select-field" id="dstpro-fast-col-asin" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+          </div>
+          <div>
+            <div class="ctrl-label" style="color:#7b78a8;">Quantity Column</div>
+            <select class="select-field" id="dstpro-fast-col-qty" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+          </div>
+        </div>
       </div>
+      <!-- Inventory columns -->
       <div>
-        <div class="ctrl-label" style="color:#7b78a8;">Location Column</div>
-        <select class="select-field" id="dstpro-fast-col-loc" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+        <div style="font-size:11px;font-weight:700;color:#4361ee;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">📦 Inventory File</div>
+        <div style="display:grid;gap:10px;">
+          <div>
+            <div class="ctrl-label" style="color:#7b78a8;">ASIN Column</div>
+            <select class="select-field" id="dstpro-fast-inv-col-asin" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+          </div>
+          <div>
+            <div class="ctrl-label" style="color:#7b78a8;">Location Column</div>
+            <select class="select-field" id="dstpro-fast-inv-col-loc" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+          </div>
+        </div>
       </div>
-      <div>
-        <div class="ctrl-label" style="color:#7b78a8;">Quantity Column</div>
-        <select class="select-field" id="dstpro-fast-col-qty" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
-      </div>
-      <div style="display:flex;align-items:flex-end;">
-        <button class="btn btn-primary" style="width:100%;" onclick="dstproFastGenerate()">⚡ Analyse Fast Movers</button>
-      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="dstproFastGenerate()">⚡ Analyse Fast Movers</button>
+      <button class="btn btn-outline" onclick="dstproFastReset()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">✕ Reset</button>
     </div>
     <div style="margin-top:12px;padding:10px 14px;background:rgba(67,97,238,0.06);border:1px solid rgba(67,97,238,0.2);border-radius:8px;font-size:12px;color:#3d3a6b;">
-      ℹ️ Only locations starting with <strong>H</strong> or <strong>I</strong> are included.
+      ℹ️ Only <strong>P-1-A</strong> and <strong>HAZ</strong> locations with <strong>H</strong> or <strong>I</strong> bins are included (e.g. P-1-A110I123, HAZ-A100H555).
     </div>
   </div>
+
   <div class="loading" id="load-fast-moving">
     <div class="loading-inner"><div class="spinner"></div><div class="loading-status-text">Analysing picks...</div>
     <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
@@ -10007,86 +10051,140 @@ var DSTPRO = (function() {
     };
     if(ext==='csv')reader.readAsText(file); else reader.readAsArrayBuffer(file);
   }
-  function fastHandleFile(file){
-    if(!file)return;
-    _parseFile(file,function(err,json){
-      if(err){_showToast('❌ '+err.message);return;}
-      if(!json.length){_showToast('⚠️ File is empty');return;}
-      _fastData=json; _fastHdrs=Object.keys(json[0]);
-      document.getElementById('dstpro-fo-fast-name').textContent=file.name;
-      document.getElementById('dstpro-fo-fast-info').textContent=json.length.toLocaleString()+' rows';
+  // ── FAST MOVING ASIN STATE ─────────────────────────────────────
+  var _fastInvData  = [];   // Real-Time Inventory file data
+  var _fastInvHdrs  = [];
+
+  function fastHandleFile(file) {
+    if (!file) return;
+    _parseFile(file, function(err, json) {
+      if (err) { _showToast('❌ ' + err.message); return; }
+      if (!json.length) { _showToast('⚠️ Outbound file is empty'); return; }
+      _fastData = json; _fastHdrs = Object.keys(json[0]);
+      document.getElementById('dstpro-fo-fast-name').textContent = file.name;
+      document.getElementById('dstpro-fo-fast-info').textContent = json.length.toLocaleString() + ' rows';
       document.getElementById('dstpro-fo-fast').classList.add('show');
-      var opts=_fastHdrs.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');
-      ['dstpro-fast-col-asin','dstpro-fast-col-loc','dstpro-fast-col-qty'].forEach(function(id){document.getElementById(id).innerHTML=opts;});
-      _fastHdrs.forEach(function(h){var lh=h.toLowerCase();
-        if(/asin/.test(lh))document.getElementById('dstpro-fast-col-asin').value=h;
-        else if(/loc|bin/.test(lh))document.getElementById('dstpro-fast-col-loc').value=h;
-        else if(/qty|quan|unit/.test(lh))document.getElementById('dstpro-fast-col-qty').value=h;
+      // Auto-detect outbound columns
+      var opts = _fastHdrs.map(function(h){ return '<option value="'+h+'">'+h+'</option>'; }).join('');
+      document.getElementById('dstpro-fast-col-asin').innerHTML = opts;
+      document.getElementById('dstpro-fast-col-qty').innerHTML  = opts;
+      _fastHdrs.forEach(function(h) {
+        var lh = h.toLowerCase();
+        if (/asin/.test(lh))           document.getElementById('dstpro-fast-col-asin').value = h;
+        else if (/qty|quan|unit/.test(lh)) document.getElementById('dstpro-fast-col-qty').value  = h;
       });
-      document.getElementById('dstpro-fast-mapper').style.display='block';
-      logActivity('Fast Moving ASIN','File Uploaded: '+file.name);
+      _fastShowMapperIfReady();
+      logActivity('Fast Moving ASIN', 'Outbound File Uploaded: ' + file.name);
     });
   }
-  function fastGenerate(){
-    if(!_fastData.length){_showToast('⚠️ Upload a file first');return;}
-    var cA=document.getElementById('dstpro-fast-col-asin').value;
-    var cL=document.getElementById('dstpro-fast-col-loc').value;
-    var cQ=document.getElementById('dstpro-fast-col-qty').value;
-    if(!cA||!cL){_showToast('⚠️ Map required columns');return;}
+
+  function fastHandleInvFile(file) {
+    if (!file) return;
+    _parseFile(file, function(err, json) {
+      if (err) { _showToast('❌ ' + err.message); return; }
+      if (!json.length) { _showToast('⚠️ Inventory file is empty'); return; }
+      _fastInvData = json; _fastInvHdrs = Object.keys(json[0]);
+      document.getElementById('dstpro-fo-fast-inv-name').textContent = file.name;
+      document.getElementById('dstpro-fo-fast-inv-info').textContent = json.length.toLocaleString() + ' rows';
+      document.getElementById('dstpro-fo-fast-inv').classList.add('show');
+      // Auto-detect inventory columns
+      var opts2 = _fastInvHdrs.map(function(h){ return '<option value="'+h+'">'+h+'</option>'; }).join('');
+      document.getElementById('dstpro-fast-inv-col-asin').innerHTML = opts2;
+      document.getElementById('dstpro-fast-inv-col-loc').innerHTML  = opts2;
+      _fastInvHdrs.forEach(function(h) {
+        var lh = h.toLowerCase();
+        if (/asin/.test(lh))           document.getElementById('dstpro-fast-inv-col-asin').value = h;
+        else if (/loc|bin/.test(lh))   document.getElementById('dstpro-fast-inv-col-loc').value  = h;
+      });
+      _fastShowMapperIfReady();
+      logActivity('Fast Moving ASIN', 'Inventory File Uploaded: ' + file.name);
+    });
+  }
+
+  function _fastShowMapperIfReady() {
+    if (_fastData.length && _fastInvData.length) {
+      document.getElementById('dstpro-fast-mapper').style.display = 'block';
+    }
+  }
+
+  function fastGenerate() {
+    if (!_fastData.length)    { _showToast('⚠️ Upload Outbound Pick file first'); return; }
+    if (!_fastInvData.length) { _showToast('⚠️ Upload Real-Time Inventory file first'); return; }
+    var cA    = document.getElementById('dstpro-fast-col-asin').value;
+    var cQ    = document.getElementById('dstpro-fast-col-qty').value;
+    var cIA   = document.getElementById('dstpro-fast-inv-col-asin').value;
+    var cIL   = document.getElementById('dstpro-fast-inv-col-loc').value;
+    if (!cA)  { _showToast('⚠️ Map ASIN column (Outbound)'); return; }
+    if (!cIA) { _showToast('⚠️ Map ASIN column (Inventory)'); return; }
+    if (!cIL) { _showToast('⚠️ Map Location column (Inventory)'); return; }
+
     document.getElementById('load-fast-moving').classList.add('show');
-    document.getElementById('dstpro-out-fast').innerHTML='';
-    document.getElementById('dstpro-export-fast').style.display='none';
-    setTimeout(function(){
-      // ── FAST MOVING ASIN — LOCATION FILTER RULES ───────────────────
-      // STEP 1 — prefix must be P-1-A or HAZ (anything else rejected)
-      // STEP 2 — location must contain H+3digits OR I+3digits (H/I bin)
-      // G zone and all other zones are excluded
-      //
-      // FETCH:   P-1-A110I123  P-1-A115H221  HAZ-A100I555  HAZ-A120H777
-      // IGNORE:  P-1-A120A123  P-1-C118G133  P-1-F110I123  P-1-V120H111
-      //          P-1-D115I444  P-1-R100H222  P-1-T120I888  X-1-A100I123
+    document.getElementById('dstpro-out-fast').innerHTML = '';
+    document.getElementById('dstpro-export-fast').style.display = 'none';
+
+    setTimeout(function() {
+
+      // ── STEP 1: Strip "Bin:" / "BIN:" prefix then apply location rules ─
+      // Real-time inventory stores locations as "Bin:P-1-A110I123"
+      // Strip that prefix before checking, and store the clean version
+      function _cleanLoc(loc) {
+        return String(loc).trim().replace(/^bin\s*:\s*/i, '');
+      }
       function _isFastMovingLoc(loc) {
-        var l = loc.trim().toUpperCase();
-        // STEP 1: must start with P-1-A or HAZ
-        var okPrefix = l.startsWith('P-1-A') || l.startsWith('HAZ');
-        if (!okPrefix) return false;
-        // STEP 2: must contain H or I immediately followed by exactly 3 digits
+        var l = _cleanLoc(loc).toUpperCase();
+        if (!l.startsWith('P-1-A') && !l.startsWith('HAZ')) return false;
         return /[HI]\d{3}(?!\d)/.test(l);
       }
 
-      var filtered = _fastData.filter(function(r) {
-        return _isFastMovingLoc(String(r[cL] || '').trim());
+      // ── STEP 2: Build inventory map ASIN → Set of clean H/I locations ─
+      var invMap = {};
+      _fastInvData.forEach(function(r) {
+        var a      = String(r[cIA] || '').trim().toUpperCase();
+        var rawLoc = String(r[cIL] || '').trim();
+        if (!a || !rawLoc) return;
+        var cleanL = _cleanLoc(rawLoc);        // e.g. "P-1-A110I123"
+        if (!_isFastMovingLoc(cleanL)) return; // skip non-matching
+        if (!invMap[a]) invMap[a] = new Set();
+        invMap[a].add(cleanL);                 // store without "Bin:"
       });
 
-      if (!filtered.length) {
-        document.getElementById('load-fast-moving').classList.remove('show');
-        document.getElementById('dstpro-out-fast').innerHTML =
-          '<div class="alert alert-warn">No matching locations found. ' +
-          'Expected: P-1-A or HAZ prefix AND H/I bin (e.g. P-1-A110I123, HAZ-A100H555).</div>';
-        return;
-      }
-
-      // Build ASIN map — full location IDs, pick count, units
+      // ── STEP 3: Process outbound picks — match against invMap ────────
       var asinMap = {};
-      filtered.forEach(function(r) {
-        var a = String(r[cA] || '').trim();
-        var l = String(r[cL] || '').trim();
+      _fastData.forEach(function(r) {
+        var a = String(r[cA] || '').trim().toUpperCase();
         var q = Math.abs(Number(r[cQ] || 1)) || 1;
         if (!a) return;
-        if (!asinMap[a]) asinMap[a] = { pickCount:0, units:0, locations:new Set() };
+        // ASIN must exist in real-time inventory with valid H/I location
+        if (!invMap[a]) return;
+        if (!asinMap[a]) asinMap[a] = { pickCount:0, units:0, locations: invMap[a] };
         asinMap[a].pickCount++;
         asinMap[a].units += q;
-        asinMap[a].locations.add(l);
       });
 
       var ranked = Object.entries(asinMap).map(function(e) {
-        return { asin:e[0], pickCount:e[1].pickCount, units:e[1].units, locations:[...e[1].locations] };
-      }).sort(function(a,b){ return b.pickCount - a.pickCount; });
+        return {
+          asin:      e[0],
+          pickCount: e[1].pickCount,
+          units:     e[1].units,
+          locations: [...e[1].locations]
+        };
+      }).sort(function(a, b) { return b.pickCount - a.pickCount; });
 
       _fastResults = ranked;
-      var totalPicks = ranked.reduce(function(s,r){ return s + r.pickCount; }, 0);
 
-      // ── BUILD OUTPUT HTML ───────────────────────────────────────────
+      if (!ranked.length) {
+        document.getElementById('load-fast-moving').classList.remove('show');
+        document.getElementById('dstpro-out-fast').innerHTML =
+          '<div class="alert alert-warn">No fast-moving ASINs found. ' +
+          'Check that Outbound ASINs exist in Real-Time Inventory with P-1-A or HAZ prefix and H/I bin locations.</div>';
+        return;
+      }
+
+      var totalPicks = ranked.reduce(function(s, r) { return s + r.pickCount; }, 0);
+      var invHits    = Object.keys(asinMap).length;
+      var outboundASINs = new Set(_fastData.map(function(r){ return String(r[cA]||'').trim().toUpperCase(); })).size;
+
+      // ── BUILD OUTPUT ──────────────────────────────────────────────
       var html =
         '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;">' +
         '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#e8500a);">' +
@@ -10097,7 +10195,8 @@ var DSTPRO = (function() {
         '<div class="stats-row">' +
         '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#e8500a;">' + ranked.length + '</div><div class="sl">Fast Moving ASINs</div></div>' +
         '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#4361ee;">' + totalPicks.toLocaleString() + '</div><div class="sl">Total Picks</div></div>' +
-        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#06d6a0;">' + filtered.length.toLocaleString() + '</div><div class="sl">H/I Bin Rows</div></div>' +
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#06d6a0;">' + outboundASINs.toLocaleString() + '</div><div class="sl">Outbound ASINs</div></div>' +
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#7c3aed;">' + Object.keys(invMap).length + '</div><div class="sl">H/I Inv. ASINs</div></div>' +
         '</div>' +
         // Table
         '<div style="overflow-x:auto;margin-top:20px;">' +
@@ -10107,40 +10206,39 @@ var DSTPRO = (function() {
         '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">ASIN</th>' +
         '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">PICKS</th>' +
         '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">UNITS</th>' +
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">FULL LOCATION(S)</th>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">H/I LOCATION(S)</th>' +
         '</tr></thead><tbody>';
 
       ranked.forEach(function(r, i) {
         var badge = i < 3
           ? '<span class="dstpro-rank-badge dstpro-rank-' + (i+1) + '">TOP ' + (i+1) + '</span>'
           : '<span style="color:#7b78a8;font-weight:600;">#' + (i+1) + '</span>';
-        var locStr = r.locations.slice(0, 5).join('<br>') + (r.locations.length > 5 ? ' <span style="color:#e8500a;font-size:10px;">+' + (r.locations.length - 5) + ' more</span>' : '');
+        var locStr = r.locations.slice(0, 5).join('<br>') +
+          (r.locations.length > 5 ? ' <span style="color:#e8500a;font-size:10px;">+' + (r.locations.length-5) + ' more</span>' : '');
         html +=
           '<tr style="border-bottom:1px solid #f0effe;">' +
           '<td style="padding:10px 14px;">' + badge + '</td>' +
           '<td style="padding:10px 14px;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a1830;">' + r.asin + '</td>' +
           '<td style="padding:10px 14px;font-weight:700;color:#e8500a;">' + r.pickCount.toLocaleString() + '</td>' +
           '<td style="padding:10px 14px;color:#4361ee;font-weight:600;">' + r.units.toLocaleString() + '</td>' +
-          '<td style="padding:10px 14px;font-size:11px;color:#7b78a8;font-family:\'DM Mono\',monospace;line-height:1.7;">' + locStr + '</td>' +
+          '<td style="padding:10px 14px;font-size:11px;color:#7b78a8;font-family:\'DM Mono\',monospace;line-height:1.8;">' + locStr + '</td>' +
           '</tr>';
       });
 
       html +=
         '</tbody></table></div>' +
-        // QR section header
+        // QR section
         '<div style="margin-top:28px;border-top:1px solid #d5d2f0;padding-top:20px;">' +
         '<div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;display:flex;align-items:center;gap:8px;">' +
         '<span style="display:inline-block;width:3px;height:16px;background:linear-gradient(180deg,#e8500a,#ff6b35);border-radius:2px;"></span>' +
-        'Scannable QR Codes — ASIN</div>' +
+        'Scannable QR Codes — ASIN + Location</div>' +
         '<div class="label-grid" id="dstpro-fast-qr-grid" style="grid-template-columns:repeat(8,1fr);gap:8px;"></div>' +
         '</div>' +
         '</div></div>';
 
       document.getElementById('dstpro-out-fast').innerHTML = html;
 
-      // ── RENDER QR CODES ─────────────────────────────────────────────
-      // Same spec as Audit by ASIN: 68x68, CorrectLevel.M
-      // QR content = ASIN + full location (first location if multiple)
+      // ── RENDER QR CODES — same spec as Audit by ASIN (68×68, M) ────
       var qrGrid = document.getElementById('dstpro-fast-qr-grid');
       ranked.forEach(function(r, idx) {
         var card = document.createElement('div');
@@ -10150,16 +10248,18 @@ var DSTPRO = (function() {
         var topBadge = idx < 3
           ? '<div style="font-size:9px;font-weight:700;color:#fff;background:' +
             (idx===0?'#e8500a':idx===1?'#4361ee':'#06d6a0') +
-            ';border-radius:3px;padding:2px 5px;margin-bottom:3px;">TOP ' + (idx+1) + '</div>'
+            ';border-radius:3px;padding:2px 5px;margin-bottom:3px;">TOP '+(idx+1)+'</div>'
           : '';
 
-        // Location line — show first location under ASIN text
         var firstLoc = r.locations.length > 0 ? r.locations[0] : '';
         var locLine = firstLoc
           ? '<div style="font-size:7px;color:#7b78a8;font-family:monospace;margin-top:2px;word-break:break-all;line-height:1.3;">' +
             firstLoc + (r.locations.length > 1 ? ' <span style=\'color:#e8500a;\'>+' + (r.locations.length-1) + '</span>' : '') +
             '</div>'
           : '';
+
+        // QR content = ASIN + full location
+        var qrContent = r.asin + (firstLoc ? ' ' + firstLoc : '');
 
         card.innerHTML =
           topBadge +
@@ -10168,9 +10268,6 @@ var DSTPRO = (function() {
           locLine;
 
         qrGrid.appendChild(card);
-
-        // QR content = ASIN only
-        var qrContent = r.asin;
         try {
           new QRCode(document.getElementById('dstpro-fqr-' + idx), {
             text: qrContent,
@@ -10184,17 +10281,22 @@ var DSTPRO = (function() {
       document.getElementById('load-fast-moving').classList.remove('show');
       document.getElementById('dstpro-export-fast').style.display = 'flex';
       logActivity('Fast Moving ASIN', 'Generated \u2014 ' + ranked.length + ' ASINs');
-      _showToast('\u2705 ' + ranked.length + ' fast-moving ASINs ranked');
+      _showToast('\u2705 ' + ranked.length + ' fast-moving ASINs found');
     }, 400);
   }
-  function fastReset(){
+
+  function fastReset() {
     _fastData=[]; _fastHdrs=[]; _fastResults=[];
+    _fastInvData=[]; _fastInvHdrs=[];
     document.getElementById('dstpro-fo-fast').classList.remove('show');
-    document.getElementById('dstpro-f-fast').value='';
+    document.getElementById('dstpro-fo-fast-inv').classList.remove('show');
+    var f1=document.getElementById('dstpro-f-fast');     if(f1)f1.value='';
+    var f2=document.getElementById('dstpro-f-fast-inv'); if(f2)f2.value='';
     document.getElementById('dstpro-fast-mapper').style.display='none';
     document.getElementById('dstpro-out-fast').innerHTML='';
     document.getElementById('dstpro-export-fast').style.display='none';
   }
+
   function fastExportExcel(){
     if(!_fastResults.length){_showToast('⚠️ Generate first');return;}
     var rows=[['Rank','ASIN','Pick Count','Total Units','Locations']];
@@ -10597,6 +10699,7 @@ var DSTPRO = (function() {
     renderLogs:function(){_loadLogs();var f=_getFiltered();renderLogTable(f);renderCharts(f);},
     clearFilters:clearFilters,clearLogs:clearLogs,exportLogs:exportLogsExcel,
     fastHandleFile:fastHandleFile,fastHandleDrop:function(e){var f=(e.dataTransfer.files||[])[0];fastHandleFile(f);},
+    fastHandleInvFile:fastHandleInvFile,
     fastGenerate:fastGenerate,fastReset:fastReset,fastExportExcel:fastExportExcel,fastExportPDF:fastExportPDF,
     auditUpload:auditUploadFile,auditDrop:function(e,s){var f=(e.dataTransfer.files||[])[0];auditUploadFile(f,s);},
     auditMatch:auditMatch,auditExportExcel:auditExportExcel,auditExportPDF:auditExportPDF,
@@ -10614,6 +10717,8 @@ function dstproClearLogs(){DSTPRO.clearLogs();}
 function dstproExportLogsExcel(){DSTPRO.exportLogs();}
 function dstproFastHandleUpload(i){DSTPRO.fastHandleFile(i.files[0]);}
 function dstproFastHandleDrop(e){DSTPRO.fastHandleDrop(e);}
+function dstproFastInvUpload(i){DSTPRO.fastHandleInvFile(i.files[0]);}
+function dstproFastInvDrop(e){var f=(e.dataTransfer.files||[])[0];DSTPRO.fastHandleInvFile(f);}
 function dstproFastGenerate(){DSTPRO.fastGenerate();}
 function dstproFastReset(){DSTPRO.fastReset();}
 function dstproFastExportExcel(){DSTPRO.fastExportExcel();}
