@@ -3119,10 +3119,46 @@ function generateAuditLoc() {
 
 function renderAuditLocResults(locations) {
   const nowStr = getNowString();
-  const zoneColors = { Frozen:'#1a5cff', Chiller:'#0891b2', Hazmat:'#dc2626', Ambient:'#1a7a4a', HRV:'#7c3aed', Mixed:'#c9a227' };
+  // Zone text colors — must match detectZone() return values exactly
+  const zoneColors = {
+    'Chiller':   '#0891b2',
+    'Freezer':   '#1a5cff',
+    'HeavyDuty': '#7c3aed',
+    'Ambient':   '#1a7a4a',
+    'V-Bin':     '#c9a227',
+    'X-Bin':     '#e8500a',
+    'T-Bin':     '#db2777',
+    'H-Bin':     '#0f766e',
+    'R-Bin':     '#9333ea',
+    'Hazmat':    '#dc2626',
+    'HRV':       '#7c3aed',
+    'Other':     '#888888'
+  };
+  // Badge backgrounds — explicit rgba so html2canvas renders correctly in PDF
+  const zoneBg = {
+    'Chiller':   'rgba(8,145,178,0.12)',
+    'Freezer':   'rgba(26,92,255,0.12)',
+    'HeavyDuty': 'rgba(124,58,237,0.12)',
+    'Ambient':   'rgba(26,122,74,0.12)',
+    'V-Bin':     'rgba(201,162,39,0.12)',
+    'X-Bin':     'rgba(232,80,10,0.12)',
+    'T-Bin':     'rgba(219,39,119,0.12)',
+    'H-Bin':     'rgba(15,118,110,0.12)',
+    'R-Bin':     'rgba(147,51,234,0.12)',
+    'Hazmat':    'rgba(220,38,38,0.12)',
+    'HRV':       'rgba(124,58,237,0.12)',
+    'Other':     'rgba(136,136,136,0.12)'
+  };
   const zones = [...new Set(locations.map(l=>l.zone))];
-  const statsHTML = zones.map(z => '<div class="stat-card"><div class="sv" style="color:' + (zoneColors[z]||'var(--accent)') + '">' + locations.filter(l=>l.zone===z).length + '</div><div class="sl">' + z + '</div></div>').join('');
-  const rowsHTML = locations.map((item,i) => '<tr><td style="font-weight:700;font-family:\'DM Mono\',monospace">' + String(i+1).padStart(2,'0') + '</td><td><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:' + (zoneColors[item.zone]||'#888') + '22;color:' + (zoneColors[item.zone]||'#888') + ';font-size:10px;font-weight:700;letter-spacing:1px">' + item.zone + '</span></td><td style="font-family:\'DM Mono\',monospace;font-weight:600">' + item.loc + '</td><td><input class="audit-remark" type="text" placeholder="Remark..."></td></tr>').join('');
+  const statsHTML = zones.map(z => '<div class="stat-card"><div class="sv" style="color:' + (zoneColors[z]||'#888') + '">' + locations.filter(l=>l.zone===z).length + '</div><div class="sl">' + z + '</div></div>').join('');
+  const rowsHTML = locations.map((item,i) => {
+    const col = zoneColors[item.zone] || '#888';
+    const bg  = zoneBg[item.zone]    || 'rgba(136,136,136,0.12)';
+    return '<tr><td style="font-weight:700;font-family:\'DM Mono\',monospace">' + String(i+1).padStart(2,'0') + '</td>' +
+      '<td><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:' + bg + ';color:' + col + ';font-size:10px;font-weight:700;letter-spacing:1px">' + item.zone + '</span></td>' +
+      '<td style="font-family:\'DM Mono\',monospace;font-weight:600">' + item.loc + '</td>' +
+      '<td><input class="audit-remark" type="text" placeholder="Remark..."></td></tr>';
+  }).join('');
 
   document.getElementById('out-audit-loc').innerHTML = '<div class="results-panel" id="audit-loc-print"><div class="results-header"><h3>📍 Location Audit Sheet</h3><span class="results-count">' + locations.length + ' locations · ' + nowStr + '</span></div><div class="results-body"><div class="stats-row">' + statsHTML + '</div><div class="tbl-wrap"><table><thead><tr><th>#</th><th>Zone</th><th>Location</th><th>Remark / Count</th></tr></thead><tbody>' + rowsHTML + '</tbody></table></div>' + signatureBarHTML() + '</div></div>';
   document.getElementById('export-audit-loc').style.display = 'flex';
@@ -3678,7 +3714,20 @@ async function exportReportPDF() {
   const el = document.getElementById('report-printable');
   if (!el) { showToast('Generate report first'); return; }
   try {
-    const canvas = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false});
+    const canvas = await html2canvas(el, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    onclone: function(clonedDoc) {
+      // Force inline background colors so html2canvas captures them correctly
+      clonedDoc.querySelectorAll('[style]').forEach(function(el) {
+        el.style.webkitPrintColorAdjust = 'exact';
+        el.style.printColorAdjust = 'exact';
+      });
+    }
+  });
     const {jsPDF} = window.jspdf;
     const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
     const pageW = pdf.internal.pageSize.getWidth();
