@@ -8903,6 +8903,7 @@ function handleVOC(e) {
   var iRcaCat   = col(['rca category','rca cat','root cause category','category']);
   var iRca      = col(['rca','root cause','root cause analysis']);
   var iPicker   = col(['picker','picker id','picker name','employee id','employee','emp id','associate id','associate','staff id','staff','user id','user','operator','operator id','agent','agent id','packed by','picked by','packer','picker no']);
+  if (iPicker < 0) iPicker = 16; // fallback: column Q (index 16) as confirmed by user
   var iProduct  = col(['product','product name','item name','item']);
   var iProdType = col(['product type','type','category type']);
   var iWeek     = col(['week','week no','week number','wk']);
