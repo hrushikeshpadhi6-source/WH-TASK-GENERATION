@@ -2166,6 +2166,23 @@ footer span { color:var(--accent); }
   </div>
 </div>
   <div id="out-lateslam"></div>
+
+  <!-- Peak Time Trend Panel -->
+  <div id="ls-peak-panel" style="display:none;margin-top:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">📈</span>
+        <span style="font-weight:700;font-size:15px;letter-spacing:0.5px;color:var(--accent,#4361ee);">PEAK TIME TREND</span>
+        <span style="font-size:12px;color:#7b78a8;">Actual Orders by 30-min slot · Store-wise</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="ls-peak-store-tabs"></div>
+    </div>
+    <div style="background:var(--card-bg,#1a1a2e);border:1px solid var(--border,#2a2a4a);border-radius:14px;padding:20px;">
+      <canvas id="ls-peak-canvas" height="110"></canvas>
+    </div>
+    <div id="ls-peak-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;"></div>
+  </div>
+
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
     <button class="btn btn-green" onclick="lsExportExcel()">⬇ Export Excel</button>
@@ -4610,6 +4627,7 @@ function lsGenerate() {
 
     document.getElementById('out-lateslam').innerHTML = allHTML;
     document.getElementById('export-lateslam').style.display = 'flex';
+    setTimeout(lsRenderPeakTrend, 50); // render peak chart after DOM settles
     showLoading('lateslam', false);
     showToast('✅ Done — ' + stores.length + ' store(s), check results!');
   }, 200);
@@ -4801,6 +4819,177 @@ function lsBuildSummary(summaryArr, reportDate) {
 }
 
 // ── Export PDF ────────────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// PEAK TIME TREND — Chart.js bar chart per store, slot-wise
+// ══════════════════════════════════════════════════════════════
+var _lsPeakChart = null;
+var _lsPeakStore = 'ALL';
+
+function lsRenderPeakTrend() {
+  var exp = window._lsExportData;
+  if (!exp || !Object.keys(exp.stores).length) return;
+
+  var panel = document.getElementById('ls-peak-panel');
+  if (panel) panel.style.display = '';
+
+  var stores = Object.keys(exp.stores);
+  _lsPeakStore = stores.length === 1 ? stores[0] : 'ALL';
+
+  // Build store tab buttons
+  var tabsEl = document.getElementById('ls-peak-store-tabs');
+  if (tabsEl) {
+    var tabHTML = '';
+    if (stores.length > 1) {
+      tabHTML += '<button onclick="lsPeakSetStore(\'ALL\')" id="lspk-ALL" style="padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;">All</button>';
+    }
+    stores.forEach(function(s) {
+      tabHTML += '<button onclick="lsPeakSetStore(\'' + s + '\')" id="lspk-' + s + '" style="padding:5px 14px;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;background:rgba(67,97,238,0.12);color:#7b78a8;">' + s + '</button>';
+    });
+    tabsEl.innerHTML = tabHTML;
+  }
+
+  lsPeakDrawChart(_lsPeakStore);
+}
+
+function lsPeakSetStore(storeId) {
+  _lsPeakStore = storeId;
+  // Update tab styles
+  var exp = window._lsExportData;
+  var stores = Object.keys(exp.stores);
+  var all = stores.length > 1 ? ['ALL'].concat(stores) : stores;
+  all.forEach(function(s) {
+    var btn = document.getElementById('lspk-' + s);
+    if (!btn) return;
+    if (s === storeId) {
+      btn.style.background = 'linear-gradient(135deg,#4361ee,#2f4bd4)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'rgba(67,97,238,0.12)';
+      btn.style.color = '#7b78a8';
+    }
+  });
+  lsPeakDrawChart(storeId);
+}
+
+function lsPeakDrawChart(storeId) {
+  var exp = window._lsExportData;
+  if (!exp) return;
+
+  // Aggregate slot data
+  var slotAO = {}, slotLS = {}, slotFO = {};
+  var storesToUse = storeId === 'ALL' ? Object.keys(exp.stores) : [storeId];
+
+  storesToUse.forEach(function(sid) {
+    var d = exp.stores[sid];
+    if (!d || !d.rows) return;
+    d.rows.forEach(function(r) {
+      if (!slotAO[r.slot]) { slotAO[r.slot]=0; slotLS[r.slot]=0; slotFO[r.slot]=0; }
+      slotAO[r.slot] += r.ao;
+      slotLS[r.slot] += r.ls;
+      slotFO[r.slot] += r.fo;
+    });
+  });
+
+  var labels = LS_SLOTS.filter(function(s){ return (slotAO[s]||0) > 0 || (slotFO[s]||0) > 0; });
+  if (!labels.length) labels = LS_SLOTS;
+
+  var aoData = labels.map(function(s){ return slotAO[s]||0; });
+  var lsData2 = labels.map(function(s){ return slotLS[s]||0; });
+  var foData = labels.map(function(s){ return slotFO[s]||0; });
+  var lsPct  = labels.map(function(s){ var ao=slotAO[s]||0; var ls=slotLS[s]||0; return ao>0?parseFloat((ls/ao*100).toFixed(1)):0; });
+
+  // Highlight top 3 peak slots
+  var sorted = aoData.slice().sort(function(a,b){return b-a;});
+  var top3 = sorted.slice(0,3);
+  var barColors = aoData.map(function(v,i){
+    if (v === top3[0]) return 'rgba(255,99,132,0.85)';
+    if (v === top3[1]) return 'rgba(255,159,64,0.75)';
+    if (v === top3[2]) return 'rgba(255,205,86,0.75)';
+    return 'rgba(67,97,238,0.55)';
+  });
+
+  // Destroy old chart
+  if (_lsPeakChart) { _lsPeakChart.destroy(); _lsPeakChart = null; }
+
+  var ctx = document.getElementById('ls-peak-canvas');
+  if (!ctx) return;
+
+  _lsPeakChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.map(function(s){ return lsSlotLabel(s); }),
+      datasets: [
+        {
+          label: 'Actual Orders',
+          data: aoData,
+          backgroundColor: barColors,
+          borderRadius: 4,
+          order: 2
+        },
+        {
+          label: 'FC Orders',
+          data: foData,
+          backgroundColor: 'rgba(6,214,160,0.25)',
+          borderColor: 'rgba(6,214,160,0.8)',
+          borderWidth: 1.5,
+          borderRadius: 4,
+          order: 3
+        },
+        {
+          label: 'Late Slam',
+          data: lsData2,
+          backgroundColor: 'rgba(220,53,69,0.7)',
+          borderRadius: 4,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#b0aed0', font: { family: 'Syne', size: 11 }, boxWidth: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            afterBody: function(items) {
+              var idx = items[0] ? items[0].dataIndex : 0;
+              return ['LS Rate: ' + lsPct[idx] + '%'];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7b78a8', font: { family: 'Syne', size: 9 }, maxRotation: 45 },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        },
+        y: {
+          ticks: { color: '#7b78a8', font: { family: 'Syne', size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.06)' }
+        }
+      }
+    }
+  });
+
+  // Summary cards — top 3 peak slots
+  var summaryEl = document.getElementById('ls-peak-summary');
+  if (summaryEl) {
+    var medals = ['🥇','🥈','🥉'];
+    var topSlots = labels.map(function(s,i){ return {slot:s, ao:aoData[i], ls:lsData2[i], pct:lsPct[i]}; })
+                         .sort(function(a,b){return b.ao-a.ao;}).slice(0,3);
+    summaryEl.innerHTML = topSlots.map(function(t,i){
+      return '<div style="flex:1;min-width:160px;background:var(--card-bg,#1a1a2e);border:1px solid var(--border,#2a2a4a);border-radius:10px;padding:12px 16px;">'
+        + '<div style="font-size:18px;margin-bottom:4px;">' + medals[i] + ' <strong>' + lsSlotLabel(t.slot) + '</strong></div>'
+        + '<div style="font-size:12px;color:#06d6a0;">Actual Orders: <strong>' + t.ao + '</strong></div>'
+        + '<div style="font-size:12px;color:#ff6384;">Late Slam: <strong>' + t.ls + '</strong> (' + t.pct + '%)</div>'
+        + '</div>';
+    }).join('');
+  }
+}
+
 async function lsExportPDF() {
   var el = document.getElementById('out-lateslam');
   if (!el || !el.innerHTML.trim()) { showToast('Generate report first'); return; }
@@ -4869,6 +5058,8 @@ function lsReset() {
   var ci=document.getElementById('ls-col-info'); if(ci) ci.style.display='none';
   document.getElementById('out-lateslam').innerHTML='';
   document.getElementById('export-lateslam').style.display='none';
+  var pp=document.getElementById('ls-peak-panel'); if(pp) pp.style.display='none';
+  if(_lsPeakChart){_lsPeakChart.destroy();_lsPeakChart=null;}
   var sf=document.getElementById('ls-store-filter');
   if(sf) sf.innerHTML='<option value="ALL">All Stores</option>';
   showToast('Reset done');
@@ -7664,7 +7855,7 @@ function vocRenderPickerFiltered() {
   var mistakes = {}, pickerStoreMap = {}, pickerDetails = {};
   pickerRows.forEach(function(r) {
     // Use picker value; fall back to orderId or "(Unknown Picker)" so mistakes still show
-    var pid = r.picker || (r.orderId ? '(Order: ' + r.orderId + ')' : '(Unknown Picker)');
+    var pid = r.picker || '(Picker Not Filled)';
     mistakes[pid] = (mistakes[pid] || 0) + 1;
     pickerStoreMap[pid] = r.store;
     if (!pickerDetails[pid]) pickerDetails[pid] = [];
@@ -8561,6 +8752,11 @@ function vocExportExcel() {
     if (sf !== 'all') curr = curr.filter(function(r){ return r.store === sf; });
     var realOrders = (vocMatrixOrders && vocMatrixOrders.totalOrders > 0) ? vocMatrixOrders.totalOrders : curr.length;
     var period = (document.getElementById('voc-period-label')||{}).textContent || 'All';
+    // Build period label from active filter for filename
+    var _wf = document.getElementById('voc-week-filter');
+    var _mf = document.getElementById('voc-month-filter');
+    var _yf = document.getElementById('voc-year-filter');
+    var periodSlug = period.replace(/[^a-zA-Z0-9_\-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'') || 'All';
     var now = new Date().toISOString().split('T')[0];
     var wb = XLSX.utils.book_new();
 
@@ -8635,7 +8831,7 @@ function vocExportExcel() {
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rcaRows), 'RCA Pending');
 
-    XLSX.writeFile(wb, 'VOC_Report_' + now + '.xlsx');
+    XLSX.writeFile(wb, 'VOC_Report_' + periodSlug + '_' + now + '.xlsx');
     showToast('✅ VOC Excel downloaded — 5 sheets!');
   } catch(e) { console.error(e); showToast('❌ Excel error: ' + e.message); }
 }
