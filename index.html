@@ -814,7 +814,7 @@ footer span { color:var(--accent); }
   gap: 0.5mm;
 }
 .locid-left .lil-top {
-  font-size: 11pt;
+  font-size: 13pt;
   font-weight: 800;
   font-family: Arial, sans-serif;
   color: rgba(0,0,0,0.9);
@@ -822,7 +822,7 @@ footer span { color:var(--accent); }
   letter-spacing: 0pt;
 }
 .locid-left .lil-bot {
-  font-size: 15pt;
+  font-size: 18pt;
   font-weight: 900;
   font-family: Arial, sans-serif;
   color: rgba(0,0,0,0.9);
@@ -2355,7 +2355,7 @@ footer span { color:var(--accent); }
     <span class="task-header-icon" style="font-size:36px;flex-shrink:0;">🏷️</span>
     <div>
       <h2>Location ID Maker</h2>
-      <p>Enter full location IDs like <strong>P-1-A116F182</strong> — auto-splits into label sections, assigns color by bay letter, generates scannable QR. A4 · 20 labels/page.</p>
+      <p>Enter full location IDs like <strong>P-1-A116F182</strong> — auto-splits into label sections, assigns color by bay letter, generates scannable QR. A4 · 24 labels/page.</p>
     </div>
   </div>
 
@@ -6157,7 +6157,7 @@ function locidGenerate() {
   document.getElementById('out-locid').innerHTML = '';
 
   setTimeout(function() {
-    var PER_PAGE = 20;
+    var PER_PAGE = 24;
     var totalPages = Math.ceil(locidQueue.length / PER_PAGE);
     var sheetHTML = '';
 
@@ -6479,7 +6479,7 @@ function stgRenderLabels(labels) {
   document.getElementById('out-locid').innerHTML = '';
 
   setTimeout(function() {
-    var PER_PAGE = 20;
+    var PER_PAGE = 24;
     var totalPages = Math.ceil(labels.length / PER_PAGE);
     var sheetHTML = '';
 
@@ -9424,5 +9424,1123 @@ function handleScanningASIN(e) {
   return { status: 'ok', asins: asins, count: asins.length };
 }
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NEW FEATURES BLOCK — v1.0 — HP WORLD DARK STORE TASK PRO
+     All 5 modules are fully isolated and plug-and-play.
+     They use the DSTPRO namespace to avoid any conflicts.
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ── PAGE: Admin Panel (hidden, password protected) ─────────── -->
+<div id="dstpro-admin-panel" style="display:none;position:fixed;inset:0;z-index:99998;
+  background:linear-gradient(135deg,#0a0914 0%,#0f0e17 50%,#1a1928 100%);
+  overflow-y:auto;font-family:'Syne',sans-serif;">
+  <div style="background:rgba(10,9,20,0.95);border-bottom:1px solid #2e2c45;padding:0 32px;
+    height:60px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:10;backdrop-filter:blur(12px);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">🛡️</span>
+      <span style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px;">Admin Panel</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;background:rgba(255,107,53,0.2);
+        border:1px solid rgba(255,107,53,0.4);padding:3px 10px;border-radius:20px;color:#ff6b35;
+        letter-spacing:1px;">HP WORLD</span>
+    </div>
+    <button onclick="dstproAdminClose()"
+      style="padding:8px 20px;border-radius:8px;border:1px solid #2e2c45;background:transparent;
+      color:#8b8aad;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;"
+      onmouseover="this.style.borderColor='#ff6b35';this.style.color='#ff6b35'"
+      onmouseout="this.style.borderColor='#2e2c45';this.style.color='#8b8aad'">✕ Close</button>
+  </div>
+
+  <div id="dstpro-admin-gate" style="display:flex;align-items:center;justify-content:center;
+    min-height:calc(100vh - 60px);padding:20px;">
+    <div style="background:rgba(26,25,40,0.97);border:1px solid rgba(67,97,238,0.3);
+      border-radius:20px;padding:40px;width:100%;max-width:360px;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:48px;margin-bottom:12px;">🛡️</div>
+        <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;">Admin Access</div>
+        <div style="font-size:12px;color:#8b8aad;">Enter admin password to continue</div>
+      </div>
+      <div id="dstpro-admin-gate-msg" style="display:none;padding:10px 14px;border-radius:8px;
+        font-size:13px;font-weight:600;margin-bottom:14px;"></div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;
+          text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Password</label>
+        <input type="password" id="dstpro-admin-pass" placeholder="Admin password"
+          style="width:100%;background:rgba(15,14,23,0.7);border:1px solid rgba(46,44,69,0.9);
+          border-radius:10px;padding:13px 16px;font-family:'Syne',sans-serif;font-size:14px;
+          color:#e8e6ff;outline:none;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')dstproAdminLogin()">
+      </div>
+      <button onclick="dstproAdminLogin()"
+        style="width:100%;padding:14px;border-radius:12px;border:none;
+        background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;
+        font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+        box-shadow:0 4px 20px rgba(67,97,238,0.4);">Enter Admin Panel →</button>
+    </div>
+  </div>
+
+  <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;
+      padding:20px 24px;margin-bottom:28px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+        color:#8b8aad;margin-bottom:14px;">🔍 Filter Logs</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+        <div>
+          <div style="font-size:11px;color:#8b8aad;margin-bottom:6px;font-weight:600;">User Name</div>
+          <input id="dstpro-filter-user" type="text" placeholder="All users" oninput="dstproRenderLogs()"
+            style="width:100%;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:8px;
+            padding:10px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#8b8aad;margin-bottom:6px;font-weight:600;">Tool</div>
+          <select id="dstpro-filter-tool" onchange="dstproRenderLogs()"
+            style="width:100%;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:8px;
+            padding:10px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;outline:none;cursor:pointer;">
+            <option value="">All Tools</option>
+            <option>Login</option><option>Consolidation</option><option>Audit by Location</option>
+            <option>Audit by ASIN</option><option>Slow Moving Items</option><option>YSM Barcode</option>
+            <option>Inventory Report</option><option>Late Slam Calculator</option>
+            <option>Catalog Issue</option><option>Scanning Issue</option><option>Location ID Maker</option>
+            <option>VOC Analysis</option><option>Fast Moving ASIN</option>
+            <option>Inventory Audit</option><option>Top Performer</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#8b8aad;margin-bottom:6px;font-weight:600;">Date</div>
+          <input id="dstpro-filter-date" type="date" onchange="dstproRenderLogs()"
+            style="width:100%;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:8px;
+            padding:10px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button onclick="dstproClearFilters()"
+            style="width:100%;padding:10px 16px;border-radius:8px;border:1px solid #2e2c45;
+            background:transparent;color:#8b8aad;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✕ Clear Filters</button>
+        </div>
+      </div>
+    </div>
+    <div id="dstpro-analytics-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;" id="dstpro-charts-row">
+      <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;padding:20px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:16px;">📊 Tool Usage</div>
+        <canvas id="dstpro-chart-tools" height="200"></canvas>
+      </div>
+      <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;padding:20px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:16px;">👤 Most Active Users</div>
+        <canvas id="dstpro-chart-users" height="200"></canvas>
+      </div>
+    </div>
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:14px;font-weight:700;color:#fff;">📋 Activity Log</div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="dstproExportLogsExcel()"
+            style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#06d6a0,#049e77);
+            color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬇ Export Excel</button>
+          <button onclick="dstproClearLogs()"
+            style="padding:8px 16px;border-radius:8px;border:1px solid #2e2c45;background:transparent;
+            color:#f72585;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear All Logs</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:rgba(67,97,238,0.1);">
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">DATE/TIME</th>
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">NAME</th>
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">EMP ID</th>
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">TOOL</th>
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">ACTION</th>
+            <th style="padding:12px 16px;text-align:left;color:#8b8aad;font-weight:700;white-space:nowrap;">DEVICE</th>
+          </tr></thead>
+          <tbody id="dstpro-log-tbody"></tbody>
+        </table>
+        <div id="dstpro-no-logs" style="padding:40px;text-align:center;color:#8b8aad;font-size:14px;">No logs yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: Fast Moving ASIN ──────────────────────────────────── -->
+<div class="page" id="page-fast-moving" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">← Back to Dashboard</button>
+  <div class="task-header" style="border-bottom-color:#d5d2f0;">
+    <span class="task-header-icon">🚀</span>
+    <div>
+      <h2 style="background:linear-gradient(135deg,#1a1830,#e8500a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Fast Moving ASIN</h2>
+      <p style="color:#3d3a6b;">Upload outbound file → rank top ASINs by pick frequency from H &amp; I locations.</p>
+    </div>
+  </div>
+  <div class="upload-zone" id="dstpro-uz-fast" style="background:#fff;border-color:#d5d2f0;"
+    onclick="document.getElementById('dstpro-f-fast').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="event.preventDefault();this.classList.remove('drag');dstproFastHandleDrop(event)">
+    <input type="file" id="dstpro-f-fast" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproFastHandleUpload(this)">
+    <div class="u-icon">📂</div>
+    <h3 style="color:#1a1830;">Upload Outbound File</h3>
+    <p style="color:#7b78a8;">Drag &amp; drop or click — XLSX, XLS, CSV</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+  <div class="file-ok" id="dstpro-fo-fast">
+    <span>✅</span>
+    <div class="fi-info"><strong id="dstpro-fo-fast-name">—</strong><span id="dstpro-fo-fast-info">—</span></div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="dstproFastReset()">✕</button>
+  </div>
+  <div id="dstpro-fast-mapper" style="display:none;background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">📋 Map Your Columns</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;align-items:end;">
+      <div>
+        <div class="ctrl-label" style="color:#7b78a8;">ASIN Column</div>
+        <select class="select-field" id="dstpro-fast-col-asin" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+      </div>
+      <div>
+        <div class="ctrl-label" style="color:#7b78a8;">Location Column</div>
+        <select class="select-field" id="dstpro-fast-col-loc" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+      </div>
+      <div>
+        <div class="ctrl-label" style="color:#7b78a8;">Quantity Column</div>
+        <select class="select-field" id="dstpro-fast-col-qty" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn btn-primary" style="width:100%;" onclick="dstproFastGenerate()">⚡ Analyse Fast Movers</button>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:rgba(67,97,238,0.06);border:1px solid rgba(67,97,238,0.2);border-radius:8px;font-size:12px;color:#3d3a6b;">
+      ℹ️ Only locations starting with <strong>H</strong> or <strong>I</strong> are included.
+    </div>
+  </div>
+  <div class="loading" id="load-fast-moving">
+    <div class="loading-inner"><div class="spinner"></div><div class="loading-status-text">Analysing picks...</div>
+    <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+  </div>
+  <div id="dstpro-out-fast"></div>
+  <div id="dstpro-export-fast" style="display:none;" class="btn-row">
+    <button class="btn btn-accent" onclick="dstproFastExportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-primary" onclick="dstproFastExportPDF()">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ── PAGE: Inventory Audit ───────────────────────────────────── -->
+<div class="page" id="page-inv-audit" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">← Back to Dashboard</button>
+  <div class="task-header" style="border-bottom-color:#d5d2f0;">
+    <span class="task-header-icon">🔍</span>
+    <div>
+      <h2 style="background:linear-gradient(135deg,#1a1830,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inventory Audit</h2>
+      <p style="color:#3d3a6b;">Upload Audit ASIN list + Real-time Inventory → match, compare, highlight mismatches.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📄 Audit ASIN File</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;"
+        onclick="document.getElementById('dstpro-f-audit1').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');dstproAuditDrop(event,1)">
+        <input type="file" id="dstpro-f-audit1" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproAuditUpload(this,1)">
+        <div class="u-icon" style="font-size:32px;">📋</div>
+        <h3 style="color:#1a1830;font-size:15px;">Audit ASINs</h3>
+        <p style="color:#7b78a8;font-size:12px;">Click or drag &amp; drop</p>
+      </div>
+      <div class="file-ok" id="dstpro-fo-audit1">
+        <span>✅</span><div class="fi-info"><strong id="dstpro-fo-audit1-name">—</strong><span id="dstpro-fo-audit1-info">—</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📦 Real-time Inventory File</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;"
+        onclick="document.getElementById('dstpro-f-audit2').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');dstproAuditDrop(event,2)">
+        <input type="file" id="dstpro-f-audit2" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproAuditUpload(this,2)">
+        <div class="u-icon" style="font-size:32px;">📦</div>
+        <h3 style="color:#1a1830;font-size:15px;">Real-time Inventory</h3>
+        <p style="color:#7b78a8;font-size:12px;">Click or drag &amp; drop</p>
+      </div>
+      <div class="file-ok" id="dstpro-fo-audit2">
+        <span>✅</span><div class="fi-info"><strong id="dstpro-fo-audit2-name">—</strong><span id="dstpro-fo-audit2-info">—</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="dstpro-audit-mapper" style="display:none;background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">📋 Map Columns</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;align-items:end;">
+      <div><div class="ctrl-label" style="color:#7b78a8;">Audit ASIN col</div><select class="select-field" id="dstpro-audit-col-asin1" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Inventory ASIN col</div><select class="select-field" id="dstpro-audit-col-asin2" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Location col</div><select class="select-field" id="dstpro-audit-col-loc" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Quantity col</div><select class="select-field" id="dstpro-audit-col-qty" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" style="width:100%;" onclick="dstproAuditMatch()">⚡ Match &amp; Compare</button></div>
+    </div>
+  </div>
+  <div class="loading" id="load-inv-audit">
+    <div class="loading-inner"><div class="spinner"></div><div class="loading-status-text">Matching ASINs...</div>
+    <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+  </div>
+  <div id="dstpro-out-audit"></div>
+  <div id="dstpro-export-audit" style="display:none;" class="btn-row">
+    <button class="btn btn-accent" onclick="dstproAuditExportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-primary" onclick="dstproAuditExportPDF()">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ── PAGE: Top Performer ─────────────────────────────────────── -->
+<div class="page" id="page-top-performer" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">← Back to Dashboard</button>
+  <div class="task-header" style="border-bottom-color:#d5d2f0;">
+    <span class="task-header-icon">🏆</span>
+    <div>
+      <h2 style="background:linear-gradient(135deg,#1a1830,#b5860d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Top Performer Generator</h2>
+      <p style="color:#3d3a6b;">Upload outbound/stow file → rank Top 3 Pickers &amp; Top 3 Stowers.</p>
+    </div>
+  </div>
+  <div class="upload-zone" id="dstpro-uz-tp" style="background:#fff;border-color:#d5d2f0;"
+    onclick="document.getElementById('dstpro-f-tp').click()"
+    ondragover="event.preventDefault();this.classList.add('drag')"
+    ondragleave="this.classList.remove('drag')"
+    ondrop="event.preventDefault();this.classList.remove('drag');dstproTPDrop(event)">
+    <input type="file" id="dstpro-f-tp" accept=".xlsx,.xls,.csv" style="display:none" onchange="dstproTPUpload(this)">
+    <div class="u-icon">📂</div>
+    <h3 style="color:#1a1830;">Upload Outbound / Stow File</h3>
+    <p style="color:#7b78a8;">Columns: Username, Order ID, Units Picked, Process Path, Quantity</p>
+    <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+  </div>
+  <div class="file-ok" id="dstpro-fo-tp">
+    <span>✅</span><div class="fi-info"><strong id="dstpro-fo-tp-name">—</strong><span id="dstpro-fo-tp-info">—</span></div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="dstproTPReset()">✕</button>
+  </div>
+  <div id="dstpro-tp-mapper" style="display:none;background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;">
+    <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;">📋 Map Your Columns</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;align-items:end;">
+      <div><div class="ctrl-label" style="color:#7b78a8;">Username</div><select class="select-field" id="dstpro-tp-col-user" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Order ID</div><select class="select-field" id="dstpro-tp-col-order" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Units Picked</div><select class="select-field" id="dstpro-tp-col-units" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Process Path</div><select class="select-field" id="dstpro-tp-col-proc" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div><div class="ctrl-label" style="color:#7b78a8;">Quantity (Stow)</div><select class="select-field" id="dstpro-tp-col-qty" style="width:100%;background:#fff;border-color:#d5d2f0;color:#1a1830;"></select></div>
+      <div style="display:flex;align-items:flex-end;"><button class="btn btn-primary" style="width:100%;background:linear-gradient(135deg,#b5860d,#9a6e0b);" onclick="dstproTPGenerate()">🏆 Generate Report</button></div>
+    </div>
+  </div>
+  <div class="loading" id="load-top-performer">
+    <div class="loading-inner"><div class="spinner"></div><div class="loading-status-text">Ranking performers...</div>
+    <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+  </div>
+  <div id="dstpro-out-tp"></div>
+  <div id="dstpro-export-tp" style="display:none;" class="btn-row">
+    <button class="btn btn-primary" onclick="dstproTPExportWord()">⬇ Export Word (.doc)</button>
+    <button class="btn btn-accent" onclick="dstproTPExportPDF()">⬇ Export PDF</button>
+  </div>
+</div>
+</div>
+
+<!-- ── STYLES ──────────────────────────────────────────────────── -->
+<style>
+#dstpro-login-fields { margin-bottom:16px; }
+#dstpro-login-fields .dstpro-lf { margin-bottom:14px; }
+#dstpro-login-fields label { display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8b8aad;margin-bottom:8px; }
+#dstpro-login-fields input { width:100%;background:rgba(15,14,23,0.7);border:1px solid rgba(46,44,69,0.9);border-radius:10px;padding:13px 16px;font-family:'Syne',sans-serif;font-size:14px;color:#e8e6ff;outline:none;transition:border-color 0.2s;box-sizing:border-box; }
+#dstpro-login-fields input:focus { border-color:#ff6b35; }
+#dstpro-admin-link { width:100%;padding:10px 12px;background:transparent;border:none;color:#4cc9f0;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:left;border-radius:8px; }
+#dstpro-admin-link:hover { background:rgba(76,201,240,0.1); }
+.dstpro-ac { background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:14px;padding:20px;transition:transform 0.2s,box-shadow 0.2s; }
+.dstpro-ac:hover { transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+.dstpro-ac .dac-val { font-size:32px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1; }
+.dstpro-ac .dac-lbl { font-size:11px;color:#8b8aad;font-weight:600;letter-spacing:1px;text-transform:uppercase; }
+#dstpro-log-tbody tr { border-bottom:1px solid rgba(46,44,69,0.4); }
+#dstpro-log-tbody tr:hover td { background:rgba(67,97,238,0.06); }
+#dstpro-log-tbody td { padding:10px 16px;color:#b8b6d9;font-size:12px;white-space:nowrap;font-family:'DM Mono',monospace; }
+.dstpro-perf-card { background:#fff;border:1.5px solid #d5d2f0;border-radius:18px;padding:24px 20px;text-align:center;position:relative;overflow:hidden;transition:all 0.25s; }
+.dstpro-perf-card:hover { transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.1); }
+.dstpro-perf-card .dpc-rank { font-size:38px;margin-bottom:8px; }
+.dstpro-perf-card .dpc-name { font-size:18px;font-weight:800;color:#1a1830;margin-bottom:8px;word-break:break-all; }
+.dstpro-perf-card .dpc-stat { font-size:13px;color:#7b78a8;margin-bottom:4px; }
+.dstpro-perf-card .dpc-stat strong { color:#1a1830; }
+.dstpro-perf-card .dpc-photo { width:72px;height:72px;border-radius:50%;border:3px solid #d5d2f0;margin:0 auto 14px;background:#f0effe;display:flex;align-items:center;justify-content:center;font-size:28px;color:#7b78a8; }
+.dstpro-perf-card.gold { border-color:#ffd60a;box-shadow:0 0 0 3px rgba(255,214,10,0.2); }
+.dstpro-perf-card.silver { border-color:#adb5bd;box-shadow:0 0 0 3px rgba(173,181,189,0.2); }
+.dstpro-perf-card.bronze { border-color:#cd7f32;box-shadow:0 0 0 3px rgba(205,127,50,0.2); }
+.dstpro-rank-badge { display:inline-block;padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px;letter-spacing:1px;margin-right:6px; }
+.dstpro-rank-1 { background:#fff3cd;color:#856404; }
+.dstpro-rank-2 { background:#d1ecf1;color:#0c5460; }
+.dstpro-rank-3 { background:#d4edda;color:#155724; }
+.dstpro-status-ok { background:#d4edda;color:#155724;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.dstpro-status-miss { background:#f8d7da;color:#721c24;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.dstpro-status-mismatch { background:#fff3cd;color:#856404;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.dstpro-status-multi { background:#d1ecf1;color:#0c5460;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+@media(max-width:640px){ #dstpro-charts-row{grid-template-columns:1fr!important;} }
+</style>
+
+<!-- ── JAVASCRIPT (DSTPRO namespace) ──────────────────────────── -->
+<script>
+var DSTPRO = (function() {
+  var ADMIN_PASSWORD = 'HPAdmin@2026';
+  var LOG_KEY        = 'dstpro_activity_log';
+  var USER_KEY       = 'dstpro_user_info';
+  var ADMIN_SESS_KEY = 'dstpro_admin_sess';
+  var _user   = { name:'', empId:'' };
+  var _logs   = [];
+  var _fastData=[], _fastHdrs=[], _fastResults=[];
+  var _auditData1=[], _auditHdrs1=[], _auditData2=[], _auditHdrs2=[], _auditResults=[];
+  var _tpData=[], _tpHdrs=[], _tpResults=null;
+  var _chartTools=null, _chartUsers=null;
+
+  function _now(){ return new Date().toISOString(); }
+  function _browser(){
+    var ua=navigator.userAgent;
+    if(/iPhone|iPad/.test(ua))return'iOS';if(/Android/.test(ua))return'Android';
+    if(/Firefox/.test(ua))return'Firefox';if(/Edg/.test(ua))return'Edge';
+    if(/Chrome/.test(ua))return'Chrome';if(/Safari/.test(ua))return'Safari';
+    return'Browser';
+  }
+  function _saveLogs(){ try{localStorage.setItem(LOG_KEY,JSON.stringify(_logs));}catch(e){} }
+  function _loadLogs(){ try{var r=localStorage.getItem(LOG_KEY);_logs=r?JSON.parse(r):[];}catch(e){_logs=[];} }
+  function _loadUser(){ try{var r=localStorage.getItem(USER_KEY);if(r)_user=JSON.parse(r);}catch(e){} }
+
+  function logActivity(tool, action){
+    var e={ts:_now(),name:_user.name||'Unknown',empId:_user.empId||'—',tool:tool,action:action||'Opened',device:_browser()};
+    _logs.unshift(e); if(_logs.length>2000)_logs=_logs.slice(0,2000); _saveLogs();
+    // Also send to Google Sheets
+    _sendActivityToSheet(tool,action);
+  }
+
+  function _patchLoginForm(){
+    var card=document.querySelector('.login-card');
+    if(!card||document.getElementById('dstpro-login-fields'))return;
+    var c=document.createElement('div'); c.id='dstpro-login-fields';
+    c.innerHTML='<div class="dstpro-lf"><label>Full Name *</label><input type="text" id="dstpro-inp-name" placeholder="Your full name" autocomplete="name"></div>';
+    var pw=card.querySelector('.login-field');
+    if(pw)card.insertBefore(c,pw); else card.prepend(c);
+    var nameEl=document.getElementById('dstpro-inp-name');
+    if(nameEl)nameEl.addEventListener('keydown',function(e){if(e.key==='Enter'){var p=document.getElementById('login-pass');if(p)p.focus();}});
+  }
+
+  function _patchLogoutMenu(){
+    var menu=document.getElementById('logout-menu');
+    if(!menu||document.getElementById('dstpro-admin-link'))return;
+    var btn=document.createElement('button');
+    btn.id='dstpro-admin-link'; btn.textContent='🛡️ Admin Panel';
+    btn.onclick=function(){menu.style.display='none';openAdminPanel();};
+    menu.insertBefore(btn,menu.firstChild);
+  }
+
+  function _hookLogin(){
+    var orig=window.authLogin;
+    window.authLogin=function(){
+      var nameEl=document.getElementById('dstpro-inp-name');
+      var name=nameEl?nameEl.value.trim():'';
+      if(!name){
+        var msg=document.getElementById('login-msg');
+        if(msg){msg.textContent='⚠️ Please enter your full name.';msg.className='login-msg error';msg.style.display='block';}
+        if(nameEl)nameEl.focus(); return;
+      }
+      _user.name=name; _user.empId='';
+      try{localStorage.setItem(USER_KEY,JSON.stringify(_user));}catch(e){}
+      var origShow=window.authShowApp;
+      window.authShowApp=function(){
+        origShow();
+        // Update session badge with user's name
+        var badge=document.getElementById('session-badge');
+        if(badge){var nm=badge.querySelector('.sb-name');if(nm)nm.textContent=name;}
+        // Log login activity
+        logActivity('Login','Signed In');
+        // Send login to Google Sheets via image-ping (same pattern as existing app)
+        _sendLoginToSheet(name);
+        window.authShowApp=origShow;
+      };
+      orig();
+    };
+  }
+  // ── Google Sheets activity log URL ────────────────────────────────
+  // Deploy the ActivityLog_AppScript.gs as a Web App and paste the URL here:
+  var ACTIVITY_SHEET_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+
+  function _sendLoginToSheet(name){
+    try{
+      var ts=new Date().toISOString();
+      var device=_browser();
+      var img=new Image();
+      img.src=ACTIVITY_SHEET_URL+'?action=trackLogin&name='+encodeURIComponent(name)+'&ts='+encodeURIComponent(ts)+'&device='+encodeURIComponent(device);
+    }catch(e){}
+  }
+  function _sendActivityToSheet(tool,action){
+    try{
+      var img=new Image();
+      img.src=ACTIVITY_SHEET_URL+'?action=trackActivity&name='+encodeURIComponent(_user.name||'Unknown')+'&tool='+encodeURIComponent(tool)+'&action='+encodeURIComponent(action||'Opened')+'&ts='+encodeURIComponent(new Date().toISOString())+'&device='+encodeURIComponent(_browser());
+    }catch(e){}
+  }
+
+  function _addAdminShortcut(){
+    document.addEventListener('keydown',function(e){
+      if(e.ctrlKey&&e.shiftKey&&(e.key==='A'||e.key==='a')){
+        openAdminPanel();
+      }
+    });
+  }
+  function _hookLogout(){
+    var orig=window.authLogout;
+    window.authLogout=function(){logActivity('Login','Signed Out');orig();};
+  }
+
+  function _hookOpenTask(){
+    var orig=window.openTask;
+    var map={'consolidation':'Consolidation','audit-loc':'Audit by Location','audit-asin':'Audit by ASIN',
+      'slow-moving':'Slow Moving Items','ysm':'YSM Barcode','report':'Inventory Report',
+      'lateslam':'Late Slam Calculator','catalog-issue':'Catalog Issue','scanning-issue':'Scanning Issue',
+      'locid':'Location ID Maker','voc':'VOC Analysis','fast-moving':'Fast Moving ASIN',
+      'inv-audit':'Inventory Audit','top-performer':'Top Performer'};
+    window.openTask=function(id){orig(id);logActivity(map[id]||id,'Opened');};
+  }
+
+  /* ADMIN */
+  function openAdminPanel(){
+    _loadLogs();
+    document.getElementById('dstpro-admin-panel').style.display='block';
+    var ok=false; try{ok=!!sessionStorage.getItem(ADMIN_SESS_KEY);}catch(e){}
+    if(ok){document.getElementById('dstpro-admin-gate').style.display='none';document.getElementById('dstpro-admin-dash').style.display='block';renderAdminDash();}
+    else{document.getElementById('dstpro-admin-gate').style.display='flex';document.getElementById('dstpro-admin-dash').style.display='none';}
+  }
+  function adminLogin(){
+    var pass=(document.getElementById('dstpro-admin-pass').value||'').trim();
+    var msg=document.getElementById('dstpro-admin-gate-msg');
+    if(pass===ADMIN_PASSWORD){
+      try{sessionStorage.setItem(ADMIN_SESS_KEY,'1');}catch(e){}
+      document.getElementById('dstpro-admin-gate').style.display='none';
+      document.getElementById('dstpro-admin-dash').style.display='block';
+      renderAdminDash();
+    } else {
+      msg.textContent='❌ Incorrect password.'; msg.className='login-msg error'; msg.style.display='block';
+      document.getElementById('dstpro-admin-pass').value='';
+    }
+  }
+  function adminClose(){ document.getElementById('dstpro-admin-panel').style.display='none'; }
+  function _getFiltered(){
+    var fu=(document.getElementById('dstpro-filter-user')||{value:''}).value||'';
+    var ft=(document.getElementById('dstpro-filter-tool')||{value:''}).value||'';
+    var fd=(document.getElementById('dstpro-filter-date')||{value:''}).value||'';
+    return _logs.filter(function(l){
+      if(fu&&l.name.toLowerCase().indexOf(fu.toLowerCase())<0)return false;
+      if(ft&&l.tool!==ft)return false;
+      if(fd&&l.ts.slice(0,10)!==fd)return false;
+      return true;
+    });
+  }
+  function renderAdminDash(){
+    var logins=_logs.filter(function(l){return l.tool==='Login'&&l.action==='Signed In';}).length;
+    var users=new Set(_logs.map(function(l){return l.name;})).size;
+    var tools=new Set(_logs.filter(function(l){return l.tool!=='Login';}).map(function(l){return l.tool;})).size;
+    var today=new Date().toISOString().slice(0,10);
+    var todayActs=_logs.filter(function(l){return l.ts.slice(0,10)===today;}).length;
+    var cards=[{val:_logs.length,lbl:'Total Activities',col:'#4361ee'},{val:logins,lbl:'Total Logins',col:'#06d6a0'},
+      {val:users,lbl:'Unique Users',col:'#ff6b35'},{val:tools,lbl:'Tools Used',col:'#ffd60a'},{val:todayActs,lbl:"Today's Actions",col:'#f72585'}];
+    document.getElementById('dstpro-analytics-cards').innerHTML=cards.map(function(c){
+      return '<div class="dstpro-ac" style="border-top:3px solid '+c.col+';"><div class="dac-val" style="color:'+c.col+'">'+c.val+'</div><div class="dac-lbl">'+c.lbl+'</div></div>';
+    }).join('');
+    var f=_getFiltered(); renderLogTable(f); renderCharts(f);
+  }
+  function renderLogTable(logs){
+    var tbody=document.getElementById('dstpro-log-tbody');
+    var noEl=document.getElementById('dstpro-no-logs');
+    if(!logs.length){tbody.innerHTML='';noEl.style.display='block';return;}
+    noEl.style.display='none';
+    tbody.innerHTML=logs.map(function(l){
+      var dt=l.ts?new Date(l.ts):new Date();
+      var ds=dt.toLocaleDateString()+' '+dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      return '<tr><td>'+ds+'</td><td style="color:#e8e6ff;font-weight:600;">'+(l.name||'—')+'</td><td>'+(l.empId||'—')+'</td><td style="color:#4cc9f0;">'+(l.tool||'—')+'</td><td>'+(l.action||'—')+'</td><td>'+(l.device||'—')+'</td></tr>';
+    }).join('');
+  }
+  function renderCharts(logs){
+    if(!window.Chart){
+      var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+      s.onload=function(){_drawCharts(logs);}; document.head.appendChild(s);
+    } else _drawCharts(logs);
+  }
+  function _drawCharts(logs){
+    if(!window.Chart)return;
+    var tc={};
+    logs.forEach(function(l){if(l.tool!=='Login')tc[l.tool]=(tc[l.tool]||0)+1;});
+    var tl=Object.keys(tc).sort(function(a,b){return tc[b]-tc[a];}).slice(0,8);
+    var tv=tl.map(function(t){return tc[t];});
+    var ctxT=document.getElementById('dstpro-chart-tools');
+    if(ctxT){if(_chartTools){_chartTools.destroy();_chartTools=null;}
+      _chartTools=new window.Chart(ctxT,{type:'bar',data:{labels:tl,datasets:[{label:'Uses',data:tv,backgroundColor:['#4361ee','#ff6b35','#06d6a0','#ffd60a','#f72585','#4cc9f0','#7209b7','#06d6a0']}]},
+        options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8b8aad',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#8b8aad'},grid:{color:'rgba(255,255,255,0.05)'}}}}});}
+    var uc={};
+    logs.forEach(function(l){uc[l.name]=(uc[l.name]||0)+1;});
+    var ul=Object.keys(uc).sort(function(a,b){return uc[b]-uc[a];}).slice(0,6);
+    var uv=ul.map(function(u){return uc[u];});
+    var ctxU=document.getElementById('dstpro-chart-users');
+    if(ctxU){if(_chartUsers){_chartUsers.destroy();_chartUsers=null;}
+      _chartUsers=new window.Chart(ctxU,{type:'doughnut',data:{labels:ul,datasets:[{data:uv,backgroundColor:['#4361ee','#ff6b35','#06d6a0','#ffd60a','#f72585','#4cc9f0']}]},
+        options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#b8b6d9',font:{size:11}}}}}});}
+  }
+  function clearFilters(){
+    ['dstpro-filter-user','dstpro-filter-tool','dstpro-filter-date'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    renderLogTable(_logs);
+  }
+  function clearLogs(){
+    if(!confirm('Clear ALL activity logs? Cannot be undone.'))return;
+    _logs=[]; _saveLogs(); renderAdminDash();
+  }
+  function exportLogsExcel(){
+    if(typeof XLSX==='undefined'){alert('SheetJS not loaded');return;}
+    var rows=[['Date/Time','Name','Emp ID','Tool','Action','Device']];
+    _logs.forEach(function(l){var dt=l.ts?new Date(l.ts).toLocaleString():'—';rows.push([dt,l.name||'—',l.empId||'—',l.tool||'—',l.action||'—',l.device||'—']);});
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Activity Log');
+    XLSX.writeFile(wb,'DSTPRO_ActivityLog_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }
+
+  /* FAST MOVING */
+  function _parseFile(file,cb){
+    var ext=file.name.split('.').pop().toLowerCase();
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var wb=ext==='csv'?XLSX.read(e.target.result,{type:'string'}):XLSX.read(e.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        cb(null,XLSX.utils.sheet_to_json(ws,{defval:''}));
+      }catch(err){cb(err);}
+    };
+    if(ext==='csv')reader.readAsText(file); else reader.readAsArrayBuffer(file);
+  }
+  function fastHandleFile(file){
+    if(!file)return;
+    _parseFile(file,function(err,json){
+      if(err){_showToast('❌ '+err.message);return;}
+      if(!json.length){_showToast('⚠️ File is empty');return;}
+      _fastData=json; _fastHdrs=Object.keys(json[0]);
+      document.getElementById('dstpro-fo-fast-name').textContent=file.name;
+      document.getElementById('dstpro-fo-fast-info').textContent=json.length.toLocaleString()+' rows';
+      document.getElementById('dstpro-fo-fast').classList.add('show');
+      var opts=_fastHdrs.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');
+      ['dstpro-fast-col-asin','dstpro-fast-col-loc','dstpro-fast-col-qty'].forEach(function(id){document.getElementById(id).innerHTML=opts;});
+      _fastHdrs.forEach(function(h){var lh=h.toLowerCase();
+        if(/asin/.test(lh))document.getElementById('dstpro-fast-col-asin').value=h;
+        else if(/loc|bin/.test(lh))document.getElementById('dstpro-fast-col-loc').value=h;
+        else if(/qty|quan|unit/.test(lh))document.getElementById('dstpro-fast-col-qty').value=h;
+      });
+      document.getElementById('dstpro-fast-mapper').style.display='block';
+      logActivity('Fast Moving ASIN','File Uploaded: '+file.name);
+    });
+  }
+  function fastGenerate(){
+    if(!_fastData.length){_showToast('⚠️ Upload a file first');return;}
+    var cA=document.getElementById('dstpro-fast-col-asin').value;
+    var cL=document.getElementById('dstpro-fast-col-loc').value;
+    var cQ=document.getElementById('dstpro-fast-col-qty').value;
+    if(!cA||!cL){_showToast('⚠️ Map required columns');return;}
+    document.getElementById('load-fast-moving').classList.add('show');
+    document.getElementById('dstpro-out-fast').innerHTML='';
+    document.getElementById('dstpro-export-fast').style.display='none';
+    setTimeout(function(){
+      // Extract area letter: matches H or I letter followed by digits anywhere in location string
+      // e.g. HAZ-A106B140 → no match (B not H/I); HAZ-A106H200 → matches H; I123 → matches I at start
+      function _hasHI(loc){
+        var l=loc.toUpperCase();
+        // Check if location contains letter H or I immediately followed by digits (area code pattern)
+        return /(?:^|[^A-Z])([HI])\d+/i.test(l)||l.startsWith('H')||l.startsWith('I');
+      }
+      function _extractArea(loc){
+        // Extract the H/I area segment e.g. "B140" from "HAZ-A106B140" → no; "H200" from "HAZ-A106H200" → "H200"
+        // Returns the matched area+number or full location if starts with H/I
+        var l=loc.toUpperCase();
+        var m=l.match(/[HI]\d+/);
+        return m?m[0]:l;
+      }
+      var filtered=_fastData.filter(function(r){var l=String(r[cL]||'').trim();return _hasHI(l);});
+      if(!filtered.length){document.getElementById('load-fast-moving').classList.remove('show');document.getElementById('dstpro-out-fast').innerHTML='<div class="alert alert-warn">No H or I area locations found. Looks for locations starting with H/I or containing H/I area codes (e.g. HAZ-A106H200).</div>';return;}
+      var asinMap={};
+      filtered.forEach(function(r){
+        var a=String(r[cA]||'').trim(); var l=String(r[cL]||'').trim(); var q=Math.abs(Number(r[cQ]||1))||1;
+        var area=_extractArea(l); // show the area code not full location
+        if(!a)return;
+        if(!asinMap[a])asinMap[a]={pickCount:0,units:0,locations:new Set(),fullLocs:new Set()};
+        asinMap[a].pickCount++; asinMap[a].units+=q; asinMap[a].locations.add(area); asinMap[a].fullLocs.add(l);
+      });
+      var ranked=Object.entries(asinMap).map(function(e){return{asin:e[0],pickCount:e[1].pickCount,units:e[1].units,locations:[...e[1].locations],fullLocs:[...e[1].fullLocs]};}).sort(function(a,b){return b.pickCount-a.pickCount;});
+      _fastResults=ranked;
+      var totalPicks=ranked.reduce(function(s,r){return s+r.pickCount;},0);
+      var html='<div class="results-panel" style="background:#fff;border-color:#d5d2f0;">'+
+        '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#e8500a);">'+
+        '<h3>🚀 Fast Moving ASINs</h3><span class="results-count">'+ranked.length+' ASINs · '+totalPicks.toLocaleString()+' picks · '+new Date().toLocaleString()+'</span></div>'+
+        '<div class="results-body"><div class="stats-row">'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#e8500a;">'+ranked.length+'</div><div class="sl">Fast Moving ASINs</div></div>'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#4361ee;">'+totalPicks.toLocaleString()+'</div><div class="sl">Total Picks</div></div>'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#06d6a0;">'+filtered.length.toLocaleString()+'</div><div class="sl">H/I Rows</div></div></div>'+
+        '<div style="overflow-x:auto;margin-top:20px;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        '<thead style="background:#f0effe;"><tr>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">RANK</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">ASIN</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">PICKS</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">UNITS</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">LOCATIONS</th>'+
+        '</tr></thead><tbody>';
+      ranked.forEach(function(r,i){
+        var badge=i<3?'<span class="dstpro-rank-badge dstpro-rank-'+(i+1)+'">TOP '+(i+1)+'</span>':'<span style="color:#7b78a8;font-weight:600;">#'+(i+1)+'</span>';
+        html+='<tr style="border-bottom:1px solid #f0effe;"><td style="padding:10px 14px;">'+badge+'</td>'+
+          '<td style="padding:10px 14px;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a1830;">'+r.asin+'</td>'+
+          '<td style="padding:10px 14px;font-weight:700;color:#e8500a;">'+r.pickCount.toLocaleString()+'</td>'+
+          '<td style="padding:10px 14px;color:#4361ee;font-weight:600;">'+r.units.toLocaleString()+'</td>'+
+          '<td style="padding:10px 14px;font-size:11px;color:#7b78a8;">'+r.locations.slice(0,5).join(', ')+(r.locations.length>5?' +more':'')+'</td></tr>';
+      });
+      html+='</tbody></table></div></div></div>';
+      document.getElementById('dstpro-out-fast').innerHTML=html;
+      document.getElementById('load-fast-moving').classList.remove('show');
+      document.getElementById('dstpro-export-fast').style.display='flex';
+      logActivity('Fast Moving ASIN','Generated — '+ranked.length+' ASINs');
+      _showToast('✅ '+ranked.length+' fast-moving ASINs ranked');
+    },400);
+  }
+  function fastReset(){
+    _fastData=[]; _fastHdrs=[]; _fastResults=[];
+    document.getElementById('dstpro-fo-fast').classList.remove('show');
+    document.getElementById('dstpro-f-fast').value='';
+    document.getElementById('dstpro-fast-mapper').style.display='none';
+    document.getElementById('dstpro-out-fast').innerHTML='';
+    document.getElementById('dstpro-export-fast').style.display='none';
+  }
+  function fastExportExcel(){
+    if(!_fastResults.length){_showToast('⚠️ Generate first');return;}
+    var rows=[['Rank','ASIN','Pick Count','Total Units','Locations']];
+    _fastResults.forEach(function(r,i){rows.push([i+1,r.asin,r.pickCount,r.units,r.locations.join(', ')]);});
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Fast Moving ASIN');
+    XLSX.writeFile(wb,'FastMovingASIN_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    logActivity('Fast Moving ASIN','Exported Excel');
+  }
+  function fastExportPDF(){
+    if(!_fastResults.length){_showToast('⚠️ Generate first');return;}
+    if(!window.jspdf||!window.jspdf.jsPDF){_showToast('⚠️ PDF lib not ready');return;}
+    var doc=new window.jspdf.jsPDF({orientation:'landscape'});
+    doc.setFontSize(16);doc.setFont(undefined,'bold');doc.text('Fast Moving ASIN Report — HP World',14,18);
+    doc.setFontSize(10);doc.setFont(undefined,'normal');doc.text('Generated: '+new Date().toLocaleString(),14,26);
+    var y=38; doc.setFontSize(11);doc.setFont(undefined,'bold');
+    ['Rank','ASIN','Picks','Units','Locations'].forEach(function(h,i){doc.text(h,14+i*55,y);});
+    y+=8; doc.setFont(undefined,'normal');doc.setFontSize(9);
+    _fastResults.slice(0,40).forEach(function(r,i){
+      doc.text(String(i+1),14,y);doc.text(r.asin,69,y);doc.text(String(r.pickCount),124,y);doc.text(String(r.units),179,y);
+      doc.text(r.locations.slice(0,3).join(', '),234,y,{maxWidth:50});
+      y+=7;if(y>185){doc.addPage();y=20;}
+    });
+    doc.save('FastMovingASIN_'+new Date().toISOString().slice(0,10)+'.pdf');
+    logActivity('Fast Moving ASIN','Exported PDF');
+  }
+
+  /* INVENTORY AUDIT */
+  function auditUploadFile(file,slot){
+    if(!file)return;
+    _parseFile(file,function(err,json){
+      if(err){_showToast('❌ '+err.message);return;}
+      if(!json.length){_showToast('⚠️ File is empty');return;}
+      var hdrs=Object.keys(json[0]);
+      if(slot===1){_auditData1=json;_auditHdrs1=hdrs;}else{_auditData2=json;_auditHdrs2=hdrs;}
+      document.getElementById('dstpro-fo-audit'+slot+'-name').textContent=file.name;
+      document.getElementById('dstpro-fo-audit'+slot+'-info').textContent=json.length.toLocaleString()+' rows';
+      document.getElementById('dstpro-fo-audit'+slot).classList.add('show');
+      if(_auditData1.length&&_auditData2.length){
+        var opts1=_auditHdrs1.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');
+        var opts2=_auditHdrs2.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');
+        document.getElementById('dstpro-audit-col-asin1').innerHTML=opts1;
+        document.getElementById('dstpro-audit-col-asin2').innerHTML=opts2;
+        document.getElementById('dstpro-audit-col-loc').innerHTML=opts2;
+        document.getElementById('dstpro-audit-col-qty').innerHTML=opts2;
+        _auditHdrs1.forEach(function(h){if(/asin/i.test(h))document.getElementById('dstpro-audit-col-asin1').value=h;});
+        _auditHdrs2.forEach(function(h){var lh=h.toLowerCase();
+          if(/asin/i.test(lh))document.getElementById('dstpro-audit-col-asin2').value=h;
+          else if(/loc|bin/i.test(lh))document.getElementById('dstpro-audit-col-loc').value=h;
+          else if(/qty|quan|unit/i.test(lh))document.getElementById('dstpro-audit-col-qty').value=h;
+        });
+        document.getElementById('dstpro-audit-mapper').style.display='block';
+      }
+      logActivity('Inventory Audit','File '+(slot===1?'Audit':'Inventory')+' Uploaded');
+    });
+  }
+  function auditMatch(){
+    if(!_auditData1.length||!_auditData2.length){_showToast('⚠️ Upload both files first');return;}
+    var c1=document.getElementById('dstpro-audit-col-asin1').value;
+    var c2=document.getElementById('dstpro-audit-col-asin2').value;
+    var cL=document.getElementById('dstpro-audit-col-loc').value;
+    var cQ=document.getElementById('dstpro-audit-col-qty').value;
+    document.getElementById('load-inv-audit').classList.add('show');
+    document.getElementById('dstpro-out-audit').innerHTML='';
+    document.getElementById('dstpro-export-audit').style.display='none';
+    setTimeout(function(){
+      // Build real-time inventory map: asin → [{loc, qty}]
+      var invMap={};
+      _auditData2.forEach(function(r){
+        var a=String(r[c2]||'').trim().toUpperCase();
+        var l=String(r[cL]||'').trim();
+        var q=Number(r[cQ]||0);
+        if(!a)return;
+        if(!invMap[a])invMap[a]=[];
+        invMap[a].push({loc:l,qty:q});
+      });
+
+      // Also get audit file locations (if audit file has a location col)
+      var auditLocMap={};
+      _auditData1.forEach(function(r){
+        var a=String(r[c1]||'').trim().toUpperCase();
+        // try to find location in audit file using same column name as inventory
+        var l=String(r[cL]||r[Object.keys(r).find(function(k){return /loc|bin/i.test(k);})||'']||'').trim();
+        if(a&&l)auditLocMap[a]=l;
+      });
+
+      var results=[];
+      _auditData1.forEach(function(r){
+        var a=String(r[c1]||'').trim().toUpperCase();
+        if(!a)return;
+        var matches=invMap[a];
+        // RULE: if ASIN not in real-time inventory at all → SKIP (do not show)
+        if(!matches)return;
+        var totalQty=matches.reduce(function(s,m){return s+m.qty;},0);
+        var locs=matches.map(function(m){return m.loc;}).filter(function(l){return l&&l!=='N/A'&&l!=='n/a'&&l!=='';});
+        // RULE: qty=0 → Zero Stock (show location from audit or inventory)
+        var status,statusCls;
+        if(totalQty===0){
+          status='Zero Stock';statusCls='dstpro-status-miss';
+          // use audit location if inventory has empty loc
+          if(!locs.length&&auditLocMap[a])locs=[auditLocMap[a]];
+        } else if(matches.length>1){
+          status='Multi-Loc';statusCls='dstpro-status-multi';
+        } else {
+          status='Found';statusCls='dstpro-status-ok';
+        }
+        var locStr=locs.join(', ')||'—';
+        results.push({asin:a,status:status,statusCls:statusCls,locations:locStr,qty:totalQty});
+      });
+
+      _auditResults=results;
+      var zeroStock=results.filter(function(r){return r.status==='Zero Stock';}).length;
+      var multiLoc=results.filter(function(r){return r.status==='Multi-Loc';}).length;
+      var found=results.filter(function(r){return r.status==='Found';}).length;
+      var total=results.length;
+
+      var html='<div class="results-panel" style="background:#fff;border-color:#d5d2f0;">'+
+        '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#7c3aed);">'+
+        '<h3>🔍 Inventory Audit Results</h3><span class="results-count">'+total+' matched ASINs · '+new Date().toLocaleString()+'</span></div>'+
+        '<div class="results-body"><div class="stats-row">'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#155724;">'+found+'</div><div class="sl">Found</div></div>'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#721c24;">'+zeroStock+'</div><div class="sl">Zero Stock</div></div>'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#0c5460;">'+multiLoc+'</div><div class="sl">Multi-Loc</div></div>'+
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#7b78a8;">'+(_auditData1.length-total)+'</div><div class="sl">Not in Inventory</div></div></div>'+
+        '<div style="margin:12px 0 4px;font-size:12px;color:#7b78a8;padding:0 2px;">ℹ️ ASINs not found in real-time inventory are excluded. Zero Stock items show their last known location.</div>'+
+        '<div style="overflow-x:auto;margin-top:12px;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        '<thead style="background:#f0effe;"><tr>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">ASIN</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">STATUS</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">LOCATION(S)</th>'+
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">QTY</th>'+
+        '</tr></thead><tbody>';
+      results.forEach(function(r){
+        var bg=r.status==='Zero Stock'?'background:#fff0f0;':r.status==='Multi-Loc'?'background:#fffbeb;':'';
+        html+='<tr style="border-bottom:1px solid #f0effe;'+bg+'">'+
+          '<td style="padding:10px 14px;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a1830;">'+r.asin+'</td>'+
+          '<td style="padding:10px 14px;"><span class="'+r.statusCls+'">'+r.status+'</span></td>'+
+          '<td style="padding:10px 14px;color:#7b78a8;font-size:12px;">'+r.locations+'</td>'+
+          '<td style="padding:10px 14px;font-weight:700;color:'+(r.qty===0?'#721c24':'#4361ee')+';">'+r.qty+'</td></tr>';
+      });
+      html+='</tbody></table></div></div></div>';
+      document.getElementById('dstpro-out-audit').innerHTML=html;
+      document.getElementById('load-inv-audit').classList.remove('show');
+      document.getElementById('dstpro-export-audit').style.display='flex';
+      logActivity('Inventory Audit','Matched — '+zeroStock+' zero stock');
+      _showToast('✅ Audit done — '+found+' found, '+zeroStock+' zero stock, '+multiLoc+' multi-loc');
+    },400);
+  }
+  function auditExportExcel(){
+    if(!_auditResults.length){_showToast('⚠️ Run audit first');return;}
+    var rows=[['ASIN','Status','Locations','Quantity']];
+    _auditResults.forEach(function(r){rows.push([r.asin,r.status,r.locations,r.qty]);});
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Inventory Audit');
+    XLSX.writeFile(wb,'InventoryAudit_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    logActivity('Inventory Audit','Exported Excel');
+  }
+  function auditExportPDF(){
+    if(!_auditResults.length){_showToast('⚠️ Run audit first');return;}
+    if(!window.jspdf||!window.jspdf.jsPDF){_showToast('⚠️ PDF lib not ready');return;}
+    var doc=new window.jspdf.jsPDF({orientation:'landscape'});
+    doc.setFontSize(16);doc.setFont(undefined,'bold');doc.text('Inventory Audit Report — HP World',14,18);
+    doc.setFontSize(10);doc.setFont(undefined,'normal');doc.text('Generated: '+new Date().toLocaleString(),14,26);
+    var y=38;doc.setFontSize(11);doc.setFont(undefined,'bold');
+    doc.text('ASIN',14,y);doc.text('Status',79,y);doc.text('Locations',144,y);doc.text('Qty',234,y);
+    y+=8;doc.setFont(undefined,'normal');doc.setFontSize(9);
+    _auditResults.forEach(function(r){
+      if(y>190){doc.addPage();y=20;}
+      doc.text(r.asin,14,y);doc.text(r.status,79,y);
+      doc.text((r.locations||'—').slice(0,35),144,y);doc.text(String(r.qty),234,y);y+=7;
+    });
+    doc.save('InventoryAudit_'+new Date().toISOString().slice(0,10)+'.pdf');
+    logActivity('Inventory Audit','Exported PDF');
+  }
+
+  /* TOP PERFORMER */
+  function tpHandleFile(file){
+    if(!file)return;
+    _parseFile(file,function(err,json){
+      if(err){_showToast('❌ '+err.message);return;}
+      if(!json.length){_showToast('⚠️ File is empty');return;}
+      _tpData=json;_tpHdrs=Object.keys(json[0]);
+      document.getElementById('dstpro-fo-tp-name').textContent=file.name;
+      document.getElementById('dstpro-fo-tp-info').textContent=json.length.toLocaleString()+' rows';
+      document.getElementById('dstpro-fo-tp').classList.add('show');
+      var opts=_tpHdrs.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('');
+      ['dstpro-tp-col-user','dstpro-tp-col-order','dstpro-tp-col-units','dstpro-tp-col-proc','dstpro-tp-col-qty'].forEach(function(id){document.getElementById(id).innerHTML=opts;});
+      _tpHdrs.forEach(function(h){var lh=h.toLowerCase();
+        if(/user|assoc|name/.test(lh))document.getElementById('dstpro-tp-col-user').value=h;
+        else if(/order.?id|orderid|ref/.test(lh))document.getElementById('dstpro-tp-col-order').value=h;
+        else if(/unit|pick/.test(lh))document.getElementById('dstpro-tp-col-units').value=h;
+        else if(/process|path|proc/.test(lh))document.getElementById('dstpro-tp-col-proc').value=h;
+        else if(/qty|quan/.test(lh))document.getElementById('dstpro-tp-col-qty').value=h;
+      });
+      document.getElementById('dstpro-tp-mapper').style.display='block';
+      logActivity('Top Performer','File Uploaded: '+file.name);
+    });
+  }
+  function tpGenerate(){
+    if(!_tpData.length){_showToast('⚠️ Upload a file first');return;}
+    var cU=document.getElementById('dstpro-tp-col-user').value;
+    var cO=document.getElementById('dstpro-tp-col-order').value;
+    var cUn=document.getElementById('dstpro-tp-col-units').value;
+    var cP=document.getElementById('dstpro-tp-col-proc').value;
+    var cQ=document.getElementById('dstpro-tp-col-qty').value;
+    document.getElementById('load-top-performer').classList.add('show');
+    document.getElementById('dstpro-out-tp').innerHTML='';
+    document.getElementById('dstpro-export-tp').style.display='none';
+    setTimeout(function(){
+      var pickerMap={},stowerMap={};
+      _tpData.forEach(function(r){
+        var user=String(r[cU]||'').trim();
+        var order=String(r[cO]||'').trim();
+        var units=Math.abs(Number(r[cUn]||0));
+        var proc=String(r[cP]||'').trim();
+        var qty=Math.abs(Number(r[cQ]||0));
+        if(!user)return;
+        if(order&&order!=='nan'&&order!=='null'&&order!=='0'){
+          if(!pickerMap[user])pickerMap[user]={orders:new Set(),units:0};
+          pickerMap[user].orders.add(order); pickerMap[user].units+=units||qty;
+        }
+        if(/recv.?3.*stow|receivev3.?stow|stow/i.test(proc)){
+          if(!stowerMap[user])stowerMap[user]={qty:0};
+          stowerMap[user].qty+=qty||units;
+        }
+      });
+      var pickers=Object.entries(pickerMap).map(function(e){return{name:e[0],orders:e[1].orders.size,units:e[1].units};})
+        .sort(function(a,b){return b.orders-a.orders||b.units-a.units;}).slice(0,3);
+      var stowers=Object.entries(stowerMap).map(function(e){return{name:e[0],qty:e[1].qty};})
+        .sort(function(a,b){return b.qty-a.qty;}).slice(0,3);
+      _tpResults={pickers:pickers,stowers:stowers};
+      var medals=['🥇','🥈','🥉'];
+      var medalColors=['linear-gradient(135deg,#f9c74f,#f3a200)','linear-gradient(135deg,#c0c0c0,#9e9e9e)','linear-gradient(135deg,#cd7f32,#a0522d)'];
+      var medalLabel=['GOLD','SILVER','BRONZE'];
+      var medalText=['#7a4e00','#4a4a4a','#5c2a00'];
+      function buildPosterCards(arr,type,color){
+        if(!arr.length)return'<div class="alert alert-info">No '+type+' data found.</div>';
+        return'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">'+
+          arr.map(function(p,i){
+            var statHtml=type==='picker'
+              ?'<div style="display:flex;justify-content:space-around;margin-top:14px;gap:8px;">'+
+                '<div style="text-align:center;background:rgba(255,255,255,0.9);border-radius:10px;padding:10px 14px;flex:1;"><div style="font-size:22px;font-weight:900;color:#1a1830;">'+p.orders+'</div><div style="font-size:10px;font-weight:700;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;">Orders</div></div>'+
+                '<div style="text-align:center;background:rgba(255,255,255,0.9);border-radius:10px;padding:10px 14px;flex:1;"><div style="font-size:22px;font-weight:900;color:#1a1830;">'+p.units+'</div><div style="font-size:10px;font-weight:700;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;">Units</div></div></div>'
+              :'<div style="text-align:center;background:rgba(255,255,255,0.9);border-radius:10px;padding:12px;margin-top:14px;">'+
+                '<div style="font-size:26px;font-weight:900;color:#1a1830;">'+p.qty.toLocaleString()+'</div>'+
+                '<div style="font-size:10px;font-weight:700;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;">Units Stowed</div></div>';
+            return'<div style="border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.13);background:#fff;border:2px solid rgba(0,0,0,0.06);">'+
+              // Header gradient with medal color
+              '<div style="background:'+medalColors[i]+';padding:20px 16px 14px;text-align:center;position:relative;">'+
+                '<div style="position:absolute;top:10px;left:12px;font-size:10px;font-weight:900;letter-spacing:2px;color:'+medalText[i]+';opacity:0.9;">'+medalLabel[i]+'</div>'+
+                '<div style="font-size:30px;margin-bottom:6px;">'+medals[i]+'</div>'+
+                // PHOTO BOX
+                '<div style="width:80px;height:80px;border-radius:12px;border:3px solid rgba(255,255,255,0.8);'+
+                  'background:#fff;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;'+
+                  'box-shadow:0 4px 14px rgba(0,0,0,0.15);overflow:hidden;position:relative;">'+
+                  '<div style="font-size:11px;font-weight:700;color:#aaa;text-align:center;line-height:1.3;padding:4px;">PHOTO<br>HERE</div>'+
+                '</div>'+
+                '<div style="font-size:16px;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.25);letter-spacing:-0.3px;">'+p.name+'</div>'+
+                '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px;">'+(type==='picker'?'Top Picker':'Top Stower')+'</div>'+
+              '</div>'+
+              // Stats area
+              '<div style="padding:14px 16px 18px;">'+statHtml+'</div>'+
+            '</div>';
+          }).join('')+'</div>';
+      }
+      var reportDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+      var html='<div style="background:linear-gradient(135deg,#1a1830,#2d2b5e);border-radius:16px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">'+
+        '<div><div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;">🏆 Top Performer Report</div><div style="font-size:12px;color:#8b8aad;margin-top:3px;">HP World · Dark Store · '+reportDate+'</div></div>'+
+        '<div style="font-size:11px;color:#4cc9f0;font-family:monospace;letter-spacing:1px;">ENWPP9081D/2019</div></div>'+
+        '<div style="margin-bottom:28px;">'+
+          '<div style="font-size:15px;font-weight:800;color:#1a1830;margin-bottom:16px;display:flex;align-items:center;gap:8px;">'+
+            '<div style="width:4px;height:18px;background:linear-gradient(180deg,#e8500a,#ff6b35);border-radius:2px;"></div>🛒 Top 3 Pickers</div>'+
+          buildPosterCards(pickers,'picker','#e8500a')+'</div>'+
+        '<div>'+
+          '<div style="font-size:15px;font-weight:800;color:#1a1830;margin-bottom:16px;display:flex;align-items:center;gap:8px;">'+
+            '<div style="width:4px;height:18px;background:linear-gradient(180deg,#4361ee,#7c3aed);border-radius:2px;"></div>📦 Top 3 Stowers</div>'+
+          buildPosterCards(stowers,'stower','#4361ee')+'</div>';
+      document.getElementById('dstpro-out-tp').innerHTML=html;
+      document.getElementById('load-top-performer').classList.remove('show');
+      document.getElementById('dstpro-export-tp').style.display='flex';
+      logActivity('Top Performer','Generated');
+      _showToast('✅ Top Performer poster ready!');
+    },400);
+  }
+  function tpReset(){
+    _tpData=[];_tpHdrs=[];_tpResults=null;
+    document.getElementById('dstpro-fo-tp').classList.remove('show');
+    document.getElementById('dstpro-f-tp').value='';
+    document.getElementById('dstpro-tp-mapper').style.display='none';
+    document.getElementById('dstpro-out-tp').innerHTML='';
+    document.getElementById('dstpro-export-tp').style.display='none';
+  }
+  function tpExportWord(){
+    if(!_tpResults){_showToast('⚠️ Generate first');return;}
+    var medals=['#1 GOLD','#2 SILVER','#3 BRONZE'];
+    var medalBg=['#fff3cd','#e9ecef','#ffe5d0'];
+    var medalBorder=['#f3a200','#9e9e9e','#cd7f32'];
+    var medalFontColor=['#7a4e00','#3a3a3a','#5c2a00'];
+    var p=_tpResults.pickers,s=_tpResults.stowers;
+    // Poster-style card for Word — one card per person in a table, with photo box
+    function cardHTML(person,rank,type){
+      var stats=type==='picker'
+        ?'<tr><td style="border:none;padding:4px 8px;"><b>Orders:</b> '+person.orders+'</td><td style="border:none;padding:4px 8px;"><b>Units:</b> '+person.units+'</td></tr>'
+        :'<tr><td colspan="2" style="border:none;padding:4px 8px;"><b>Units Stowed:</b> '+person.qty+'</td></tr>';
+      return '<td style="border:1px solid '+medalBorder[rank]+';border-radius:12px;padding:0;width:33%;vertical-align:top;">'+
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">'+
+          '<tr><td style="background:'+medalBg[rank]+';border-bottom:2px solid '+medalBorder[rank]+';padding:14px 10px;text-align:center;border-radius:11px 11px 0 0;">'+
+            '<div style="font-size:15px;font-weight:900;letter-spacing:1px;color:'+medalFontColor[rank]+';">'+medals[rank]+'</div>'+
+            // PHOTO BOX — empty rect for pasting photo
+            '<table align="center" cellpadding="0" cellspacing="0" style="margin:10px auto;"><tr>'+
+            '<td style="width:90px;height:110px;border:2px dashed '+medalBorder[rank]+';background:#fff;text-align:center;vertical-align:middle;font-size:9px;color:#aaa;font-family:Arial;letter-spacing:1px;">PHOTO<br>HERE</td>'+
+            '</tr></table>'+
+            '<div style="font-size:14px;font-weight:bold;color:#1a1830;">'+person.name+'</div>'+
+            '<div style="font-size:9px;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:2px;">'+(type==='picker'?'Top Picker':'Top Stower')+'</div>'+
+          '</td></tr>'+
+          '<tr><td style="padding:10px;"><table width="100%" cellpadding="0" cellspacing="0">'+stats+'</table></td></tr>'+
+        '</table></td>';
+    }
+    var pickerCells=p.map(function(x,i){return cardHTML(x,i,'picker');}).join('<td style="width:12px;border:none;"></td>');
+    var stowerCells=s.map(function(x,i){return cardHTML(x,i,'stower');}).join('<td style="width:12px;border:none;"></td>');
+    var reportDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    var htmlDoc='<html><body style="font-family:Arial,sans-serif;padding:28px;background:#f9f9f9;">'+
+      '<div style="background:linear-gradient(135deg,#1a1830,#2d2b5e);padding:18px 24px;border-radius:10px;margin-bottom:24px;">'+
+        '<h1 style="color:#fff;margin:0;font-size:22px;font-family:Arial,sans-serif;">TOP PERFORMER REPORT - HP World</h1>'+
+        '<p style="color:#8b8aad;margin:4px 0 0;font-size:12px;">'+reportDate+' &nbsp;·&nbsp; ENWPP9081D/2019</p>'+
+      '</div>'+
+      '<h2 style="color:#e8500a;margin-bottom:14px;font-family:Arial,sans-serif;">Top 3 Pickers</h2>'+
+      '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:12px;margin-bottom:28px;"><tr>'+pickerCells+'</tr></table>'+
+      '<h2 style="color:#4361ee;margin-bottom:14px;font-family:Arial,sans-serif;">Top 3 Stowers</h2>'+
+      '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:12px;"><tr>'+stowerCells+'</tr></table>'+
+      '<p style="font-size:10px;color:#aaa;margin-top:30px;text-align:center;font-family:Arial,sans-serif;">Generated by Dark Store Task Pro - HP World Operations</p>'+
+    '</body></html>';
+    var blob=new Blob([htmlDoc],{type:'application/msword'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download='TopPerformer_'+new Date().toISOString().slice(0,10)+'.doc';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    logActivity('Top Performer','Exported Word');
+    _showToast('✅ Word poster downloaded!');
+  }
+  function tpExportPDF(){
+    if(!_tpResults){_showToast('⚠️ Generate first');return;}
+    if(!window.jspdf||!window.jspdf.jsPDF){_showToast('⚠️ PDF lib not ready');return;}
+    var medals=['1st','2nd','3rd'];
+    var doc=new window.jspdf.jsPDF();
+    doc.setFontSize(18);doc.setFont(undefined,'bold');doc.text('Top Performer Report — HP World',14,22);
+    doc.setFontSize(10);doc.setFont(undefined,'normal');doc.text('Generated: '+new Date().toLocaleString(),14,30);
+    var y=44;
+    doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('Top Pickers',14,y);y+=8;
+    doc.setFont(undefined,'normal');doc.setFontSize(10);
+    _tpResults.pickers.forEach(function(p,i){doc.text((i+1)+'. '+p.name+' — '+p.orders+' orders, '+p.units+' units',18,y);y+=7;});
+    y+=6;doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text('Top Stowers',14,y);y+=8;
+    doc.setFont(undefined,'normal');doc.setFontSize(10);
+    _tpResults.stowers.forEach(function(p,i){doc.text((i+1)+'. '+p.name+' — '+p.qty+' units stowed',18,y);y+=7;});
+    doc.save('TopPerformer_'+new Date().toISOString().slice(0,10)+'.pdf');
+    logActivity('Top Performer','Exported PDF');
+  }
+
+  function _showToast(msg){ if(typeof showToast==='function')showToast(msg); }
+
+  /* INIT */
+  function init(){
+    _loadLogs();_loadUser();
+    _patchLoginForm();_patchLogoutMenu();
+    _hookLogin();_hookLogout();_hookOpenTask();
+    _addAdminShortcut();
+    _injectDashCards();
+  }
+
+  function _injectDashCards(){
+    var grid=document.querySelector('.task-grid');
+    if(!grid)return;
+    var cards=[
+      {id:'fast-moving',col:'#e8500a',icon:'🚀',num:'NEW',title:'Fast Moving ASIN',desc:'Rank top ASINs by pick frequency from H &amp; I locations.'},
+      {id:'inv-audit',col:'#7c3aed',icon:'🔍',num:'NEW',title:'Inventory Audit',desc:'Match audit list vs real-time inventory — highlight missing &amp; mismatches.'},
+      {id:'top-performer',col:'#b5860d',icon:'🏆',num:'NEW',title:'Top Performer',desc:'Auto-rank Top 3 Pickers &amp; Top 3 Stowers from outbound/stow file.'}
+    ];
+    cards.forEach(function(card){
+      if(document.getElementById('dstpro-card-'+card.id))return;
+      var div=document.createElement('div');
+      div.id='dstpro-card-'+card.id; div.className='task-card';
+      div.style.setProperty('--card-color',card.col);
+      div.setAttribute('onclick',"openTask('"+card.id+"')");
+      div.innerHTML='<div class="card-num" style="color:'+card.col+';">'+card.num+'</div>'+
+        '<span class="card-icon">'+card.icon+'</span>'+
+        '<h3>'+card.title+'</h3><p>'+card.desc+'</p><span class="card-arrow">→</span>';
+      var fb=grid.querySelector('[onclick*="feedback"]');
+      if(fb)grid.insertBefore(div,fb); else grid.appendChild(div);
+    });
+    // Footer injection for new pages
+    ['page-fast-moving','page-inv-audit','page-top-performer'].forEach(function(id){
+      var pg=document.getElementById(id);
+      if(pg&&!pg.querySelector('.hp-footer-injected')){
+        var d=document.createElement('div');d.className='hp-footer-injected';
+        d.innerHTML='<footer style="background:#0a0914;border-top:1px solid #2e2c45;color:#8b8aad;padding:18px 20px;font-size:12px;font-family:\'DM Mono\',monospace;display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:40px;"><div>Copyright &copy; 2026 <span style="color:#ff6b35;">HP WORLD</span> &nbsp;&middot;&nbsp; Hrushikesh Padhi &nbsp;&middot;&nbsp; <span style="color:#ff6b35;">ENWPP9081D/2019</span></div></footer>';
+        pg.appendChild(d);
+      }
+    });
+  }
+
+  return {
+    init:init,openAdminPanel:openAdminPanel,adminLogin:adminLogin,adminClose:adminClose,
+    renderLogs:function(){_loadLogs();var f=_getFiltered();renderLogTable(f);renderCharts(f);},
+    clearFilters:clearFilters,clearLogs:clearLogs,exportLogs:exportLogsExcel,
+    fastHandleFile:fastHandleFile,fastHandleDrop:function(e){var f=(e.dataTransfer.files||[])[0];fastHandleFile(f);},
+    fastGenerate:fastGenerate,fastReset:fastReset,fastExportExcel:fastExportExcel,fastExportPDF:fastExportPDF,
+    auditUpload:auditUploadFile,auditDrop:function(e,s){var f=(e.dataTransfer.files||[])[0];auditUploadFile(f,s);},
+    auditMatch:auditMatch,auditExportExcel:auditExportExcel,auditExportPDF:auditExportPDF,
+    tpHandleFile:tpHandleFile,tpDrop:function(e){var f=(e.dataTransfer.files||[])[0];tpHandleFile(f);},
+    tpGenerate:tpGenerate,tpReset:tpReset,tpExportWord:tpExportWord,tpExportPDF:tpExportPDF
+  };
+})();
+
+/* Global shims */
+function dstproAdminClose(){DSTPRO.adminClose();}
+function dstproAdminLogin(){DSTPRO.adminLogin();}
+function dstproRenderLogs(){DSTPRO.renderLogs();}
+function dstproClearFilters(){DSTPRO.clearFilters();}
+function dstproClearLogs(){DSTPRO.clearLogs();}
+function dstproExportLogsExcel(){DSTPRO.exportLogs();}
+function dstproFastHandleUpload(i){DSTPRO.fastHandleFile(i.files[0]);}
+function dstproFastHandleDrop(e){DSTPRO.fastHandleDrop(e);}
+function dstproFastGenerate(){DSTPRO.fastGenerate();}
+function dstproFastReset(){DSTPRO.fastReset();}
+function dstproFastExportExcel(){DSTPRO.fastExportExcel();}
+function dstproFastExportPDF(){DSTPRO.fastExportPDF();}
+function dstproAuditUpload(i,s){DSTPRO.auditUpload(i.files[0],s);}
+function dstproAuditDrop(e,s){DSTPRO.auditDrop(e,s);}
+function dstproAuditMatch(){DSTPRO.auditMatch();}
+function dstproAuditExportExcel(){DSTPRO.auditExportExcel();}
+function dstproAuditExportPDF(){DSTPRO.auditExportPDF();}
+function dstproTPUpload(i){DSTPRO.tpHandleFile(i.files[0]);}
+function dstproTPDrop(e){DSTPRO.tpDrop(e);}
+function dstproTPGenerate(){DSTPRO.tpGenerate();}
+function dstproTPReset(){DSTPRO.tpReset();}
+function dstproTPExportWord(){DSTPRO.tpExportWord();}
+function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
+
+/* Boot */
+(function(){function boot(){DSTPRO.init();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();})();
+</script>
+
 </body>
 </html>
