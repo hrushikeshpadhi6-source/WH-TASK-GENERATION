@@ -10037,107 +10037,155 @@ var DSTPRO = (function() {
     document.getElementById('dstpro-out-fast').innerHTML='';
     document.getElementById('dstpro-export-fast').style.display='none';
     setTimeout(function(){
-      // ── LOCATION LOGIC: Include G/H/I zone, Exclude A zone ─────────
-      // Include: location contains G###, H###, or I### (letter + 3 digits)
-      // Exclude: location ends with A### (A zone)
-      // Example: P-1-A110I123 → INCLUDE | P-1-A120A123 → EXCLUDE
-      function _isGHIZone(loc){
-        var l=loc.toUpperCase();
-        if(!/[GHI]\d{3}(?!\d)/.test(l))return false;
-        if(/A\d{3}(?!\d)\s*$/.test(l))return false;
-        return true;
+      // ── FAST MOVING ASIN — LOCATION FILTER RULES ───────────────────
+      // STEP 1 — prefix must be P-1-A or HAZ (anything else rejected)
+      // STEP 2 — location must contain H+3digits OR I+3digits (H/I bin)
+      // G zone and all other zones are excluded
+      //
+      // FETCH:   P-1-A110I123  P-1-A115H221  HAZ-A100I555  HAZ-A120H777
+      // IGNORE:  P-1-A120A123  P-1-C118G133  P-1-F110I123  P-1-V120H111
+      //          P-1-D115I444  P-1-R100H222  P-1-T120I888  X-1-A100I123
+      function _isFastMovingLoc(loc) {
+        var l = loc.trim().toUpperCase();
+        // STEP 1: must start with P-1-A or HAZ
+        var okPrefix = l.startsWith('P-1-A') || l.startsWith('HAZ');
+        if (!okPrefix) return false;
+        // STEP 2: must contain H or I immediately followed by exactly 3 digits
+        return /[HI]\d{3}(?!\d)/.test(l);
       }
-      var filtered=_fastData.filter(function(r){
-        return _isGHIZone(String(r[cL]||'').trim());
+
+      var filtered = _fastData.filter(function(r) {
+        return _isFastMovingLoc(String(r[cL] || '').trim());
       });
-      if(!filtered.length){
+
+      if (!filtered.length) {
         document.getElementById('load-fast-moving').classList.remove('show');
-        document.getElementById('dstpro-out-fast').innerHTML='<div class="alert alert-warn">No G/H/I zone locations found. Expected format: P-1-A110I123, P-1-A115G221, P-1-A119H455.</div>';
+        document.getElementById('dstpro-out-fast').innerHTML =
+          '<div class="alert alert-warn">No matching locations found. ' +
+          'Expected: P-1-A or HAZ prefix AND H/I bin (e.g. P-1-A110I123, HAZ-A100H555).</div>';
         return;
       }
-      var asinMap={};
-      filtered.forEach(function(r){
-        var a=String(r[cA]||'').trim();
-        var l=String(r[cL]||'').trim();
-        var q=Math.abs(Number(r[cQ]||1))||1;
-        if(!a)return;
-        if(!asinMap[a])asinMap[a]={pickCount:0,units:0,locations:new Set()};
-        asinMap[a].pickCount++; asinMap[a].units+=q; asinMap[a].locations.add(l);
-      });
-      var ranked=Object.entries(asinMap).map(function(e){
-        return{asin:e[0],pickCount:e[1].pickCount,units:e[1].units,locations:[...e[1].locations]};
-      }).sort(function(a,b){return b.pickCount-a.pickCount;});
-      _fastResults=ranked;
-      var totalPicks=ranked.reduce(function(s,r){return s+r.pickCount;},0);
 
-      var html='<div class="results-panel" style="background:#fff;border-color:#d5d2f0;">'+
-        '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#e8500a);">'+
-        '<h3>\uD83D\uDE80 Fast Moving ASINs</h3>'+
-        '<span class="results-count">'+ranked.length+' ASINs \xB7 '+totalPicks.toLocaleString()+' picks \xB7 '+new Date().toLocaleString()+'</span></div>'+
-        '<div class="results-body">'+
-        '<div class="stats-row">'+
-        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#e8500a;">'+ranked.length+'</div><div class="sl">Fast Moving ASINs</div></div>'+
-        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#4361ee;">'+totalPicks.toLocaleString()+'</div><div class="sl">Total Picks</div></div>'+
-        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#06d6a0;">'+filtered.length.toLocaleString()+'</div><div class="sl">G/H/I Rows</div></div>'+
-        '</div>'+
-        '<div style="overflow-x:auto;margin-top:20px;">'+
-        '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
-        '<thead style="background:#f0effe;"><tr>'+
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">RANK</th>'+
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">ASIN</th>'+
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">PICKS</th>'+
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">UNITS</th>'+
-        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">FULL LOCATIONS</th>'+
-        '</tr></thead><tbody>';
-      ranked.forEach(function(r,i){
-        var badge=i<3?'<span class="dstpro-rank-badge dstpro-rank-'+(i+1)+'">TOP '+(i+1)+'</span>':'<span style="color:#7b78a8;font-weight:600;">#'+(i+1)+'</span>';
-        html+='<tr style="border-bottom:1px solid #f0effe;">'+
-          '<td style="padding:10px 14px;">'+badge+'</td>'+
-          '<td style="padding:10px 14px;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a1830;">'+r.asin+'</td>'+
-          '<td style="padding:10px 14px;font-weight:700;color:#e8500a;">'+r.pickCount.toLocaleString()+'</td>'+
-          '<td style="padding:10px 14px;color:#4361ee;font-weight:600;">'+r.units.toLocaleString()+'</td>'+
-          '<td style="padding:10px 14px;font-size:11px;color:#7b78a8;font-family:\'DM Mono\',monospace;">'+
-            r.locations.slice(0,5).join('<br>')+(r.locations.length>5?' +more':'')+
-          '</td></tr>';
+      // Build ASIN map — full location IDs, pick count, units
+      var asinMap = {};
+      filtered.forEach(function(r) {
+        var a = String(r[cA] || '').trim();
+        var l = String(r[cL] || '').trim();
+        var q = Math.abs(Number(r[cQ] || 1)) || 1;
+        if (!a) return;
+        if (!asinMap[a]) asinMap[a] = { pickCount:0, units:0, locations:new Set() };
+        asinMap[a].pickCount++;
+        asinMap[a].units += q;
+        asinMap[a].locations.add(l);
       });
-      html+='</tbody></table></div>'+
-        '<div style="margin-top:28px;border-top:1px solid #d5d2f0;padding-top:20px;">'+
-        '<div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;display:flex;align-items:center;gap:8px;">'+
-        '<span style="display:inline-block;width:3px;height:16px;background:linear-gradient(180deg,#e8500a,#ff6b35);border-radius:2px;"></span>'+
-        'Scannable QR Codes</div>'+
-        '<div class="label-grid" id="dstpro-fast-qr-grid" style="grid-template-columns:repeat(8,1fr);gap:8px;"></div>'+
-        '</div>'+
+
+      var ranked = Object.entries(asinMap).map(function(e) {
+        return { asin:e[0], pickCount:e[1].pickCount, units:e[1].units, locations:[...e[1].locations] };
+      }).sort(function(a,b){ return b.pickCount - a.pickCount; });
+
+      _fastResults = ranked;
+      var totalPicks = ranked.reduce(function(s,r){ return s + r.pickCount; }, 0);
+
+      // ── BUILD OUTPUT HTML ───────────────────────────────────────────
+      var html =
+        '<div class="results-panel" style="background:#fff;border-color:#d5d2f0;">' +
+        '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#e8500a);">' +
+        '<h3>\uD83D\uDE80 Fast Moving ASINs</h3>' +
+        '<span class="results-count">' + ranked.length + ' ASINs \xB7 ' + totalPicks.toLocaleString() + ' picks \xB7 ' + new Date().toLocaleString() + '</span>' +
+        '</div>' +
+        '<div class="results-body">' +
+        '<div class="stats-row">' +
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#e8500a;">' + ranked.length + '</div><div class="sl">Fast Moving ASINs</div></div>' +
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#4361ee;">' + totalPicks.toLocaleString() + '</div><div class="sl">Total Picks</div></div>' +
+        '<div class="stat-card" style="background:#fff;border-color:#d5d2f0;"><div class="sv" style="color:#06d6a0;">' + filtered.length.toLocaleString() + '</div><div class="sl">H/I Bin Rows</div></div>' +
+        '</div>' +
+        // Table
+        '<div style="overflow-x:auto;margin-top:20px;">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+        '<thead style="background:#f0effe;"><tr>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">RANK</th>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">ASIN</th>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">PICKS</th>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">UNITS</th>' +
+        '<th style="padding:10px 14px;text-align:left;color:#7b78a8;font-weight:700;">FULL LOCATION(S)</th>' +
+        '</tr></thead><tbody>';
+
+      ranked.forEach(function(r, i) {
+        var badge = i < 3
+          ? '<span class="dstpro-rank-badge dstpro-rank-' + (i+1) + '">TOP ' + (i+1) + '</span>'
+          : '<span style="color:#7b78a8;font-weight:600;">#' + (i+1) + '</span>';
+        var locStr = r.locations.slice(0, 5).join('<br>') + (r.locations.length > 5 ? ' <span style="color:#e8500a;font-size:10px;">+' + (r.locations.length - 5) + ' more</span>' : '');
+        html +=
+          '<tr style="border-bottom:1px solid #f0effe;">' +
+          '<td style="padding:10px 14px;">' + badge + '</td>' +
+          '<td style="padding:10px 14px;font-family:\'DM Mono\',monospace;font-weight:700;color:#1a1830;">' + r.asin + '</td>' +
+          '<td style="padding:10px 14px;font-weight:700;color:#e8500a;">' + r.pickCount.toLocaleString() + '</td>' +
+          '<td style="padding:10px 14px;color:#4361ee;font-weight:600;">' + r.units.toLocaleString() + '</td>' +
+          '<td style="padding:10px 14px;font-size:11px;color:#7b78a8;font-family:\'DM Mono\',monospace;line-height:1.7;">' + locStr + '</td>' +
+          '</tr>';
+      });
+
+      html +=
+        '</tbody></table></div>' +
+        // QR section header
+        '<div style="margin-top:28px;border-top:1px solid #d5d2f0;padding-top:20px;">' +
+        '<div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;display:flex;align-items:center;gap:8px;">' +
+        '<span style="display:inline-block;width:3px;height:16px;background:linear-gradient(180deg,#e8500a,#ff6b35);border-radius:2px;"></span>' +
+        'Scannable QR Codes — ASIN</div>' +
+        '<div class="label-grid" id="dstpro-fast-qr-grid" style="grid-template-columns:repeat(8,1fr);gap:8px;"></div>' +
+        '</div>' +
         '</div></div>';
 
-      document.getElementById('dstpro-out-fast').innerHTML=html;
+      document.getElementById('dstpro-out-fast').innerHTML = html;
 
-      // Render QR codes — same spec as Audit by ASIN (68x68, CorrectLevel.M)
-      var qrGrid=document.getElementById('dstpro-fast-qr-grid');
-      ranked.forEach(function(r,idx){
-        var card=document.createElement('div');
-        card.className='label-card';
-        card.style.cssText='background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
-        var topBadge=idx<3?'<div style="font-size:9px;font-weight:700;color:#fff;background:'+(idx===0?'#e8500a':idx===1?'#4361ee':'#06d6a0')+';border-radius:3px;padding:2px 5px;margin-bottom:3px;">TOP '+(idx+1)+'</div>':'';
-        var locLine=r.locations.length>0?'<div style="font-size:7px;color:#7b78a8;font-family:monospace;margin-top:2px;word-break:break-all;line-height:1.3;">'+r.locations[0]+(r.locations.length>1?' <span style=\'color:#e8500a;\'>+'+( r.locations.length-1)+'</span>':'')+'</div>':'';
-        card.innerHTML=topBadge+
-          '<div id="dstpro-fqr-'+idx+'" style="display:flex;justify-content:center;"></div>'+
-          '<div class="asin-txt" style="color:#000!important;background:#fff;font-size:9px;font-weight:800;margin-top:2px;">'+r.asin+'</div>'+
+      // ── RENDER QR CODES ─────────────────────────────────────────────
+      // Same spec as Audit by ASIN: 68x68, CorrectLevel.M
+      // QR content = ASIN + full location (first location if multiple)
+      var qrGrid = document.getElementById('dstpro-fast-qr-grid');
+      ranked.forEach(function(r, idx) {
+        var card = document.createElement('div');
+        card.className = 'label-card';
+        card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
+
+        var topBadge = idx < 3
+          ? '<div style="font-size:9px;font-weight:700;color:#fff;background:' +
+            (idx===0?'#e8500a':idx===1?'#4361ee':'#06d6a0') +
+            ';border-radius:3px;padding:2px 5px;margin-bottom:3px;">TOP ' + (idx+1) + '</div>'
+          : '';
+
+        // Location line — show first location under ASIN text
+        var firstLoc = r.locations.length > 0 ? r.locations[0] : '';
+        var locLine = firstLoc
+          ? '<div style="font-size:7px;color:#7b78a8;font-family:monospace;margin-top:2px;word-break:break-all;line-height:1.3;">' +
+            firstLoc + (r.locations.length > 1 ? ' <span style=\'color:#e8500a;\'>+' + (r.locations.length-1) + '</span>' : '') +
+            '</div>'
+          : '';
+
+        card.innerHTML =
+          topBadge +
+          '<div id="dstpro-fqr-' + idx + '" style="display:flex;justify-content:center;"></div>' +
+          '<div class="asin-txt" style="color:#000!important;background:#fff;font-size:9px;font-weight:800;margin-top:2px;">' + r.asin + '</div>' +
           locLine;
+
         qrGrid.appendChild(card);
-        try{
-          new QRCode(document.getElementById('dstpro-fqr-'+idx),{
-            text:r.asin,width:68,height:68,
-            colorDark:'#000000',colorLight:'#ffffff',
-            correctLevel:QRCode.CorrectLevel.M
+
+        // QR content = ASIN only
+        var qrContent = r.asin;
+        try {
+          new QRCode(document.getElementById('dstpro-fqr-' + idx), {
+            text: qrContent,
+            width: 68, height: 68,
+            colorDark: '#000000', colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
           });
-        }catch(err){}
+        } catch(err) {}
       });
 
       document.getElementById('load-fast-moving').classList.remove('show');
-      document.getElementById('dstpro-export-fast').style.display='flex';
-      logActivity('Fast Moving ASIN','Generated \u2014 '+ranked.length+' ASINs');
-      _showToast('\u2705 '+ranked.length+' fast-moving ASINs ranked');
-    },400);
+      document.getElementById('dstpro-export-fast').style.display = 'flex';
+      logActivity('Fast Moving ASIN', 'Generated \u2014 ' + ranked.length + ' ASINs');
+      _showToast('\u2705 ' + ranked.length + ' fast-moving ASINs ranked');
+    }, 400);
   }
   function fastReset(){
     _fastData=[]; _fastHdrs=[]; _fastResults=[];
