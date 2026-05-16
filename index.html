@@ -4980,11 +4980,15 @@ function lsPeakDrawChart(storeId) {
     var medals = ['🥇','🥈','🥉'];
     var topSlots = labels.map(function(s,i){ return {slot:s, ao:aoData[i], ls:lsData2[i], pct:lsPct[i]}; })
                          .sort(function(a,b){return b.ao-a.ao;}).slice(0,3);
+    var rankLabel = ['#1 Busiest Slot','#2 Busiest Slot','#3 Busiest Slot'];
+    var rankColor = ['#f59e0b','#94a3b8','#cd7f32'];
     summaryEl.innerHTML = topSlots.map(function(t,i){
-      return '<div style="flex:1;min-width:160px;background:var(--card-bg,#1a1a2e);border:1px solid var(--border,#2a2a4a);border-radius:10px;padding:12px 16px;">'
-        + '<div style="font-size:18px;margin-bottom:4px;">' + medals[i] + ' <strong>' + lsSlotLabel(t.slot) + '</strong></div>'
-        + '<div style="font-size:12px;color:#06d6a0;">Actual Orders: <strong>' + t.ao + '</strong></div>'
-        + '<div style="font-size:12px;color:#ff6384;">Late Slam: <strong>' + t.ls + '</strong> (' + t.pct + '%)</div>'
+      return '<div style="flex:1;min-width:180px;background:var(--card-bg,#1a1a2e);border:2px solid '+rankColor[i]+';border-radius:12px;padding:14px 18px;">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1px;color:'+rankColor[i]+';text-transform:uppercase;margin-bottom:6px;">' + medals[i] + ' ' + rankLabel[i] + '</div>'
+        + '<div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;font-family:monospace;">' + lsSlotLabel(t.slot) + '</div>'
+        + '<div style="font-size:12px;color:#7b78a8;margin-bottom:2px;">⏰ Time Window: <strong style="color:#e2e8f0;">' + t.slot + ' – ' + lsSlotLabel(t.slot).split(' - ')[1] + '</strong></div>'
+        + '<div style="font-size:12px;color:#06d6a0;margin-bottom:2px;">📦 Actual Orders: <strong>' + t.ao + '</strong></div>'
+        + '<div style="font-size:12px;color:#ff6384;">🚨 Late Slam: <strong>' + t.ls + '</strong> <span style="opacity:0.8;">(' + t.pct + '%)</span></div>'
         + '</div>';
     }).join('');
   }
