@@ -10246,7 +10246,7 @@ var DSTPRO = (function() {
         invMap[a].add(cleanL);                 // store without "Bin:"
       });
 
-      // ── STEP 3: Process outbound picks — match against invMap ────────
+      // ── STEP 3: Count outbound picks per ASIN — only those in H/I inventory
       var asinMap = {};
       _fastData.forEach(function(r) {
         var a = String(r[cA] || '').trim().toUpperCase();
@@ -10259,22 +10259,27 @@ var DSTPRO = (function() {
         asinMap[a].units += q;
       });
 
-      var ranked = Object.entries(asinMap).map(function(e) {
-        return {
-          asin:      e[0],
-          pickCount: e[1].pickCount,
-          units:     e[1].units,
-          locations: [...e[1].locations]
-        };
-      }).sort(function(a, b) { return b.pickCount - a.pickCount; });
+      // ── KEY LOGIC: Keep ONLY ASINs picked 3 or more times ────────────
+      // Single-pick or double-pick ASINs are excluded — only REPEAT movers
+      var MIN_PICKS = 3;
+      var ranked = Object.entries(asinMap)
+        .filter(function(e) { return e[1].pickCount >= MIN_PICKS; })
+        .map(function(e) {
+          return {
+            asin:      e[0],
+            pickCount: e[1].pickCount,
+            units:     e[1].units,
+            locations: [...e[1].locations]
+          };
+        }).sort(function(a, b) { return b.pickCount - a.pickCount; });
 
       _fastResults = ranked;
 
       if (!ranked.length) {
         document.getElementById('load-fast-moving').classList.remove('show');
         document.getElementById('dstpro-out-fast').innerHTML =
-          '<div class="alert alert-warn">No fast-moving ASINs found. ' +
-          'Check that Outbound ASINs exist in Real-Time Inventory with P-1-A or HAZ prefix and H/I bin locations.</div>';
+          '<div class="alert alert-warn">No fast-moving ASINs found with 3+ picks in H/I locations. ' +
+          'Try uploading a longer date range (7–15 days) of outbound data.</div>';
         return;
       }
 
