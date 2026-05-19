@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DMS PRO</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+
+
+
+
+
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
 <style>
@@ -659,24 +659,22 @@ footer span { color:var(--accent); }
   color: #333;
 }
 
-/* ── NEW TASK PAGES: Catalog Issue + Scanning Issue + Manpower ── */
-#page-catalog-issue, #page-scanning-issue, #page-manpower {
+/* ── NEW TASK PAGES: Catalog Issue + Scanning Issue ── */
+#page-catalog-issue, #page-scanning-issue {
   background: #f8f7ff;
   min-height: 100vh;
 }
 #page-catalog-issue .task-page,
-#page-scanning-issue .task-page,
-#page-manpower .task-page {
+#page-scanning-issue .task-page {
   --bg:#f8f7ff; --surface:#ffffff; --surface2:#f0effe;
   --border:#d5d2f0; --text:#1a1830; --text2:#3d3a6b;
   --muted:#7b78a8; --accent:#d97706; color:#1a1830;
 }
 #page-catalog-issue .back-btn,
-#page-scanning-issue .back-btn,
-#page-manpower .back-btn { background:#fff; border-color:#d5d2f0; color:#3d3a6b; }
+#page-scanning-issue .back-btn { background:#fff; border-color:#d5d2f0; color:#3d3a6b; }
 #page-catalog-issue .back-btn:hover { background:#d97706; color:#fff; border-color:#d97706; }
 #page-scanning-issue .back-btn:hover { background:#0284c7; color:#fff; border-color:#0284c7; }
-#page-manpower .back-btn:hover { background:#6366f1; color:#fff; border-color:#6366f1; }
+
 #page-catalog-issue .task-header h2 {
   background:linear-gradient(135deg,#1a1830,#d97706);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
@@ -685,13 +683,10 @@ footer span { color:var(--accent); }
   background:linear-gradient(135deg,#1a1830,#0284c7);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-#page-manpower .task-header h2 {
-  background:linear-gradient(135deg,#1a1830,#6366f1);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
+
 #page-catalog-issue .task-header,
 #page-scanning-issue .task-header,
-#page-manpower .task-header { border-bottom-color:#d5d2f0 !important; }
+
 #page-catalog-issue .upload-zone,
 #page-scanning-issue .upload-zone { background:#fff; border-color:#d5d2f0; }
 #page-catalog-issue .upload-zone h3,
@@ -744,18 +739,7 @@ footer span { color:var(--accent); }
 .si-loc-chip .loc-qty { color:#0284c7 !important; }
 .ci-loc-chip .loc-zone { font-size:9px; color:#7b78a8; letter-spacing:0.5px; text-transform:uppercase; }
 
-/* Manpower placeholder */
-.manpower-under-process {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  min-height:400px; text-align:center; padding:60px 20px;
-}
-.manpower-under-process .mp-icon { font-size:80px; margin-bottom:24px; animation:mpPulse 2s ease-in-out infinite; }
-@keyframes mpPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.08);opacity:0.8;} }
-.manpower-under-process h3 { font-size:28px; font-weight:800; color:#6366f1; margin-bottom:10px; }
-.manpower-under-process p { color:#7b78a8; font-size:15px; max-width:420px; line-height:1.7; }
-.mp-progress-bar { width:280px; height:8px; background:#e0e7ff; border-radius:4px; margin-top:24px; overflow:hidden; }
-.mp-progress-fill { height:100%; width:45%; background:linear-gradient(90deg,#6366f1,#a5b4fc); border-radius:4px; animation:mpBar 2s ease-in-out infinite alternate; }
-@keyframes mpBar { from{width:30%;} to{width:65%;} }
+to{width:65%;} }
 
 
 /* ── LOCATION ID MAKER ── */
@@ -1071,6 +1055,112 @@ footer span { color:var(--accent); }
 .login-session-badge .sb-name { color:#e8e6ff; font-weight:600; }
 @media(max-width:480px){ .login-card{ padding:32px 20px; } }
 
+/* ── Card icon animations ── */
+@keyframes vocPulse {
+  0%,100% { transform: scale(1); filter: drop-shadow(0 0 0px #06d6a0); }
+  50%      { transform: scale(1.15); filter: drop-shadow(0 0 8px #06d6a0); }
+}
+@keyframes storeFloat {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes reportBounce {
+  0%,100% { transform: scale(1) rotate(0deg); }
+  30%      { transform: scale(1.18) rotate(-8deg); }
+  60%      { transform: scale(1.1) rotate(6deg); }
+}
+@keyframes phoneRing {
+  0%,100% { transform: rotate(0deg); }
+  10%      { transform: rotate(-18deg); }
+  20%      { transform: rotate(18deg); }
+  30%      { transform: rotate(-12deg); }
+  40%      { transform: rotate(12deg); }
+  50%      { transform: rotate(0deg); }
+}
+@keyframes arrowPing {
+  0%,100% { transform: translateX(0); opacity:1; }
+  50%      { transform: translateX(5px); opacity:0.6; }
+}
+/* Task 01 — Consolidation: shuffle side to side */
+@keyframes iconShuffle {
+  0%,100% { transform: translateX(0) rotate(0deg); }
+  25%      { transform: translateX(-5px) rotate(-10deg); }
+  75%      { transform: translateX(5px) rotate(10deg); }
+}
+/* Task 02 — Audit by Location: pin drop bounce */
+@keyframes iconPinDrop {
+  0%,60%,100% { transform: translateY(0) scale(1); }
+  30%          { transform: translateY(-10px) scale(1.1); }
+  75%          { transform: translateY(-3px) scale(0.95); }
+}
+/* Task 03 — Audit by ASIN: zoom search */
+@keyframes iconZoomSearch {
+  0%,100% { transform: scale(1) rotate(0deg); }
+  40%      { transform: scale(1.2) rotate(-15deg); }
+  70%      { transform: scale(1.1) rotate(10deg); }
+}
+/* Task 04 — Slow Moving: slow crawl */
+@keyframes iconSlowCrawl {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(6px); }
+}
+/* Task 05 — YSM Barcode: scan sweep */
+@keyframes iconScanSweep {
+  0%,100% { transform: translateY(0) scaleX(1); filter: drop-shadow(0 0 0px #1a7a4a); }
+  50%      { transform: translateY(-5px) scaleX(1.08); filter: drop-shadow(0 0 6px #1a7a4a); }
+}
+/* Task 06 — Inventory Report: chart grow pulse */
+@keyframes iconChartGrow {
+  0%,100% { transform: scaleY(1); filter: drop-shadow(0 0 0px #0f766e); }
+  50%      { transform: scaleY(1.15); filter: drop-shadow(0 0 8px #0f766e); }
+}
+/* Task 07 — Late Slam: timer tick spin */
+@keyframes iconTimerTick {
+  0%      { transform: rotate(0deg) scale(1); }
+  10%     { transform: rotate(-8deg) scale(1.08); }
+  20%     { transform: rotate(8deg) scale(1.08); }
+  30%     { transform: rotate(-5deg) scale(1.05); }
+  40%     { transform: rotate(0deg) scale(1); }
+  100%    { transform: rotate(0deg) scale(1); }
+}
+/* Task 08 — Catalog Issue: clipboard flip */
+@keyframes iconClipFlip {
+  0%,100% { transform: rotateY(0deg); }
+  40%      { transform: rotateY(180deg); }
+  80%      { transform: rotateY(360deg); }
+}
+/* Task 09 — Scanning Issue: microscope focus zoom */
+@keyframes iconMicroFocus {
+  0%,100% { transform: scale(1); }
+  30%      { transform: scale(1.18) translateY(-4px); }
+  60%      { transform: scale(1.05) translateY(-2px); }
+}
+/* Task 10 — Location ID: tag swing */
+@keyframes iconTagSwing {
+  0%,100% { transform: rotate(0deg); transform-origin: top center; }
+  25%      { transform: rotate(-12deg); transform-origin: top center; }
+  75%      { transform: rotate(12deg); transform-origin: top center; }
+}
+
+/* ── NEW tool card animations ── */
+@keyframes rocketLaunch {
+  0%,100% { transform: translateY(0) rotate(-5deg); filter: drop-shadow(0 0 0px #e8500a); }
+  40%      { transform: translateY(-12px) rotate(-10deg); filter: drop-shadow(0 0 10px #e8500a); }
+  70%      { transform: translateY(-6px) rotate(-7deg); filter: drop-shadow(0 0 5px #e8500a); }
+}
+@keyframes auditScan {
+  0%,100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #7c3aed); }
+  30%      { transform: scale(1.2) rotate(-20deg); filter: drop-shadow(0 0 8px #7c3aed); }
+  60%      { transform: scale(1.1) rotate(15deg); filter: drop-shadow(0 0 4px #7c3aed); }
+}
+@keyframes trophyShine {
+  0%,100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #b5860d); }
+  20%      { transform: scale(1.15) rotate(-5deg); filter: drop-shadow(0 0 12px #ffd60a); }
+  40%      { transform: scale(1.2) rotate(5deg); filter: drop-shadow(0 0 16px #ffd60a); }
+  60%      { transform: scale(1.1) rotate(-3deg); filter: drop-shadow(0 0 8px #b5860d); }
+}
+
+
 @keyframes ticker {
   0%   { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
@@ -1257,11 +1347,13 @@ footer span { color:var(--accent); }
 
 /* ── VOC table th in light mode — proper contrast ───────────────── */
 #page-voc[data-theme="light"] .voc-tbl-wrap table th {
-  background: #f4f3ff;
-  color: #7b78a8 !important;
+  background: #e8eaf6;
+  color: #1e1b4b !important;
+  font-weight: 800 !important;
 }
 #page-voc[data-theme="light"] .voc-tbl-wrap table td {
-  color: #1a1830 !important;
+  color: #0f0e1a !important;
+  font-weight: 500 !important;
 }
 
 /* ── Product table specific light mode fix ──────────────────────── */
@@ -1320,10 +1412,16 @@ footer span { color:var(--accent); }
   background-size: 600px 100%;
 }
 #page-voc[data-theme="light"] .voc-metric-shimmer-item {
-  background: linear-gradient(90deg, #f0effe 25%, #e4e1fc 50%, #f0effe 75%);
+  background: linear-gradient(90deg, #e8eaf6 25%, #d5d8f0 50%, #e8eaf6 75%);
   background-size: 600px 100%;
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 
@@ -1378,52 +1476,55 @@ footer span { color:var(--accent); }
 <div class="page active" id="page-dashboard">
 <div style="background:linear-gradient(90deg,#0a0914 0%,#13121f 30%,#1a0a0a 60%,#0a0914 100%);overflow:hidden;white-space:nowrap;padding:0;border-bottom:1px solid rgba(247,37,133,0.25);position:relative;animation:notifGlow 3s ease-in-out infinite;">
 
-  <!-- Gradient left edge fade -->
+  <!-- Edge fades -->
   <div style="position:absolute;left:0;top:0;bottom:0;width:60px;background:linear-gradient(90deg,#0a0914,transparent);z-index:2;pointer-events:none;"></div>
-  <!-- Gradient right edge fade -->
   <div style="position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(270deg,#0a0914,transparent);z-index:2;pointer-events:none;"></div>
 
-  <div style="display:flex;align-items:center;gap:0;padding:7px 18px;">
+  <div style="display:flex;align-items:center;padding:7px 18px;gap:0;">
 
-    <!-- LIVE badge -->
+    <!-- LIVE badge — fixed left -->
     <div style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 7px;border-radius:20px;background:linear-gradient(135deg,rgba(6,214,160,0.18),rgba(6,214,160,0.07));border:1px solid rgba(6,214,160,0.4);margin-right:14px;z-index:3;">
       <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#06d6a0;animation:livePulse 1.6s ease-in-out infinite;flex-shrink:0;"></span>
       <span style="font-size:10px;font-weight:900;letter-spacing:2px;color:#06d6a0;font-family:'DM Mono',monospace;text-transform:uppercase;">Live</span>
     </div>
 
-    <!-- Scrolling text -->
+    <!-- Scrolling content -->
     <div style="flex:1;overflow:hidden;position:relative;">
       <span style="display:inline-block;animation:ticker 28s linear infinite;white-space:nowrap;">
+
         <!-- Segment 1 -->
         <span style="display:inline-flex;align-items:center;gap:10px;margin-right:60px;">
           <span style="font-size:15px;animation:bellShake 2.4s ease-in-out infinite;display:inline-block;">🔴</span>
           <span style="font-size:12px;font-weight:800;letter-spacing:2px;font-family:'Syne',Arial,sans-serif;background:linear-gradient(90deg,#ff6b35,#f72585,#4361ee,#06d6a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase;">VOC Analysis Updated</span>
-          <span style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#f72585,#c0392b);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(247,37,133,0.5);animation:ctaPop 2s ease-in-out infinite;cursor:pointer;" onclick="openTask('voc')">Check Now →</span>
+          <span onclick="openTask('voc')" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#f72585,#c0392b);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(247,37,133,0.5);animation:ctaPop 2s ease-in-out infinite;cursor:pointer;">Check Now →</span>
         </span>
-        <!-- Separator -->
+
         <span style="margin-right:60px;color:rgba(255,255,255,0.15);font-size:18px;">·</span>
-        <!-- Segment 2 (repeat for seamless loop) -->
+
+        <!-- Segment 2 -->
         <span style="display:inline-flex;align-items:center;gap:10px;margin-right:60px;">
           <span style="font-size:15px;animation:bellShake 2.4s ease-in-out 1.2s infinite;display:inline-block;">🔴</span>
           <span style="font-size:12px;font-weight:800;letter-spacing:2px;font-family:'Syne',Arial,sans-serif;background:linear-gradient(90deg,#4361ee,#f72585,#ff6b35,#06d6a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase;">VOC Analysis Updated</span>
-          <span style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#4361ee,#f72585);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(67,97,238,0.5);animation:ctaPop 2s ease-in-out 1s infinite;cursor:pointer;" onclick="openTask('voc')">Check Now →</span>
+          <span onclick="openTask('voc')" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#4361ee,#f72585);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(67,97,238,0.5);animation:ctaPop 2s ease-in-out 1s infinite;cursor:pointer;">Check Now →</span>
         </span>
-        <!-- Separator -->
+
         <span style="margin-right:60px;color:rgba(255,255,255,0.15);font-size:18px;">·</span>
+
         <!-- Segment 3 -->
         <span style="display:inline-flex;align-items:center;gap:10px;margin-right:60px;">
           <span style="font-size:15px;animation:bellShake 2.4s ease-in-out 0.6s infinite;display:inline-block;">🔴</span>
           <span style="font-size:12px;font-weight:800;letter-spacing:2px;font-family:'Syne',Arial,sans-serif;background:linear-gradient(90deg,#06d6a0,#4361ee,#f72585,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase;">VOC Analysis Updated</span>
-          <span style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#06d6a0,#4361ee);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(6,214,160,0.5);animation:ctaPop 2s ease-in-out 0.5s infinite;cursor:pointer;" onclick="openTask('voc')">Check Now →</span>
+          <span onclick="openTask('voc')" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;background:linear-gradient(135deg,#06d6a0,#4361ee);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'Syne',Arial,sans-serif;box-shadow:0 0 10px rgba(6,214,160,0.5);animation:ctaPop 2s ease-in-out 0.5s infinite;cursor:pointer;">Check Now →</span>
         </span>
+
       </span>
     </div>
-
   </div>
 </div>
 <div class="dashboard">
   <div class="dash-hero">
     <div class="hero-tag">⚡ Dark Store Management System</div>
+
     <h1>Dark Store<br>Management System</h1>
     <p>Upload your inventory, select a task, generate print-ready sheets for your warehouse team — instantly.</p>
     <div id="live-clock" style="width:100%;margin-bottom:32px;">
@@ -1489,111 +1590,149 @@ footer span { color:var(--accent); }
   </div>
 </div>
 
+  <!-- ── TASK SEARCH BAR ── -->
+  <div id="dash-search-wrap" style="margin-bottom:18px;position:relative;">
+    <div style="position:relative;max-width:420px;margin:0 auto;">
+      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;opacity:0.5;">🔍</span>
+      <input id="dash-search-input" type="text" placeholder="Search tasks… (or press /)" oninput="dashSearchFilter()"
+        style="width:100%;box-sizing:border-box;padding:11px 16px 11px 40px;border-radius:12px;border:1px solid var(--border,#2e2c45);background:var(--surface,#13121f);color:var(--text,#e8e6ff);font-family:'Syne',sans-serif;font-size:14px;outline:none;transition:border 0.2s,box-shadow 0.2s;"
+        onfocus="this.style.borderColor='#4361ee';this.style.boxShadow='0 0 0 3px rgba(67,97,238,0.18)'"
+        onblur="this.style.borderColor='';this.style.boxShadow=''">
+      <span id="dash-search-clear" onclick="dashSearchClear()" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;opacity:0.5;line-height:1;">✕</span>
+    </div>
+    <div id="dash-search-nomatch" style="display:none;text-align:center;color:var(--muted,#8b8aad);font-size:13px;padding:10px 0;">No tasks match your search.</div>
+  </div>
+
   <div class="task-grid">
     <div class="task-card" style="--card-color:#e8500a" onclick="openTask('consolidation')">
       <div class="card-num">Task 01</div>
-      <span class="card-icon">🔀</span>
+      <span class="card-icon" style="display:inline-block;animation:iconShuffle 2s ease-in-out infinite;">🔀</span>
       <h3>Consolidation</h3>
       <p>Group ASINs spread across multiple locations and generate consolidation task lists.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#1a5cff" onclick="openTask('audit-loc')">
       <div class="card-num">Task 02</div>
-      <span class="card-icon">📍</span>
+      <span class="card-icon" style="display:inline-block;animation:iconPinDrop 2.2s ease-in-out infinite;">📍</span>
       <h3>Audit by Location</h3>
-      <p>Generate 70 random locations across Frozen, Chiller, Hazmat, Ambient, HRV & Mixed zones.</p>
+      <p>Generate 90 random locations across Frozen, Chiller, Hazmat, Ambient, HRV & Mixed zones.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#c9a227" onclick="openTask('audit-asin')">
       <div class="card-num">Task 03</div>
-      <span class="card-icon">🔎</span>
+      <span class="card-icon" style="display:inline-block;animation:iconZoomSearch 2.5s ease-in-out infinite;">🔎</span>
       <h3>Audit by ASIN</h3>
       <p>Pick 60 random ASINs from inventory for physical stock count verification.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
       <div class="card-num">Task 04</div>
-      <span class="card-icon">🐢</span>
+      <span class="card-icon" style="display:inline-block;animation:iconSlowCrawl 3.5s ease-in-out infinite;">🐢</span>
       <h3>Slow Moving Items</h3>
       <p>Identify items aged over 90 days requiring attention, relocation, or clearance.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
       <div class="card-num">Task 05</div>
-      <span class="card-icon">🏷️</span>
+      <span class="card-icon" style="display:inline-block;animation:iconScanSweep 2.4s ease-in-out infinite;">🏷️</span>
       <h3>YSM Barcode Task</h3>
       <p>Generate individual scannable barcode labels for each unit. One label per item.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#0f766e" onclick="openTask('report')">
       <div class="card-num">Task 06</div>
-      <span class="card-icon">📊</span>
+      <span class="card-icon" style="display:inline-block;animation:iconChartGrow 2.2s ease-in-out infinite;">📊</span>
       <h3>Inventory Report</h3>
       <p>Generate a professional inventory audit report with Excel & PDF output.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#e11d48" onclick="openTask('lateslam')">
       <div class="card-num">Task 07</div>
-      <span class="card-icon">⏱️</span>
+      <span class="card-icon" style="display:inline-block;animation:iconTimerTick 2s ease-in-out infinite;">⏱️</span>
       <h3>Late Slam Calculator</h3>
       <p>Upload orders → fetch forecast → full 30-min slot variance report per store.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#d97706" onclick="openTask('catalog-issue')">
       <div class="card-num">Task 08</div>
-      <span class="card-icon">📋</span>
+      <span class="card-icon" style="display:inline-block;animation:iconClipFlip 3s ease-in-out infinite;">📋</span>
       <h3>Catalog Issue Items</h3>
       <p>Avoid VOC and Late Slam – Move Fast to Special Bin. Auto-fetch from Google Sheet.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#0284c7" onclick="openTask('scanning-issue')">
       <div class="card-num">Task 09</div>
-      <span class="card-icon">🔬</span>
+      <span class="card-icon" style="display:inline-block;animation:iconMicroFocus 2.8s ease-in-out infinite;">🔬</span>
       <h3>Scanning Issue Items</h3>
       <p>Identify scanning problem ASINs from Google Sheet and generate barcode labels.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#6366f1; cursor:default; opacity:0.85;" onclick="">
-      <div class="card-num" style="color:#6366f1;">Task 10</div>
-      <span class="card-icon">👥</span>
-      <h3>Manpower Allocation</h3>
-      <p>Smart manpower planning & shift allocation tool.</p>
-      <div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;color:#818cf8;letter-spacing:1px;">⚙️ UNDER PROCESS</div>
-    </div>
+
     <div class="task-card" style="--card-color:#16a34a" onclick="openTask('locid')">
-      <div class="card-num">Task 11</div>
-      <span class="card-icon">🏷️</span>
+      <div class="card-num">Task 10</div>
+      <span class="card-icon" style="display:inline-block;animation:iconTagSwing 2.5s ease-in-out infinite;">🏷️</span>
       <h3>Location ID Maker</h3>
       <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#06d6a0" onclick="openTask('voc')">
-      <div class="card-num">Task 12</div>
-      <span class="card-icon">📉</span>
-      <h3>VOC Analysis</h3>
+      <!-- no task number — this is an analysis tool -->
+      <!-- Animated stock-market trendline SVG -->
+      <span class="card-icon" style="display:inline-block;line-height:1;">
+        <svg width="56" height="40" viewBox="0 0 56 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;">
+          <defs>
+            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#06d6a0" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#06d6a0" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <!-- Fill area under line -->
+          <polygon points="2,34 8,28 14,30 20,18 26,22 32,10 38,14 44,6 52,12 52,38 2,38" fill="url(#trendFill)"/>
+          <!-- Main trendline -->
+          <polyline points="2,34 8,28 14,30 20,18 26,22 32,10 38,14 44,6 52,12"
+            fill="none" stroke="#06d6a0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <animate attributeName="stroke-dasharray" from="0,200" to="200,0" dur="1.8s" begin="0s" repeatCount="indefinite"/>
+          </polyline>
+          <!-- Animated moving dot on line -->
+          <circle r="3.5" fill="#06d6a0" filter="url(#dotGlow)">
+            <animateMotion dur="1.8s" repeatCount="indefinite" keySplines="0.4 0 0.6 1" calcMode="spline">
+              <mpath href="#trendPath"/>
+            </animateMotion>
+          </circle>
+          <path id="trendPath" d="M2,34 L8,28 L14,30 L20,18 L26,22 L32,10 L38,14 L44,6 L52,12" fill="none"/>
+          <!-- Glow filter for dot -->
+          <defs>
+            <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Up tick arrow -->
+          <polyline points="46,4 50,1 54,4" fill="none" stroke="#06d6a0" stroke-width="2" stroke-linecap="round">
+            <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/>
+          </polyline>
+        </svg>
+      </span>
+      <h3 style="background:linear-gradient(135deg,#06d6a0,#4361ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">VOC Analysis</h3>
       <p>Live Voice of Customer analytics — UTR, OTR, Non-Ops breakdown, picker contribution & deep dive by store.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#7b78a8;cursor:not-allowed;opacity:0.7;" title="Under development">
-      <div class="card-num" style="color:#7b78a8;">Task 13</div>
-      <span class="card-icon">🏪</span>
-      <h3 style="color:#b8b6d9;">Store Metrics</h3>
-      <p>Store-wise KPIs — orders, units, VOC rate, trends and performance benchmarking across all stores.</p>
-      <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(123,120,173,0.15);border:1px solid rgba(123,120,173,0.3);padding:5px 12px;border-radius:20px;margin-top:10px;">
-        <span style="display:inline-block;width:10px;height:10px;border:2px solid #8b8aad;border-top-color:#ff6b35;border-radius:50%;animation:spin 0.9s linear infinite;"></span>
-        <span style="font-size:11px;font-weight:700;color:#8b8aad;letter-spacing:1px;">UNDER DEVELOPMENT</span>
-      </div>
-    </div>
-    <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
-      <span class="card-icon">💬</span>
-      <h3>Feedback</h3>
-      <p>Send feedback, suggestions, or report any issues directly to the system administrator.</p>
+    <div class="task-card" style="--card-color:#7b78a8;" onclick="window.open('store-metrics.html','_blank')">
+      <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🏪</span>
+      <h3 style="background:linear-gradient(135deg,#7b78a8,#4361ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Store Metrics</h3>
+      <p>Live store-wise KPIs — orders, inbound, OB/IB TPH, SLA, UPO, removals &amp; performance trends.</p>
       <span class="card-arrow">→</span>
     </div>
+    <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
+      <span class="card-icon" style="animation:reportBounce 1.8s ease-in-out infinite;display:inline-block;">💬</span>
+      <h3>Report &amp; Suggest</h3>
+      <p>Share feedback, flag issues, or suggest improvements directly to the system administrator.</p>
+      <span class="card-arrow" style="animation:arrowPing 1.5s ease-in-out infinite;">→</span>
+    </div>
     <div class="task-card" style="--card-color:#0891b2" onclick="openTask('contact')">
-      <span class="card-icon">📞</span>
-      <h3>Contact Us</h3>
-      <p>Get in touch with the Dark Store Management System team.</p>
+      <span class="card-icon" style="animation:phoneRing 2.2s ease-in-out infinite;display:inline-block;">📞</span>
+      <h3>Support Desk</h3>
+      <p>Get in touch with the Dark Store Management System team for any support or queries.</p>
       <span class="card-arrow">→</span>
     </div>
   </div>
@@ -1699,8 +1838,8 @@ footer span { color:var(--accent); }
   <div class="task-header">
     <span class="task-header-icon">📍</span>
     <div>
-      <h2>Generate 70 Random Locations</h2>
-      <p>Generates 70 random locations across all zone types from your inventory data.</p>
+      <h2>Generate 90 Random Locations</h2>
+      <p>Generates 90 random locations across all zone types from your inventory data.</p>
     </div>
   </div>
   <div class="upload-zone" id="uz-audit-loc" onclick="triggerUpload('f-audit-loc')">
@@ -1721,7 +1860,7 @@ footer span { color:var(--accent); }
     <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('audit-loc')">✕</button>
   </div>
   <div class="btn-row">
-    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 70 Locations</button>
+    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 90 Locations</button>
   </div>
   <div class="loading" id="load-audit-loc">
   <div class="loading-inner">
@@ -2251,7 +2390,138 @@ footer span { color:var(--accent); }
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
     <button class="btn btn-green" onclick="lsExportExcel()">⬇ Export Excel</button>
+    <button class="btn" onclick="openTask('ls-deepdive')" style="background:linear-gradient(135deg,#7c3aed,#4361ee);color:#fff;border:none;display:inline-flex;align-items:center;gap:8px;font-weight:700;">🔬 Late Slam Deep Dive</button>
   </div>
+
+  <!-- Deep Dive entry point even without export visible -->
+  <div style="margin-top:20px;padding-top:20px;border-top:1px solid #e0e0e0;">
+    <button onclick="openTask('ls-deepdive')" style="display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:12px;border:2px solid #7c3aed;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(67,97,238,0.1));color:#7c3aed;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;font-family:'Syne',sans-serif;transition:all 0.2s;" onmouseenter="this.style.background='linear-gradient(135deg,#7c3aed,#4361ee)';this.style.color='#fff';" onmouseleave="this.style.background='linear-gradient(135deg,rgba(124,58,237,0.1),rgba(67,97,238,0.1))';this.style.color='#7c3aed';">
+      🔬 Late Slam Deep Dive &nbsp;<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(124,58,237,0.15);font-weight:700;">NEW</span>
+    </button>
+    <div style="font-size:12px;color:#7b78a8;margin-top:8px;">Upload LS file + Outbound Pick file → full order-level analysis, picker tracking, zone breakdown & Excel export</div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     LATE SLAM DEEP DIVE PAGE
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-ls-deepdive" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page" style="--bg:#f8f7ff;--surface:#ffffff;--border:#d5d2f0;--text:#1a1830;--muted:#7b78a8;color:#1a1830;max-width:1200px;">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;margin-bottom:20px;">← Back to Dashboard</button>
+  <button onclick="openTask('lateslam')" style="margin-bottom:20px;margin-left:10px;background:none;border:1px solid #d5d2f0;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;color:#7b78a8;">⏱ Back to Late Slam Calculator</button>
+
+  <div class="task-header" style="display:flex;align-items:center;gap:14px;border-bottom:1px solid #d5d2f0;padding-bottom:20px;margin-bottom:24px;">
+    <span style="font-size:36px;">🔬</span>
+    <div>
+      <h2 style="background:linear-gradient(135deg,#7c3aed,#4361ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:24px;font-weight:800;margin-bottom:4px;">Late Slam Deep Dive</h2>
+      <p style="color:#7b78a8;font-size:13px;">Upload Late Slam file + Outbound Pick file → trace every order from creation to staging</p>
+    </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    <!-- File 1 -->
+    <div style="background:#fff;border:2px dashed #d5d2f0;border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;" onclick="document.getElementById('dd-file1').click()" id="dd-zone1" onmouseenter="this.style.borderColor='#7c3aed'" onmouseleave="this.style.borderColor=document.getElementById('dd-file1').files.length?'#7c3aed':'#d5d2f0'">
+      <div style="font-size:32px;margin-bottom:8px;">📋</div>
+      <div style="font-weight:700;color:#1a1830;margin-bottom:4px;">File 1 — Late Slam Data</div>
+      <div style="font-size:12px;color:#7b78a8;">picklist_created_time, assignment, staging, pl_create_to_stage, promise_utr</div>
+      <div id="dd-file1-name" style="margin-top:10px;font-size:12px;color:#7c3aed;font-weight:700;"></div>
+      <input type="file" id="dd-file1" accept=".csv,.xls,.xlsx" style="display:none" onchange="ddFileLoaded(1,this)">
+    </div>
+    <!-- File 2 -->
+    <div style="background:#fff;border:2px dashed #d5d2f0;border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;" onclick="document.getElementById('dd-file2').click()" id="dd-zone2" onmouseenter="this.style.borderColor='#4361ee'" onmouseleave="this.style.borderColor=document.getElementById('dd-file2').files.length?'#4361ee':'#d5d2f0'">
+      <div style="font-size:32px;margin-bottom:8px;">🚀</div>
+      <div style="font-weight:700;color:#1a1830;margin-bottom:4px;">File 2 — Outbound Pick Data</div>
+      <div style="font-size:12px;color:#7b78a8;">Timestamp, LocationId, ASIN, User (picker), ReferenceIdValue (order_id)</div>
+      <div id="dd-file2-name" style="margin-top:10px;font-size:12px;color:#4361ee;font-weight:700;"></div>
+      <input type="file" id="dd-file2" accept=".csv,.xls,.xlsx" style="display:none" onchange="ddFileLoaded(2,this)">
+    </div>
+  </div>
+
+  <!-- Store Filter + Analyse Button -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+    <select id="dd-store-filter" style="padding:8px 14px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;color:#1a1830;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;outline:none;">
+      <option value="all">All Stores</option>
+    </select>
+    <input type="date" id="dd-fc-date" style="padding:8px 14px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;color:#1a1830;font-family:'Syne',sans-serif;font-size:13px;outline:none;" title="Date for forecast fetch (optional)">
+    <button onclick="ddFetchForecast()" style="padding:10px 18px;border-radius:10px;border:none;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'Syne',sans-serif;">☁️ Fetch FC</button>
+    <button onclick="ddAnalyse()" style="padding:10px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#4361ee);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 4px 14px rgba(124,58,237,0.3);">🔍 Analyse</button>
+    <button onclick="ddExportExcel()" id="dd-export-btn" style="display:none;padding:10px 24px;border-radius:10px;border:none;background:linear-gradient(135deg,#1a7a4a,#14532d);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'Syne',sans-serif;">⬇ Export Full Excel</button>
+    <div id="dd-status" style="font-size:12px;color:#7b78a8;"></div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div id="dd-summary-cards" style="display:none;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;" id="dd-cards-grid"></div>
+  </div>
+
+  <!-- Hour-wise Table -->
+  <div id="dd-hourly-wrap" style="display:none;margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#7b78a8;margin-bottom:12px;">⏰ Hourly Breakdown — FC vs Actual vs Late Slam</div>
+    <div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;" id="dd-hourly-table">
+          <thead>
+            <tr style="background:#f0effe;">
+              <th style="padding:10px 14px;text-align:left;color:#1e1b4b;font-weight:800;white-space:nowrap;">Hour</th>
+              <th style="padding:10px 14px;text-align:center;color:#1e1b4b;font-weight:800;">Time Window</th>
+              <th style="padding:10px 14px;text-align:center;color:#93c5fd;font-weight:800;">FC Orders</th>
+              <th style="padding:10px 14px;text-align:center;color:#4361ee;font-weight:800;">Actual Orders</th>
+              <th style="padding:10px 14px;text-align:center;color:#c0392b;font-weight:800;">Late Slams</th>
+              <th style="padding:10px 14px;text-align:center;color:#e67e22;font-weight:800;">LS Rate</th>
+              <th style="padding:10px 14px;text-align:center;color:#1a7a4a;font-weight:800;">FC Var %</th>
+              <th style="padding:10px 14px;text-align:center;color:#7c3aed;font-weight:800;">Units Picked</th>
+              <th style="padding:10px 14px;text-align:center;color:#1a7a4a;font-weight:800;">Pickers Needed</th>
+              <th style="padding:10px 14px;text-align:center;color:#0891b2;font-weight:800;">Avg Delay (s)</th>
+              <th style="padding:10px 14px;text-align:left;color:#1e1b4b;font-weight:800;">Top Zone</th>
+            </tr>
+          </thead>
+          <tbody id="dd-hourly-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend Chart -->
+  <div id="dd-chart-wrap" style="display:none;margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#7b78a8;margin-bottom:12px;">📈 Hourly Trend — Orders vs Late Slams</div>
+    <div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;padding:20px;">
+      <canvas id="dd-chart" height="80"></canvas>
+    </div>
+  </div>
+
+  <!-- Late Slam Orders Detail Table -->
+  <div id="dd-orders-wrap" style="display:none;margin-bottom:24px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#c0392b;margin-bottom:12px;">🚨 Late Slam Orders — Full Timeline</div>
+    <div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;" id="dd-orders-table">
+          <thead>
+            <tr style="background:#fff0f0;">
+              <th style="padding:9px 12px;text-align:left;color:#c0392b;font-weight:800;white-space:nowrap;">Order ID</th>
+              <th style="padding:9px 12px;text-align:left;color:#1e1b4b;font-weight:800;">Store</th>
+              <th style="padding:9px 12px;text-align:left;color:#1e1b4b;font-weight:800;">Picker</th>
+              <th style="padding:9px 12px;text-align:center;color:#1e1b4b;font-weight:800;">Units</th>
+              <th style="padding:9px 12px;text-align:center;color:#1e1b4b;font-weight:800;">UPO Bucket</th>
+              <th style="padding:9px 12px;text-align:center;color:#4361ee;font-weight:800;">Drop Time</th>
+              <th style="padding:9px 12px;text-align:center;color:#7c3aed;font-weight:800;">Assign Time</th>
+              <th style="padding:9px 12px;text-align:center;color:#e67e22;font-weight:800;">Assign→1st Pick</th>
+              <th style="padding:9px 12px;text-align:center;color:#1a7a4a;font-weight:800;">Pick Duration</th>
+              <th style="padding:9px 12px;text-align:center;color:#0891b2;font-weight:800;">Pack/Stage</th>
+              <th style="padding:9px 12px;text-align:center;color:#7c3aed;font-weight:800;">Assign→Stage (s)</th><th style="padding:9px 12px;text-align:center;color:#0891b2;font-weight:800;">PL→Stage (s)</th><th style="padding:9px 12px;text-align:center;color:#c0392b;font-weight:800;">Delay (s)</th>
+              <th style="padding:9px 12px;text-align:center;color:#c0392b;font-weight:800;">Delay Bucket</th>
+              <th style="padding:9px 12px;text-align:left;color:#1e1b4b;font-weight:800;">Zone(s)</th>
+              <th style="padding:9px 12px;text-align:left;color:#1e1b4b;font-weight:800;">Slow Picks</th>
+            </tr>
+          </thead>
+          <tbody id="dd-orders-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
 </div>
 </div>
 
@@ -2387,27 +2657,6 @@ footer span { color:var(--accent); }
 </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     TASK 10: MANPOWER ALLOCATION (PLACEHOLDER)
-══════════════════════════════════════════════════ -->
-<div class="page" id="page-manpower">
-<div class="task-page">
-  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
-  <div class="task-header">
-    <span class="task-header-icon">👥</span>
-    <div>
-      <h2>Manpower Allocation</h2>
-      <p>Smart manpower planning, shift allocation and performance tracking tool.</p>
-    </div>
-  </div>
-  <div class="manpower-under-process">
-    <div class="mp-icon">⚙️</div>
-    <h3>Under Process</h3>
-    <p>Manpower allocation logic is being developed. This feature will allow smart shift planning, associate assignment, and productivity tracking across all zones.</p>
-    <div class="mp-progress-bar"><div class="mp-progress-fill"></div></div>
-    <div style="margin-top:16px;font-size:12px;color:#a5b4fc;font-family:'DM Mono',monospace;letter-spacing:1px;">BUILDING IN PROGRESS — STAY TUNED</div>
-  </div>
-</div>
 </div>
 
 <!-- ══════════════════════════════════════════════════
@@ -2629,6 +2878,41 @@ footer span { color:var(--accent); }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── BACK TO TOP ── -->
+<button id="back-to-top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top"
+  style="display:none;position:fixed;bottom:76px;right:22px;z-index:9000;width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#4361ee,#3a0ca3);color:#fff;font-size:19px;box-shadow:0 4px 18px rgba(67,97,238,0.45);
+  transition:opacity 0.25s,transform 0.25s;opacity:0;align-items:center;justify-content:center;">↑</button>
+
+<button id="go-to-bottom-btn" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})" title="Go to bottom"
+  style="display:none;position:fixed;bottom:24px;right:22px;z-index:9000;width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#4361ee,#3a0ca3);color:#fff;font-size:19px;box-shadow:0 4px 18px rgba(67,97,238,0.45);
+  transition:opacity 0.25s,transform 0.25s;opacity:0;align-items:center;justify-content:center;">↓</button>
+
+<!-- ── KEYBOARD SHORTCUT OVERLAY ── -->
+<div id="kb-shortcut-overlay" onclick="if(event.target===this)dashKbHideOverlay()"
+  style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(10,9,20,0.82);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:#13121f;border:1px solid #2e2c45;border-radius:20px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#e8e6ff;">⌨️ Keyboard Shortcuts</div>
+      <button onclick="dashKbHideOverlay()" style="background:none;border:none;color:#8b8aad;cursor:pointer;font-size:18px;line-height:1;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">D</kbd><span style="color:#8b8aad;">Dashboard</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">V</kbd><span style="color:#8b8aad;">VOC Analysis</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">R</kbd><span style="color:#8b8aad;">Inventory Report</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">L</kbd><span style="color:#8b8aad;">Location ID Maker</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">C</kbd><span style="color:#8b8aad;">Consolidation</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">A</kbd><span style="color:#8b8aad;">Audit by Location</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">S</kbd><span style="color:#8b8aad;">Slow Moving</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">F</kbd><span style="color:#8b8aad;">Feedback</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">/</kbd><span style="color:#8b8aad;">Search Tasks</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#1a1928;border-radius:8px;"><kbd style="background:#2e2c45;color:#e8e6ff;padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;">Esc</kbd><span style="color:#8b8aad;">Close / Back</span></div>
+    </div>
+    <div style="margin-top:16px;text-align:center;font-size:11px;color:#8b8aad;">Press <kbd style="background:#2e2c45;color:#e8e6ff;padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace;">?</kbd> anytime to show this</div>
+  </div>
+</div>
 
 <!-- ── VOC DETAIL MODAL ─────────────────────────────────────── -->
 <div id="voc-detail-modal" style="display:none;position:fixed;inset:0;z-index:9000;align-items:center;justify-content:center;padding:20px;">
@@ -2930,8 +3214,83 @@ function vocCloseModal() {
 }
 // Close on Escape key
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') vocCloseModal();
+  if (e.key === 'Escape') { vocCloseModal(); dashKbHideOverlay(); return; }
+  // Feature 5: keyboard shortcuts — only when no input is focused
+  var tag = document.activeElement ? document.activeElement.tagName : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === '?') { dashKbToggleOverlay(); return; }
+  if (e.key === '/') { e.preventDefault(); var si = document.getElementById('dash-search-input'); if (si) { openPage('dashboard'); si.focus(); } return; }
+  var shortcuts = { 'd':'dashboard','v':'voc','l':'locid','r':'report','c':'consolidation','a':'audit-loc','s':'slow-moving','f':'feedback' };
+  if (shortcuts[e.key.toLowerCase()] && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    var tgt = shortcuts[e.key.toLowerCase()];
+    if (tgt === 'dashboard') { goHome(); } else { openTask(tgt); }
+  }
 });
+
+// ── FEATURE 5: Keyboard shortcut overlay ──────────────────────
+function dashKbToggleOverlay() {
+  var o = document.getElementById('kb-shortcut-overlay');
+  if (!o) return;
+  var vis = o.style.display !== 'none';
+  o.style.display = vis ? 'none' : 'flex';
+}
+function dashKbHideOverlay() {
+  var o = document.getElementById('kb-shortcut-overlay');
+  if (o) o.style.display = 'none';
+}
+
+// ── FEATURE 6: Dashboard task search ──────────────────────────
+function dashSearchFilter() {
+  var inp = document.getElementById('dash-search-input');
+  var clr = document.getElementById('dash-search-clear');
+  var nomatch = document.getElementById('dash-search-nomatch');
+  if (!inp) return;
+  var q = inp.value.trim().toLowerCase();
+  if (clr) clr.style.display = q ? 'block' : 'none';
+  var cards = document.querySelectorAll('.task-grid .task-card');
+  var visible = 0;
+  cards.forEach(function(card) {
+    var text = card.textContent.toLowerCase();
+    var match = !q || text.includes(q);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  if (nomatch) nomatch.style.display = (q && visible === 0) ? 'block' : 'none';
+}
+function dashSearchClear() {
+  var inp = document.getElementById('dash-search-input');
+  if (inp) { inp.value = ''; inp.focus(); }
+  dashSearchFilter();
+}
+
+// ── Scroll navigation buttons (top + bottom) ───────────────────
+(function() {
+  var topBtn = document.getElementById('back-to-top-btn');
+  var botBtn = document.getElementById('go-to-bottom-btn');
+  if (!topBtn || !botBtn) return;
+  topBtn.style.display = 'flex';
+  botBtn.style.display = 'flex';
+
+  function updateBtns() {
+    var scrolled = window.scrollY > 320;
+    var atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 60;
+    // Top button — show when scrolled down
+    topBtn.style.opacity = scrolled ? '1' : '0';
+    topBtn.style.transform = scrolled ? 'scale(1)' : 'scale(0.8)';
+    // Bottom button — show when not at bottom and page is scrollable
+    var pageScrollable = document.body.scrollHeight > window.innerHeight + 100;
+    botBtn.style.opacity = (pageScrollable && !atBottom) ? '1' : '0';
+    botBtn.style.transform = (pageScrollable && !atBottom) ? 'scale(1)' : 'scale(0.8)';
+  }
+  window.addEventListener('scroll', updateBtns, { passive: true });
+  window.addEventListener('resize', updateBtns, { passive: true });
+  setTimeout(updateBtns, 500);
+
+  [topBtn, botBtn].forEach(function(b) {
+    b.addEventListener('mouseenter', function() { b.style.transform = 'scale(1.12)'; });
+    b.addEventListener('mouseleave', updateBtns);
+  });
+})();
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -3135,7 +3494,7 @@ function generateAuditLoc() {
     const locCol = findCol(h, ['location','bin','shelf','locationid','loc.?id','storage.?loc','aisle','slot']);
     let locations = [];
     const targets = {
-      Freezer:10, Chiller:10, Hazmat:10, Ambient:18, HRV:10,
+      Freezer:15, Chiller:15, Hazmat:10, Ambient:28, HRV:10,
       HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1
     };
     // Note: "Other" zone intentionally excluded — only standard P-1-R type locations
@@ -3154,7 +3513,7 @@ function generateAuditLoc() {
         const avail = zoneLocs[zone] || [];
         if (avail.length) pickRandUnique(avail, n).forEach(loc => locations.push({zone, loc}));
       });
-      locations = locations.sort(() => Math.random()-0.5).slice(0, 70);
+      locations = locations.sort(() => Math.random()-0.5).slice(0, 90);
     }
     if (!locations.length) {
       showToast('Location column not found — using sample data');
@@ -3891,8 +4250,118 @@ async function exportPDF(containerId, title) {
     if (containerId === 'out-ysm') { await exportYSMPDF(); }
     else if (containerId === 'out-audit-asin') { await exportAuditAsinPDF(title); }
     else if (containerId === 'out-consolidation') { await exportConsolidationPDF(title); }
+    else if (containerId === 'out-audit-loc') { await exportAuditLocPDF(el, title); }
     else { await exportA4PDF(el, title); }
   } catch(err) { showToast('PDF export failed.'); console.error(err); }
+}
+
+// ── Audit Location PDF — clean white professional layout ──────────
+async function exportAuditLocPDF(el, title) {
+  showToast('Building PDF...');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 10, usableW = pageW - margin*2, usableH = pageH - margin*2 - 14;
+  const nowStr = getNowString();
+
+  // Get all location rows from the rendered table
+  const rows = el.querySelectorAll('tbody tr');
+  if (!rows.length) { showToast('Nothing to export'); return; }
+
+  // Build a clean white HTML string directly — no cloning dark theme
+  const tableRows = Array.from(rows).map(function(tr, i) {
+    const cells = tr.querySelectorAll('td');
+    const num  = cells[0] ? cells[0].textContent.trim() : String(i+1).padStart(2,'0');
+    const zone = cells[1] ? cells[1].textContent.trim() : '';
+    const loc  = cells[2] ? cells[2].textContent.trim() : '';
+    const bg   = i % 2 === 0 ? '#f8f8fc' : '#ffffff';
+    const zoneColors = {
+      'Ambient':'#16a34a','Chiller':'#0891b2','Freezer':'#4361ee',
+      'Hazmat':'#dc2626','HRV':'#7c3aed','H-Bin':'#0f766e',
+      'V-Bin':'#b45309','X-Bin':'#ea580c','R-Bin':'#9333ea',
+      'HeavyDuty':'#6d28d9','T-Bin':'#be185d','Other':'#6b7280'
+    };
+    const zCol = zoneColors[zone] || '#333';
+    return '<tr style="background:'+bg+';">' +
+      '<td style="padding:8px 12px;font-weight:700;color:#111;font-family:monospace;font-size:12px;border-bottom:1px solid #e5e5e5;width:40px;">'+num+'</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #e5e5e5;width:100px;"><span style="background:'+zCol+'22;color:'+zCol+';border:1px solid '+zCol+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:0.5px;">'+zone+'</span></td>' +
+      '<td style="padding:8px 10px;font-family:monospace;font-weight:700;font-size:12px;color:#111;border-bottom:1px solid #e5e5e5;letter-spacing:0.3px;">'+loc+'</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #e5e5e5;"><div style="border:1px solid #ccc;border-radius:4px;height:22px;background:#fff;"></div></td>' +
+    '</tr>';
+  }).join('');
+
+  // Get zone stats from stat cards
+  const statCards = el.querySelectorAll('.stat-card');
+  const statsHTML = Array.from(statCards).map(function(c) {
+    const val  = c.querySelector('.sv');
+    const lbl  = c.querySelector('.sl');
+    const col  = val ? (val.style.color || '#333') : '#333';
+    return '<div style="border:1.5px solid '+col+';border-radius:8px;padding:6px 14px;text-align:center;background:#fff;min-width:60px;">' +
+      '<div style="font-size:20px;font-weight:800;color:'+col+';font-family:monospace;">'+(val?val.textContent:'')+'</div>' +
+      '<div style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-top:1px;">'+(lbl?lbl.textContent:'')+'</div>' +
+    '</div>';
+  }).join('');
+
+  const html = '<div style="background:#fff;font-family:Arial,sans-serif;width:700px;padding:0;">' +
+    '<div style="background:#1a1830;color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;">' +
+      '<div style="font-size:15px;font-weight:700;">📍 Location Audit Sheet</div>' +
+      '<div style="font-size:10px;color:#b8b6d9;font-family:monospace;">'+rows.length+' locations &nbsp;·&nbsp; '+nowStr+'</div>' +
+    '</div>' +
+    '<div style="padding:12px 18px;background:#f4f3ff;border-bottom:1px solid #ddd;display:flex;flex-wrap:wrap;gap:8px;">'+statsHTML+'</div>' +
+    '<div style="padding:0 18px 12px;">' +
+      '<table style="width:100%;border-collapse:collapse;margin-top:0;">' +
+        '<thead><tr style="background:#2d2b4e;">' +
+          '<th style="padding:9px 12px;color:#fff;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-align:left;width:40px;">#</th>' +
+          '<th style="padding:9px 10px;color:#fff;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-align:left;width:100px;">Zone</th>' +
+          '<th style="padding:9px 10px;color:#fff;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-align:left;">Location</th>' +
+          '<th style="padding:9px 10px;color:#fff;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-align:left;">Remark / Count</th>' +
+        '</tr></thead>' +
+        '<tbody>'+tableRows+'</tbody>' +
+        '<tfoot><tr><td colspan="4" style="padding:10px 2px 2px;border-top:1px solid #ddd;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:9px;color:#555;">' +
+            '<span>Checked By: _________________________</span>' +
+            '<span>TL / Supervisor: _________________________</span>' +
+          '</div>' +
+        '</td></tr></tfoot>' +
+      '</table>' +
+    '</div>' +
+  '</div>';
+
+  // Render off-screen
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;';
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+  await new Promise(r => setTimeout(r, 200));
+
+  const canvas = await html2canvas(wrap, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+  document.body.removeChild(wrap);
+
+  // Paginate
+  const pxPerMm = canvas.width / usableW;
+  const slicePx = Math.floor(usableH * pxPerMm);
+  let srcY = 0, pageNum = 0;
+  while (srcY < canvas.height) {
+    const rowH = Math.min(slicePx, canvas.height - srcY);
+    const sc = document.createElement('canvas');
+    sc.width = canvas.width; sc.height = rowH;
+    const ctx = sc.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,sc.width,sc.height);
+    ctx.drawImage(canvas, 0, srcY, canvas.width, rowH, 0, 0, canvas.width, rowH);
+    if (pageNum > 0) pdf.addPage();
+    pageNum++;
+    const sliceH = rowH / pxPerMm;
+    pdf.addImage(sc.toDataURL('image/jpeg', 0.93), 'JPEG', margin, margin, usableW, sliceH);
+    const fy = pageH - 6;
+    pdf.setFontSize(6); pdf.setTextColor(120);
+    pdf.text('HP World DMS PRO · '+title+' · Page '+pageNum, margin, fy);
+    pdf.text(nowStr, pageW - margin, fy, { align:'right' });
+    srcY += rowH;
+  }
+  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
+  showToast('✅ PDF downloaded!');
 }
 
 async function exportA4PDF(el, title) {
@@ -5181,6 +5650,431 @@ function lsReset() {
   var sf=document.getElementById('ls-store-filter');
   if(sf) sf.innerHTML='<option value="ALL">All Stores</option>';
   showToast('Reset done');
+}
+
+// ══════════════════════════════════════════════════════════════
+// LATE SLAM DEEP DIVE ENGINE
+// ══════════════════════════════════════════════════════════════
+var _ddF1 = null, _ddF2 = null, _ddAnalysed = null;
+var _ddFcOrders = {}; // store → { 'HH:MM': fcOrderCount }
+
+// ── Fetch Forecast for Deep Dive (reuses same Apps Script as LS Calculator) ──
+function ddFetchForecast() {
+  var dateVal = document.getElementById('dd-fc-date').value;
+  var statusEl = document.getElementById('dd-status');
+  if (!dateVal) { statusEl.textContent = '⚠️ Select a date first for forecast fetch.'; return; }
+  if (typeof LS_SHEET_ID === 'undefined' || !LS_SHEET_ID) {
+    statusEl.textContent = '⚠️ Open Late Slam Calculator first and paste the Sheet ID, then come back here.';
+    return;
+  }
+  statusEl.textContent = '⏳ Fetching forecast…';
+  appsScriptJSONP(
+    { action: 'forecast', date: dateVal },
+    function(data) {
+      if (!data || data.status === 'error') {
+        statusEl.textContent = '❌ Forecast fetch failed: ' + (data ? data.message : 'No response');
+        return;
+      }
+      _ddFcOrders = data.orders || {};
+      var n = Object.keys(_ddFcOrders).length;
+      var fcTotal = 0;
+      Object.keys(_ddFcOrders).forEach(function(sk){
+        Object.values(_ddFcOrders[sk]).forEach(function(v){ fcTotal += Math.round(v||0); });
+      });
+      statusEl.textContent = '✅ Forecast loaded — ' + n + ' store(s), ' + fcTotal + ' FC orders total. FC vs Actual difference is expected — FC = forecasted, Actual = your uploaded file orders.';
+      showToast('☁️ Deep Dive forecast ready — ' + n + ' store(s)');
+    },
+    function(err) { statusEl.textContent = '❌ Forecast error: ' + err.message; }
+  );
+}
+var _ddCharts = {};
+
+function ddFileLoaded(num, input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    // Handle BOM
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    var rows = text.split('\n').map(function(r) { return r.split(',').map(function(c){ return c.replace(/^"|"$/g,'').trim(); }); });
+    var headers = rows[0];
+    var data = rows.slice(1).filter(function(r){ return r.length > 1 && r[0]; });
+    var parsed = data.map(function(r) {
+      var obj = {};
+      headers.forEach(function(h,i){ obj[h] = r[i] || ''; });
+      return obj;
+    });
+    if (num === 1) {
+      _ddF1 = parsed;
+      document.getElementById('dd-file1-name').textContent = '✅ ' + file.name + ' (' + parsed.length + ' rows)';
+      document.getElementById('dd-zone1').style.borderColor = '#7c3aed';
+      // Populate store filter
+      var stores = [...new Set(parsed.map(function(r){ return r['delivery_station_code']; }))].filter(Boolean).sort();
+      var sf = document.getElementById('dd-store-filter');
+      sf.innerHTML = '<option value="all">All Stores</option>';
+      stores.forEach(function(s){ sf.innerHTML += '<option value="'+s+'">'+s+'</option>'; });
+      // Auto-fill FC date from file data
+      var firstDate = parsed[0] && parsed[0]['picklist_created_time'] ? parsed[0]['picklist_created_time'].slice(0,10) : '';
+      if (firstDate) {
+        document.getElementById('dd-fc-date').value = firstDate;
+        document.getElementById('dd-status').textContent = '📅 Date auto-set to ' + firstDate + ' — click ☁️ Fetch FC to load forecast for this date.';
+      }
+    } else {
+      _ddF2 = parsed;
+      document.getElementById('dd-file2-name').textContent = '✅ ' + file.name + ' (' + parsed.length + ' rows)';
+      document.getElementById('dd-zone2').style.borderColor = '#4361ee';
+    }
+    document.getElementById('dd-status').textContent = 'File ' + num + ' loaded. ' + (_ddF1&&_ddF2 ? 'Ready to analyse!' : '');
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function ddGetZone(loc) {
+  var l = (loc||'').toUpperCase();
+  if (l.indexOf('P-1-A') !== -1) return 'Ambient';
+  if (l.indexOf('P-1-C') !== -1) return 'Chiller';
+  if (l.indexOf('P-1-F') !== -1) return 'Frozen';
+  if (l.indexOf('P-1-H') !== -1) return 'Hazmat';
+  if (l.indexOf('P-1-V') !== -1) return 'HRV';
+  if (l.indexOf('P-1-G') !== -1) return 'Heavy';
+  return 'Other';
+}
+function ddDelayBucket(d) {
+  if (d < 30) return '<30s'; if (d < 60) return '<60s';
+  if (d < 120) return '<2min'; if (d < 180) return '<3min';
+  if (d < 300) return '<5min'; return '>5min';
+}
+function ddUpoBucket(u) {
+  u = parseInt(u)||0;
+  if (u <= 3) return '1-3'; if (u <= 6) return '4-6';
+  if (u <= 10) return '7-10'; if (u <= 20) return '11-20';
+  if (u <= 30) return '21-30'; if (u <= 40) return '31-40';
+  return '41-50';
+}
+function ddTimeWindow(h) {
+  if (h < 7) return '12am-7am'; if (h < 11) return '7am-11am';
+  if (h < 14) return '11am-2pm'; if (h < 17) return '2pm-5pm';
+  if (h < 21) return '5pm-9pm'; return '9pm-12am';
+}
+function ddFmtTime(ts) {
+  if (!ts) return '—';
+  var d = new Date(ts); if (isNaN(d)) return ts;
+  return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function ddSecs(s) { return (parseInt(s)||0) + 's'; }
+
+function ddAnalyse() {
+  if (!_ddF1 || !_ddF2) { showToast('Please upload both files first'); return; }
+  var sf = document.getElementById('dd-store-filter').value;
+  document.getElementById('dd-status').textContent = 'Analysing…';
+
+  // Filter File1 by store
+  var f1 = sf === 'all' ? _ddF1 : _ddF1.filter(function(r){ return r['delivery_station_code'] === sf; });
+
+  // Build picks map from File2: order_id → sorted pick rows
+  var picksMap = {};
+  _ddF2.forEach(function(r) {
+    var oid = r['ReferenceIdValue'];
+    if (!picksMap[oid]) picksMap[oid] = [];
+    picksMap[oid].push(r);
+  });
+  Object.keys(picksMap).forEach(function(oid) {
+    picksMap[oid].sort(function(a,b){ return new Date(a['Timestamp']) - new Date(b['Timestamp']); });
+  });
+
+  // Day-level UPO
+  var totalUnits = f1.reduce(function(s,r){ return s + (parseInt(r['units_picked'])||0); }, 0);
+  var upo = f1.length > 0 ? (totalUnits / f1.length).toFixed(2) : 0;
+
+  // Process each order
+  var orders = f1.map(function(r) {
+    var oid = r['order_id'];
+    var pl_create = parseInt(r['pl_create_to_stage'])||0;
+    var promise   = parseInt(r['promise_utr'])||0;
+    // ── Same rule as Late Slam Calculator: blank promise_utr = NOT a late slam ──
+    var hasPromise = r['promise_utr'] && r['promise_utr'].trim() !== '';
+    var isLS      = hasPromise && pl_create > promise;
+    var delay     = isLS ? pl_create - promise : 0;
+    var units     = parseInt(r['units_picked'])||0;
+    var picks     = picksMap[oid] || [];
+    var picker    = picks.length > 0 ? picks[0]['User'] : '—';
+
+    // Time gaps
+    var dropTime   = r['picklist_created_time'];
+    var assignTime = r['pick_assignment_time'];
+    var stageTime  = r['staging_time'];
+
+    var assignToFirstPick = 0, pickDuration = 0, packTime = 0;
+    var slowPicks = [], zones = [];
+
+    if (picks.length > 0) {
+      var firstPick = new Date(picks[0]['Timestamp']);
+      var lastPick  = new Date(picks[picks.length-1]['Timestamp']);
+      var assignDt  = new Date(assignTime);
+      var stageDt   = new Date(stageTime);
+
+      assignToFirstPick = Math.round((firstPick - assignDt) / 1000);
+      pickDuration      = Math.round((lastPick - firstPick) / 1000);
+      packTime          = Math.round((stageDt - lastPick) / 1000);
+
+      // Inter-pick gaps — flag if >20s
+      picks.forEach(function(p, i) {
+        zones.push(ddGetZone(p['LocationId']));
+        if (i > 0) {
+          var gap = Math.round((new Date(p['Timestamp']) - new Date(picks[i-1]['Timestamp'])) / 1000);
+          if (gap > 20) {
+            slowPicks.push({ asin: p['ASIN'], loc: p['LocationId'], gap: gap, zone: ddGetZone(p['LocationId']) });
+          }
+        }
+      });
+    }
+
+    // Unique zones
+    var uniqueZones = [...new Set(zones)].join(', ');
+
+    // Read time values directly from File 1 columns
+    var assignToStage   = parseInt(r['assignment_to_stage_time_secs']) || 0; // col K
+    var plCreateToStage = parseInt(r['pl_create_to_stage']) || 0;            // col L
+
+    return {
+      oid, isLS, delay, assignToStage, plCreateToStage, units, picker, upo,
+      store: r['delivery_station_code'],
+      dropTime, assignTime, stageTime,
+      assignToFirstPick, pickDuration, packTime,
+      slowPicks, uniqueZones,
+      pl_create: plCreateToStage, promise,
+      hour: dropTime ? new Date(dropTime).getHours() : -1,
+      delayBucket: ddDelayBucket(delay),
+      upoBucket: ddUpoBucket(units),
+      timeWindow: dropTime ? ddTimeWindow(new Date(dropTime).getHours()) : '—'
+    };
+  });
+
+  // Hour-wise aggregation + FC mapping
+  var hourData = {};
+
+  // Build FC hour totals — sum both HH:00 and HH:30 slots for each hour
+  var fcHourMap = {};
+  function sumFcByHour(storeObj) {
+    Object.keys(storeObj).forEach(function(slot) {
+      var parts = slot.split(':');
+      var h = parseInt(parts[0]);
+      if (!isNaN(h)) fcHourMap[h] = (fcHourMap[h]||0) + Math.round(storeObj[slot]||0);
+    });
+  }
+  if (Object.keys(_ddFcOrders).length > 0) {
+    var fcKeys = Object.keys(_ddFcOrders);
+    // Get actual stores present in the uploaded data
+    var actualStores = [...new Set(f1.map(function(r){ return r['delivery_station_code']; }))].filter(Boolean);
+    if (sf === 'all') {
+      // Only sum FC for stores that are in the actual file — not all FC stores
+      fcKeys.forEach(function(sk) {
+        var matchesActual = actualStores.some(function(as){
+          return sk === as || sk.indexOf(as) >= 0 || as.indexOf(sk) >= 0;
+        });
+        if (matchesActual) sumFcByHour(_ddFcOrders[sk]);
+      });
+    } else {
+      // Match selected store
+      var fcStoreKey = null;
+      fcKeys.forEach(function(sk) {
+        if (sk === sf || sk.indexOf(sf) >= 0 || sf.indexOf(sk) >= 0) fcStoreKey = sk;
+      });
+      if (fcStoreKey) sumFcByHour(_ddFcOrders[fcStoreKey]);
+    }
+  }
+  orders.forEach(function(o) {
+    if (o.hour < 0) return;
+    if (!hourData[o.hour]) hourData[o.hour] = { total:0, ls:0, units:0, delay:[], zones:[] };
+    hourData[o.hour].total++;
+    if (o.isLS) { hourData[o.hour].ls++; hourData[o.hour].delay.push(o.delay); }
+    hourData[o.hour].units += o.units;
+    o.uniqueZones.split(', ').forEach(function(z){ if(z) hourData[o.hour].zones.push(z); });
+  });
+
+  _ddAnalysed = { orders, hourData, fcHourMap, upo, totalUnits, f1count: f1.length,
+    lsOrders: orders.filter(function(o){ return o.isLS; }) };
+
+  ddRenderAll();
+  document.getElementById('dd-export-btn').style.display = 'inline-flex';
+  document.getElementById('dd-status').textContent = '✅ Analysis complete — ' + orders.filter(function(o){return o.isLS;}).length + ' late slams found out of ' + f1.length + ' orders.';
+}
+
+function ddRenderAll() {
+  var d = _ddAnalysed;
+  var lsCount = d.lsOrders.length;
+  var avgDelay = lsCount > 0 ? Math.round(d.lsOrders.reduce(function(s,o){return s+o.delay;},0)/lsCount) : 0;
+  var avgPack  = lsCount > 0 ? Math.round(d.lsOrders.reduce(function(s,o){return s+o.packTime;},0)/lsCount) : 0;
+  var pickers  = [...new Set(d.orders.map(function(o){return o.picker;}))].filter(function(p){return p!=='—';});
+  var ordersPerPicker = pickers.length > 0 ? Math.round(d.f1count / pickers.length) : 0;
+  // Pickers needed = average units per active hour / 50 (OB TPH)
+  var activeHours = Object.keys(d.hourData).length || 1;
+  var avgUnitsPerHour = Math.round(d.totalUnits / activeHours);
+  var pickersNeeded = Math.ceil(avgUnitsPerHour / 50) || 1;
+
+  // Summary cards
+  var cards = [
+    { label:'Total Orders', val: d.f1count, color:'#4361ee' },
+    { label:'Late Slams', val: lsCount, color:'#c0392b' },
+    { label:'LS Rate', val: d.f1count>0?(lsCount/d.f1count*100).toFixed(1)+'%':'—', color:'#e67e22' },
+    { label:'Day UPO', val: parseFloat(d.upo), color:'#7c3aed' },
+    { label:'Avg Delay (LS)', val: avgDelay+'s', color:'#c0392b' },
+    { label:'Avg Pack Time', val: avgPack+'s', color:'#0891b2' },
+    { label:'Pickers Needed', val: pickersNeeded, color:'#1a7a4a', sub:'@50 units/hr' },
+    { label:'Total Units', val: d.totalUnits, color:'#7c3aed' }
+  ];
+  document.getElementById('dd-cards-grid').innerHTML = cards.map(function(c) {
+    return '<div style="background:#fff;border:1px solid #d5d2f0;border-radius:12px;padding:14px 16px;border-top:3px solid '+c.color+';">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#7b78a8;margin-bottom:6px;">'+c.label+'</div>' +
+      '<div style="font-size:22px;font-weight:800;color:'+c.color+';">'+c.val+'</div>' +
+      (c.sub?'<div style="font-size:10px;color:#7b78a8;margin-top:2px;">'+c.sub+'</div>':'') +
+      '</div>';
+  }).join('');
+  document.getElementById('dd-summary-cards').style.display = 'block';
+
+  // Hourly table
+  var hours = Object.keys(d.hourData).map(Number).sort(function(a,b){return a-b;});
+  var tbody = '';
+  hours.forEach(function(h) {
+    var hd = d.hourData[h];
+    var rate = hd.total > 0 ? (hd.ls/hd.total*100).toFixed(1)+'%' : '0%';
+    var avgDel = hd.delay.length > 0 ? Math.round(hd.delay.reduce(function(s,v){return s+v;},0)/hd.delay.length) : 0;
+    var topZone = hd.zones.length > 0 ? (function(arr){ var c={}; arr.forEach(function(z){c[z]=(c[z]||0)+1;}); return Object.keys(c).sort(function(a,b){return c[b]-c[a];})[0]; })(hd.zones) : '—';
+    var pkNeeded = Math.ceil(hd.units / 50) || 1;
+    var isHighLS = hd.ls >= 3;
+    var fcO = d.fcHourMap[h] || 0;
+    var fcVar = fcO > 0 ? ((hd.total - fcO) / fcO * 100).toFixed(1) : '—';
+    var fcVarCol = fcVar === '—' ? '#7b78a8' : parseFloat(fcVar) > 10 ? '#c0392b' : parseFloat(fcVar) > 0 ? '#e67e22' : '#1a7a4a';
+    tbody += '<tr style="background:'+(isHighLS?'rgba(192,57,43,0.04)':'')+';">' +
+      '<td style="padding:9px 14px;font-weight:700;color:#1e1b4b;font-family:monospace;">' + String(h).padStart(2,'0') + ':00</td>' +
+      '<td style="padding:9px 14px;text-align:center;color:#7b78a8;font-size:11px;">' + ddTimeWindow(h) + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:700;color:#93c5fd;">' + (fcO > 0 ? fcO : '—') + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:700;color:#4361ee;">' + hd.total + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:800;color:' + (hd.ls>0?'#c0392b':'#1a7a4a') + ';">' + (hd.ls>0?'🚨 ':'✅ ') + hd.ls + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:700;color:' + (parseFloat(rate)>5?'#c0392b':'#e67e22') + ';">' + rate + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:700;color:'+fcVarCol+';">' + (fcVar !== '—' ? fcVar+'%' : '—') + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;color:#7c3aed;font-weight:600;">' + hd.units + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;color:#1a7a4a;font-weight:700;">' + pkNeeded + '</td>' +
+      '<td style="padding:9px 14px;text-align:center;color:#0891b2;font-weight:600;">' + (avgDel>0?avgDel+'s':'—') + '</td>' +
+      '<td style="padding:9px 14px;color:#1e1b4b;font-size:11px;">' + topZone + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('dd-hourly-body').innerHTML = tbody;
+  document.getElementById('dd-hourly-wrap').style.display = 'block';
+
+  // Trend chart
+  if (_ddCharts.trend) _ddCharts.trend.destroy();
+  var ctx = document.getElementById('dd-chart').getContext('2d');
+  var fcDataset = hours.some(function(h){ return d.fcHourMap[h] > 0; })
+    ? [{ label:'FC Orders', data: hours.map(function(h){return d.fcHourMap[h]||0;}), borderColor:'#93c5fd', backgroundColor:'rgba(147,197,253,0.06)', tension:0.4, fill:false, pointRadius:3, borderDash:[5,3] }]
+    : [];
+  _ddCharts.trend = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: hours.map(function(h){ return String(h).padStart(2,'0')+':00'; }),
+      datasets: fcDataset.concat([
+        { label:'Actual Orders', data: hours.map(function(h){return d.hourData[h].total;}), borderColor:'#4361ee', backgroundColor:'rgba(67,97,238,0.08)', tension:0.4, fill:true, pointRadius:4 },
+        { label:'Late Slams', data: hours.map(function(h){return d.hourData[h].ls;}), borderColor:'#c0392b', backgroundColor:'rgba(192,57,43,0.08)', tension:0.4, fill:true, pointRadius:5, pointBackgroundColor:'#c0392b' }
+      ])
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true}},
+      scales:{ x:{ticks:{font:{size:10}}}, y:{beginAtZero:true,ticks:{font:{size:10}}} } }
+  });
+  document.getElementById('dd-chart-wrap').style.display = 'block';
+
+  // Orders table — only Late Slams
+  var obody = '';
+  d.lsOrders.forEach(function(o) {
+    var slowHtml = o.slowPicks.length > 0
+      ? o.slowPicks.map(function(sp){ return '<span style="display:inline-block;margin:1px 2px;padding:2px 6px;border-radius:4px;background:rgba(192,57,43,0.1);color:#c0392b;font-size:10px;font-weight:700;">'+sp.asin.slice(-6)+' ('+sp.loc+') '+sp.gap+'s</span>'; }).join('')
+      : '<span style="color:#1a7a4a;font-size:10px;">✅ None</span>';
+    obody += '<tr style="border-bottom:1px solid #f0effe;">' +
+      '<td style="padding:8px 12px;font-family:monospace;font-size:10px;color:#c0392b;font-weight:700;">'+o.oid+'</td>' +
+      '<td style="padding:8px 12px;font-weight:700;color:#1e1b4b;">'+o.store+'</td>' +
+      '<td style="padding:8px 12px;font-weight:600;color:#7c3aed;">'+o.picker+'</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:700;">'+o.units+'</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:rgba(124,58,237,0.1);color:#7c3aed;font-weight:700;">'+o.upoBucket+'</span></td>' +
+      '<td style="padding:8px 12px;text-align:center;font-family:monospace;font-size:10px;color:#4361ee;">'+ddFmtTime(o.dropTime)+'</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-family:monospace;font-size:10px;color:#7c3aed;">'+ddFmtTime(o.assignTime)+'</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:' + (o.assignToFirstPick>60?'#c0392b':'#1a7a4a') + ';">'+o.assignToFirstPick+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:#1a7a4a;">'+o.pickDuration+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:' + (o.packTime>30?'#e67e22':'#0891b2') + ';">'+o.packTime+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:#7c3aed;">'+o.assignToStage+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:600;color:#0891b2;">'+o.plCreateToStage+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;font-weight:800;color:#c0392b;">+'+(o.isLS?o.delay:0)+'s</td>' +
+      '<td style="padding:8px 12px;text-align:center;"><span style="padding:2px 8px;border-radius:10px;background:rgba(192,57,43,0.1);color:#c0392b;font-size:10px;font-weight:700;">'+o.delayBucket+'</span></td>' +
+      '<td style="padding:8px 12px;font-size:10px;color:#7b78a8;">'+o.uniqueZones+'</td>' +
+      '<td style="padding:8px 12px;">'+slowHtml+'</td>' +
+      '</tr>';
+  });
+  document.getElementById('dd-orders-body').innerHTML = obody || '<tr><td colspan="14" style="padding:20px;text-align:center;color:#1a7a4a;font-weight:700;">✅ No late slams in selected filter</td></tr>';
+  document.getElementById('dd-orders-wrap').style.display = 'block';
+
+  // Breakdown charts
+
+}
+
+
+
+function ddExportExcel() {
+  if (!_ddAnalysed) { showToast('Run analysis first'); return; }
+  var d = _ddAnalysed;
+  var wb = XLSX.utils.book_new();
+
+  // Sheet 1: All Orders Raw Data
+  var rawHeaders = ['Order ID','Store','Picker','Units','UPO Bucket','Drop Time','Assign Time','Stage Time',
+    'Assign→1st Pick (s)','Pick Duration (s)','Pack/Stage Time (s)','Assign→Stage (s)','PL→Stage (s)','pl_create_to_stage (s)',
+    'promise_utr (s)','Late Slam','Delay (s)','Delay Bucket','Time Window','Hour','Zone(s)','Slow Picks (ASIN|Loc|Gap)'];
+  var rawRows = d.orders.map(function(o) {
+    return [o.oid, o.store, o.picker, o.units, o.upoBucket,
+      o.dropTime, o.assignTime, o.stageTime,
+      o.assignToFirstPick, o.pickDuration, o.packTime, o.assignToStage, o.plCreateToStage,
+      o.pl_create, o.promise,
+      o.isLS ? 'YES' : 'NO', o.delay, o.delayBucket, o.timeWindow, o.hour,
+      o.uniqueZones,
+      o.slowPicks.map(function(sp){return sp.asin+'|'+sp.loc+'|'+sp.gap+'s';}).join(' / ')
+    ];
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([rawHeaders].concat(rawRows)), 'All Orders Raw');
+
+  // Sheet 2: Late Slams Only
+  var lsRows = d.lsOrders.map(function(o) {
+    return [o.oid, o.store, o.picker, o.units, o.upoBucket,
+      o.dropTime, o.assignTime, o.stageTime,
+      o.assignToFirstPick, o.pickDuration, o.packTime, o.assignToStage, o.plCreateToStage,
+      o.pl_create, o.promise, o.delay, o.delayBucket, o.timeWindow, o.hour,
+      o.uniqueZones,
+      o.slowPicks.map(function(sp){return sp.asin+'|'+sp.loc+'|'+sp.gap+'s';}).join(' / ')
+    ];
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([rawHeaders.slice(0,-1).concat(['Delay','Delay Bucket','Time Window','Hour','Zones','Slow Picks'])].concat(lsRows)), 'Late Slams Only');
+
+  // Sheet 3: Hourly Breakdown
+  var hRows = [['Hour','Time Window','FC Orders','Actual Orders','Late Slams','LS Rate %','FC Var %','Units Picked','Pickers Needed (@50 units/hr)','Avg Delay (s)','Top Zone']];
+  var hours = Object.keys(d.hourData).map(Number).sort(function(a,b){return a-b;});
+  hours.forEach(function(h) {
+    var hd = d.hourData[h];
+    var rate = hd.total > 0 ? (hd.ls/hd.total*100).toFixed(1) : 0;
+    var avgDel = hd.delay.length > 0 ? Math.round(hd.delay.reduce(function(s,v){return s+v;},0)/hd.delay.length) : 0;
+    var topZone = hd.zones.length > 0 ? (function(arr){ var c={}; arr.forEach(function(z){c[z]=(c[z]||0)+1;}); return Object.keys(c).sort(function(a,b){return c[b]-c[a];})[0]; })(hd.zones) : '—';
+    var fcO = d.fcHourMap[h] || 0;
+    var fcVar = fcO > 0 ? ((hd.total - fcO) / fcO * 100).toFixed(1) : '—';
+    hRows.push([String(h).padStart(2,'0')+':00', ddTimeWindow(h), fcO||'—', hd.total, hd.ls, rate, fcVar, hd.units, Math.ceil(hd.units/50)||1, avgDel, topZone]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hRows), 'Hourly Breakdown');
+
+  // Sheet 4: Slow Picks Detail
+  var spRows = [['Order ID','Store','Picker','Is Late Slam','ASIN','Location','Zone','Gap (s)','Flag']];
+  d.orders.forEach(function(o) {
+    o.slowPicks.forEach(function(sp) {
+      spRows.push([o.oid, o.store, o.picker, o.isLS?'YES':'NO', sp.asin, sp.loc, sp.zone, sp.gap, sp.gap>20?'⚠️ Slow':'✅']);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(spRows), 'Slow Picks Detail');
+
+  XLSX.writeFile(wb, 'LS_DeepDive_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('Excel exported — 4 sheets!');
 }
 
 // ── Set default date ──────────────────────────────────────────
@@ -6931,6 +7825,25 @@ if (document.readyState === 'loading') {
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- VOC ANALYSIS PAGE -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- STORE METRICS PAGE -->
+<div class="page" id="page-store-metrics">
+<div class="task-page" style="max-width:900px;">
+  <button class="back-btn" onclick="goHome()">← Back</button>
+  <div class="task-header">
+    <div class="task-header-icon">🏪</div>
+    <div>
+      <h2>Store Metrics</h2>
+      <p>Live store-wise KPIs · Orders · Units · TPH · SLA · UPO · Trends</p>
+    </div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🚀</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text);">Coming Soon</div>
+    <div style="font-size:14px;color:var(--muted);">Store Metrics dashboard is being rebuilt fresh. Check back soon!</div>
+  </div>
+</div>
+</div>
+
 <div class="page" id="page-voc" style="background:#0a0914;min-height:100vh;" data-theme="dark">
 <div style="max-width:1200px;margin:0 auto;padding:32px 24px 80px;position:relative;z-index:1;">
 
@@ -7049,10 +7962,17 @@ if (document.readyState === 'loading') {
     </div>
 
     <!-- ── SECTION: OVERALL METRICS ── -->
-    <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">Overall Metrics</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:24px;" id="voc-metric-cards"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);" class="voc-section-label">Overall Metrics</div>
+      <!-- Feature 2: Copy Summary Button -->
+      <button id="voc-copy-summary-btn" onclick="vocCopySummary()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid rgba(67,97,238,0.35);background:rgba(67,97,238,0.10);color:#4361ee;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;font-family:'Syne',sans-serif;transition:background 0.2s;" onmouseenter="this.style.background='rgba(67,97,238,0.2)'" onmouseleave="this.style.background='rgba(67,97,238,0.10)'">📋 Copy Summary</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px;" id="voc-metric-cards"></div>
+
 
     <!-- ── SECTION: UTR vs OTR SPLIT ── -->
+    <!-- ── DUPLICATE VOC BADGE ── -->
+    <div id="voc-duplicate-badge-wrap" style="margin-bottom:20px;display:none;"></div>
     <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-bottom:10px;" class="voc-section-label">UTR vs OTR — Ops Controllable Split</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:20px;" id="voc-utr-otr-cards"></div>
 
@@ -7165,26 +8085,6 @@ if (document.readyState === 'loading') {
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- STORE METRICS PAGE -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<div class="page" id="page-store-metrics">
-<div class="task-page" style="max-width:1200px;">
-  <button class="back-btn" onclick="goHome()">← Back</button>
-  <div class="task-header">
-    <div class="task-header-icon">🏪</div>
-    <div>
-      <h2>Store Metrics</h2>
-      <p>Store-wise KPIs · Orders · Units · VOC Rate · Trends · Performance benchmarking</p>
-    </div>
-  </div>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;">
-    <div style="font-size:48px;margin-bottom:16px;">🚧</div>
-    <div style="font-size:20px;font-weight:700;margin-bottom:8px;">Store Metrics</div>
-    <div style="font-size:14px;color:var(--muted);margin-bottom:20px;">Share your Store Metrics Google Sheet URL and design screenshot.<br>This module will be fully configured with your exact KPI columns.</div>
-    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(247,37,133,0.1);border:1px solid rgba(247,37,133,0.3);padding:8px 18px;border-radius:20px;font-size:12px;color:var(--pink);font-weight:700;letter-spacing:1px;">⚙️ AWAITING YOUR SHEET + SCREENSHOT</div>
-  </div>
-</div>
-</div>
-
 <style>
 /* ─── VOC THEME VARIABLES ───────────────────────────────── */
 #page-voc[data-theme="dark"] {
@@ -7203,18 +8103,18 @@ if (document.readyState === 'loading') {
   --voc-input-bg:   #13121f;
 }
 #page-voc[data-theme="light"] {
-  --voc-bg:         #f8f7ff;
+  --voc-bg:         #f0f2f8;
   --voc-surface:    #ffffff;
-  --voc-surface2:   #f0effe;
-  --voc-surface3:   #e8e6fd;
-  --voc-border:     #d5d2f0;
-  --voc-text:       #1a1830;
-  --voc-text2:      #3d3a6b;
-  --voc-muted:      #7b78a8;
-  --voc-label:      #7b78a8;
-  --voc-val:        #1a1830;
-  --voc-thead:      #f8f7ff;
-  --voc-row-alt:    #f8f7ff;
+  --voc-surface2:   #e8eaf6;
+  --voc-surface3:   #dde0f5;
+  --voc-border:     #b8bde8;
+  --voc-text:       #0f0e1a;
+  --voc-text2:      #1e1b4b;
+  --voc-muted:      #4a4580;
+  --voc-label:      #4a4580;
+  --voc-val:        #0f0e1a;
+  --voc-thead:      #e8eaf6;
+  --voc-row-alt:    #f4f5fc;
   --voc-input-bg:   #ffffff;
 }
 
@@ -7315,13 +8215,82 @@ if (document.readyState === 'loading') {
 }
 #page-voc[data-theme="dark"] .voc-orders-banner { background:rgba(67,97,238,0.15);border-color:rgba(67,97,238,0.35); }
 #page-voc[data-theme="light"] .voc-orders-banner { background:rgba(67,97,238,0.06);border-color:rgba(67,97,238,0.2); }
+
+/* ── LIGHT THEME: Strong readable overrides ── */
+#page-voc[data-theme="light"] { background:#f0f2f8 !important; color:#0f0e1a !important; }
+
+/* Section labels — deep navy, very visible */
+#page-voc[data-theme="light"] .voc-section-label { color:#1e1b4b !important; }
+
+/* Metric cards */
+#page-voc[data-theme="light"] .voc-dyn-card { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 2px 8px rgba(30,27,75,0.08) !important; }
+#page-voc[data-theme="light"] .voc-dyn-card .voc-card-label { color:#4a4580 !important; font-weight:700 !important; }
+#page-voc[data-theme="light"] .voc-dyn-card .voc-card-val { color:#0f0e1a !important; font-weight:800 !important; }
+#page-voc[data-theme="light"] .voc-dyn-card .voc-card-sub { color:#3730a3 !important; font-weight:600 !important; }
+
+/* Filter bar */
+#page-voc[data-theme="light"] .voc-filter-bar { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 1px 4px rgba(30,27,75,0.06) !important; }
+#page-voc[data-theme="light"] #voc-store-filter,
+#page-voc[data-theme="light"] #voc-week-select,
+#page-voc[data-theme="light"] #voc-month-select,
+#page-voc[data-theme="light"] #voc-picker-store { background:#ffffff !important; border-color:#b8bde8 !important; color:#0f0e1a !important; font-weight:600 !important; }
+
+/* Tables */
+#page-voc[data-theme="light"] .voc-tbl-wrap { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 2px 8px rgba(30,27,75,0.07) !important; }
+#page-voc[data-theme="light"] .voc-tbl-wrap table thead tr { background:#e8eaf6 !important; }
+#page-voc[data-theme="light"] .voc-tbl-wrap table th { color:#1e1b4b !important; font-weight:800 !important; border-bottom-color:#b8bde8 !important; }
+#page-voc[data-theme="light"] .voc-tbl-wrap table td { color:#0f0e1a !important; font-weight:500 !important; border-bottom-color:#e8eaf6 !important; }
+#page-voc[data-theme="light"] .voc-tbl-wrap table tr:nth-child(even) td { background:#f4f5fc !important; }
+#page-voc[data-theme="light"] .voc-tbl-wrap table tr:hover td { background:#e0e3f5 !important; }
+
+/* Health & RCA boxes */
+#page-voc[data-theme="light"] .voc-health-box { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 2px 8px rgba(30,27,75,0.07) !important; }
+#page-voc[data-theme="light"] .voc-rca-box { background:#ffffff !important; border-color:#b8bde8 !important; }
+#page-voc[data-theme="light"] .voc-health-row { background:#e8eaf6 !important; }
+#page-voc[data-theme="light"] .voc-health-row .vhr-label { color:#1e1b4b !important; font-weight:600 !important; }
+#page-voc[data-theme="light"] .voc-health-row .vhr-val { color:#0f0e1a !important; font-weight:700 !important; }
+
+/* Chart boxes */
+#page-voc[data-theme="light"] .voc-chart-box { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 2px 8px rgba(30,27,75,0.07) !important; }
+#page-voc[data-theme="light"] .voc-chart-box .voc-section-label { color:#1e1b4b !important; }
+
+/* Store & target cards */
+#page-voc[data-theme="light"] #voc-store-cards > div { background:#ffffff !important; border-color:#b8bde8 !important; box-shadow:0 2px 6px rgba(30,27,75,0.08) !important; }
+#page-voc[data-theme="light"] #voc-target-cards > div { box-shadow:0 2px 6px rgba(30,27,75,0.08) !important; }
+
+/* Period label & subtext */
+#page-voc[data-theme="light"] #voc-period-label { color:#1e1b4b !important; font-weight:700 !important; }
+
+/* Non-ops breakdown */
+#page-voc[data-theme="light"] #voc-nonops-breakdown { background:#ffffff !important; border-color:#b8bde8 !important; color:#0f0e1a !important; }
+
+/* Orders banner chips */
+#page-voc[data-theme="light"] .voc-orders-chip { color:#1e1b4b !important; }
+
+/* URL input */
+#page-voc[data-theme="light"] #voc-sheet-url { background:#ffffff !important; border-color:#b8bde8 !important; color:#0f0e1a !important; }
+
+/* Gate box */
+#page-voc[data-theme="light"] #voc-gate > div { background:#ffffff !important; border-color:#b8bde8 !important; }
+#page-voc[data-theme="light"] #voc-gate .voc-gate-title { color:#0f0e1a !important; }
+#page-voc[data-theme="light"] #voc-gate .voc-gate-sub { color:#4a4580 !important; }
+#page-voc[data-theme="light"] #voc-username-input { background:#ffffff !important; border-color:#b8bde8 !important; color:#0f0e1a !important; }
+
+/* Picker count text */
+#page-voc[data-theme="light"] #voc-picker-count { color:#4a4580 !important; font-weight:600 !important; }
+
+/* Product body */
+#page-voc[data-theme="light"] #voc-product-body td { color:#0f0e1a !important; }
+
+/* Status text in cards */
+#page-voc[data-theme="light"] .voc-dyn-card small { color:#c0392b !important; font-weight:700 !important; }
 .voc-orders-chip {
   display:inline-flex;align-items:center;gap:6px;
   padding:5px 12px;border-radius:20px;font-weight:700;font-family:'DM Mono',monospace;font-size:12px;
 }
 </style>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
 <script>
 // ═══════════════════════════════════════════════════════
 // VOC ANALYSIS ENGINE v2 — matches screenshot design
@@ -7890,14 +8859,34 @@ function vocRender() {
 
   // Apply period filter to raw VOC data (from VOC sheet only)
   var periodRows = vocFilterByPeriod(vocRawData);
-  // Deduplicate by orderId+asin
+  // Deduplicate
   var curr = vocDedup(periodRows);
   // Apply store filter
   if (sf && sf !== 'all') curr = curr.filter(function(r) { return r.store === sf; });
 
-  // Previous period comparison
-  var prevBounds = vocGetPeriodBounds(1);
-  var prev = vocDedup(vocFilterRows(vocRawData, prevBounds));
+  // ── Previous period — MUST use same matching strategy as curr ──
+  // Weekly: match by r.week column (weekNum-1), NOT by date bounds
+  // Monthly/Yearly: use date bounds as before
+  var prev;
+  if (vocPeriod === 'week' && vocSelectedWeek) {
+    var _wm = vocSelectedWeek.match(/(\d{4})-W(\d{1,2})$/);
+    var _wy = _wm ? parseInt(_wm[1], 10) : new Date().getFullYear();
+    var _wn = _wm ? parseInt(_wm[2], 10) : null;
+    var _pwn = _wn !== null ? _wn - 1 : null;
+    var _pwy = _wy;
+    if (_pwn !== null && _pwn < 1) { _pwn = 52; _pwy--; }
+    prev = vocDedup(vocRawData.filter(function(r) {
+      if (_pwn === null) return false;
+      if (r.week) return parseInt(r.week, 10) === _pwn;
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      var w = vocISOWeek(d);
+      return w.week === _pwn && w.year === _pwy;
+    }));
+  } else {
+    var prevBounds = vocGetPeriodBounds(1);
+    prev = vocDedup(vocFilterRows(vocRawData, prevBounds));
+  }
   if (sf && sf !== 'all') prev = prev.filter(function(r) { return r.store === sf; });
 
   // Store-specific order count from Store Metric (fetched separately)
@@ -7916,6 +8905,7 @@ function vocRender() {
   vocRenderProducts(curr);
   vocRunHealthCheck();
   vocRenderRCA();
+  vocRenderDuplicateBadge(periodRows, sf);
 }
 
 // Get orders for a specific store (or total) from vocMatrixOrders
@@ -8098,14 +9088,29 @@ function vocCardWarning(label,val,sub,accentColor){
     '<div class="voc-card-sub" style="font-size:11px;color:'+sub2+';">'+sub+'</div></div>';
 }
 
-function vocCard(label,val,sub,border){
+function vocCard(label,val,sub,border,statusGlow){
+  // Feature 4: statusGlow = ok | warn | bad | null
   var isDark = document.getElementById('page-voc').getAttribute('data-theme')==='dark';
   var bg  = isDark ? '#1a1928' : '#ffffff';
   var brd = isDark ? '#2e2c45' : '#d5d2f0';
   var lbl = isDark ? '#8b8aad' : '#7b78a8';
   var txt = isDark ? '#ffffff' : '#1a1830';
   var sub2 = isDark ? '#8b8aad' : '#7b78a8';
-  return '<div class="voc-dyn-card" style="background:'+bg+';border:1px solid '+brd+';border-radius:14px;padding:16px 18px;border-top:3px solid '+border+'">'+
+  var glowStyle = '';
+  var bgImg = '';
+  if (statusGlow === 'ok') {
+    glowStyle = 'box-shadow:0 0 0 1.5px rgba(6,214,160,0.35),0 2px 10px rgba(6,214,160,0.12);';
+    bgImg = 'background-image:linear-gradient(135deg,rgba(6,214,160,0.06),transparent 70%);';
+    border = '#06d6a0';
+  } else if (statusGlow === 'warn') {
+    glowStyle = 'box-shadow:0 0 0 1.5px rgba(181,134,13,0.4),0 2px 10px rgba(181,134,13,0.12);';
+    bgImg = 'background-image:linear-gradient(135deg,rgba(181,134,13,0.07),transparent 70%);';
+    border = '#b5860d';
+  } else if (statusGlow === 'bad') {
+    glowStyle = 'box-shadow:0 0 0 1.5px rgba(192,57,43,0.4),0 2px 10px rgba(192,57,43,0.13);';
+    bgImg = 'background-image:linear-gradient(135deg,rgba(192,57,43,0.07),transparent 70%);';
+  }
+  return '<div class="voc-dyn-card" style="background:'+bg+';border:1px solid '+brd+';border-radius:14px;padding:16px 18px;border-top:3px solid '+border+';'+glowStyle+bgImg+'">'+
     '<div class="voc-card-label" style="font-size:11px;color:'+lbl+';margin-bottom:6px;">'+label+'</div>'+
     '<div class="voc-card-val" style="font-size:22px;font-weight:700;color:'+txt+';margin-bottom:4px;">'+val+'</div>'+
     '<div class="voc-card-sub" style="font-size:11px;color:'+sub2+';">'+sub+'</div></div>';
@@ -8135,21 +9140,73 @@ function vocRenderMetrics(curr, prev, storeOrders) {
     ? ('vs prev: ' + ptotal + ' ' + totalVocPrevComp)
     : 'vs prev: ' + ptotal + ' cases';
 
+  // Feature 4: status glow signals
+  var utrRate = realOrders > 0 ? (utr.length / realOrders) * 100 : -1;
+  var pmRate  = realOrders > 0 ? (picker.length / realOrders) * 100 : -1;
+  var qcRate  = realOrders > 0 ? (qc.length / realOrders) * 100 : -1;
+  var utrGlow = utrRate < 0 ? null : utrRate <= VOC_UTR_TARGET ? 'ok' : utrRate <= VOC_UTR_TARGET * 2 ? 'warn' : 'bad';
+  var pmGlow  = pmRate  < 0 ? null : picker.length === 0 ? 'ok' : picker.length <= 5 ? 'warn' : 'bad';
+  var qcGlow  = qcRate  < 0 ? null : qc.length === 0 ? 'ok' : qc.length <= 3 ? 'warn' : 'bad';
+
   var mc = document.getElementById('voc-metric-cards');
   mc.innerHTML = [
-    vocCard('Total Orders', realOrders > 0 ? realOrders.toLocaleString() : '—', realOrdersLabel, '#4361ee'),
+    vocCard('Total Orders', realOrders > 0 ? realOrders.toLocaleString() : '\u2014', realOrdersLabel, '#4361ee'),
     vocCard('Total VOC',
       total + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(total) + ')</small>' : ''),
       totalVocSub,
       '#3d3a6b'),
-    vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length) || 'Store side', '#c0392b'),
+    vocCard('UTR Ops Controllable', utr.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(utr.length) + ')</small>' : ''), vocPct(utr.length, prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length) || 'Store side', '#c0392b', utrGlow),
     vocCard('OTR Ops Controllable', otr.length, vocPct(otr.length, prev.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length) || 'Delivery side', '#e67e22'),
-    vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length) || 'Picker mistakes only', '#8e44ad'),
-    vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length) || 'Quality checks', '#2980b9'),
+    vocCard('Picker Mistakes', picker.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(picker.length) + ')</small>' : ''), vocPct(picker.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length) || 'Picker mistakes only', '#8e44ad', pmGlow),
+    vocCard('QC Issues', qc.length + (realOrders > 0 ? ' <small style="font-size:12px;color:#ff6b35;">(' + pct(qc.length) + ')</small>' : ''), vocPct(qc.length, prev.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length) || 'Quality checks', '#2980b9', qcGlow),
     vocCard('NOT for Our Store', curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_NOT_STORE); }).length, 'Flagged separately', '#ff6b35'),
-    vocCardWarning('RCA Not Filled', rcaNotFilled, rcaNotFilled > 0 ? '⚠️ Missing RCA in current filter' : '✅ All RCA filled', rcaNotFilled > 0 ? '#b5860d' : '#1a7a4a'),
+    vocCardWarning('RCA Not Filled', rcaNotFilled, rcaNotFilled > 0 ? '\u26a0\ufe0f Missing RCA in current filter' : '\u2705 All RCA filled', rcaNotFilled > 0 ? '#b5860d' : '#1a7a4a'),
   ].join('');
 }
+
+// ── FEATURE 2: VOC Summary Copy ────────────────────────────────
+function vocCopySummary() {
+  var btn = document.getElementById('voc-copy-summary-btn');
+  var curr = vocDedup(vocFilterByPeriod(vocRawData));
+  var sf = (document.getElementById('voc-store-filter') || {}).value || 'all';
+  if (sf && sf !== 'all') curr = curr.filter(function(r){ return r.store === sf; });
+  var period = (document.getElementById('voc-period-label') || {}).textContent || 'Period';
+  var total = curr.length;
+  var utr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_UTR); }).length;
+  var otr = curr.filter(function(r){ return rcaIn(r.rcaCategory, VOC_OTR); }).length;
+  var pm  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
+  var qc  = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); }).length;
+  var rca = curr.filter(function(r){ return !r.rcaCategory || !r.rcaCategory.trim(); }).length;
+  // Per-store breakdown
+  var stores = [...new Set(curr.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var storeLines = stores.map(function(s) {
+    var sc = curr.filter(function(r){ return r.store === s; }).length;
+    return '  • ' + s + ': ' + sc + ' VOC';
+  }).join('\n');
+  var NL = '\n';
+  var SEP = '--------------------' + NL;
+  var text = '[VOC Summary] ' + period + NL
+    + (sf !== 'all' ? 'Store: ' + sf + NL : '')
+    + SEP
+    + 'Total VOC: ' + total + NL
+    + 'UTR Ops: ' + utr + NL
+    + 'OTR Ops: ' + otr + NL
+    + 'Picker Mistakes: ' + pm + NL
+    + 'QC Issues: ' + qc + NL
+    + (rca > 0 ? 'RCA Not Filled: ' + rca + NL : 'All RCA Filled' + NL)
+    + (storeLines ? SEP + storeLines + NL : '')
+    + SEP
+    + 'Generated by Dark Store Management System Pro';
+  navigator.clipboard.writeText(text).then(function() {
+    if (btn) { btn.textContent = '✅ Copied!'; setTimeout(function(){ btn.textContent = '📋 Copy Summary'; }, 2500); }
+    showToast('VOC summary copied to clipboard!');
+  }).catch(function() {
+    showToast('Copy failed — please copy manually.');
+  });
+}
+
+// ── FEATURE 3: Top picker alert (injected into vocRenderPickerFiltered) ──
+// Called after vocRenderPickerFiltered builds its sorted list — finds top offender and updates alert badge
 
 function vocRenderUTROTR(curr, prev) {
   var utrPM   = curr.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); }).length;
@@ -8297,13 +9354,77 @@ function vocRenderStoreCards(curr, storeFilter) {
 
   var stores = [...new Set(curr.map(function(r){ return r.store; }))].filter(Boolean).sort();
   var el = document.getElementById('voc-store-cards');
-
   if (!stores.length) { el.innerHTML = ''; return; }
 
+  // ── FEATURE 1: sparkline helper ──
+  var currWkMatch = (vocSelectedWeek || '').match(/W(\d{1,2})$/);
+  var currWkNum = currWkMatch ? parseInt(currWkMatch[1], 10) : null;
+  function getStoreWeekCount(store, offset) {
+    if (vocPeriod === 'week' && currWkNum !== null) {
+      var tw = currWkNum - offset; if (tw < 1) tw += 52;
+      return vocDedup(vocRawData.filter(function(r) {
+        if (r.store !== store) return false;
+        if (r.week) return parseInt(r.week, 10) === tw;
+        var d = r.date instanceof Date ? r.date : new Date(r.date);
+        return !isNaN(d) && vocISOWeek(d).week === tw;
+      })).length;
+    }
+    if (vocPeriod === 'monthly' && vocSelectedMonth) {
+      var mp = vocSelectedMonth.split('-');
+      var y = parseInt(mp[0],10), mo = parseInt(mp[1],10) - 1 - offset;
+      while (mo < 0) { mo += 12; y--; }
+      return vocDedup(vocRawData.filter(function(r) {
+        if (r.store !== store) return false;
+        var d = r.date instanceof Date ? r.date : new Date(r.date);
+        return !isNaN(d) && d.getFullYear()===y && d.getMonth()===mo;
+      })).length;
+    }
+    return 0;
+  }
+  function buildSparkSVG(vals) {
+    var max = Math.max.apply(null, vals) || 1;
+    var W=72, H=28, n=vals.length;
+    var pts = vals.map(function(v,i){ return (i*(W/(n-1))).toFixed(1)+','+(H-(v/max)*(H-6)-3).toFixed(1); });
+    var rising = vals[n-1] > vals[n-2];
+    var falling = vals[n-1] < vals[n-2];
+    var col = rising ? '#c0392b' : falling ? '#06d6a0' : '#4361ee';
+    var fill = '0,'+H+' '+pts.join(' ')+' '+W+','+H;
+    var uid = 'sp'+Math.random().toString(36).slice(2,7);
+    return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="overflow:visible;flex-shrink:0;">'
+      +'<defs><linearGradient id="'+uid+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0%" stop-color="'+col+'" stop-opacity="0.3"/>'
+      +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0.02"/>'
+      +'</linearGradient></defs>'
+      +'<polygon points="'+fill+'" fill="url(#'+uid+')" />'
+      +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+      +'<circle cx="'+pts[n-1].split(',')[0]+'" cy="'+pts[n-1].split(',')[1]+'" r="3" fill="'+col+'"/>'
+      +'</svg>';
+  }
+
   el.innerHTML = stores.map(function(s) {
-    var sRows    = curr.filter(function(r){ return r.store === s; });
-    var prevB    = vocGetPeriodBounds(1);
-    var prevRows = vocDedup(vocFilterRows(vocRawData, prevB)).filter(function(r){ return r.store === s; });
+    var sRows = curr.filter(function(r){ return r.store === s; });
+    // Use same week-column strategy as curr for consistent prev comparison
+    var prevRows;
+    if (vocPeriod === 'week' && vocSelectedWeek) {
+      var _sm = vocSelectedWeek.match(/(\d{4})-W(\d{1,2})$/);
+      var _swy = _sm ? parseInt(_sm[1],10) : new Date().getFullYear();
+      var _swn = _sm ? parseInt(_sm[2],10) : null;
+      var _spwn = _swn !== null ? _swn - 1 : null;
+      var _spwy = _swy;
+      if (_spwn !== null && _spwn < 1) { _spwn = 52; _spwy--; }
+      prevRows = vocDedup(vocRawData.filter(function(r) {
+        if (r.store !== s) return false;
+        if (_spwn === null) return false;
+        if (r.week) return parseInt(r.week,10) === _spwn;
+        var d = r.date instanceof Date ? r.date : new Date(r.date);
+        if (isNaN(d.getTime())) return false;
+        var w = vocISOWeek(d);
+        return w.week === _spwn && w.year === _spwy;
+      }));
+    } else {
+      var prevB = vocGetPeriodBounds(1);
+      prevRows = vocDedup(vocFilterRows(vocRawData, prevB)).filter(function(r){ return r.store === s; });
+    }
     var pm = sRows.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - Picker Mistake'); });
     var qc = sRows.filter(function(r){ return rcaIs(r.rcaCategory, 'Ops Controllable - QC Issue'); });
     var pctChange = (sRows.length > 0 && prevRows.length > 0)
@@ -8313,8 +9434,13 @@ function vocRenderStoreCards(curr, storeFilter) {
       : pctChange < -5
       ? '<span style="background:#D5F5E3;color:#1A5C37;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">▼ ' + Math.abs(pctChange) + '%</span>'
       : '<span style="background:' + (isDark?'rgba(123,120,173,0.2)':'#f0effe') + ';color:' + txtMut + ';font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;">→ Stable</span>';
+    var sparkVals = [getStoreWeekCount(s,3), getStoreWeekCount(s,2), getStoreWeekCount(s,1), sRows.length];
+    var sparkHtml = buildSparkSVG(sparkVals);
     return '<div style="background:' + cardBg + ';border:1px solid ' + brd + ';border-radius:16px;padding:16px 18px;">' +
-      '<div style="font-size:15px;font-weight:800;color:' + txtMain + ';margin-bottom:10px;">' + s + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+        '<div style="font-size:15px;font-weight:800;color:' + txtMain + ';">' + s + '</div>' +
+        '<div title="Last 4 periods: ' + sparkVals.join(' → ') + '">' + sparkHtml + '</div>' +
+      '</div>' +
       '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">VOC Count</span><span style="font-weight:600;color:' + txtMain + ';">' + sRows.length + '</span></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">Trend</span><span>' + trending + '</span></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid ' + brdLight + ';"><span style="color:' + txtMut + ';">Picker Err</span><span style="font-weight:600;color:' + (pm.length > 5 ? '#c0392b' : '#1a7a4a') + ';">' + pm.length + ' ' + (pm.length > 5 ? '🛑' : '✅') + '</span></div>' +
@@ -8322,7 +9448,6 @@ function vocRenderStoreCards(curr, storeFilter) {
       '</div>';
   }).join('');
 }
-
 function vocRenderIssueChart(rows) {
   var isDark=document.getElementById('page-voc').getAttribute('data-theme')==='dark';
   var tickColor = isDark ? '#8b8aad' : '#7b78a8';
@@ -8562,6 +9687,95 @@ function vocRCAToggle(el) {
   if (arrow) arrow.textContent = d.style.display === 'none' ? '▼' : '▲';
 }
 
+// ── DUPLICATE VOC BADGE ─────────────────────────────────────────
+function vocRenderDuplicateBadge(periodRows, sf) {
+  var wrap = document.getElementById('voc-duplicate-badge-wrap');
+  if (!wrap) return;
+  var isDark = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
+
+  // Count orderId+asin occurrences across period rows
+  var keyCount = {};
+  periodRows.forEach(function(r) {
+    var k = (r.orderId||'').trim() + '||' + (r.asin||'').trim();
+    if (k === '||') return;
+    keyCount[k] = (keyCount[k]||0) + 1;
+  });
+
+  // Rows that are duplicates (key appears >1 time)
+  var dupRows = periodRows.filter(function(r) {
+    var k = (r.orderId||'').trim()+'||'+(r.asin||'').trim();
+    return k !== '||' && keyCount[k] > 1;
+  });
+
+  // Apply store filter
+  var filtered = (sf && sf !== 'all') ? dupRows.filter(function(r){ return r.store===sf; }) : dupRows;
+
+  // Unique pairs
+  var seenPairs = {}, uniquePairs = [];
+  filtered.forEach(function(r) {
+    var k = (r.orderId||'').trim()+'||'+(r.asin||'').trim();
+    if (!seenPairs[k]) { seenPairs[k]=true; uniquePairs.push({store:r.store,orderId:r.orderId,asin:r.asin,count:keyCount[k]}); }
+  });
+
+  var extraCount = filtered.length - uniquePairs.length;
+  if (!filtered.length) { wrap.style.display='none'; return; }
+  wrap.style.display = 'block';
+
+  // Per-store tooltip breakdown
+  var byStore = {};
+  uniquePairs.forEach(function(p) { if (!byStore[p.store]) byStore[p.store]=[]; byStore[p.store].push(p); });
+  var tooltipRows = '';
+  Object.keys(byStore).sort().forEach(function(s) {
+    var items = byStore[s];
+    tooltipRows += '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+(isDark?'#8b8aad':'#7b78a8')+';margin-bottom:5px;">🏪 '+s+' — '+items.length+' pair(s)</div>';
+    items.slice(0,12).forEach(function(item) {
+      tooltipRows += '<div style="padding:6px 8px;border-radius:7px;margin-bottom:4px;background:'+(isDark?'#1e1d30':'#f4f3ff')+';border-left:3px solid #f72585;">'
+        +'<div style="font-size:11px;font-weight:700;color:'+(isDark?'#e8e6ff':'#1a1830')+';">🧾 '+item.orderId+'</div>'
+        +'<div style="font-size:10px;color:'+(isDark?'#8b8aad':'#7b78a8')+';">ASIN: '+item.asin+' · ×'+item.count+' complaints</div>'
+        +'</div>';
+    });
+    if (items.length > 12) tooltipRows += '<div style="font-size:10px;color:'+(isDark?'#8b8aad':'#7b78a8')+';padding:4px 8px;">+ '+(items.length-12)+' more…</div>';
+    tooltipRows += '</div>';
+  });
+
+  var accentCol = '#f72585';
+  var badgeBg   = isDark ? '#1a1928' : '#ffffff';
+  var badgeBrd  = isDark ? '#2e2c45' : '#d5d2f0';
+  var ttBg      = isDark ? '#13121f' : '#ffffff';
+  var ttBrd     = isDark ? '#2e2c45' : '#d5d2f0';
+  var mutCol    = isDark ? '#8b8aad' : '#7b78a8';
+
+  wrap.innerHTML =
+    '<div style="position:relative;display:inline-block;">'
+    // Badge card
+    +'<div style="display:inline-flex;align-items:center;gap:14px;padding:13px 20px;border-radius:14px;'
+    +'background:'+badgeBg+';border:1px solid '+badgeBrd+';border-top:3px solid '+accentCol+';'
+    +'background-image:linear-gradient(135deg,rgba(247,37,133,0.08),transparent 80%);'
+    +'cursor:pointer;box-shadow:0 2px 12px rgba(247,37,133,0.10);"'
+    +' onmouseenter="document.getElementById(\'voc-dup-tt\').style.display=\'block\';"'
+    +' onmouseleave="document.getElementById(\'voc-dup-tt\').style.display=\'none\';">'
+    +'<div style="display:flex;flex-direction:column;gap:2px;">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+mutCol+';">Duplicate VOC</div>'
+    +'<div style="display:flex;align-items:baseline;gap:8px;">'
+    +'<span style="font-size:26px;font-weight:800;color:'+accentCol+';line-height:1;">'+extraCount+'</span>'
+    +'<span style="font-size:12px;color:'+mutCol+';">excluded from count</span>'
+    +'</div></div>'
+    +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+    +'<span style="padding:4px 12px;border-radius:20px;background:rgba(247,37,133,0.15);color:'+accentCol+';font-size:11px;font-weight:800;">🔁 '+uniquePairs.length+' pairs</span>'
+    +'<span style="font-size:10px;color:'+mutCol+';">hover to see details</span>'
+    +'</div></div>'
+    // Tooltip
+    +'<div id="voc-dup-tt" style="display:none;position:absolute;left:0;top:calc(100% + 8px);z-index:9999;'
+    +'min-width:300px;max-width:380px;max-height:340px;overflow-y:auto;'
+    +'background:'+ttBg+';border:1px solid '+ttBrd+';border-radius:14px;'
+    +'padding:16px;box-shadow:0 8px 32px rgba(0,0,0,0.22);"'
+    +' onmouseenter="this.style.display=\'block\';" onmouseleave="this.style.display=\'none\';">'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+accentCol+';margin-bottom:12px;">🔁 Duplicate VOC Details</div>'
+    + tooltipRows
+    +'</div></div>';
+}
+// ── END DUPLICATE VOC BADGE ─────────────────────────────────────
+
 function vocRenderRCA() {
   var isDark  = document.getElementById('page-voc').getAttribute('data-theme') === 'dark';
   var rowBg   = isDark ? '#1a1928' : '#f8f7ff';
@@ -8613,7 +9827,57 @@ function vocRenderRCA() {
     var sPend    = sPeriod.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
     var drawerId = 'rca-drawer-' + si;
 
-    // Build pending rows drawer HTML
+    // ── Period-pending rows for hover tooltip ──
+    var sPendRows = sPeriod.filter(function(r){ return !r.rca || r.rca.trim() === ''; });
+    var sPendSorted = sPendRows.slice().sort(function(a,b){
+      var da = a.date instanceof Date ? a.date : new Date(a.date);
+      var db = b.date instanceof Date ? b.date : new Date(b.date);
+      return db - da;
+    });
+
+    // Build hover tooltip HTML for this-period pending
+    var ttId = 'rca-tt-' + si;
+    var ttHtml = '';
+    if (sPendSorted.length > 0) {
+      var ttRows = '';
+      sPendSorted.slice(0, 20).forEach(function(r, ri) {
+        var dateStr = r.date instanceof Date
+          ? r.date.toLocaleDateString('en-GB', {day:'2-digit', month:'short'})
+          : String(r.date || '—');
+        var orderId = r.orderId || '—';
+        var asin    = r.asin    || '—';
+        var issue   = r.issue   || r.rcaCategory || '—';
+        var rBg     = ri % 2 === 0 ? (isDark ? '#1e1d30' : '#eef0fc') : (isDark ? '#1a1928' : '#f8f9ff');
+        ttRows +=
+          '<div style="display:grid;grid-template-columns:18px 1fr;gap:4px 8px;padding:7px 10px;background:' + rBg + ';border-radius:7px;margin-bottom:4px;border-left:3px solid #c0392b;">' +
+            '<div style="font-size:10px;color:' + txtMut + ';font-weight:700;padding-top:1px;">' + (ri+1) + '</div>' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:800;color:' + txtMain + ';font-family:\'Courier New\',monospace;letter-spacing:0.3px;">' + orderId + '</div>' +
+              '<div style="font-size:10px;color:' + txtMut + ';margin-top:2px;">ASIN: <span style="font-family:\'Courier New\',monospace;color:' + (isDark?'#a5b4fc':'#3730a3') + ';">' + asin + '</span></div>' +
+              '<div style="font-size:10px;color:#c0392b;margin-top:1px;font-weight:600;">' + issue + '</div>' +
+            '</div>' +
+            '<div></div>' +
+            '<div style="font-size:9px;color:' + txtMut + ';text-align:right;">' + dateStr + '</div>' +
+          '</div>';
+      });
+      if (sPendSorted.length > 20) {
+        ttRows += '<div style="font-size:10px;color:' + txtMut + ';text-align:center;padding:6px;">+ ' + (sPendSorted.length - 20) + ' more…</div>';
+      }
+      ttHtml =
+        '<div id="' + ttId + '" style="display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:9999;' +
+        'min-width:320px;max-width:400px;max-height:320px;overflow-y:auto;' +
+        'background:' + (isDark?'#13121f':'#ffffff') + ';border:1px solid ' + (isDark?'#2e2c45':'#b8bde8') + ';' +
+        'border-radius:14px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.25);"' +
+        ' onmouseenter="this.style.display=\'block\';" onmouseleave="this.style.display=\'none\';">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#c0392b;">⏳ ' + s + ' — This Period Pending</div>' +
+          '<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(192,57,43,0.12);color:#c0392b;">' + sPendSorted.length + ' orders</div>' +
+        '</div>' +
+        ttRows +
+        '</div>';
+    }
+
+    // Build pending rows drawer HTML (click to expand — all time)
     var drawerHtml = '';
     if (pend > 0) {
       // Sort by date descending (most recent first)
@@ -8666,8 +9930,13 @@ function vocRenderRCA() {
             '<div style="font-size:14px;font-weight:700;color:' + txtMain + ';">' + s + '</div>' +
             '<div style="font-size:11px;color:' + txtMut + ';margin-top:2px;">' +
               comp + ' done · ' + pend + ' pending (all time) &nbsp;|&nbsp; ' +
-              '<span style="color:' + (sPend>0?'#c0392b':'#06d6a0') + ';font-weight:600;">' +
-              sPeriod.length + ' VOC · ' + sPend + ' pending this period</span>' +
+              '<span style="position:relative;display:inline-block;">' +
+                '<span style="color:' + (sPend>0?'#c0392b':'#06d6a0') + ';font-weight:700;' + (sPend>0?'cursor:pointer;text-decoration:underline dotted;':'') + '"' +
+                (sPend>0 ? ' onmouseenter="document.getElementById(\'' + ttId + '\').style.display=\'block\';" onmouseleave="setTimeout(function(){var t=document.getElementById(\'' + ttId + '\');if(t&&!t.matches(\':hover\'))t.style.display=\'none\';},120);"' : '') + '>' +
+                sPeriod.length + ' VOC · ' + sPend + ' pending this period' + (sPend>0?' 👁':'') +
+                '</span>' +
+                ttHtml +
+              '</span>' +
             '</div>' +
           '</div>' +
           '<div style="text-align:right;">' +
@@ -9124,7 +10393,7 @@ document.addEventListener('click', function(e) {
     'Connect on LinkedIn</a></footer>';
   var ids=['page-consolidation','page-audit-loc','page-audit-asin','page-slow-moving','page-ysm',
            'page-report','page-feedback','page-contact','page-lateslam','page-catalog-issue',
-           'page-scanning-issue','page-manpower','page-locid','page-store-metrics','page-voc'];
+           'page-scanning-issue','page-locid','page-store-metrics','page-voc','page-ls-deepdive'];
   function inject(){
     ids.forEach(function(id){
       var pg=document.getElementById(id);
@@ -9584,6 +10853,7 @@ function handleScanningASIN(e) {
   }
   return { status: 'ok', asins: asins, count: asins.length };
 }
+
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
@@ -10833,9 +12103,9 @@ var DSTPRO = (function() {
     var grid=document.querySelector('.task-grid');
     if(!grid)return;
     var cards=[
-      {id:'fast-moving',col:'#e8500a',icon:'🚀',num:'NEW',title:'Fast Moving ASIN',desc:'Rank top ASINs by pick frequency from H &amp; I locations.'},
-      {id:'inv-audit',col:'#7c3aed',icon:'🔍',num:'NEW',title:'Inventory Audit',desc:'Match audit list vs real-time inventory — highlight missing &amp; mismatches.'},
-      {id:'top-performer',col:'#b5860d',icon:'🏆',num:'NEW',title:'Top Performer',desc:'Auto-rank Top 3 Pickers &amp; Top 3 Stowers from outbound/stow file.'}
+      {id:'fast-moving',col:'#e8500a',icon:'🚀',anim:'rocketLaunch 2s ease-in-out infinite',num:'NEW',title:'Fast Moving ASIN',desc:'Rank top ASINs by pick frequency from H &amp; I locations.'},
+      {id:'inv-audit',col:'#7c3aed',icon:'🔍',anim:'auditScan 2.5s ease-in-out infinite',num:'NEW',title:'Inventory Audit',desc:'Match audit list vs real-time inventory — highlight missing &amp; mismatches.'},
+      {id:'top-performer',col:'#b5860d',icon:'🏆',anim:'trophyShine 2.2s ease-in-out infinite',num:'NEW',title:'Top Performer',desc:'Auto-rank Top 3 Pickers &amp; Top 3 Stowers from outbound/stow file.'}
     ];
     cards.forEach(function(card){
       if(document.getElementById('dstpro-card-'+card.id))return;
@@ -10844,7 +12114,7 @@ var DSTPRO = (function() {
       div.style.setProperty('--card-color',card.col);
       div.setAttribute('onclick',"openTask('"+card.id+"')");
       div.innerHTML='<div class="card-num" style="color:'+card.col+';">'+card.num+'</div>'+
-        '<span class="card-icon">'+card.icon+'</span>'+
+        '<span class="card-icon" style="display:inline-block;animation:'+card.anim+';">'+card.icon+'</span>'+
         '<h3>'+card.title+'</h3><p>'+card.desc+'</p><span class="card-arrow">→</span>';
       var fb=grid.querySelector('[onclick*="feedback"]');
       if(fb)grid.insertBefore(div,fb); else grid.appendChild(div);
