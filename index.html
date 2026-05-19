@@ -8820,20 +8820,19 @@ function vocFilterRows(rows, bounds) {
 }
 
 function vocDedup(rows) {
-  // Only deduplicate truly identical rows:
-  // same orderId + same ASIN + same store + same date + same RCA category
-  // This preserves multiple VOC entries for same order (different ASINs)
-  // and same ASIN ordered multiple times on different dates
+  // Deduplicate: same orderId + same ASIN = ONE complaint regardless of date/RCA/store
+  // This prevents same complaint being counted multiple times if entered more than once
   var seen = {};
   return rows.filter(function(r) {
-    var dateStr = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date || '');
     var k = [
-      r.orderId     || '',
-      r.asin        || '',
-      r.store       || '',
-      dateStr,
-      r.rcaCategory || ''
+      (r.orderId || '').trim(),
+      (r.asin    || '').trim()
     ].join('||');
+    // If both orderId and asin are empty, fall back to full dedup to avoid losing valid rows
+    if (!r.orderId && !r.asin) {
+      var dateStr = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date || '');
+      k = [(r.store||''), dateStr, (r.issue||''), (r.picker||'')].join('||');
+    }
     if (seen[k]) return false;
     seen[k] = true;
     return true;
