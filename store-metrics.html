@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store Metrics — HP World DMS PRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:       #07060f;
+  --surface:  #0f0e1c;
+  --card:     #13121f;
+  --border:   rgba(255,255,255,0.08);
+  --text:     #e8e6ff;
+  --muted:    #6b69a0;
+  --accent:   #4361ee;
+  --green:    #06d6a0;
+  --yellow:   #ffd60a;
+  --red:      #c0392b;
+  --orange:   #ff6b35;
+  --purple:   #7c3aed;
+  --cyan:     #0891b2;
+
+  --QAA1: #4361ee;
+  --QAA6: #06d6a0;
+  --QAA7: #ffd60a;
+  --QDC6: #ff6b35;
+  --QDD3: #f72585;
+  --QDG5: #a855f7;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* animated bg */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(67,97,238,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(6,214,160,0.04) 0%, transparent 70%);
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky; top:0; z-index:100;
+  background: rgba(7,6,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.header-left { display:flex; align-items:center; gap:14px; }
+.back-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text); font-family:'Syne',sans-serif; font-size:12px;
+  padding: 6px 14px; cursor:pointer; transition:all 0.15s;
+}
+.back-btn:hover { background:rgba(255,255,255,0.12); }
+.header-title {
+  font-size:18px; font-weight:800;
+  background: linear-gradient(135deg, #7b78a8, #4361ee, #06d6a0);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.header-sub { font-size:11px; color:var(--muted); margin-top:1px; font-family:'DM Mono',monospace; }
+
+.load-btn {
+  display: inline-flex; align-items:center; gap:8px;
+  padding: 8px 20px; border-radius:10px; border:none;
+  background: linear-gradient(135deg, #4361ee, #7c3aed);
+  color:#fff; font-weight:800; font-size:13px;
+  cursor:pointer; font-family:'Syne',sans-serif;
+  box-shadow: 0 4px 16px rgba(67,97,238,0.3);
+  transition: all 0.2s;
+}
+.load-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(67,97,238,0.45); }
+.load-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+/* ── MAIN ── */
+.main { position:relative; z-index:1; max-width:1320px; margin:0 auto; padding:20px 16px; }
+
+/* ── NOTE ── */
+.note {
+  background: linear-gradient(135deg,rgba(67,97,238,0.1),rgba(6,214,160,0.05));
+  border: 1px solid rgba(67,97,238,0.2);
+  border-radius:12px; padding:11px 16px; margin-bottom:18px;
+  font-size:12px; color:#b8b6d9; display:flex; align-items:center; gap:10px;
+  animation: fadeIn 0.5s ease;
+}
+
+/* ── FILTERS ── */
+.filters {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius:14px; padding:14px 18px; margin-bottom:18px;
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  animation: slideUp 0.4s ease;
+}
+.filter-label { font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+
+.period-btn {
+  padding:5px 14px; border-radius:20px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:transparent; color:var(--muted);
+  font-size:11px; font-weight:700; cursor:pointer;
+  font-family:'Syne',sans-serif; transition:all 0.15s;
+}
+.period-btn:hover { border-color:var(--accent); color:var(--accent); }
+.period-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.filter-select {
+  background: rgba(255,255,255,0.05);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--text); padding:6px 12px;
+  font-family:'Syne',sans-serif; font-size:12px; outline:none;
+  cursor:pointer;
+}
+.filter-select option { background:#1a1928; }
+
+.status-txt { font-size:11px; color:var(--muted); margin-left:auto; font-family:'DM Mono',monospace; }
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap:10px; margin-bottom:18px;
+  animation: slideUp 0.5s ease 0.1s both;
+}
+.kpi-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:16px 14px;
+  border-top:3px solid var(--accent-col, var(--accent));
+  position:relative; overflow:hidden; transition:transform 0.2s;
+}
+.kpi-card:hover { transform:translateY(-2px); }
+.kpi-card::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg, var(--accent-col, var(--accent))08, transparent 60%);
+  pointer-events:none;
+}
+.kpi-icon { font-size:16px; margin-bottom:6px; }
+.kpi-label { font-size:9px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.kpi-val { font-size:24px; font-weight:800; color:var(--accent-col, var(--accent)); font-family:'DM Mono',monospace; line-height:1; }
+.kpi-sub { font-size:10px; color:var(--muted); margin-top:4px; font-family:'DM Mono',monospace; }
+
+/* ── CHARTS GRID ── */
+.charts-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;
+  animation: slideUp 0.5s ease 0.2s both;
+}
+.chart-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:16px 18px;
+}
+.chart-title {
+  font-size:10px; font-weight:800; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--muted); margin-bottom:14px;
+  display:flex; align-items:center; gap:6px;
+}
+canvas { max-height:160px; }
+
+/* ── LEADERBOARD ── */
+.leaderboard {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:18px; margin-bottom:18px;
+  animation: slideUp 0.5s ease 0.3s both;
+}
+.lb-row {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:10px;
+  margin-bottom:8px;
+  border-left:4px solid var(--store-col, var(--accent));
+  background:rgba(255,255,255,0.03);
+  transition:all 0.2s;
+}
+.lb-row:hover { background:rgba(255,255,255,0.06); transform:translateX(2px); }
+.lb-medal { font-size:18px; width:28px; text-align:center; }
+.lb-store { font-weight:800; font-size:15px; min-width:60px; }
+.lb-chips { display:flex; flex-wrap:wrap; gap:6px; flex:1; }
+.lb-chip {
+  display:flex; flex-direction:column; align-items:center;
+  padding:4px 10px; background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.07); border-radius:8px;
+}
+.lb-chip-lbl { font-size:8px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.lb-chip-val { font-size:13px; font-weight:800; }
+
+/* ── TABLE ── */
+.table-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden; margin-bottom:20px;
+  animation: slideUp 0.5s ease 0.4s both;
+}
+.table-header {
+  padding:12px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.table-title { font-size:10px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+.table-scroll { overflow-x:auto; max-height:380px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:11px; white-space:nowrap; font-family:'DM Mono',monospace; }
+thead tr { background:#0d0c1a; position:sticky; top:0; z-index:2; }
+th { padding:9px 12px; text-align:left; color:var(--muted); font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid var(--border); }
+td { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#b8b6d9; }
+tbody tr:hover { background:rgba(255,255,255,0.03); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align:center; padding:60px 20px; color:var(--muted);
+}
+.empty-icon { font-size:48px; margin-bottom:16px; opacity:0.5; }
+.empty-title { font-size:16px; font-weight:700; margin-bottom:8px; color:var(--text); opacity:0.6; }
+.empty-sub { font-size:13px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.loading { animation:pulse 1.2s ease-in-out infinite; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px) {
+  .charts-grid { grid-template-columns:1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <button class="back-btn" onclick="history.back()">← Back</button>
+    <div>
+      <div class="header-title">🏪 Store Metrics</div>
+      <div class="header-sub" id="sm-updated">HP World DMS PRO</div>
+    </div>
+  </div>
+  <button class="load-btn" id="sm-load-btn" onclick="smLoad()">⟳ Load Live Data</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- Note -->
+  <div class="note">
+    💡 Fetches live data from <strong style="color:#06d6a0;">"Store Metric"</strong> tab in your Google Sheet.
+    Use the filters to drill by Day / Week / Month / Year. All KPIs and charts update instantly.
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <span class="filter-label">Filter</span>
+    <div style="display:flex;gap:5px;">
+      <button class="period-btn active" onclick="smSetPeriod('day',this)">Day</button>
+      <button class="period-btn" onclick="smSetPeriod('week',this)">Week</button>
+      <button class="period-btn" onclick="smSetPeriod('month',this)">Month</button>
+      <button class="period-btn" onclick="smSetPeriod('year',this)">Year</button>
+      <button class="period-btn" onclick="smSetPeriod('all',this)">All</button>
+    </div>
+    <select id="sm-period-val" class="filter-select" onchange="smRender()">
+      <option value="all">— All —</option>
+    </select>
+    <select id="sm-store-sel" class="filter-select" onchange="smRender()">
+      <option value="all">All Stores</option>
+    </select>
+    <div class="status-txt" id="sm-status">No data loaded</div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="sm-kpi-grid">
+    <div class="kpi-card" style="grid-column:1/-1;">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">No Data Yet</div>
+        <div class="empty-sub">Click "Load Live Data" to fetch from your Google Sheet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">📦 Orders Trend</div>
+      <canvas id="sm-c-orders"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">⚡ IB vs OB TPH by Store</div>
+      <canvas id="sm-c-tph"></canvas>
+    </div>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">✅ Avg SLA % by Store</div>
+      <canvas id="sm-c-sla"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🗑️ Removals Breakdown</div>
+      <canvas id="sm-c-removal"></canvas>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard">
+    <div class="chart-title">🏆 Store Leaderboard — Ranked by SLA %</div>
+    <div id="sm-leaderboard">
+      <div class="empty-state" style="padding:30px;">
+        <div class="empty-sub">Load data to see store rankings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">📋 Raw Data</div>
+      <div class="status-txt" id="sm-row-count"></div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead id="sm-thead"><tr><th>Load data to see table</th></tr></thead>
+        <tbody id="sm-tbody"><tr><td style="color:var(--muted);padding:20px;">—</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+
+var STORE_COLORS = {
+  QAA1:'#4361ee', QAA6:'#06d6a0', QAA7:'#ffd60a',
+  QDC6:'#ff6b35', QDD3:'#f72585', QDG5:'#a855f7'
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+var smData   = [];
+var smPeriod = 'day';
+var smCharts = {};
+
+// ═══════════════════════════════════════
+// FETCH
+// ═══════════════════════════════════════
+function smLoad() {
+  var btn = document.getElementById('sm-load-btn');
+  btn.textContent = '⏳ Loading…'; btn.disabled = true;
+  document.getElementById('sm-status').textContent = 'Connecting…';
+
+  var cbName = 'smCb_' + Date.now();
+  var timer = setTimeout(function() {
+    cleanup(); btn.textContent = '⟳ Load Live Data'; btn.disabled = false;
+    document.getElementById('sm-status').textContent = '❌ Timeout — check connection';
+  }, 25000);
+
+  function cleanup() {
+    clearTimeout(timer);
+    delete window[cbName];
+    var s = document.getElementById('jsonp-' + cbName);
+    if (s) s.parentNode.removeChild(s);
+  }
+
+  window[cbName] = function(data) {
+    cleanup();
+    btn.textContent = '⟳ Load Live Data'; btn.disabled = false;
+    if (!data || !Array.isArray(data.rows) || !data.rows.length) {
+      document.getElementById('sm-status').textContent = '❌ No data — check "Store Metric" tab name';
+      return;
+    }
+    smData = data.rows;
+    document.getElementById('sm-updated').textContent =
+      '✅ ' + smData.length + ' rows · ' + new Date().toLocaleString('en-GB');
+    smBuildFilters();
+    smRender();
+  };
+
+  var script = document.createElement('script');
+  script.id = 'jsonp-' + cbName;
+  script.src = APPS_SCRIPT_URL + '?action=storeMetric&callback=' + cbName;
+  script.onerror = function() {
+    cleanup(); btn.textContent = '⟳ Load Live Data'; btn.disabled = false;
+    document.getElementById('sm-status').textContent = '❌ Script load error';
+  };
+  document.head.appendChild(script);
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function smNum(v)  { var n = parseFloat(String(v||'').replace('%','')); return isNaN(n) ? 0 : n; }
+function smAvg(a)  { return a.length ? a.reduce(function(s,v){return s+v;},0)/a.length : 0; }
+function smSum(a)  { return a.reduce(function(s,v){return s+v;},0); }
+function smFmt(n)  { return Number(n).toLocaleString(); }
+
+function smGetDate(r) {
+  var v = r['DATE'] || r['Date'] || r['date'] || '';
+  return String(v).split(' ')[0];
+}
+function smGetStore(r) {
+  return String(r['STORE'] || r['Store'] || r['store'] || '');
+}
+function smGetWeek(r) {
+  return String(r['Week'] || r['WEEK'] || r['week'] || r['AB'] || '');
+}
+function smGetMonth(r) {
+  return String(r['Month'] || r['MONTH'] || r['month'] || r['W'] || '');
+}
+
+function smGetNum(r, keys) {
+  for (var i=0; i<keys.length; i++) {
+    var v = r[keys[i]];
+    if (v !== undefined && v !== '') return smNum(v);
+  }
+  return 0;
+}
+
+// ═══════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════
+function smBuildFilters() {
+  // Stores
+  var stores = smData.map(smGetStore).filter(Boolean);
+  stores = [...new Set(stores)].sort();
+  var ss = document.getElementById('sm-store-sel');
+  ss.innerHTML = '<option value="all">All Stores</option>';
+  stores.forEach(function(s) { ss.innerHTML += '<option value="'+s+'">'+s+'</option>'; });
+  // Period dropdown
+  smBuildPeriodDrop();
+}
+
+function smBuildPeriodDrop() {
+  var pv = document.getElementById('sm-period-val');
+  var opts = ['<option value="all">— All —</option>'];
+
+  if (smPeriod === 'day') {
+    var days = [...new Set(smData.map(smGetDate).filter(Boolean))].sort().reverse();
+    days.forEach(function(d){ opts.push('<option value="'+d+'">'+d+'</option>'); });
+  } else if (smPeriod === 'week') {
+    var weeks = [...new Set(smData.map(smGetWeek).filter(Boolean))].sort().reverse();
+    weeks.forEach(function(w){ opts.push('<option value="'+w+'">'+w+'</option>'); });
+  } else if (smPeriod === 'month') {
+    var months = [...new Set(smData.map(smGetMonth).filter(Boolean))].sort().reverse();
+    months.forEach(function(m){ opts.push('<option value="'+m+'">'+m+'</option>'); });
+  } else if (smPeriod === 'year') {
+    var years = [...new Set(smData.map(smGetDate).map(function(d){ return d.slice(0,4); }).filter(Boolean))].sort().reverse();
+    years.forEach(function(y){ opts.push('<option value="'+y+'">'+y+'</option>'); });
+  }
+  pv.innerHTML = opts.join('');
+}
+
+function smSetPeriod(p, btn) {
+  smPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  smBuildPeriodDrop();
+  smRender();
+}
+
+function smFilterData() {
+  var sf   = document.getElementById('sm-store-sel').value;
+  var pval = document.getElementById('sm-period-val').value;
+  return smData.filter(function(r) {
+    var storeOk = sf === 'all' || smGetStore(r) === sf;
+    var periodOk = true;
+    if (pval !== 'all') {
+      if (smPeriod === 'day')   periodOk = smGetDate(r)  === pval;
+      if (smPeriod === 'week')  periodOk = smGetWeek(r)  === pval;
+      if (smPeriod === 'month') periodOk = smGetMonth(r) === pval;
+      if (smPeriod === 'year')  periodOk = smGetDate(r).startsWith(pval);
+    }
+    return storeOk && periodOk;
+  });
+}
+
+// ═══════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════
+function smRender() {
+  if (!smData.length) return;
+  var rows = smFilterData();
+  document.getElementById('sm-status').textContent = rows.length + ' rows';
+  smRenderKPI(rows);
+  smRenderCharts(rows);
+  smRenderLeaderboard(rows);
+  smRenderTable(rows);
+}
+
+// ═══════════════════════════════════════
+// KPI CARDS
+// ═══════════════════════════════════════
+function smRenderKPI(rows) {
+  if (!rows.length) {
+    document.getElementById('sm-kpi-grid').innerHTML =
+      '<div class="kpi-card" style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);">No data for selected filter</div>';
+    return;
+  }
+
+  var orders   = smSum(rows.map(function(r){ return smGetNum(r,['ORDERS','Orders','orders','I']); }));
+  var inbound  = smSum(rows.map(function(r){ return smGetNum(r,['TOTAL INBOUND','Total Inbound','total inbound','C']); }));
+  var obUnits  = smSum(rows.map(function(r){ return smGetNum(r,['OUTBOUND UNITS','Outbound Units','outbound units','J']); }));
+  var lateSlam = smSum(rows.map(function(r){ return smGetNum(r,['LATE SLAM','Late Slam','late slam','N']); }));
+  var avgUpo   = smAvg(rows.map(function(r){ return smGetNum(r,['AVG UPO','Avg UPO','avg upo','T']); }));
+  var avgSla   = smAvg(rows.map(function(r){ return smGetNum(r,['AVG SLA','Avg SLA','avg sla','S']); }));
+  var ibTph    = smAvg(rows.map(function(r){ return smGetNum(r,['IB TPH','ib tph','O']); }));
+  var obTph    = smAvg(rows.map(function(r){ return smGetNum(r,['OB TPH','ob tph','P']); }));
+  var shrink   = smSum(rows.map(function(r){ return smGetNum(r,['SHRINK QTY','Shrink Qty','shrink qty','Y']); }));
+  var lsRate   = orders > 0 ? (lateSlam/orders*100).toFixed(1)+'%' : '—';
+  var slaCol   = avgSla >= 99 ? '#06d6a0' : avgSla >= 95 ? '#ffd60a' : '#c0392b';
+  var lsCol    = lateSlam === 0 ? '#06d6a0' : lateSlam <= 5 ? '#ffd60a' : '#c0392b';
+
+  var cards = [
+    { icon:'📦', label:'Total Orders',  val:smFmt(orders),           sub:rows.length+' records',       col:'#4361ee' },
+    { icon:'📥', label:'Total Inbound', val:smFmt(inbound),          sub:'IB units',                   col:'#06d6a0' },
+    { icon:'📤', label:'OB Units',      val:smFmt(obUnits),          sub:'outbound picked',            col:'#ffd60a' },
+    { icon:'🚨', label:'Late Slams',    val:smFmt(lateSlam),         sub:'LS Rate: '+lsRate,           col:lsCol     },
+    { icon:'📊', label:'Avg UPO',       val:avgUpo.toFixed(2),       sub:'units per order',            col:'#a855f7' },
+    { icon:'✅', label:'Avg SLA %',     val:avgSla.toFixed(1)+'%',   sub:avgSla>=99?'✅ On Target':'⚠️ Below Target', col:slaCol },
+    { icon:'⚡', label:'IB TPH',        val:ibTph.toFixed(1),        sub:'inbound/hr avg',             col:'#0891b2' },
+    { icon:'🚀', label:'OB TPH',        val:obTph.toFixed(1),        sub:'outbound/hr avg',            col:'#ff6b35' },
+    { icon:'📉', label:'Shrink Qty',    val:smFmt(shrink),           sub:'total shrinkage',            col:shrink>0?'#f72585':'#06d6a0' },
+  ];
+
+  document.getElementById('sm-kpi-grid').innerHTML = cards.map(function(c) {
+    return '<div class="kpi-card" style="--accent-col:'+c.col+';">' +
+      '<div class="kpi-icon">'+c.icon+'</div>' +
+      '<div class="kpi-label">'+c.label+'</div>' +
+      '<div class="kpi-val">'+c.val+'</div>' +
+      '<div class="kpi-sub">'+c.sub+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════
+var CHART_OPTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ display:true, position:'top', labels:{ color:'#6b69a0', font:{size:9}, boxWidth:10, padding:8 } } },
+  scales:{
+    x:{ ticks:{color:'#6b69a0',font:{size:9},maxRotation:40}, grid:{color:'rgba(255,255,255,0.04)'} },
+    y:{ ticks:{color:'#6b69a0',font:{size:9}}, grid:{color:'rgba(255,255,255,0.04)'}, beginAtZero:true }
+  }
+};
+
+function smRenderCharts(rows) {
+  var stores = [...new Set(rows.map(smGetStore))].filter(Boolean).sort();
+
+  // 1. Orders trend by date
+  var dateMap = {};
+  rows.forEach(function(r) {
+    var d = smGetDate(r); var s = smGetStore(r);
+    if (!d) return;
+    if (!dateMap[d]) dateMap[d] = {};
+    dateMap[d][s] = (dateMap[d][s]||0) + smGetNum(r,['ORDERS','Orders','orders','I']);
+  });
+  var labels = Object.keys(dateMap).sort().slice(-20);
+
+  if (smCharts.orders) smCharts.orders.destroy();
+  smCharts.orders = new Chart(document.getElementById('sm-c-orders'), {
+    type:'line',
+    data:{ labels:labels, datasets: stores.map(function(s){ return {
+      label:s,
+      data: labels.map(function(d){ return dateMap[d][s]||0; }),
+      borderColor: STORE_COLORS[s]||'#8b8aad',
+      backgroundColor: 'transparent',
+      tension:0.4, pointRadius:3, borderWidth:2
+    };}) },
+    options: Object.assign({}, CHART_OPTS)
+  });
+
+  // 2. IB vs OB TPH
+  var ibByStore = stores.map(function(s){
+    return smAvg(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['IB TPH','ib tph','O']);}));
+  });
+  var obByStore = stores.map(function(s){
+    return smAvg(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['OB TPH','ob tph','P']);}));
+  });
+
+  if (smCharts.tph) smCharts.tph.destroy();
+  smCharts.tph = new Chart(document.getElementById('sm-c-tph'), {
+    type:'bar',
+    data:{ labels:stores, datasets:[
+      { label:'IB TPH', data:ibByStore, backgroundColor:'rgba(67,97,238,0.75)', borderRadius:4 },
+      { label:'OB TPH', data:obByStore, backgroundColor:'rgba(6,214,160,0.75)',  borderRadius:4 }
+    ]},
+    options: Object.assign({}, CHART_OPTS, { plugins: Object.assign({}, CHART_OPTS.plugins) })
+  });
+
+  // 3. SLA %
+  var slaByStore = stores.map(function(s){
+    return smAvg(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['AVG SLA','Avg SLA','avg sla','S']);}));
+  });
+
+  if (smCharts.sla) smCharts.sla.destroy();
+  smCharts.sla = new Chart(document.getElementById('sm-c-sla'), {
+    type:'bar',
+    data:{ labels:stores, datasets:[{ label:'SLA %',
+      data:slaByStore,
+      backgroundColor: slaByStore.map(function(v){ return v>=99?'rgba(6,214,160,0.75)':v>=95?'rgba(255,214,10,0.75)':'rgba(192,57,43,0.75)'; }),
+      borderRadius:6
+    }]},
+    options: Object.assign({}, CHART_OPTS, {
+      plugins:{ legend:{display:false} },
+      scales:{ x:CHART_OPTS.scales.x, y:{ min:85, max:101, ticks:{color:'#6b69a0',font:{size:9},callback:function(v){return v+'%';}}, grid:{color:'rgba(255,255,255,0.04)'} } }
+    })
+  });
+
+  // 4. Removals stacked
+  var qRem = stores.map(function(s){ return smSum(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['QUALITY REMOVAL','Quality Removal','quality removal','K']);})); });
+  var dRem = stores.map(function(s){ return smSum(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['DAMAGED REMOVAL','Damaged Removal','damaged removal','L']);})); });
+  var eRem = stores.map(function(s){ return smSum(rows.filter(function(r){return smGetStore(r)===s;}).map(function(r){return smGetNum(r,['EXPIRED REMOVAL','Expired Removal','expired removal','M']);})); });
+
+  if (smCharts.removal) smCharts.removal.destroy();
+  smCharts.removal = new Chart(document.getElementById('sm-c-removal'), {
+    type:'bar',
+    data:{ labels:stores, datasets:[
+      { label:'Quality', data:qRem, backgroundColor:'rgba(67,97,238,0.75)', borderRadius:3, stack:'s' },
+      { label:'Damaged', data:dRem, backgroundColor:'rgba(192,57,43,0.75)', borderRadius:3, stack:'s' },
+      { label:'Expired', data:eRem, backgroundColor:'rgba(255,214,10,0.75)', borderRadius:3, stack:'s' }
+    ]},
+    options: Object.assign({}, CHART_OPTS, {
+      scales:{ x:Object.assign({stacked:true},CHART_OPTS.scales.x), y:Object.assign({stacked:true},CHART_OPTS.scales.y) }
+    })
+  });
+}
+
+// ═══════════════════════════════════════
+// LEADERBOARD
+// ═══════════════════════════════════════
+function smRenderLeaderboard(rows) {
+  var stores = [...new Set(rows.map(smGetStore))].filter(Boolean).sort();
+  if (!stores.length) { document.getElementById('sm-leaderboard').innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">No data</div>'; return; }
+
+  var data = stores.map(function(s) {
+    var sr = rows.filter(function(r){ return smGetStore(r)===s; });
+    return {
+      store:  s,
+      orders: smSum(sr.map(function(r){ return smGetNum(r,['ORDERS','Orders','orders','I']); })),
+      sla:    smAvg(sr.map(function(r){ return smGetNum(r,['AVG SLA','Avg SLA','avg sla','S']); })),
+      ls:     smSum(sr.map(function(r){ return smGetNum(r,['LATE SLAM','Late Slam','late slam','N']); })),
+      upo:    smAvg(sr.map(function(r){ return smGetNum(r,['AVG UPO','Avg UPO','avg upo','T']); })),
+      ibTph:  smAvg(sr.map(function(r){ return smGetNum(r,['IB TPH','ib tph','O']); })),
+      obTph:  smAvg(sr.map(function(r){ return smGetNum(r,['OB TPH','ob tph','P']); })),
+      points: smSum(sr.map(function(r){ return smGetNum(r,['Points','POINTS','X']); }))
+    };
+  }).sort(function(a,b){ return b.sla - a.sla; });
+
+  var medals = ['🥇','🥈','🥉'];
+
+  document.getElementById('sm-leaderboard').innerHTML = data.map(function(d,i){
+    var col   = STORE_COLORS[d.store] || '#8b8aad';
+    var slaC  = d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#c0392b';
+    var lsC   = d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#c0392b';
+    return '<div class="lb-row" style="--store-col:'+col+';">' +
+      '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>' +
+      '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>' +
+      '<div class="lb-chips">' +
+        chip('Orders', smFmt(d.orders), '#4361ee') +
+        chip('SLA', d.sla.toFixed(1)+'%', slaC) +
+        chip('IB TPH', d.ibTph.toFixed(0), '#0891b2') +
+        chip('OB TPH', d.obTph.toFixed(0), '#ff6b35') +
+        chip('UPO', d.upo.toFixed(2), '#a855f7') +
+        chip('LS', d.ls, lsC) +
+        chip('Points', smFmt(d.points), '#ffd60a') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function chip(label, val, col) {
+  return '<div class="lb-chip">' +
+    '<div class="lb-chip-lbl">'+label+'</div>' +
+    '<div class="lb-chip-val" style="color:'+col+';">'+val+'</div>' +
+  '</div>';
+}
+
+// ═══════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════
+function smRenderTable(rows) {
+  if (!rows.length) {
+    document.getElementById('sm-tbody').innerHTML = '<tr><td style="padding:20px;color:var(--muted);">No rows match filter</td></tr>';
+    return;
+  }
+  var keys = Object.keys(rows[0]);
+  document.getElementById('sm-thead').innerHTML =
+    '<tr>' + keys.map(function(k){ return '<th>'+k+'</th>'; }).join('') + '</tr>';
+
+  document.getElementById('sm-tbody').innerHTML = rows.slice(0,500).map(function(r, i) {
+    return '<tr>' + keys.map(function(k) {
+      var v = r[k]; var col = '#b8b6d9';
+      var kl = k.toLowerCase();
+      var n  = smNum(v);
+      if (kl.includes('sla')) col = n>=99?'#06d6a0':n>=95?'#ffd60a':'#c0392b';
+      if (kl.includes('late') && n>0) col = '#c0392b';
+      if (kl.includes('points')) col = '#ffd60a';
+      return '<td style="color:'+col+';">'+(v||'—')+'</td>';
+    }).join('') + '</tr>';
+  }).join('');
+
+  document.getElementById('sm-row-count').textContent =
+    rows.length + ' rows' + (rows.length>500?' (showing 500)':'');
+}
+</script>
+</body>
+</html>
