@@ -897,14 +897,43 @@ function smLeaderboard(rows){
 function smTable(rows){
   if(!rows.length){document.getElementById('sm-tb').innerHTML='<tr><td class="empty">No rows</td></tr>';return;}
   var keys=Object.keys(rows[0]);
+
+  // Build orders lookup per row index for LS% calculation
   document.getElementById('sm-th').innerHTML='<tr>'+keys.map(function(k){return'<th>'+k+'</th>';}).join('')+'</tr>';
   document.getElementById('sm-tb').innerHTML=rows.slice(0,500).map(function(r){
     return'<tr>'+keys.map(function(k){
-      var v=r[k];var c='';var kl=k.toLowerCase();var nv=n(v);var disp=v||'—';
-      if(kl.includes('sla')||kl==='late slam v.2%'||kl==='lateslam%'||kl==='lateslam m%'){var sv=toP(nv);c=sv>=99?'color:#06d6a0':sv>=95?'color:#ffd60a':'color:#ef4444';disp=sv>0?sv.toFixed(2)+'%':disp;}
-      else if(kl.includes('late')&&nv>0)c='color:#ef4444';
-      else if(kl.includes('points')&&nv>0){disp=toP(nv).toFixed(2)+'%';c='color:#ffd60a';}
-      if(disp==='#DIV/0!'||disp==='#N/A')disp='—';
+      var v=r[k]; var c=''; var kl=k.toLowerCase().trim(); var nv=n(v); var disp=v||'—';
+
+      // SLA columns → convert decimal to % if needed
+      if(kl==='avg sla'||kl==='s'||kl==='ib sla vendor'||kl==='ib sla trans'||kl==='avg sla%'){
+        var sv=toP(nv);
+        c=sv>=99?'color:#06d6a0':sv>=95?'color:#ffd60a':'color:#ef4444';
+        disp=sv>0?sv.toFixed(2)+'%':disp;
+      }
+      // LATE SLAM count column → show as number (red if >0)
+      else if(kl==='late slam'||kl==='n'){
+        c=nv>0?'color:#ef4444':'color:#06d6a0';
+        disp=nv>=0?String(Math.round(nv)):'—';
+      }
+      // LATE SLAM V.2% → calculate from LS/Orders for this row
+      else if(kl==='late slam v.2%'||kl==='z'||kl==='lateslam%'||kl==='lateslam m%'||kl==='aa'){
+        var lsVal   = gNum(r,['LATE SLAM','Late Slam','N']);
+        var ordVal  = gNum(r,['ORDERS','Orders','I']);
+        var calcPct = ordVal>0 ? (lsVal/ordVal*100) : 0;
+        // Also check if sheet has a value
+        var sheetPct = toP(nv);
+        var finalPct = sheetPct>0 ? sheetPct : calcPct;
+        c = finalPct>=3?'color:#ef4444':finalPct>0?'color:#ffd60a':'color:#06d6a0';
+        disp = ordVal>0 ? finalPct.toFixed(2)+'%' : (sheetPct>0?sheetPct.toFixed(2)+'%':'—');
+      }
+      // Points → %
+      else if(kl==='points'||kl==='x'){
+        if(nv>0){disp=toP(nv).toFixed(2)+'%';c='color:#ffd60a';}
+      }
+      // Late in other columns
+      else if(kl.includes('late')&&nv>0) c='color:#ef4444';
+
+      if(disp==='#DIV/0!'||disp==='#N/A'||disp==='0'&&(kl==='late slam v.2%'||kl==='z'))disp='—';
       return'<td style="'+c+'">'+disp+'</td>';
     }).join('')+'</tr>';
   }).join('');
@@ -1005,42 +1034,57 @@ function copySummary(){
   var rows=smFilter();
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   var period=document.getElementById('sm-pval').value;
-  var store=document.getElementById('sm-store').value;
-  var now=new Date().toLocaleString('en-GB');
+  var now=new Date();
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var dateLabel = period!=='all' ? period : now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  var lines=[];
 
-  var lines=[
-    '📊 HP World — Dark Store Management System',
-    '📍 Store Metrics Summary',
-    '🕐 Generated: '+now,
-    '📅 Period: '+(period==='all'?'All':period)+' | Store: '+(store==='all'?'All Stores':store),
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-    ''
-  ];
+  // Header — only once
+  lines.push('Hello Team, Good Morning! 🌅');
+  lines.push('');
+  lines.push('Here are the numbers for '+dateLabel+':');
+  lines.push('');
 
   stores.forEach(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
-    var slaR=avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}));
-    var sla=toP(slaR);
-    var orders=sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
-    var inbound=sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);}));
-    var vendor=sum(sr.map(function(r){return gNum(r,['VENDOR','Vendor','D']);}));
-    var transs=sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);}));
-    var obUnits=sum(sr.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}));
-    var ls=sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
-    var upo=avg(sr.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);}));
-    var ibTph=avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
-    var obTph=avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
-    var voc=smVocData[s]||0;
+    var orders  = sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
+    var obUnits = sum(sr.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}));
+    var ls      = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
+    var lsPct   = orders>0?(ls/orders*100).toFixed(2)+'%':'0%';
+    var lsV2R   = avg(sr.map(function(r){return gNum(r,['LATE SLAM V.2%','Late Slam V.2%','Z']);}));
+    var lsV2pct = lsV2R>0?toP(lsV2R).toFixed(2)+'%':'Not Updated';
+    var lsV2cnt = sum(sr.map(function(r){return gNum(r,['LATESLA M%','LateSlam%','AA']);}));
+    var lsV2Fmt = lsV2cnt>0?lsV2cnt:'Not Updated';
+    var skip    = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','U']);}));
+    var short   = sum(sr.map(function(r){return gNum(r,['SHORT','Short','V']);}));
+    var ibTph   = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
+    var obTph   = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
+    var damaged = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
+    var quality = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
+    var donate  = sum(sr.map(function(r){return gNum(r,['EXP-DONATE','Exp-Donate','H']);}));
+    var slaTR   = avg(sr.map(function(r){return gNum(r,['IB SLA TRANS','IB SLA Trans','R']);}));
+    var slaVR   = avg(sr.map(function(r){return gNum(r,['IB SLA VENDOR','IB SLA Vendor','Q']);}));
+    var slaTpct = toP(slaTR).toFixed(1)+'%';
+    var slaVpct = toP(slaVR).toFixed(1)+'%';
+
     lines.push('🏪 '+s);
-    lines.push('  SLA: '+sla.toFixed(2)+'% | Orders: '+fmt(orders)+' | Units: '+fmt(obUnits));
-    lines.push('  Inbound: '+fmt(inbound)+' (Vendor: '+fmt(vendor)+' | Transs: '+fmt(transs)+')');
-    lines.push('  UPO: '+upo.toFixed(2)+' | IB TPH: '+ibTph.toFixed(1)+' | OB TPH: '+obTph.toFixed(1));
-    lines.push('  Late Slams: '+ls+' | VOC: '+voc);
+    lines.push('📦 Orders: '+fmt(orders));
+    lines.push('📤 Units: '+fmt(obUnits));
+    lines.push('🚨 Late Slams: '+ls+' ('+lsPct+')');
+    lines.push('📊 LS v2 logic ('+dateLabel+'): '+lsV2Fmt);
+    lines.push('📊 LS v2 logic ('+dateLabel+') %: '+lsV2pct);
+    lines.push('⏭️ Skips/Shorts: '+skip+'/'+short);
+    lines.push('⚡ TPH IB/OB: '+ibTph.toFixed(0)+'/'+obTph.toFixed(0));
+    lines.push('🔴 Removals under Damage: '+damaged);
+    lines.push('🔵 Removals under Quality: '+quality);
+    lines.push('🤝 Expiry Awareness Donation: '+donate);
+    lines.push('✅ SLA Trans/Vend: '+slaTpct+'/'+slaVpct);
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     lines.push('');
   });
+
   lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  lines.push('Powered by Dark Store Management System | HP World');
+  lines.push('Generated by Dark Store Management System (DMS PRO)');
 
   navigator.clipboard.writeText(lines.join('\n')).then(function(){
     var btn=document.querySelector('.copy-btn');
