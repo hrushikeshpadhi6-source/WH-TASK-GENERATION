@@ -882,7 +882,7 @@ function smLeaderboard(rows){
         ch('UPO',d.upo.toFixed(2),'#7c3aed')+
         ch('IB TPH',d.ibTph.toFixed(0),'#0891b2')+
         ch('OB TPH',d.obTph.toFixed(0),'#ff6b35')+
-        ch('LS',d.ls,lsC)+
+        ch('LS',d.ls+' ('+(d.orders>0?(d.ls/d.orders*100).toFixed(1):'0')+'%)',lsC)+
         ch('Skip',d.skip,d.skip>0?'#ef4444':'#06d6a0')+
         ch('Short',d.short,d.short>0?'#ef4444':'#06d6a0')+
         ch('VOC',voc,vocC)+
@@ -901,7 +901,7 @@ function smTable(rows){
   document.getElementById('sm-tb').innerHTML=rows.slice(0,500).map(function(r){
     return'<tr>'+keys.map(function(k){
       var v=r[k];var c='';var kl=k.toLowerCase();var nv=n(v);var disp=v||'—';
-      if(kl.includes('sla')){var sv=toP(nv);c=sv>=99?'color:#06d6a0':sv>=95?'color:#ffd60a':'color:#ef4444';disp=sv>0?sv.toFixed(2)+'%':disp;}
+      if(kl.includes('sla')||kl==='late slam v.2%'||kl==='lateslam%'||kl==='lateslam m%'){var sv=toP(nv);c=sv>=99?'color:#06d6a0':sv>=95?'color:#ffd60a':'color:#ef4444';disp=sv>0?sv.toFixed(2)+'%':disp;}
       else if(kl.includes('late')&&nv>0)c='color:#ef4444';
       else if(kl.includes('points')&&nv>0){disp=toP(nv).toFixed(2)+'%';c='color:#ffd60a';}
       if(disp==='#DIV/0!'||disp==='#N/A')disp='—';
