@@ -2235,9 +2235,9 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="mailto:hrushikeshpadhi6@live.com">
+    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#2f475d5a5c4746444a5c475f4e4b4746196f4346594a014c4042">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value">hrushikeshpadhi6@live.com</div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="016973747269686a647269716065696837416d6877642f626e6c">[email&#160;protected]</span></div></div>
     </a>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
@@ -2940,7 +2940,7 @@ to{width:65%;} }
   <div class="loader-fill" id="top-loader-fill"></div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 
 // ── PREMIUM ANALOG + DIGITAL CLOCK ────────────────────────────
 (function() {
@@ -10962,14 +10962,20 @@ function handleScanningASIN(e) {
     </div>
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="font-size:14px;font-weight:700;color:#fff;">📋 Activity Log</div>
-        <div style="display:flex;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">📋 Activity Log</div>
+          <div id="dstpro-sync-status" style="font-size:11px;color:#8b8aad;font-family:'DM Mono',monospace;letter-spacing:0.3px;">○ Local cache only</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button id="dstpro-sync-btn" onclick="dstproSyncLogs()"
+            style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#4361ee,#2f4bd4);
+            color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Sync from Sheet</button>
           <button onclick="dstproExportLogsExcel()"
             style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#06d6a0,#049e77);
             color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬇ Export Excel</button>
           <button onclick="dstproClearLogs()"
             style="padding:8px 16px;border-radius:8px;border:1px solid #2e2c45;background:transparent;
-            color:#f72585;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear All Logs</button>
+            color:#f72585;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;" title="Clears LOCAL cache only — sheet data is untouched">🗑 Clear Local Cache</button>
         </div>
       </div>
       <div style="overflow-x:auto;">
@@ -11348,6 +11354,107 @@ var DSTPRO = (function() {
     }catch(e){}
   }
 
+  // ── Fetch ALL activity from Google Sheet (JSONP) ─────────────────
+  // Requires the Apps Script to expose ?action=getActivity&callback=...
+  var _lastSyncTs = 0;
+  var _isSyncing  = false;
+  function _fetchLogsFromSheet(cb){
+    if(_isSyncing){ if(cb) cb(null,'Already syncing'); return; }
+    _isSyncing=true;
+    var fnName='dstproActLogsCb_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
+    var done=false;
+    var script=document.createElement('script');
+    var timer=setTimeout(function(){ finish(null,'Timeout'); },25000);
+    function finish(rows,err){
+      if(done) return; done=true;
+      _isSyncing=false;
+      clearTimeout(timer);
+      try{ delete window[fnName]; }catch(e){ window[fnName]=null; }
+      if(script.parentNode) script.parentNode.removeChild(script);
+      if(cb) cb(rows||null, err||null);
+    }
+    window[fnName]=function(data){
+      if(!data){ finish(null,'No data'); return; }
+      if(data && data.error){ finish(null, data.error); return; }
+      var rows = Array.isArray(data) ? data : (data.rows || data.data || []);
+      finish(rows, null);
+    };
+    script.onerror=function(){ finish(null,'Network/script load error'); };
+    script.src=ACTIVITY_SHEET_URL+'?action=getActivity&callback='+fnName+'&_='+Date.now();
+    document.head.appendChild(script);
+  }
+
+  function _normalizeSheetRow(r){
+    if(!r) return null;
+    // Accept many casings/shapes from Apps Script.
+    var iso = r.iso || r.ISO || r.timestamp || r.Timestamp || r.ts || r['ISO Timestamp'] || r['ISO_Timestamp'];
+    if(!iso){
+      var dRaw = r.date || r.Date || '';
+      var tRaw = r.time || r.Time || '';
+      try{
+        // dRaw might be a Date string or already a Date
+        var combo = (dRaw && tRaw) ? (dRaw + ' ' + tRaw) : (dRaw || tRaw);
+        iso = combo ? new Date(combo).toISOString() : new Date().toISOString();
+      }catch(e){ iso = new Date().toISOString(); }
+    }else{
+      try{ iso = new Date(iso).toISOString(); }catch(e){}
+    }
+    return {
+      ts:     iso,
+      name:   r.name   || r.Name   || 'Unknown',
+      empId:  r.empId  || r['Emp ID'] || r.empid || '—',
+      tool:   r.tool   || r.Tool   || '—',
+      action: r.action || r.Action || '—',
+      device: r.device || r.Device || '—'
+    };
+  }
+
+  function _mergeSheetRows(sheetRows){
+    var mapped = (sheetRows||[]).map(_normalizeSheetRow).filter(Boolean);
+    // Dedup by ts+name+tool+action; keep local entries not yet in sheet.
+    var seen = Object.create(null);
+    mapped.forEach(function(e){
+      seen[(e.ts||'')+'|'+e.name+'|'+e.tool+'|'+e.action] = true;
+    });
+    (_logs||[]).forEach(function(e){
+      var k=(e.ts||'')+'|'+e.name+'|'+e.tool+'|'+e.action;
+      if(!seen[k]) mapped.push(e);
+    });
+    mapped.sort(function(a,b){ return (b.ts||'').localeCompare(a.ts||''); });
+    if(mapped.length>5000) mapped = mapped.slice(0,5000);
+    _logs = mapped;
+    _saveLogs();
+  }
+
+  function _setSyncStatus(state, msg){
+    var el=document.getElementById('dstpro-sync-status');
+    if(!el) return;
+    var color = state==='ok' ? '#06d6a0' : state==='err' ? '#f72585' : state==='busy' ? '#ffd60a' : '#8b8aad';
+    var icon  = state==='ok' ? '✓' : state==='err' ? '⚠' : state==='busy' ? '⟳' : '○';
+    el.style.color=color;
+    el.textContent=icon+' '+(msg||'');
+  }
+
+  function syncLogs(cb){
+    _setSyncStatus('busy','Syncing from Google Sheet…');
+    var btn=document.getElementById('dstpro-sync-btn');
+    if(btn){ btn.disabled=true; btn.dataset.origText=btn.textContent; btn.textContent='⟳ Syncing…'; }
+    _fetchLogsFromSheet(function(rows, err){
+      if(btn){ btn.disabled=false; btn.textContent=btn.dataset.origText||'🔄 Sync from Sheet'; }
+      if(err || !rows){
+        _setSyncStatus('err','Sync failed: '+(err||'no data')+' — showing local cache');
+        if(cb) cb(false, err);
+        return;
+      }
+      _mergeSheetRows(rows);
+      _lastSyncTs = Date.now();
+      var ts = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      _setSyncStatus('ok','Synced from sheet • '+rows.length+' rows • '+ts);
+      renderAdminDash();
+      if(cb) cb(true, null);
+    });
+  }
+
   function _addAdminShortcut(){
     document.addEventListener('keydown',function(e){
       if(e.ctrlKey&&e.shiftKey&&(e.key==='A'||e.key==='a')){
@@ -11375,7 +11482,13 @@ var DSTPRO = (function() {
     _loadLogs();
     document.getElementById('dstpro-admin-panel').style.display='block';
     var ok=false; try{ok=!!sessionStorage.getItem(ADMIN_SESS_KEY);}catch(e){}
-    if(ok){document.getElementById('dstpro-admin-gate').style.display='none';document.getElementById('dstpro-admin-dash').style.display='block';renderAdminDash();}
+    if(ok){
+      document.getElementById('dstpro-admin-gate').style.display='none';
+      document.getElementById('dstpro-admin-dash').style.display='block';
+      renderAdminDash();
+      // Pull all activity from Google Sheet so the admin sees rows from every device.
+      syncLogs();
+    }
     else{document.getElementById('dstpro-admin-gate').style.display='flex';document.getElementById('dstpro-admin-dash').style.display='none';}
   }
   function adminLogin(){
@@ -11386,6 +11499,8 @@ var DSTPRO = (function() {
       document.getElementById('dstpro-admin-gate').style.display='none';
       document.getElementById('dstpro-admin-dash').style.display='block';
       renderAdminDash();
+      // Pull all activity from Google Sheet so the admin sees rows from every device.
+      syncLogs();
     } else {
       msg.textContent='❌ Incorrect password.'; msg.className='login-msg error'; msg.style.display='block';
       document.getElementById('dstpro-admin-pass').value='';
@@ -12132,6 +12247,7 @@ var DSTPRO = (function() {
   return {
     init:init,openAdminPanel:openAdminPanel,adminLogin:adminLogin,adminClose:adminClose,
     renderLogs:function(){_loadLogs();var f=_getFiltered();renderLogTable(f);renderCharts(f);},
+    syncLogs:syncLogs,
     clearFilters:clearFilters,clearLogs:clearLogs,exportLogs:exportLogsExcel,
     fastHandleFile:fastHandleFile,fastHandleDrop:function(e){var f=(e.dataTransfer.files||[])[0];fastHandleFile(f);},
     fastHandleInvFile:fastHandleInvFile,
@@ -12150,6 +12266,7 @@ function dstproRenderLogs(){DSTPRO.renderLogs();}
 function dstproClearFilters(){DSTPRO.clearFilters();}
 function dstproClearLogs(){DSTPRO.clearLogs();}
 function dstproExportLogsExcel(){DSTPRO.exportLogs();}
+function dstproSyncLogs(){DSTPRO.syncLogs();}
 function dstproFastHandleUpload(i){DSTPRO.fastHandleFile(i.files[0]);}
 function dstproFastHandleDrop(e){DSTPRO.fastHandleDrop(e);}
 function dstproFastInvUpload(i){DSTPRO.fastHandleInvFile(i.files[0]);}
