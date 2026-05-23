@@ -1521,6 +1521,53 @@ to{width:65%;} }
     </div>
   </div>
 </div>
+
+<!-- ── SLIM "NEW FEATURES" NOTIFICATION TICKER ───────────────────── -->
+<div id="nf-ticker" style="position:relative;margin:0 auto 14px;max-width:1280px;
+  background:linear-gradient(90deg,rgba(76,201,240,0.10),rgba(67,97,238,0.12),rgba(247,37,133,0.10));
+  border:1px solid rgba(76,201,240,0.28);border-radius:14px;overflow:hidden;
+  box-shadow:0 0 20px rgba(76,201,240,0.10);display:flex;align-items:center;gap:10px;padding:6px 12px;">
+  <!-- Badge -->
+  <div style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:3px 9px 3px 7px;
+    border-radius:20px;background:linear-gradient(135deg,rgba(76,201,240,0.22),rgba(76,201,240,0.08));
+    border:1px solid rgba(76,201,240,0.45);">
+    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#4cc9f0;
+      animation:livePulse 1.6s ease-in-out infinite;flex-shrink:0;"></span>
+    <span style="font-size:9px;font-weight:900;letter-spacing:1.8px;color:#4cc9f0;
+      font-family:'DM Mono',monospace;text-transform:uppercase;">New</span>
+  </div>
+  <!-- Scrolling content -->
+  <div style="flex:1;overflow:hidden;position:relative;">
+    <span style="display:inline-block;animation:ticker 22s linear infinite;white-space:nowrap;">
+      <span style="display:inline-flex;align-items:center;gap:8px;margin-right:80px;">
+        <span style="font-size:13px;display:inline-block;animation:bellShake 2.4s ease-in-out infinite;">🚀</span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;font-family:Arial,sans-serif;
+          background:linear-gradient(90deg,#4cc9f0,#06d6a0,#ffd60a,#ff6b35,#f72585);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          text-transform:uppercase;">New features coming soon…</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.55);font-family:Arial,sans-serif;letter-spacing:0.5px;">stay tuned for the next drop ✨</span>
+      </span>
+      <span style="margin-right:80px;color:rgba(255,255,255,0.15);font-size:16px;">•</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;margin-right:80px;">
+        <span style="font-size:13px;display:inline-block;animation:bellShake 2.4s ease-in-out 0.8s infinite;">🛠️</span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;font-family:Arial,sans-serif;
+          background:linear-gradient(90deg,#f72585,#4361ee,#06d6a0,#ffd60a);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          text-transform:uppercase;">Building something exciting</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.55);font-family:Arial,sans-serif;letter-spacing:0.5px;">your feedback shapes it 💬</span>
+      </span>
+      <span style="margin-right:80px;color:rgba(255,255,255,0.15);font-size:16px;">•</span>
+      <span style="display:inline-flex;align-items:center;gap:8px;margin-right:80px;">
+        <span style="font-size:13px;display:inline-block;animation:bellShake 2.4s ease-in-out 1.6s infinite;">⚡</span>
+        <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;font-family:Arial,sans-serif;
+          background:linear-gradient(90deg,#06d6a0,#4cc9f0,#f72585,#ff6b35);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          text-transform:uppercase;">More tools · faster workflows · smarter insights</span>
+      </span>
+    </span>
+  </div>
+</div>
+
 <div class="dashboard">
   <div class="dash-hero">
     <div class="hero-tag">⚡ Dark Store Management System</div>
@@ -1539,17 +1586,17 @@ to{width:65%;} }
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span style="font-size:13px;">🦺</span>
           <span style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;
-            color:#ff6b35;font-family:Syne,sans-serif;">Safety Tip</span>
+            color:#ff6b35;font-family:Arial,sans-serif;">Safety Tip</span>
         </div>
         <div id="daily-safety" style="font-size:12.5px;color:rgba(255,255,255,0.85);
-          line-height:1.6;font-family:Syne,sans-serif;"></div>
+          line-height:1.6;font-family:Arial,sans-serif;"></div>
       </div>
       <div style="background:rgba(6,214,160,0.07);border:1px solid rgba(6,214,160,0.2);
         border-radius:12px;padding:12px 16px;flex:1;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
           <span style="font-size:13px;">✅</span>
           <span style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;
-            color:#06d6a0;font-family:Syne,sans-serif;">Quality Tip</span>
+            color:#06d6a0;font-family:Arial,sans-serif;">Quality Tip</span>
         </div>
         <div id="daily-quality" style="font-size:12.5px;color:rgba(255,255,255,0.85);
           line-height:1.6;font-family:Syne,sans-serif;"></div>
@@ -1567,23 +1614,61 @@ to{width:65%;} }
         text-shadow:0 0 18px rgba(255,107,53,0.9),0 0 36px rgba(255,107,53,0.5);"></div>
       <div id="digital-date" style="font-family:DM Mono,monospace;font-size:12px;
         letter-spacing:2px;color:rgba(255,107,53,0.85);font-weight:500;text-align:center;"></div>
+      <!-- Live Temperature + Location pill (under clock) -->
+      <div id="clk-temp-wrap" style="display:flex;align-items:center;gap:8px;padding:5px 12px;margin-top:4px;
+        background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(247,37,133,0.10));
+        border:1px solid rgba(255,107,53,0.35);border-radius:999px;
+        box-shadow:0 0 12px rgba(255,107,53,0.15);">
+        <span id="clk-temp-icon" style="font-size:13px;line-height:1;">🌡️</span>
+        <span id="clk-temp-val" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;
+          background:linear-gradient(135deg,#ff6b35,#f72585);-webkit-background-clip:text;
+          -webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px;">-- °C</span>
+        <span style="opacity:0.4;font-size:10px;">·</span>
+        <span id="clk-temp-loc" style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.7);">···</span>
+      </div>
     </div>
 
-    <!-- RIGHT: Today Occasion / Positive msg -->
+    <!-- RIGHT: Live Month-to-Date Insights Ticker -->
     <div style="padding:20px 22px;display:flex;flex-direction:column;">
-      <div id="daily-occasion-box" style="border-radius:12px;padding:16px 18px;flex:1;
-        background:rgba(67,97,238,0.1);border:1px solid rgba(67,97,238,0.25);
-        display:flex;flex-direction:column;justify-content:center;">
-        <div id="daily-occasion-label" style="font-size:9px;font-weight:800;letter-spacing:1.8px;
-          text-transform:uppercase;color:#4cc9f0;margin-bottom:10px;
-          font-family:Syne,sans-serif;display:flex;align-items:center;gap:5px;">
-          <span>📅</span><span>Today</span>
+      <div id="live-insights-box" style="border-radius:12px;padding:16px 18px;flex:1;
+        background:rgba(67,97,238,0.07);border:1px solid rgba(67,97,238,0.22);
+        display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;min-height:170px;">
+        <!-- Header row: label + month + refresh -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;z-index:2;">
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;
+            color:#4cc9f0;font-family:Syne,sans-serif;display:flex;align-items:center;gap:6px;">
+            <span style="width:6px;height:6px;background:#06d6a0;border-radius:50%;
+              animation:pulse 1.5s ease infinite;display:inline-block;"></span>
+            <span>LIVE</span>
+            <span style="opacity:0.5;">·</span>
+            <span id="li-month-label" style="color:rgba(255,255,255,0.65);">···</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="li-pause" onclick="liTogglePause()" title="Pause/Play"
+              style="cursor:pointer;font-size:11px;color:rgba(255,255,255,0.45);
+              transition:color 0.2s;user-select:none;line-height:1;"
+              onmouseover="this.style.color='#4cc9f0'" onmouseout="this.style.color='rgba(255,255,255,0.45)'">⏸</span>
+            <span id="li-refresh" onclick="liRefresh()" title="Refresh"
+              style="cursor:pointer;font-size:12px;color:rgba(255,255,255,0.4);
+              transition:transform 0.3s, color 0.2s;user-select:none;line-height:1;"
+              onmouseover="this.style.color='#4cc9f0'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">⟳</span>
+          </div>
         </div>
-        <div id="daily-occasion-icon" style="font-size:36px;margin-bottom:8px;line-height:1;"></div>
-        <div id="daily-occasion-title" style="font-size:16px;font-weight:800;color:#fff;
-          margin-bottom:6px;font-family:Syne,sans-serif;line-height:1.3;"></div>
-        <div id="daily-occasion-msg" style="font-size:12.5px;color:rgba(255,255,255,0.72);
-          line-height:1.6;font-family:Syne,sans-serif;"></div>
+
+        <!-- Slide stage -->
+        <div id="li-stage" style="flex:1;display:flex;flex-direction:column;justify-content:center;
+          gap:6px;z-index:1;transition:opacity 0.35s ease;">
+          <div id="li-icon" style="font-size:30px;line-height:1;"></div>
+          <div id="li-title" style="font-size:14px;font-weight:800;color:#fff;
+            font-family:Syne,sans-serif;line-height:1.3;letter-spacing:0.2px;"></div>
+          <div id="li-value" style="font-size:22px;font-weight:900;font-family:'DM Mono',monospace;
+            letter-spacing:0.5px;line-height:1;"></div>
+          <div id="li-msg" style="font-size:11.5px;color:rgba(255,255,255,0.72);
+            line-height:1.5;font-family:Syne,sans-serif;"></div>
+        </div>
+
+        <!-- Slide dots -->
+        <div id="li-dots" style="display:flex;gap:5px;justify-content:center;margin-top:8px;z-index:2;"></div>
       </div>
     </div>
 
@@ -2235,9 +2320,9 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#2f475d5a5c4746444a5c475f4e4b4746196f4346594a014c4042">
+    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#39514b4c4a5150525c4a5149585d51500f7955504f5c175a5654">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="016973747269686a647269716065696837416d6877642f626e6c">[email&#160;protected]</span></div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="88e0fafdfbe0e1e3edfbe0f8e9ece0e1bec8e4e1feeda6ebe7e5">[email&#160;protected]</span></div></div>
     </a>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
@@ -7820,6 +7905,429 @@ if (document.readyState === 'loading') {
   initDailyWidgets();
 }
 
+// ═══════════════════════════════════════════════════════════════
+// LIVE INSIGHTS TICKER — pulls store-metric + VOC, rotates
+// month-to-date highlights (good=green, bad=red) on dashboard.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var LI_API = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+  var liSlides = [];
+  var liIdx = 0;
+  var liTimer = null;
+  var liPaused = false;
+
+  // ── tiny JSONP ──
+  function jsonp(action, cb){
+    var name = 'liCb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+    var s = document.createElement('script'); s.id = 'js-'+name;
+    var t = setTimeout(function(){ cleanup(); cb(null); }, 25000);
+    function cleanup(){ clearTimeout(t); delete window[name]; if(s.parentNode) s.parentNode.removeChild(s); }
+    window[name] = function(d){ cleanup(); cb(d); };
+    s.src = LI_API + '?action=' + action + '&callback=' + name;
+    s.onerror = function(){ cleanup(); cb(null); };
+    document.head.appendChild(s);
+  }
+
+  // ── helpers ──
+  function n(v){ if(v==null||v==='')return 0; if(typeof v==='number')return v; var s=String(v).replace(/,/g,'').trim(); if(s.endsWith('%'))s=s.slice(0,-1); var x=parseFloat(s); return isNaN(x)?0:x; }
+  function toP(v){ return v>0 && v<=1 ? v*100 : v; }
+  function sum(a){ return a.reduce(function(s,v){return s+v;},0); }
+  function gStore(r){ return String(r['STORE']||r['Store']||r['store']||'').trim(); }
+  function gDate(r){
+    var raw = String(r['DATE']||r['Date']||r['date']||'').split(' ')[0].trim();
+    if(!raw) return '';
+    if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)){
+      var p=raw.split('/'); return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+    }
+    return raw;
+  }
+  function gNum(r,keys){ for(var i=0;i<keys.length;i++){var v=r[keys[i]]; if(v!==undefined && v!=='') return n(v);} return 0; }
+  function monthLong(d){
+    return ['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()];
+  }
+
+  // ── build slides from rows ──
+  function buildSlides(smRows, vocRows){
+    var now = new Date();
+    var ym  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    var monthLabel = monthLong(now) + ' ' + now.getFullYear();
+    var monthLabelShort = monthLong(now).slice(0,3).toUpperCase() + ' MTD';
+
+    document.getElementById('li-month-label').textContent = monthLabelShort;
+
+    // Month-to-date store metric rows
+    var mtd = (smRows||[]).filter(function(r){ return gDate(r).indexOf(ym) === 0; });
+
+    // Group by store
+    var byStore = {};
+    mtd.forEach(function(r){
+      var s = gStore(r); if(!s) return;
+      if(!byStore[s]) byStore[s] = { orders:0, units:0, ls:0, voc:0, skip:0, shrt:0, n:0 };
+      byStore[s].orders += gNum(r, ['ORDERS','Orders','I']);
+      byStore[s].units  += gNum(r, ['OUTBOUND UNITS','Outbound Units','J']);
+      byStore[s].ls     += gNum(r, ['LATE SLAM','Late Slam','N']);
+      byStore[s].voc    += gNum(r, ['VOC','Voc','voc']);
+      byStore[s].skip   += gNum(r, ['SKIPS','Skips','skips']);
+      byStore[s].shrt   += gNum(r, ['SHORTS','Shorts','shorts']);
+      byStore[s].n      += 1;
+    });
+    var stores = Object.keys(byStore);
+
+    var slides = [];
+
+    // Slide 1 — Month overview
+    var totOrd = sum(stores.map(function(s){return byStore[s].orders;}));
+    var totLs  = sum(stores.map(function(s){return byStore[s].ls;}));
+    var lsRate = totOrd > 0 ? (totLs/totOrd*100) : 0;
+    var totVoc = sum(stores.map(function(s){return byStore[s].voc;}));
+    slides.push({
+      icon:'📊',
+      title: monthLabel + ' — Snapshot',
+      value: totOrd.toLocaleString() + ' orders',
+      valueColor:'#4cc9f0',
+      msg: '🏪 ' + stores.length + ' stores · 🚨 ' + totLs.toLocaleString() + ' late slams (' + lsRate.toFixed(2) + '%)' + (totVoc>0 ? ' · 📣 ' + totVoc + ' VOC' : ''),
+      msgColor:'rgba(255,255,255,0.78)',
+      bg:'rgba(67,97,238,0.10)', bd:'rgba(67,97,238,0.30)'
+    });
+
+    // Slide 2 — Worst Late-Slam store (RED)
+    if(stores.length){
+      var worst = null, worstRate = -1;
+      stores.forEach(function(s){
+        var o = byStore[s].orders, l = byStore[s].ls;
+        if(o > 0){
+          var r = l/o*100;
+          if(r > worstRate){ worstRate = r; worst = s; }
+        }
+      });
+      if(worst){
+        slides.push({
+          icon:'🚨',
+          title:'Highest Late Slam',
+          value: worst + ' · ' + worstRate.toFixed(2) + '%',
+          valueColor: worstRate >= 3 ? '#ef4444' : worstRate >= 1.5 ? '#ffd60a' : '#06d6a0',
+          msg: byStore[worst].ls.toLocaleString() + ' late slams of ' + byStore[worst].orders.toLocaleString() + ' orders — needs attention.',
+          msgColor:'rgba(255,255,255,0.78)',
+          bg: worstRate >= 3 ? 'rgba(239,68,68,0.10)' : 'rgba(255,214,10,0.08)',
+          bd: worstRate >= 3 ? 'rgba(239,68,68,0.40)' : 'rgba(255,214,10,0.30)'
+        });
+      }
+
+      // Slide 3 — Best Late-Slam store (GREEN)
+      var best = null, bestRate = 999;
+      stores.forEach(function(s){
+        var o = byStore[s].orders, l = byStore[s].ls;
+        if(o > 0){
+          var r = l/o*100;
+          if(r < bestRate){ bestRate = r; best = s; }
+        }
+      });
+      if(best && best !== worst){
+        slides.push({
+          icon:'🏆',
+          title:'Lowest Late Slam',
+          value: best + ' · ' + bestRate.toFixed(2) + '%',
+          valueColor:'#06d6a0',
+          msg: byStore[best].ls.toLocaleString() + ' late slams of ' + byStore[best].orders.toLocaleString() + ' orders — keep it up!',
+          msgColor:'rgba(255,255,255,0.78)',
+          bg:'rgba(6,214,160,0.10)', bd:'rgba(6,214,160,0.35)'
+        });
+      }
+
+      // Slide 4 — Stores under target (LS > 3% target)
+      var underTarget = stores.filter(function(s){
+        var o = byStore[s].orders; return o > 0 && (byStore[s].ls/o*100) > 3;
+      }).sort(function(a,b){ return (byStore[b].ls/byStore[b].orders) - (byStore[a].ls/byStore[a].orders); });
+      if(underTarget.length){
+        slides.push({
+          icon:'⚠️',
+          title:'Stores Below Target',
+          value: underTarget.length + ' store' + (underTarget.length>1?'s':'') + ' > 3%',
+          valueColor:'#ef4444',
+          msg: underTarget.slice(0,3).map(function(s){
+            return s + ' (' + (byStore[s].ls/byStore[s].orders*100).toFixed(1) + '%)';
+          }).join(' · '),
+          msgColor:'rgba(255,255,255,0.82)',
+          bg:'rgba(239,68,68,0.10)', bd:'rgba(239,68,68,0.40)'
+        });
+      } else {
+        slides.push({
+          icon:'✅',
+          title:'All Stores On Target',
+          value:'0 stores > 3%',
+          valueColor:'#06d6a0',
+          msg:'Every store is within the Late Slam target this month. Excellent!',
+          msgColor:'rgba(255,255,255,0.78)',
+          bg:'rgba(6,214,160,0.10)', bd:'rgba(6,214,160,0.35)'
+        });
+      }
+    }
+
+    // Slide 5 — VOC: worst store (if VOC data available)
+    if(vocRows && vocRows.length){
+      var vbyStore = {};
+      var vbyPicker = {};
+      vocRows.forEach(function(r){
+        var s = String(r['STORE']||r['Store']||r['store']||'').trim();
+        var p = String(r['PICKER']||r['Picker']||r['picker']||r['User']||r['USER']||'').trim();
+        var d = String(r['DATE']||r['Date']||r['date']||'').split(' ')[0].trim();
+        if(d.indexOf(ym) !== 0 && !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){ return; }
+        if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){
+          var pp=d.split('/'); d = pp[2]+'-'+pp[1].padStart(2,'0')+'-'+pp[0].padStart(2,'0');
+          if(d.indexOf(ym) !== 0) return;
+        }
+        if(s){ vbyStore[s] = (vbyStore[s]||0)+1; }
+        if(p){ vbyPicker[p] = (vbyPicker[p]||0)+1; }
+      });
+      var vsKeys = Object.keys(vbyStore).sort(function(a,b){return vbyStore[b]-vbyStore[a];});
+      var vpKeys = Object.keys(vbyPicker).sort(function(a,b){return vbyPicker[b]-vbyPicker[a];});
+      if(vsKeys.length){
+        slides.push({
+          icon:'📣',
+          title:'Highest VOC Store',
+          value: vsKeys[0] + ' · ' + vbyStore[vsKeys[0]] + ' VOC',
+          valueColor:'#f72585',
+          msg: vsKeys.slice(1,3).length
+            ? 'Then: ' + vsKeys.slice(1,3).map(function(s){return s+' ('+vbyStore[s]+')';}).join(' · ')
+            : 'Only store with VOC this month.',
+          msgColor:'rgba(255,255,255,0.78)',
+          bg:'rgba(247,37,133,0.10)', bd:'rgba(247,37,133,0.35)'
+        });
+      }
+      if(vpKeys.length){
+        slides.push({
+          icon:'👤',
+          title:'Top Picker Mistakes',
+          value: vpKeys[0] + ' · ' + vbyPicker[vpKeys[0]],
+          valueColor:'#ef4444',
+          msg: vpKeys.slice(1,3).length
+            ? 'Watchlist: ' + vpKeys.slice(1,3).map(function(p){return p+' ('+vbyPicker[p]+')';}).join(' · ')
+            : 'Coach this picker — recurring errors detected.',
+          msgColor:'rgba(255,255,255,0.78)',
+          bg:'rgba(239,68,68,0.10)', bd:'rgba(239,68,68,0.40)'
+        });
+      }
+    }
+
+    // Slide 7 — Race Track scene (top 6 stores by Late Slam %, lowest = leader)
+    if(stores.length >= 2){
+      var ranked = stores.filter(function(s){return byStore[s].orders > 0;})
+        .map(function(s){ return { s:s, r: byStore[s].ls / byStore[s].orders * 100, orders: byStore[s].orders }; })
+        .sort(function(a,b){ return a.r - b.r; })
+        .slice(0, 6);
+      if(ranked.length >= 2){
+        var leader = ranked[0];
+        var worst  = ranked[ranked.length-1];
+        var span   = Math.max(0.01, worst.r - leader.r);
+        // Position 0..100 where leader=100 (front), worst=0 (back)
+        var medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+        var runners = ['🏎️','🚗','🚙','🛺','🚐','🚜'];
+        var laneColors = ['#ffd60a','#c0c0c0','#cd7f32','#4cc9f0','#a78bfa','#8b8aad'];
+        var lanesHtml = ranked.map(function(item, i){
+          var pos = 100 - ((item.r - leader.r) / span) * 100; // % from left
+          pos = Math.max(4, Math.min(94, pos));
+          var col = laneColors[i];
+          return ''+
+          '<div style="display:flex;align-items:center;gap:5px;height:13px;font-family:Arial,sans-serif;">'+
+            '<span style="font-size:9px;width:12px;text-align:center;flex-shrink:0;">'+medals[i]+'</span>'+
+            '<span style="font-size:10px;font-weight:800;color:'+col+';width:48px;flex-shrink:0;letter-spacing:0.3px;font-family:Arial,sans-serif;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">'+item.s+'</span>'+
+            '<div style="flex:1;position:relative;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:visible;border-top:1px dashed rgba(255,255,255,0.08);border-bottom:1px dashed rgba(255,255,255,0.08);">'+
+              '<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);height:3px;width:'+pos+'%;background:linear-gradient(90deg,transparent,'+col+');border-radius:2px;opacity:0.55;"></div>'+
+              '<span style="position:absolute;left:'+pos+'%;top:50%;transform:translate(-50%,-55%);font-size:13px;filter:drop-shadow(0 0 4px '+col+');animation:'+(i===0?'racePulse 1.2s ease-in-out infinite':'none')+';">'+runners[i]+'</span>'+
+              '<span style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:10px;">🏁</span>'+
+            '</div>'+
+            '<span style="font-size:9px;font-family:Arial,sans-serif;font-weight:700;color:'+col+';width:40px;text-align:right;flex-shrink:0;">'+item.r.toFixed(2)+'%</span>'+
+          '</div>';
+        }).join('');
+        slides.push({
+          icon:'', title:'',
+          customHtml: ''+
+            '<style>@keyframes racePulse{0%,100%{transform:translate(-50%,-55%) scale(1);}50%{transform:translate(-50%,-55%) scale(1.18);}}</style>'+
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-family:Arial,sans-serif;">'+
+              '<div style="font-size:13px;font-weight:800;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;gap:5px;">'+
+                '<span style="font-size:14px;">🏁</span>Late Slam Grand Prix'+
+              '</div>'+
+              '<div style="font-size:9px;font-weight:800;color:#ffd60a;letter-spacing:0.8px;text-transform:uppercase;font-family:Arial,sans-serif;">🏆 '+leader.s+' leads</div>'+
+            '</div>'+
+            '<div style="display:flex;flex-direction:column;gap:2px;">'+lanesHtml+'</div>'+
+            '<div style="font-size:9.5px;color:rgba(255,255,255,0.55);margin-top:5px;font-family:Arial,sans-serif;text-align:center;">Closer to 🏁 = lower Late Slam % (better)</div>',
+          bg:'linear-gradient(135deg,rgba(255,214,10,0.08),rgba(67,97,238,0.08))',
+          bd:'rgba(255,214,10,0.30)'
+        });
+      }
+    }
+
+    return slides;
+  }
+
+  // ── render current slide ──
+  function renderSlide(){
+    if(!liSlides.length) return;
+    var s = liSlides[liIdx % liSlides.length];
+    var box   = document.getElementById('live-insights-box');
+    var stage = document.getElementById('li-stage');
+    if(!box || !stage) return;
+    stage.style.opacity = '0';
+    setTimeout(function(){
+      box.style.background = s.bg;
+      box.style.border     = '1px solid ' + s.bd;
+      if(s.customHtml){
+        stage.innerHTML = s.customHtml;
+      } else {
+        stage.innerHTML = ''+
+          '<div id="li-icon" style="font-size:30px;line-height:1;">'+(s.icon||'')+'</div>'+
+          '<div id="li-title" style="font-size:14px;font-weight:800;color:#fff;font-family:Syne,sans-serif;line-height:1.3;letter-spacing:0.2px;">'+(s.title||'')+'</div>'+
+          '<div id="li-value" style="font-size:22px;font-weight:900;font-family:DM Mono,monospace;letter-spacing:0.5px;line-height:1;color:'+(s.valueColor||'#fff')+';">'+(s.value||'')+'</div>'+
+          '<div id="li-msg" style="font-size:11.5px;line-height:1.5;font-family:Syne,sans-serif;color:'+(s.msgColor||'rgba(255,255,255,0.72)')+';">'+(s.msg||'')+'</div>';
+      }
+      // Update dots
+      var accent = s.valueColor || '#4cc9f0';
+      var dots = document.getElementById('li-dots');
+      dots.innerHTML = liSlides.map(function(_, i){
+        return '<span style="width:'+(i===liIdx%liSlides.length?'18px':'5px')+';height:5px;border-radius:3px;background:'+(i===liIdx%liSlides.length?accent:'rgba(255,255,255,0.18)')+';transition:all 0.3s;"></span>';
+      }).join('');
+      stage.style.opacity = '1';
+    }, 200);
+  }
+
+  window.liTogglePause = function(){
+    liPaused = !liPaused;
+    var btn = document.getElementById('li-pause');
+    if(btn) btn.textContent = liPaused ? '▶' : '⏸';
+    if(liPaused){
+      if(liTimer) clearInterval(liTimer); liTimer = null;
+    } else {
+      startRotation();
+    }
+  };
+
+  function startRotation(){
+    if(liTimer) clearInterval(liTimer);
+    if(liPaused) return;
+    liTimer = setInterval(function(){
+      liIdx = (liIdx+1) % liSlides.length;
+      renderSlide();
+    }, 6000);
+  }
+
+  // ── load + assemble ──
+  function loadInsights(){
+    var smDone=false, vocDone=false, smRows=null, vocRows=null;
+    function assemble(){
+      if(!smDone || !vocDone) return;
+      liSlides = buildSlides(smRows||[], vocRows||[]);
+      if(!liSlides.length){
+        liSlides = [{
+          icon:'⚠️', title:'No Data', value:'—',
+          valueColor:'rgba(255,255,255,0.5)',
+          msg:'Could not connect to Google Sheet. Click ⟳ to retry.',
+          msgColor:'rgba(255,255,255,0.6)',
+          bg:'rgba(255,255,255,0.04)', bd:'rgba(255,255,255,0.12)'
+        }];
+      }
+      liIdx = 0;
+      renderSlide();
+      startRotation();
+    }
+    jsonp('storeMetric', function(d){ smDone=true; smRows = d && Array.isArray(d.rows) ? d.rows : []; assemble(); });
+    jsonp('voc',         function(d){ vocDone=true; vocRows = d && Array.isArray(d.rows) ? d.rows : []; assemble(); });
+  }
+
+  window.liRefresh = function(){
+    var btn = document.getElementById('li-refresh');
+    if(btn) btn.style.transform = 'rotate(360deg)';
+    liSlides = [{
+      icon:'⏳', title:'Refreshing…', value:'',
+      valueColor:'#4cc9f0',
+      msg:'Pulling latest numbers from the sheet.',
+      msgColor:'rgba(255,255,255,0.7)',
+      bg:'rgba(67,97,238,0.10)', bd:'rgba(67,97,238,0.30)'
+    }];
+    liIdx = 0; renderSlide();
+    setTimeout(function(){ if(btn) btn.style.transform=''; loadInsights(); }, 300);
+  };
+
+  function init(){
+    // Initial loading slide
+    liSlides = [{
+      icon:'⏳', title:'Loading Insights', value:'Connecting…',
+      valueColor:'#4cc9f0',
+      msg:'Pulling month-to-date numbers from Google Sheet.',
+      msgColor:'rgba(255,255,255,0.7)',
+      bg:'rgba(67,97,238,0.10)', bd:'rgba(67,97,238,0.30)'
+    }];
+    renderSlide();
+    loadInsights();
+    // Auto-refresh every 5 min
+    setInterval(loadInsights, 5*60*1000);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE TEMPERATURE + LOCATION (under analog clock)
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var loc = { lat:12.9716, lon:77.5946, name:'BENGALURU' };
+
+  function fetchTemp(){
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude='+loc.lat+'&longitude='+loc.lon+'&current=temperature_2m';
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      var t = d && d.current && d.current.temperature_2m;
+      var v = document.getElementById('clk-temp-val');
+      var l = document.getElementById('clk-temp-loc');
+      var i = document.getElementById('clk-temp-icon');
+      if(typeof t === 'number'){
+        if(v) v.textContent = Math.round(t)+' °C';
+        if(l) l.textContent = loc.name;
+        if(i) i.textContent = t>=35?'🔥':t>=25?'☀️':t>=15?'🌤️':t>=5?'🌥️':'❄️';
+      }
+    }).catch(function(){
+      var v=document.getElementById('clk-temp-val'); if(v)v.textContent='-- °C';
+      var l=document.getElementById('clk-temp-loc'); if(l)l.textContent='OFFLINE';
+    });
+  }
+
+  function reverseGeo(lat, lon){
+    var url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en';
+    return fetch(url).then(function(r){return r.json();}).then(function(d){
+      return d.city || d.locality || d.principalSubdivision || d.countryName || 'LIVE';
+    }).catch(function(){ return 'LIVE'; });
+  }
+
+  function tryIp(){
+    fetch('https://ipapi.co/json/').then(function(r){return r.json();}).then(function(d){
+      if(d && typeof d.latitude==='number' && typeof d.longitude==='number'){
+        loc = {
+          lat:d.latitude, lon:d.longitude,
+          name:(d.city || d.region || d.country_name || 'LIVE').toString().toUpperCase()
+        };
+      }
+      fetchTemp();
+    }).catch(fetchTemp);
+  }
+
+  function init(){
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(function(p){
+        loc = { lat:p.coords.latitude, lon:p.coords.longitude, name:'LIVE' };
+        reverseGeo(loc.lat, loc.lon).then(function(name){
+          loc.name = String(name).toUpperCase();
+          fetchTemp();
+        });
+      }, tryIp, { timeout:4000, maximumAge:600000 });
+    } else { tryIp(); }
+    setInterval(fetchTemp, 10*60*1000);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -8296,7 +8804,7 @@ if (document.readyState === 'loading') {
 // VOC ANALYSIS ENGINE v2 — matches screenshot design
 // ═══════════════════════════════════════════════════════
 
-var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1','Atef01','Sach1','Ashutosh1'];
+var VOC_ALLOWED_USERS = ['Rishi1','Hpworld','Ahsan1','Jubid1','Mahnoor1','Pooja1','Atef01'];
 var VOC_UTR_TARGET = 0.10; // 0.10% target
 
 // ── CENTRAL APPS SCRIPT URL — used by all features ──────────────
@@ -8742,6 +9250,47 @@ function vocBuildPeriodDropdowns() {
   });
   var yFil = document.getElementById('voc-year-filter');
   if (yFil) yFil.innerHTML = yOpts;
+
+  // ── AUTO-SELECT CURRENT WEEK & MONTH ─────────────────────────────
+  // On first load (no period currently chosen), pre-select today's ISO week
+  // and today's month if either exists in the data. If today isn't in the
+  // data yet, fall back to the most recent available week/month.
+  var now      = new Date();
+  var todayWk  = vocISOWeekStr(now);                                   // e.g. "2026-W21"
+  var todayMo  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'); // "2026-05"
+
+  if (!vocSelectedWeek && !vocSelectedMonth) {
+    // Pick week: today's if present, else newest available
+    var pickWk = weekSet[todayWk]  ? todayWk : (wKeys.length ? wKeys[wKeys.length-1] : null);
+    // Pick month: today's if present, else newest available
+    var pickMo = monthSet[todayMo] ? todayMo : (mKeys.length ? mKeys[mKeys.length-1] : null);
+
+    // Sync the orders week + month filters so "Fetch Orders" uses current week/month by default
+    if (pickWk) {
+      var wFilD = document.getElementById('voc-week-filter');
+      if (wFilD) wFilD.value = pickWk;
+      var wSelD = document.getElementById('voc-week-select');
+      if (wSelD) wSelD.value = pickWk;
+    }
+    if (pickMo) {
+      var mFilD = document.getElementById('voc-month-filter');
+      if (mFilD) mFilD.value = pickMo;
+      var mSelD = document.getElementById('voc-month-select');
+      if (mSelD) mSelD.value = pickMo;
+    }
+
+    // Default the dashboard view to current MONTH (most common usage).
+    // User can still switch to Week via the period dropdown.
+    if (pickMo) {
+      vocSelectedMonth = pickMo;
+      vocSelectedWeek  = null;
+      vocPeriod        = 'monthly';
+      var MONTHSFULL2 = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var mp2 = pickMo.split('-');
+      var plD = document.getElementById('voc-period-label');
+      if (plD) plD.textContent = MONTHSFULL2[parseInt(mp2[1],10)-1] + ' ' + mp2[0];
+    }
+  }
 }
 
 function vocSetWeek(val) {
