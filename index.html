@@ -762,6 +762,132 @@ to{width:65%;} }
 }
 #page-locid .alert-info { background:rgba(22,163,74,0.07); color:#14532d; border:1px solid #86efac; }
 
+/* ── GATE PASS (Task 11) ── */
+#page-gatepass { background:#f4f4fa; min-height:100vh; }
+#page-gatepass .task-page {
+  --bg:#f4f4fa; --surface:#ffffff; --surface2:#eef0f9;
+  --border:#d4d6e6; --text:#0f1736; --text2:#3a4373;
+  --muted:#6b7196; --accent:#1F3864; color:#0f1736;
+  max-width:980px;
+}
+#page-gatepass .back-btn { background:#fff; border-color:#d4d6e6; color:#3a4373; }
+#page-gatepass .back-btn:hover { background:#1F3864; color:#fff; border-color:#1F3864; }
+#page-gatepass .task-header { border-bottom-color:#d4d6e6 !important; }
+#page-gatepass .task-header h2 {
+  background:linear-gradient(135deg,#0f1736,#1F3864);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#page-gatepass .gp-shell {
+  background:#fff; border:1px solid #d4d6e6; border-radius:18px;
+  box-shadow:0 4px 24px rgba(15,23,54,0.06); overflow:hidden;
+}
+#page-gatepass .gp-shell-head {
+  background:linear-gradient(135deg,#1F3864,#2a4a82);
+  color:#fff; padding:22px 28px; display:flex; align-items:center;
+  justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+#page-gatepass .gp-shell-head h3 {
+  font-size:18px; font-weight:800; letter-spacing:0.5px; margin:0;
+}
+#page-gatepass .gp-shell-head .gp-shell-sub {
+  font-family:'DM Mono',monospace; font-size:11px; opacity:0.85; letter-spacing:2px; text-transform:uppercase;
+}
+#page-gatepass .gp-shell-body { padding:28px; }
+#page-gatepass .gp-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:18px;
+}
+@media (max-width:640px) { #page-gatepass .gp-grid { grid-template-columns:1fr; } }
+#page-gatepass .gp-field { display:flex; flex-direction:column; gap:6px; }
+#page-gatepass .gp-field label {
+  font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase;
+  color:#3a4373;
+}
+#page-gatepass .gp-field label .req { color:#e11d48; margin-left:4px; }
+#page-gatepass .gp-field input {
+  width:100%; background:#fafbff; border:1px solid #d4d6e6; border-radius:10px;
+  padding:12px 14px; font-family:'Syne',sans-serif; font-size:14px; color:#0f1736;
+  outline:none; transition:border-color 0.15s, box-shadow 0.15s;
+}
+#page-gatepass .gp-field input:focus {
+  border-color:#1F3864; box-shadow:0 0 0 3px rgba(31,56,100,0.12); background:#fff;
+}
+#page-gatepass .gp-field input::placeholder { color:#a4abce; }
+#page-gatepass .gp-confirm {
+  margin-top:22px; padding:16px 18px; background:#eef0f9; border-left:4px solid #1F3864;
+  border-radius:8px; font-size:13px; color:#0f1736; line-height:1.55;
+}
+#page-gatepass .gp-actions {
+  margin-top:24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;
+}
+#page-gatepass .gp-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:13px 24px;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; border:none; border-radius:10px; cursor:pointer;
+  transition:transform 0.15s, box-shadow 0.15s;
+}
+#page-gatepass .gp-btn-primary {
+  background:linear-gradient(135deg,#1F3864,#2a4a82); color:#fff;
+  box-shadow:0 4px 16px rgba(31,56,100,0.3);
+}
+#page-gatepass .gp-btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(31,56,100,0.4); }
+#page-gatepass .gp-btn-ghost {
+  background:#fff; color:#3a4373; border:1px solid #d4d6e6;
+}
+#page-gatepass .gp-btn-ghost:hover { background:#eef0f9; border-color:#1F3864; color:#1F3864; }
+
+/* Print preview block */
+#page-gatepass .gp-preview {
+  margin-top:32px; background:#fff; border:1px solid #d4d6e6; border-radius:14px;
+  padding:24px;
+}
+#page-gatepass .gp-preview-title {
+  font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:#6b7196; margin-bottom:14px;
+}
+#page-gatepass .gp-doc {
+  background:#fff; color:#000; font-family:Calibri,Arial,sans-serif;
+  border:1px solid #c2c5d6; padding:24px;
+}
+#page-gatepass .gp-doc .gp-doc-title-cell {
+  background:#1F3864; color:#fff; text-align:center;
+  padding:18px 12px; border:2px solid #000;
+}
+#page-gatepass .gp-doc .gp-doc-title-cell h4 {
+  font-size:22px; font-weight:800; margin:0; letter-spacing:0.5px;
+}
+#page-gatepass .gp-doc .gp-doc-title-cell .gp-doc-sub {
+  font-size:13px; margin-top:6px; font-weight:400;
+}
+#page-gatepass .gp-doc table {
+  width:100%; border-collapse:collapse; margin-top:12px;
+  font-size:13px; color:#000;
+}
+#page-gatepass .gp-doc table td {
+  border:1px solid #000; padding:10px 12px; vertical-align:middle;
+  background:#fff; color:#000;
+}
+#page-gatepass .gp-doc table td.gp-doc-lbl {
+  background:#f2f2f2; font-weight:700; width:25%;
+}
+#page-gatepass .gp-doc .gp-doc-confirm {
+  margin:14px 0 12px; font-size:13px; color:#000;
+}
+#page-gatepass .gp-doc .gp-doc-sig td {
+  height:90px; vertical-align:bottom; width:33.33%;
+  background:#fff;
+}
+#page-gatepass .gp-doc .gp-doc-sig .gp-doc-sig-role { font-weight:700; font-size:11px; }
+#page-gatepass .gp-doc .gp-doc-sig .gp-doc-sig-name { font-size:11px; margin-top:4px; }
+#page-gatepass .gp-doc .gp-doc-footer {
+  margin-top:10px; font-size:10px; color:#595959; letter-spacing:0.3px;
+}
+
+@media print {
+  #page-gatepass .gp-shell, #page-gatepass .back-btn, #page-gatepass .task-header,
+  #page-gatepass .gp-preview-title { display:none !important; }
+  #page-gatepass .gp-doc { border:none; padding:0; }
+}
+
 /* ── Label print sheet ── */
 .locid-sheet {
   background: #fff;
@@ -1134,6 +1260,11 @@ to{width:65%;} }
   0%,100% { transform: scale(1); }
   30%      { transform: scale(1.18) translateY(-4px); }
   60%      { transform: scale(1.05) translateY(-2px); }
+}
+/* Task 11 — Gate Pass: truck rolls */
+@keyframes iconTruckRoll {
+  0%,100% { transform: translateX(-3px) rotate(-2deg); filter: drop-shadow(0 0 0px #1F3864); }
+  50%      { transform: translateX(4px) rotate(2deg); filter: drop-shadow(0 0 8px #1F3864); }
 }
 /* Task 10 — Location ID: tag swing */
 @keyframes iconTagSwing {
@@ -1760,6 +1891,13 @@ to{width:65%;} }
       <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
       <span class="card-arrow">→</span>
     </div>
+    <div class="task-card" style="--card-color:#1F3864" onclick="openTask('gatepass')">
+      <div class="card-num">Task 11</div>
+      <span class="card-icon" style="display:inline-block;animation:iconTruckRoll 2.2s ease-in-out infinite;">🚚</span>
+      <h3>Reverse Transshipment Gate Pass</h3>
+      <p>Fill the form &amp; export a print-ready Word file for the gate.</p>
+      <span class="card-arrow">→</span>
+    </div>
     <div class="task-card" style="--card-color:#06d6a0" onclick="openTask('voc')">
       <!-- no task number — this is an analysis tool -->
       <!-- Animated stock-market trendline SVG -->
@@ -2320,9 +2458,9 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#39514b4c4a5150525c4a5149585d51500f7955504f5c175a5654">
+    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#5e362c2b2d3637353b2d362e3f3a3637681e3237283b703d3133">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="88e0fafdfbe0e1e3edfbe0f8e9ece0e1bec8e4e1feeda6ebe7e5">[email&#160;protected]</span></div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="d9b1abacaab1b0b2bcaab1a9b8bdb1b0ef99b5b0afbcf7bab6b4">[email&#160;protected]</span></div></div>
     </a>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
@@ -2959,6 +3097,139 @@ to{width:65%;} }
 </div>
   <div id="locid-print-area" style="display:none;"></div>
   <div id="out-locid"></div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TASK 11: REVERSE TRANSSHIPMENT GATE PASS
+════════════════════════════════════════════════ -->
+<div class="page" id="page-gatepass">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🚚</span>
+    <div>
+      <h2>Reverse Transshipment Gate Pass</h2>
+      <p>Enter the shipment details below, preview the form, and export a print-ready Word (.docx) for the security gate.</p>
+    </div>
+  </div>
+
+  <div class="gp-shell">
+    <div class="gp-shell-head">
+      <div>
+        <h3>REVERSE TRANSSHIPMENT GATE PASS</h3>
+        <div class="gp-shell-sub">Dark Store → FC / RDC</div>
+      </div>
+      <div class="gp-shell-sub" style="text-align:right;">Fill → Preview → Export</div>
+    </div>
+    <div class="gp-shell-body">
+      <div class="gp-grid">
+        <div class="gp-field">
+          <label>Date<span class="req">*</span></label>
+          <input type="date" id="gp-date">
+        </div>
+        <div class="gp-field">
+          <label>Time<span class="req">*</span></label>
+          <input type="time" id="gp-time">
+        </div>
+        <div class="gp-field">
+          <label>From (Dark Store)<span class="req">*</span></label>
+          <input type="text" id="gp-from" placeholder="e.g. QAA7">
+        </div>
+        <div class="gp-field">
+          <label>To (FC)<span class="req">*</span></label>
+          <input type="text" id="gp-to" placeholder="e.g. DXB5">
+        </div>
+        <div class="gp-field">
+          <label>Transshipment ID<span class="req">*</span></label>
+          <input type="text" id="gp-tid" placeholder="e.g. TS-2026-00891" style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="gp-field">
+          <label>Time of Departure</label>
+          <input type="time" id="gp-depart">
+        </div>
+        <div class="gp-field">
+          <label>Total No. of Totes<span class="req">*</span></label>
+          <input type="number" id="gp-totes" min="0" placeholder="e.g. 42">
+        </div>
+        <div class="gp-field">
+          <label>Total No. of Units<span class="req">*</span></label>
+          <input type="number" id="gp-units" min="0" placeholder="e.g. 318">
+        </div>
+        <div class="gp-field">
+          <label>Vehicle No.<span class="req">*</span></label>
+          <input type="text" id="gp-vehicle" placeholder="e.g. TS09 AB 1234" style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="gp-field">
+          <label>Driver Name &amp; Contact<span class="req">*</span></label>
+          <input type="text" id="gp-driver" placeholder="e.g. Hrushikesh Padhi / +971 558896493">
+        </div>
+      </div>
+
+      <div class="gp-confirm">
+        <strong>Confirmation note:</strong> I confirm that all totes listed above have been scanned against the transshipment ID and the totals (totes and units) match the system count.
+      </div>
+
+      <div class="gp-actions">
+        <button class="gp-btn gp-btn-ghost" onclick="gpClearForm()">↻ Reset</button>
+        <button class="gp-btn gp-btn-ghost" onclick="gpUpdatePreview(true)">👁 Preview</button>
+        <button class="gp-btn gp-btn-ghost" onclick="window.print()">🖨 Print</button>
+        <button class="gp-btn gp-btn-primary" onclick="gpExportWord()">⬇ Export Word (.docx)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="gp-preview" id="gp-preview" style="display:none;">
+    <div class="gp-preview-title">— Document Preview —</div>
+    <div class="gp-doc" id="gp-doc">
+      <div class="gp-doc-title-cell">
+        <h4>REVERSE TRANSSHIPMENT GATE PASS</h4>
+        <div class="gp-doc-sub">Dark Store → FC / RDC</div>
+      </div>
+      <table>
+        <tr>
+          <td class="gp-doc-lbl">Date</td><td id="gp-pv-date"></td>
+          <td class="gp-doc-lbl">Time</td><td id="gp-pv-time"></td>
+        </tr>
+      </table>
+      <table>
+        <tr>
+          <td class="gp-doc-lbl">From (Dark Store)</td><td id="gp-pv-from"></td>
+          <td class="gp-doc-lbl">To (FC)</td><td id="gp-pv-to"></td>
+        </tr>
+        <tr>
+          <td class="gp-doc-lbl">Transshipment ID</td><td id="gp-pv-tid"></td>
+          <td class="gp-doc-lbl">Time of Departure</td><td id="gp-pv-depart"></td>
+        </tr>
+        <tr>
+          <td class="gp-doc-lbl">Total No. of Totes</td><td id="gp-pv-totes"></td>
+          <td class="gp-doc-lbl">Total No. of Units</td><td id="gp-pv-units"></td>
+        </tr>
+        <tr>
+          <td class="gp-doc-lbl">Vehicle No.</td><td id="gp-pv-vehicle"></td>
+          <td class="gp-doc-lbl">Driver Name &amp; Contact</td><td id="gp-pv-driver"></td>
+        </tr>
+      </table>
+      <div class="gp-doc-confirm">I confirm that all totes listed above have been scanned against the transshipment ID and the totals (totes and units) match the system count.</div>
+      <table>
+        <tr class="gp-doc-sig">
+          <td>
+            <div class="gp-doc-sig-role">Dispatched by (Associate / TL)</div>
+            <div class="gp-doc-sig-name">Name: ____________________</div>
+          </td>
+          <td>
+            <div class="gp-doc-sig-role">Security Out-Gate Signature</div>
+            <div class="gp-doc-sig-name">Name: ____________________</div>
+          </td>
+          <td>
+            <div class="gp-doc-sig-role">Received by (Destination FC)</div>
+            <div class="gp-doc-sig-name">Name: ____________________</div>
+          </td>
+        </tr>
+      </table>
+      <div class="gp-doc-footer">Operations • Retain copy at Dark Store; original travels with the shipment.</div>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -10941,7 +11212,7 @@ document.addEventListener('click', function(e) {
     'Connect on LinkedIn</a></footer>';
   var ids=['page-consolidation','page-audit-loc','page-audit-asin','page-slow-moving','page-ysm',
            'page-report','page-feedback','page-contact','page-lateslam','page-catalog-issue',
-           'page-scanning-issue','page-locid','page-store-metrics','page-ls-deepdive'];
+           'page-scanning-issue','page-locid','page-gatepass','page-store-metrics','page-ls-deepdive'];
   function inject(){
     ids.forEach(function(id){
       var pg=document.getElementById(id);
@@ -12838,6 +13109,344 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
 
 /* Boot */
 (function(){function boot(){DSTPRO.init();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TASK 11 — REVERSE TRANSSHIPMENT GATE PASS  (form + Word export)
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function $(id){ return document.getElementById(id); }
+  function val(id){ var el=$(id); return el && el.value ? el.value.trim() : ''; }
+  function esc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function xmlEsc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  function fmtDate(iso){
+    if(!iso) return '';
+    var p = iso.split('-');
+    if(p.length!==3) return iso;
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    if(isNaN(d)) return iso;
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return ('0'+d.getDate()).slice(-2)+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function fmtTime(t){
+    if(!t) return '';
+    var p = t.split(':');
+    if(p.length<2) return t;
+    var h = +p[0], m = p[1];
+    var ap = h>=12 ? 'PM' : 'AM';
+    var hh = h%12; if(hh===0) hh=12;
+    return hh+':'+m+' '+ap;
+  }
+
+  function gather(){
+    return {
+      date    : fmtDate(val('gp-date')),
+      time    : fmtTime(val('gp-time')),
+      from    : val('gp-from'),
+      to      : val('gp-to'),
+      tid     : val('gp-tid'),
+      depart  : fmtTime(val('gp-depart')),
+      totes   : val('gp-totes'),
+      units   : val('gp-units'),
+      vehicle : val('gp-vehicle'),
+      driver  : val('gp-driver')
+    };
+  }
+
+  function setText(id, v){ var el=$(id); if(el) el.textContent = v || ''; }
+
+  // ── Live preview ─────────────────────────────────────────────
+  window.gpUpdatePreview = function(scrollTo){
+    var d = gather();
+    setText('gp-pv-date', d.date);
+    setText('gp-pv-time', d.time);
+    setText('gp-pv-from', d.from);
+    setText('gp-pv-to', d.to);
+    setText('gp-pv-tid', d.tid);
+    setText('gp-pv-depart', d.depart);
+    setText('gp-pv-totes', d.totes);
+    setText('gp-pv-units', d.units);
+    setText('gp-pv-vehicle', d.vehicle);
+    setText('gp-pv-driver', d.driver);
+    var pv = $('gp-preview');
+    if(pv) pv.style.display = 'block';
+    if(scrollTo && pv) pv.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  window.gpClearForm = function(){
+    ['gp-date','gp-time','gp-from','gp-to','gp-tid','gp-depart',
+     'gp-totes','gp-units','gp-vehicle','gp-driver'].forEach(function(id){
+      var el=$(id); if(el) el.value='';
+    });
+    var pv = $('gp-preview'); if(pv) pv.style.display='none';
+    if(typeof showToast==='function') showToast('Form cleared');
+  };
+
+  // Auto-update preview as the user types
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id && e.target.id.indexOf('gp-')===0 && $('gp-preview') && $('gp-preview').style.display==='block'){
+      gpUpdatePreview(false);
+    }
+  });
+
+  // ── Build docx XML ───────────────────────────────────────────
+  // Helper: a labelled cell (grey) + value cell pair inside a 4-col row.
+  function rowKV(k1, v1, k2, v2){
+    function cell(text, isLbl, w){
+      var shd = isLbl ? '<w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>' : '';
+      var pr  = isLbl ? '<w:rPr><w:b/></w:rPr>' : '';
+      return '<w:tc>' +
+        '<w:tcPr>' +
+          '<w:tcW w:w="'+w+'" w:type="dxa"/>' +
+          '<w:tcBorders>' +
+            '<w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:left w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:right w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+          '</w:tcBorders>' +
+          shd +
+          '<w:tcMar><w:top w:w="140" w:type="dxa"/><w:left w:w="160" w:type="dxa"/><w:bottom w:w="140" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tcMar>' +
+          '<w:vAlign w:val="center"/>' +
+        '</w:tcPr>' +
+        '<w:p><w:r>'+pr+'<w:t xml:space="preserve">'+xmlEsc(text||' ')+'</w:t></w:r></w:p>' +
+      '</w:tc>';
+    }
+    return '<w:tr>' + cell(k1,true,2340) + cell(v1,false,2340) + cell(k2,true,2340) + cell(v2,false,2340) + '</w:tr>';
+  }
+
+  function buildTitleTable(){
+    return '<w:tbl>' +
+      '<w:tblPr>' +
+        '<w:tblW w:w="9360" w:type="dxa"/>' +
+        '<w:tblBorders>' +
+          '<w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/>' +
+          '<w:left w:val="single" w:sz="12" w:space="0" w:color="000000"/>' +
+          '<w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/>' +
+          '<w:right w:val="single" w:sz="12" w:space="0" w:color="000000"/>' +
+        '</w:tblBorders>' +
+      '</w:tblPr>' +
+      '<w:tblGrid><w:gridCol w:w="9360"/></w:tblGrid>' +
+      '<w:tr><w:tc>' +
+        '<w:tcPr>' +
+          '<w:tcW w:w="9360" w:type="dxa"/>' +
+          '<w:shd w:val="clear" w:color="auto" w:fill="1F3864"/>' +
+          '<w:tcMar><w:top w:w="200" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:bottom w:w="200" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tcMar>' +
+        '</w:tcPr>' +
+        '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+          '<w:r><w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="36"/></w:rPr>' +
+          '<w:t>REVERSE TRANSSHIPMENT GATE PASS</w:t></w:r></w:p>' +
+        '<w:p><w:pPr><w:spacing w:before="60"/><w:jc w:val="center"/></w:pPr>' +
+          '<w:r><w:rPr><w:color w:val="FFFFFF"/><w:sz w:val="22"/></w:rPr>' +
+          '<w:t xml:space="preserve">Dark Store  \u2192  FC/RDC</w:t></w:r></w:p>' +
+      '</w:tc></w:tr></w:tbl>';
+  }
+
+  function buildDataTable(d){
+    return '<w:tbl>' +
+      '<w:tblPr>' +
+        '<w:tblW w:w="9360" w:type="dxa"/>' +
+        '<w:tblBorders>' +
+          '<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+        '</w:tblBorders>' +
+      '</w:tblPr>' +
+      '<w:tblGrid><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/></w:tblGrid>' +
+      rowKV('Date', d.date, 'Time', d.time) +
+    '</w:tbl>';
+  }
+
+  function buildDetailsTable(d){
+    return '<w:tbl>' +
+      '<w:tblPr>' +
+        '<w:tblW w:w="9360" w:type="dxa"/>' +
+        '<w:tblBorders>' +
+          '<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+        '</w:tblBorders>' +
+      '</w:tblPr>' +
+      '<w:tblGrid><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/><w:gridCol w:w="2340"/></w:tblGrid>' +
+      rowKV('From (Dark Store)', d.from, 'To (FC)', d.to) +
+      rowKV('Transshipment ID', d.tid, 'Time of Departure', d.depart) +
+      rowKV('Total No. of Totes', d.totes, 'Total No. of Units', d.units) +
+      rowKV('Vehicle No.', d.vehicle, 'Driver Name & Contact', d.driver) +
+    '</w:tbl>';
+  }
+
+  function buildSignatureTable(){
+    function sigCell(role){
+      return '<w:tc>' +
+        '<w:tcPr>' +
+          '<w:tcW w:w="3120" w:type="dxa"/>' +
+          '<w:tcBorders>' +
+            '<w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:left w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+            '<w:right w:val="single" w:sz="6" w:space="0" w:color="000000"/>' +
+          '</w:tcBorders>' +
+          '<w:tcMar><w:top w:w="160" w:type="dxa"/><w:left w:w="160" w:type="dxa"/><w:bottom w:w="160" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tcMar>' +
+        '</w:tcPr>' +
+        '<w:p><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve"> </w:t></w:r></w:p>' +
+        '<w:p><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve"> </w:t></w:r></w:p>' +
+        '<w:p><w:r><w:rPr><w:b/><w:sz w:val="18"/></w:rPr><w:t>'+xmlEsc(role)+'</w:t></w:r></w:p>' +
+        '<w:p></w:p>' +
+        '<w:p><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>Name: ____________________</w:t></w:r></w:p>' +
+      '</w:tc>';
+    }
+    return '<w:tbl>' +
+      '<w:tblPr>' +
+        '<w:tblW w:w="9360" w:type="dxa"/>' +
+        '<w:tblBorders>' +
+          '<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+          '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>' +
+        '</w:tblBorders>' +
+      '</w:tblPr>' +
+      '<w:tblGrid><w:gridCol w:w="3120"/><w:gridCol w:w="3120"/><w:gridCol w:w="3120"/></w:tblGrid>' +
+      '<w:tr>' +
+        sigCell('Dispatched by (Associate / TL)') +
+        sigCell('Security Out-Gate Signature') +
+        sigCell('Received by (Destination FC)') +
+      '</w:tr>' +
+    '</w:tbl>';
+  }
+
+  function buildDocXml(d){
+    var body =
+      buildTitleTable() +
+      '<w:p><w:pPr><w:spacing w:before="100" w:after="100"/></w:pPr></w:p>' +
+      buildDataTable(d) +
+      '<w:p><w:pPr><w:spacing w:before="100" w:after="100"/></w:pPr></w:p>' +
+      buildDetailsTable(d) +
+      '<w:p><w:pPr><w:spacing w:before="200" w:after="120"/></w:pPr>' +
+        '<w:r><w:t>I confirm that all totes listed above have been scanned against the transshipment ID and the totals (totes and units) match the system count.</w:t></w:r>' +
+      '</w:p>' +
+      buildSignatureTable() +
+      '<w:p><w:pPr><w:spacing w:before="200"/></w:pPr>' +
+        '<w:r><w:rPr><w:color w:val="595959"/><w:sz w:val="16"/></w:rPr>' +
+          '<w:t xml:space="preserve">Operations  \u2022  Retain copy at Dark Store; original travels with the shipment.</w:t>' +
+        '</w:r>' +
+      '</w:p>' +
+      '<w:sectPr>' +
+        '<w:pgSz w:w="12240" w:h="15840"/>' +
+        '<w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>' +
+      '</w:sectPr>';
+
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '+
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<w:body>' + body + '</w:body>' +
+      '</w:document>';
+  }
+
+  // ── Export to .docx ──────────────────────────────────────────
+  window.gpExportWord = async function(){
+    var d = gather();
+    var required = [
+      ['gp-date', d.date, 'Date'],
+      ['gp-time', d.time, 'Time'],
+      ['gp-from', d.from, 'From (Dark Store)'],
+      ['gp-to',   d.to,   'To (FC)'],
+      ['gp-tid',  d.tid,  'Transshipment ID'],
+      ['gp-totes',d.totes,'Total No. of Totes'],
+      ['gp-units',d.units,'Total No. of Units'],
+      ['gp-vehicle',d.vehicle,'Vehicle No.'],
+      ['gp-driver',d.driver,'Driver Name & Contact']
+    ];
+    var missing = required.filter(function(r){ return !r[1]; });
+    if(missing.length){
+      var firstEl = $(missing[0][0]);
+      if(firstEl){ firstEl.focus(); firstEl.style.borderColor = '#e11d48'; firstEl.style.boxShadow='0 0 0 3px rgba(225,29,72,0.18)'; }
+      if(typeof showToast==='function') showToast('⚠ Please fill: ' + missing.map(function(m){return m[2];}).join(', '));
+      return;
+    }
+
+    if(typeof showToast==='function') showToast('⏳ Generating Word file…');
+
+    try {
+      if(!window.JSZip){
+        await new Promise(function(res, rej){
+          var s=document.createElement('script');
+          s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.onload=res; s.onerror=rej; document.head.appendChild(s);
+        });
+      }
+
+      var zip = new JSZip();
+      zip.file('[Content_Types].xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '</Types>');
+
+      zip.file('_rels/.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>');
+
+      zip.file('word/_rels/document.xml.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>');
+
+      zip.file('word/document.xml', buildDocXml(d));
+
+      var blob = await zip.generateAsync({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      var safe = (d.tid || 'GatePass').replace(/[^A-Z0-9\-_]/gi,'_');
+      a.href = url;
+      a.download = 'Reverse_Transshipment_Gate_Pass_' + safe + '.docx';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      if(typeof showToast==='function') showToast('✅ Word (.docx) ready!');
+      gpUpdatePreview(false);
+    } catch(err){
+      console.error(err);
+      if(typeof showToast==='function') showToast('❌ Error: ' + err.message);
+    }
+  };
+
+  // ── Defaults: today's date pre-filled ────────────────────────
+  function setDefaultsOnce(){
+    var de = $('gp-date');
+    if(de && !de.value){
+      var n = new Date();
+      de.value = n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', setDefaultsOnce);
+  else setDefaultsOnce();
+
+})();
 </script>
 
 </body>
