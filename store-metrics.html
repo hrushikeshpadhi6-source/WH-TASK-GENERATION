@@ -11,14 +11,14 @@
 [data-theme="dark"] {
   --bg:#07060f; --surface:#0f0e1c; --card:#13121f; --border:rgba(255,255,255,0.07);
   --text:#e8e6ff; --muted:#6b69a0; --th-bg:#0d0c1a; --row-hover:rgba(255,255,255,0.03);
-  --chip-bg:rgba(255,255,255,0.05); --chip-border:rgba(255,255,255,0.09);
+  --chip-bg:rgba(255,255,255,0.07); --chip-border:rgba(255,255,255,0.18);
   --progress-track:rgba(255,255,255,0.07); --note-bg:rgba(67,97,238,0.08);
   --filter-bg:rgba(255,255,255,0.05); --hdr-bg:rgba(7,6,15,0.95);
 }
 [data-theme="light"] {
   --bg:#eeedf8; --surface:#fff; --card:#fff; --border:rgba(0,0,0,0.1);
   --text:#0d0c1a; --muted:#4a4870; --th-bg:#e8e6f8; --row-hover:rgba(67,97,238,0.06);
-  --chip-bg:rgba(67,97,238,0.08); --chip-border:rgba(67,97,238,0.2);
+  --chip-bg:rgba(67,97,238,0.09); --chip-border:rgba(67,97,238,0.35);
   --progress-track:rgba(0,0,0,0.1); --note-bg:rgba(67,97,238,0.06);
   --filter-bg:rgba(0,0,0,0.05); --hdr-bg:rgba(238,237,248,0.98);
 }
@@ -152,14 +152,14 @@ canvas{max-height:160px;}
 .lb-chips{display:flex;flex-wrap:nowrap;gap:4px;flex:1;overflow-x:auto;}
 .lb-chips::-webkit-scrollbar{height:2px;}
 .lb-chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:50px;}
-.chip{display:flex;flex-direction:column;align-items:center;padding:4px 8px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:8px;transition:all 0.2s;cursor:default;min-width:42px;flex-shrink:0;}
+.chip{display:flex;flex-direction:column;align-items:center;padding:5px 9px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:8px;transition:all 0.2s;cursor:default;min-width:46px;flex-shrink:0;}
 .chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
-.chip-l{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:800;white-space:nowrap;}
-[data-theme='light'] .chip-l{color:#3a3860;font-weight:900;letter-spacing:1.2px;}
+.chip-l{font-size:9px;color:#c4c2e0;text-transform:uppercase;letter-spacing:0.8px;font-weight:800;white-space:nowrap;}
+[data-theme='light'] .chip-l{color:#1e1b4b;font-weight:900;letter-spacing:0.8px;}
 [data-theme='light'] td{color:#0d0c1a;opacity:1;}
 [data-theme='light'] .kpi-lbl{color:#4a4870;font-weight:900;}
 [data-theme='light'] .kpi-sub{color:#5a5888;}
-.chip-v{font-size:12px;font-weight:800;font-family:'DM Mono',monospace;margin-top:1px;white-space:nowrap;}
+.chip-v{font-size:13px;font-weight:800;font-family:'DM Mono',monospace;margin-top:2px;white-space:nowrap;}
 
 /* TABLE */
 .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
@@ -255,9 +255,9 @@ tbody tr:hover{background:var(--row-hover);}
   .lb-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;gap:4px;}
   .lb-chips::-webkit-scrollbar{height:2px;}
   .lb-chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:50px;}
-  .chip{min-width:44px;padding:3px 6px;flex-shrink:0;}
-  .chip-v{font-size:11px;}
-  .chip-l{font-size:6px;}
+  .chip{min-width:46px;padding:4px 7px;flex-shrink:0;}
+  .chip-v{font-size:12px;}
+  .chip-l{font-size:8px;}
   .lb-medal{font-size:16px;width:22px;}
   .lb-wrap .sec-hdr{flex-direction:column;align-items:flex-start !important;gap:8px;}
 
@@ -654,7 +654,7 @@ function smGoBack(){
   if (window.history.length > 1) { history.back(); return; }
   window.location.href = 'index.html';
 }
-var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={};
+var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[];
 
 // ═══════════════════════════════════════════════
 // THEME
@@ -1003,35 +1003,15 @@ function smFetchVOC(){
     var now = new Date();
 
     smVocData={};
-    // Deduplicate by store+orderId+asin — same order+asin = one complaint
-    var vocSeen = {}; // key: store|orderId|asin
+    smVocRaw=[];
+    // Store raw VOC rows so the leaderboard can re-filter by the active main date
     data.rows.forEach(function(r){
       var store   = String(r.store||r.Store||'').trim();
       var orderId = String(r.orderId||r.order_id||r.orderid||'').trim();
       var asin    = String(r.asin||r.ASIN||'').trim();
+      var date    = String(r.date||r.Date||r.DATE||'').split('T')[0].split(' ')[0].trim();
       if(!store) return;
-
-      var match = true;
-      if(vocPeriod !== 'all' && r.date) {
-        var rd = new Date(r.date);
-        if(vocPeriod === 'day') {
-          var vocDateInput = document.getElementById('voc-date-filter');
-          var dayStr = (vocDateInput && vocDateInput.value) ? vocDateInput.value : (currentDate !== 'all' ? currentDate : now.toISOString().split('T')[0]);
-          match = r.date.startsWith(dayStr);
-        } else if(vocPeriod === 'week') {
-          var weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
-          match = rd >= weekAgo;
-        } else if(vocPeriod === 'month') {
-          match = rd.getMonth()===now.getMonth() && rd.getFullYear()===now.getFullYear();
-        }
-      }
-      if(!match) return;
-
-      // Dedup key: store + orderId + asin
-      var key = store + '|' + orderId + '|' + asin;
-      if(vocSeen[key]) return; // already counted
-      vocSeen[key] = true;
-      smVocData[store] = (smVocData[store]||0) + 1;
+      smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date});
     });
 
     var rows=smFilter(); smLeaderboard(rows);
@@ -1101,7 +1081,24 @@ function smLeaderboard(rows){
     var col=SC[d.store]||'#8b8aad';
     var slaC=d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
     var lsC=d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#ef4444';
-    var voc=smVocData[d.store]||0; var vocC=voc>0?'#f72585':'#06d6a0';
+    var voc=0;
+    if(smVocRaw.length){
+      var pv=document.getElementById('sm-pval').value;
+      var vocSeen2={};
+      smVocRaw.forEach(function(v){
+        if(v.store!==d.store)return;
+        // Apply same date filter as the main table
+        if(pv!=='all'){
+          if(smPeriod==='day'&&v.date!==pv)return;
+          if(smPeriod==='year'&&!v.date.startsWith(pv))return;
+          if(smPeriod==='month'&&v.date.substring(0,7)!==pv.substring(0,7))return;
+        }
+        // Dedup: same orderId+asin = one VOC; same orderId+different asin = separate VOC
+        var k=v.orderId+'|'+v.asin;
+        if(!vocSeen2[k]){vocSeen2[k]=true;voc++;}
+      });
+    }
+    var vocC=voc>0?'#f72585':'#06d6a0';
     return '<div class="lb-row" style="--sc:'+col+';">'+
       '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
       '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>'+
