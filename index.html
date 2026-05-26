@@ -9227,13 +9227,7 @@ function vocCheckAccess() {
   var uname = rawVal.trim().toLowerCase();
   var el = document.getElementById('voc-gate-msg');
 
-  // ── TEMP DEBUG — remove after fix ──
-  el.textContent = 'Typed: [' + uname + ']';
-  el.style.display = 'block';
-  el.style.background = 'rgba(67,97,238,0.1)';
-  el.style.border = '1px solid rgba(67,97,238,0.3)';
-  el.style.color = '#4361ee';
-  // ───────────────────────────────────
+
 
   if (!uname) { el.textContent='⚠️ Please enter your username.'; el.style.display='block'; el.style.background='rgba(247,37,133,0.1)'; el.style.border='1px solid rgba(247,37,133,0.3)'; el.style.color='#c0392b'; return; }
   if (VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname)===-1) {
