@@ -143,16 +143,14 @@ canvas{max-height:160px;}
 
 /* LEADERBOARD */
 .lb-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
-.lb-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
+.lb-row{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:14px;
   margin-bottom:10px;border-left:5px solid var(--sc,var(--accent));background:var(--chip-bg);
   transition:all 0.25s;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 .lb-row:hover{background:rgba(67,97,238,0.08);transform:translateX(4px);box-shadow:0 4px 16px rgba(0,0,0,0.1);}
-.lb-medal{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
-.lb-store{font-weight:800;font-size:16px;min-width:64px;font-family:'DM Mono',monospace;}
-.lb-chips{display:flex;flex-wrap:nowrap;gap:4px;flex:1;overflow-x:auto;}
-.lb-chips::-webkit-scrollbar{height:2px;}
-.lb-chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:50px;}
-.chip{display:flex;flex-direction:column;align-items:center;padding:5px 9px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:8px;transition:all 0.2s;cursor:default;min-width:46px;flex-shrink:0;}
+.lb-medal{font-size:20px;width:28px;text-align:center;flex-shrink:0;padding-top:4px;}
+.lb-store{font-weight:800;font-size:16px;min-width:64px;font-family:'DM Mono',monospace;padding-top:4px;}
+.lb-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;}
+.chip{display:flex;flex-direction:column;align-items:center;padding:5px 10px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:8px;transition:all 0.2s;cursor:default;min-width:52px;flex-shrink:0;}
 .chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
 .chip-l{font-size:9px;color:#c4c2e0;text-transform:uppercase;letter-spacing:0.8px;font-weight:800;white-space:nowrap;}
 [data-theme='light'] .chip-l{color:#1e1b4b;font-weight:900;letter-spacing:0.8px;}
@@ -252,9 +250,7 @@ tbody tr:hover{background:var(--row-hover);}
   /* Leaderboard */
   .lb-row{padding:10px 12px;gap:8px;}
   .lb-store{font-size:13px;min-width:50px;}
-  .lb-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;gap:4px;}
-  .lb-chips::-webkit-scrollbar{height:2px;}
-  .lb-chips::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:50px;}
+  .lb-chips{flex-wrap:wrap;gap:4px;}
   .chip{min-width:46px;padding:4px 7px;flex-shrink:0;}
   .chip-v{font-size:12px;}
   .chip-l{font-size:8px;}
@@ -1054,51 +1050,70 @@ function smLeaderboard(rows){
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   if(!stores.length){document.getElementById('sm-lb').innerHTML='<div class="empty">No data</div>';return;}
   function ch(l,v,c){return '<div class="chip"><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
+
+  // Pre-read VOC filter once for all stores
+  var pvVoc=document.getElementById('sm-pval').value;
+  function storeVoc(s){
+    if(!smVocRaw.length)return 0;
+    var seen={};var cnt=0;
+    smVocRaw.forEach(function(v){
+      if(v.store!==s)return;
+      if(pvVoc!=='all'){
+        if(smPeriod==='day'&&v.date!==pvVoc)return;
+        if(smPeriod==='year'&&!v.date.startsWith(pvVoc))return;
+        if(smPeriod==='month'&&v.date.substring(0,7)!==pvVoc.substring(0,7))return;
+      }
+      var k=v.orderId+'|'+v.asin;
+      if(!seen[k]){seen[k]=true;cnt++;}
+    });
+    return cnt;
+  }
+
   var data=stores.map(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
-    var slaR=avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}));
-    var pts=sum(sr.map(function(r){return gNum(r,['Points','POINTS','X']);}));
-    var ptsAvg=sr.length>0?pts/sr.length:0;
-    return{store:s,
-      sla:toP(slaR),
+    var slaR  = avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}));
+    var ptsR  = sum(sr.map(function(r){return gNum(r,['Points','POINTS','X']);}));
+    var ibTph = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
+    var orders= sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
+    var ls    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
+    var sla   = toP(slaR);
+    var pts   = toP(sr.length>0?ptsR/sr.length:0);
+    var voc   = storeVoc(s);
+
+    // ── Composite Score (max 100 pts) ──────────────────────────
+    // SLA    : 40 pts  — quality delivery (target ≥99%)
+    // Points : 30 pts  — existing KPI data from sheet
+    // IB TPH : 15 pts  — inbound productivity (target 145, bonus if above)
+    // VOC    : 15 pts  — customer complaints (-3 per VOC, min 0)
+    var slaScore = Math.min(sla/100,1)*40;
+    var ptsScore = Math.min(pts/100,1)*30;
+    var ibScore  = ibTph>0?Math.min(ibTph/145,1.1)*15:0; // up to 16.5 if TPH>145
+    var vocScore = Math.max(0,15-voc*3);
+    var score    = slaScore+ptsScore+ibScore+vocScore;
+
+    return{store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, score:score,
       inbound:sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);})),
-      transs:sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);})),
-      vendor:sum(sr.map(function(r){return gNum(r,['VENDOR','Vendor','D']);})),
-      orders:sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);})),
+      transs: sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);})),
+      vendor: sum(sr.map(function(r){return gNum(r,['VENDOR','Vendor','D']);})),
+      orders: orders,
       obUnits:sum(sr.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);})),
-      upo:avg(sr.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})),
-      ibTph:avg(sr.map(function(r){return gNum(r,['IB TPH','O']);})),
-      obTph:avg(sr.map(function(r){return gNum(r,['OB TPH','P']);})),
-      ls:sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);})),
-      skip:sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);})),
-      short:sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);})),
-      pts:toP(ptsAvg)
+      upo:    avg(sr.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})),
+      obTph:  avg(sr.map(function(r){return gNum(r,['OB TPH','P']);})),
+      ls:ls,
+      skip:   sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);})),
+      short:  sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}))
     };
-  }).sort(function(a,b){return b.pts-a.pts;});
+  }).sort(function(a,b){return b.score-a.score;});
 
   var medals=['🥇','🥈','🥉'];
   document.getElementById('sm-lb').innerHTML=data.map(function(d,i){
-    var col=SC[d.store]||'#8b8aad';
-    var slaC=d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
-    var lsC=d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#ef4444';
-    var voc=0;
-    if(smVocRaw.length){
-      var pv=document.getElementById('sm-pval').value;
-      var vocSeen2={};
-      smVocRaw.forEach(function(v){
-        if(v.store!==d.store)return;
-        // Apply same date filter as the main table
-        if(pv!=='all'){
-          if(smPeriod==='day'&&v.date!==pv)return;
-          if(smPeriod==='year'&&!v.date.startsWith(pv))return;
-          if(smPeriod==='month'&&v.date.substring(0,7)!==pv.substring(0,7))return;
-        }
-        // Dedup: same orderId+asin = one VOC; same orderId+different asin = separate VOC
-        var k=v.orderId+'|'+v.asin;
-        if(!vocSeen2[k]){vocSeen2[k]=true;voc++;}
-      });
-    }
-    var vocC=voc>0?'#f72585':'#06d6a0';
+    var col  = SC[d.store]||'#8b8aad';
+    var slaC = d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
+    var lsC  = d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#ef4444';
+    var vocC = d.voc===0?'#06d6a0':d.voc<=3?'#ffd60a':'#f72585';
+    var ibC  = d.ibTph>=145?'#06d6a0':d.ibTph>=100?'#ffd60a':'#ef4444';
+    // Score colour: green ≥85, yellow ≥70, red <70
+    var scoreC = d.score>=85?'#06d6a0':d.score>=70?'#ffd60a':'#ef4444';
     return '<div class="lb-row" style="--sc:'+col+';">'+
       '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
       '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>'+
@@ -1110,13 +1125,14 @@ function smLeaderboard(rows){
         ch('Orders',fmt(d.orders),'#4361ee')+
         ch('Units',fmt(d.obUnits),'#ffd60a')+
         ch('UPO',d.upo.toFixed(2),'#7c3aed')+
-        ch('IB TPH',d.ibTph.toFixed(0),'#0891b2')+
+        ch('IB TPH',d.ibTph.toFixed(0),ibC)+
         ch('OB TPH',d.obTph.toFixed(0),'#ff6b35')+
         ch('LS',d.ls+' ('+(d.orders>0?(d.ls/d.orders*100).toFixed(1):'0')+'%)',lsC)+
         ch('Skip',d.skip,d.skip>0?'#ef4444':'#06d6a0')+
         ch('Short',d.short,d.short>0?'#ef4444':'#06d6a0')+
-        ch('VOC',voc,vocC)+
-        ch('Points',d.pts>0?d.pts.toFixed(1)+'%':'0%','#ffd60a')+
+        ch('VOC',d.voc,vocC)+
+        ch('Sh.Pts',d.pts>0?d.pts.toFixed(1)+'%':'0%','#a855f7')+
+        ch('Score',d.score.toFixed(1),scoreC)+
       '</div></div>';
   }).join('');
 }
