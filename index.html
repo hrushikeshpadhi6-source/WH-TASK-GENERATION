@@ -1322,6 +1322,16 @@ to{width:65%;} }
   display: flex !important;
   animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
 }
+#voc-deepdive-modal.open {
+  display: flex !important;
+  animation: modalIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+#voc-deepdive-card {
+  animation: cardSlideUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+.voc-dd-tab { transition: color 0.15s, border-bottom-color 0.15s; }
+.voc-dd-tab:hover { color: #fff !important; }
+#page-voc[data-theme="light"] .voc-dd-tab:hover { color: #1a1830 !important; }
 @keyframes modalIn {
   from { opacity:0; transform:scale(0.94); }
   to   { opacity:1; transform:scale(1); }
@@ -2458,9 +2468,9 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#5e362c2b2d3637353b2d362e3f3a3637681e3237283b703d3133">
+    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#a5cdd7d0d6cdcccec0d6cdd5c4c1cdcc93e5c9ccd3c08bc6cac8">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="d9b1abacaab1b0b2bcaab1a9b8bdb1b0ef99b5b0afbcf7bab6b4">[email&#160;protected]</span></div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="a8c0dadddbc0c1c3cddbc0d8c9ccc0c19ee8c4c1decd86cbc7c5">[email&#160;protected]</span></div></div>
     </a>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
@@ -3292,6 +3302,74 @@ to{width:65%;} }
     </div>
   </div>
 </div>
+
+<!-- ── VOC DEEP DIVE MODAL ───────────────────────────────────── -->
+<div id="voc-deepdive-modal" style="display:none;position:fixed;inset:0;z-index:9100;align-items:center;justify-content:center;padding:18px;font-family:Arial,Helvetica,sans-serif;">
+  <div onclick="vocCloseDeepDive()" style="position:absolute;inset:0;background:rgba(5,4,14,0.78);backdrop-filter:blur(8px);"></div>
+  <div id="voc-deepdive-card" style="position:relative;z-index:1;background:#13121f;border:1px solid #2e2c45;border-radius:20px;width:100%;max-width:1240px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6);font-family:Arial,Helvetica,sans-serif;">
+    <!-- Header -->
+    <div id="voc-deepdive-header" style="padding:16px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,rgba(67,97,238,0.15),rgba(114,9,183,0.1) 60%,#13121f);">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#4361ee,#7209b7);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 6px 20px rgba(67,97,238,0.4);">🔬</div>
+        <div>
+          <div id="voc-deepdive-title" style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.2px;font-family:Arial,Helvetica,sans-serif;">VOC Deep Dive</div>
+          <div id="voc-deepdive-sub" style="font-size:11px;color:#8b8aad;margin-top:2px;font-family:Arial,Helvetica,sans-serif;letter-spacing:0.5px;">Weekly trend · area movement · RCA quality</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="vocDDExportExcel()" style="padding:8px 16px;border-radius:10px;border:none;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#1a7a4a,#14532d);color:#fff;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(26,122,74,0.35);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">📊 Export Excel</button>
+        <button onclick="vocCloseDeepDive()" style="background:rgba(255,255,255,0.06);border:1px solid #2e2c45;border-radius:10px;color:#8b8aad;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseover="this.style.borderColor='#ff6b35';this.style.color='#ff6b35'" onmouseout="this.style.borderColor='#2e2c45';this.style.color='#8b8aad'">×</button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div id="voc-deepdive-filterbar" style="padding:11px 24px;border-bottom:1px solid #2e2c45;background:#161525;display:flex;flex-wrap:wrap;align-items:center;gap:10px;flex-shrink:0;font-family:Arial,Helvetica,sans-serif;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8b8aad;text-transform:uppercase;margin-right:4px;">Compare</div>
+      <select id="voc-dd-compare" onchange="vocRenderDeepDive()" style="background:#1a1928;border:1px solid #2e2c45;border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#e8e6ff;outline:none;cursor:pointer;font-weight:600;">
+        <option value="wk1">This Week vs Prev Week</option>
+        <option value="wk4">Last 4 Weeks vs Prev 4 Weeks</option>
+        <option value="mo1">This Month vs Prev Month</option>
+        <option value="mo4">Last 4 Months vs Prev 4 Months</option>
+        <option value="all">All Time (no compare)</option>
+      </select>
+      <div style="width:1px;height:22px;background:#2e2c45;margin:0 2px;"></div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8b8aad;text-transform:uppercase;">Store</div>
+      <select id="voc-dd-store" onchange="vocRenderDeepDive()" style="background:#1a1928;border:1px solid #2e2c45;border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#e8e6ff;outline:none;min-width:140px;cursor:pointer;font-weight:600;">
+        <option value="all">All Stores</option>
+      </select>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8b8aad;text-transform:uppercase;">Area</div>
+      <select id="voc-dd-area" onchange="vocRenderDeepDive()" style="background:#1a1928;border:1px solid #2e2c45;border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#e8e6ff;outline:none;min-width:180px;cursor:pointer;font-weight:600;">
+        <option value="all">All RCA Areas</option>
+      </select>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8b8aad;text-transform:uppercase;">Date</div>
+      <input type="date" id="voc-dd-date-from" onchange="vocRenderDeepDive()" title="From date" style="background:#1a1928;border:1px solid #2e2c45;border-radius:8px;padding:6px 10px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#e8e6ff;outline:none;cursor:pointer;font-weight:600;">
+      <span style="color:#8b8aad;font-size:13px;">→</span>
+      <input type="date" id="voc-dd-date-to"   onchange="vocRenderDeepDive()" title="To date" style="background:#1a1928;border:1px solid #2e2c45;border-radius:8px;padding:6px 10px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#e8e6ff;outline:none;cursor:pointer;font-weight:600;">
+      <button onclick="vocDDClearDateRange()" title="Clear date range" style="background:rgba(255,255,255,0.05);border:1px solid #2e2c45;border-radius:8px;padding:6px 10px;color:#8b8aad;font-size:12px;cursor:pointer;font-family:Arial,Helvetica,sans-serif;font-weight:600;" onmouseover="this.style.color='#ff6b35';this.style.borderColor='#ff6b35'" onmouseout="this.style.color='#8b8aad';this.style.borderColor='#2e2c45'">✕</button>
+      <div style="flex:1;"></div>
+      <div id="voc-dd-summary" style="font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#8b8aad;letter-spacing:0.3px;font-weight:600;"></div>
+    </div>
+
+    <!-- Tab bar -->
+    <div style="padding:0 24px;border-bottom:1px solid #2e2c45;background:#13121f;display:flex;gap:0;flex-shrink:0;overflow-x:auto;">
+      <button class="voc-dd-tab" data-tab="trend" onclick="vocDDTab('trend')" style="padding:13px 18px;border:none;background:transparent;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid #4361ee;letter-spacing:0.3px;white-space:nowrap;">📈 Weekly Trend</button>
+      <button class="voc-dd-tab" data-tab="areas" onclick="vocDDTab('areas')" style="padding:13px 18px;border:none;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.3px;white-space:nowrap;">🎯 Area Movement</button>
+      <button class="voc-dd-tab" data-tab="stores" onclick="vocDDTab('stores')" style="padding:13px 18px;border:none;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.3px;white-space:nowrap;">🏬 Store Movement</button>
+      <button class="voc-dd-tab" data-tab="unsat" onclick="vocDDTab('unsat')" style="padding:13px 18px;border:none;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.3px;white-space:nowrap;">⚠ Unsatisfied RCAs <span id="voc-dd-unsat-pill" style="display:none;background:#c0392b;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:4px;">0</span></button>
+      <button class="voc-dd-tab" data-tab="copypaste" onclick="vocDDTab('copypaste')" style="padding:13px 18px;border:none;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.3px;white-space:nowrap;">🔁 Copy-Paste RCAs <span id="voc-dd-cp-pill" style="display:none;background:#ff6b35;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:4px;">0</span></button>
+      <button class="voc-dd-tab" data-tab="notfilled" onclick="vocDDTab('notfilled')" style="padding:13px 18px;border:none;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.3px;white-space:nowrap;">📝 RCA Not Filled <span id="voc-dd-nf-pill" style="display:none;background:#b5860d;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:4px;">0</span></button>
+    </div>
+
+    <!-- Body -->
+    <div id="voc-deepdive-body" style="overflow-y:auto;flex:1;padding:20px 24px;background:#0f0e17;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;"></div>
+
+    <!-- Footer -->
+    <div style="padding:11px 24px;border-top:1px solid #2e2c45;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#161525;font-family:Arial,Helvetica,sans-serif;">
+      <div style="font-size:11.5px;color:#8b8aad;">💡 Click any unsatisfied RCA row to see full ticket details</div>
+      <button onclick="vocCloseDeepDive()" style="padding:9px 24px;border-radius:10px;border:1px solid #2e2c45;background:transparent;color:#8b8aad;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='#4361ee';this.style.color='#4361ee';" onmouseout="this.style.borderColor='#2e2c45';this.style.color='#8b8aad';">Close</button>
+    </div>
+  </div>
+</div>
 <div id="page-top-loader" style="opacity:0;transition:opacity 0.3s;">
   <div class="loader-fill" id="top-loader-fill"></div>
 </div>
@@ -3570,7 +3648,7 @@ function vocCloseModal() {
 }
 // Close on Escape key
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { vocCloseModal(); dashKbHideOverlay(); return; }
+  if (e.key === 'Escape') { vocCloseModal(); vocCloseDeepDive(); dashKbHideOverlay(); return; }
   // Feature 5: keyboard shortcuts — only when no input is focused
   var tag = document.activeElement ? document.activeElement.tagName : '';
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -8683,10 +8761,14 @@ if (document.readyState === 'loading') {
 
         <!-- Mode toggle tabs -->
         <div style="display:flex;gap:4px;background:rgba(67,97,238,0.08);border-radius:8px;padding:3px;">
+          <button id="ord-tab-day"   onclick="vocOrdersSetMode('day')"   style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Day</button>
           <button id="ord-tab-week"  onclick="vocOrdersSetMode('week')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;transition:all 0.15s;">Week</button>
           <button id="ord-tab-month" onclick="vocOrdersSetMode('month')" style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Month</button>
           <button id="ord-tab-year"  onclick="vocOrdersSetMode('year')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Year</button>
         </div>
+
+        <!-- Day filter (hidden by default) -->
+        <input type="date" id="voc-day-filter" style="display:none;background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:140px;">
 
         <!-- Week filter -->
         <select id="voc-week-filter" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:150px;">
@@ -8725,6 +8807,8 @@ if (document.readyState === 'loading') {
     <!-- DEEP DIVE FILTERS -->
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:22px;padding:14px 18px;background:var(--voc-surface,#fff);border:1px solid var(--voc-border,#d5d2f0);border-radius:12px;" class="voc-filter-bar">
       <span style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);margin-right:4px;">Period</span>
+      <!-- Daily: date input -->
+      <input type="date" id="voc-day-select" onchange="vocSetDay(this.value)" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;" title="Filter by single day">
       <!-- Weekly: dropdown for Week 1–53 -->
       <select id="voc-week-select" onchange="vocSetWeek(this.value)" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;">
         <option value="">— Week —</option>
@@ -8816,6 +8900,29 @@ if (document.readyState === 'loading') {
           <tbody id="voc-picker-body"></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- ── DEEP DIVE LAUNCHER ──────────────────────────────────────────── -->
+    <div style="background:linear-gradient(135deg,rgba(67,97,238,0.08),rgba(114,9,183,0.05) 60%,transparent);border:1px solid var(--voc-border,#d5d2f0);border-left:4px solid #4361ee;border-radius:16px;padding:18px 22px;margin-bottom:24px;display:flex;flex-wrap:wrap;align-items:center;gap:18px;">
+      <div style="flex:1;min-width:260px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:22px;">🔬</span>
+          <div style="font-size:14px;font-weight:800;color:var(--voc-text,#1a1830);letter-spacing:-0.2px;">Deep Dive — Weekly Trend & RCA Quality</div>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;background:rgba(67,97,238,0.15);color:#4361ee;padding:3px 9px;border-radius:10px;font-weight:700;">NEW</span>
+        </div>
+        <div style="font-size:12.5px;color:var(--voc-text2,#3d3a6b);line-height:1.55;margin-bottom:6px;">
+          Compare VOC week-over-week per store, see which <b>areas improved</b> vs which <b>got impacted</b>, and surface tickets where the RCA reply doesn't match the customer's complaint.
+        </div>
+        <div style="font-size:11.5px;color:var(--voc-muted,#7b78a8);line-height:1.55;padding:8px 12px;background:rgba(192,57,43,0.05);border:1px dashed rgba(192,57,43,0.3);border-radius:8px;margin-top:8px;">
+          <b style="color:#c0392b;">⚠ Example of an unsatisfied RCA:</b>
+          Customer comment says <i>"vegetables were moldy"</i> but the RCA reply is just <i>"vendor to check"</i> — the reply deflects the issue instead of fixing it. We auto-highlight these so you can re-open them.
+        </div>
+      </div>
+      <button onclick="vocOpenDeepDive()" style="padding:14px 26px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:pointer;background:linear-gradient(135deg,#4361ee,#7209b7);color:#fff;display:inline-flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(67,97,238,0.35);transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 30px rgba(67,97,238,0.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 20px rgba(67,97,238,0.35)'">
+        <span style="font-size:18px;">🔬</span>
+        <span>Deep Dive</span>
+        <span style="font-size:16px;">→</span>
+      </button>
     </div>
 
     <!-- ── TOP VOC PRODUCTS ── -->
@@ -9239,14 +9346,16 @@ var _vocOrdersMode = 'week'; // 'week' | 'month' | 'year'
 function vocOrdersSetMode(mode) {
   _vocOrdersMode = mode;
   // Show/hide the right dropdown
+  var df = document.getElementById('voc-day-filter');
   var wf = document.getElementById('voc-week-filter');
   var mf = document.getElementById('voc-month-filter');
   var yf = document.getElementById('voc-year-filter');
+  if (df) df.style.display = mode === 'day'   ? '' : 'none';
   if (wf) wf.style.display = mode === 'week'  ? '' : 'none';
   if (mf) mf.style.display = mode === 'month' ? '' : 'none';
   if (yf) yf.style.display = mode === 'year'  ? '' : 'none';
   // Style active tab
-  ['week','month','year'].forEach(function(m) {
+  ['day','week','month','year'].forEach(function(m) {
     var btn = document.getElementById('ord-tab-' + m);
     if (!btn) return;
     if (m === mode) {
@@ -9277,7 +9386,23 @@ function vocFetchOrders() {
   var params = { action: 'orders' };
   var displayLabel = '';
 
-  if (_vocOrdersMode === 'week') {
+  if (_vocOrdersMode === 'day') {
+    var dayVal = (document.getElementById('voc-day-filter') || {}).value || '';
+    if (!dayVal) { setOS('⚠️ Select a date first.', 'err'); return; }
+    var dObj = new Date(dayVal + 'T00:00:00');
+    var isoWk = (typeof vocISOWeekStr === 'function') ? vocISOWeekStr(dObj) : '';
+    var isoWkM = isoWk.match(/^(\d{4})-W(\d{1,2})$/);
+    var weekNumD = isoWkM ? parseInt(isoWkM[2],10).toString() : '';
+    params.day      = dayVal;
+    params.date     = dayVal;
+    params.isoDate  = dayVal;
+    params.week     = weekNumD;
+    params.isoWeek  = isoWk;
+    displayLabel = dayVal;
+    setOS('⏳ Fetching orders for ' + dayVal + '… (using week ' + weekNumD + ' as fallback)', 'info');
+    vocSetDay(dayVal);
+
+  } else if (_vocOrdersMode === 'week') {
     var weekVal = (document.getElementById('voc-week-filter') || {}).value || '';
     if (!weekVal) { setOS('⚠️ Select a week first.', 'err'); return; }
     var isoMatch = weekVal.match(/^(\d{4})-W(\d{1,2})$/);
@@ -9326,21 +9451,28 @@ function vocFetchOrders() {
       var units = (data && data.outboundUnits) || 0;
       var label = (data && (data.monthLabel || data.weekLabel || data.yearLabel || data.label)) || displayLabel;
 
-      // If Apps Script returned all orders (not filtered), warn the user
+      // Day mode: backend now returns actual day orders directly
+      var displayOrders = total;
+      var displayUnits  = units;
+
       var banner = document.getElementById('voc-orders-banner-row');
       var co = document.getElementById('voc-chip-orders');
       var cu = document.getElementById('voc-chip-units');
       var cd = document.getElementById('voc-chip-date');
       if (banner) banner.style.display = 'flex';
-      if (co) co.textContent = '📦 ' + total.toLocaleString() + ' Orders';
-      if (cu) cu.textContent = '📤 ' + units.toLocaleString() + ' OB Units';
-      if (cd) cd.textContent = '📅 ' + label;
+      if (co) co.innerHTML = '📦 ' + displayOrders.toLocaleString() + ' Orders';
+      if (cu) cu.innerHTML = '📤 ' + displayUnits.toLocaleString() + ' OB Units';
+      if (cd) cd.innerHTML = '📅 ' + (_vocOrdersMode === 'day' ? params.day : label);
 
-      setOS('✅ <strong>' + total.toLocaleString() + ' orders</strong> · <strong>' + units.toLocaleString() + ' OB units</strong> · ' + label, 'ok');
-      showToast('📦 Orders loaded: ' + total.toLocaleString() + ' · ' + label);
+      setOS('✅ <strong>' + displayOrders.toLocaleString() + ' orders</strong> · <strong>' + displayUnits.toLocaleString() + ' OB units</strong> · ' + (_vocOrdersMode === 'day' ? params.day : label), 'ok');
+      showToast('📦 Orders loaded: ' + displayOrders.toLocaleString() + ' · ' + (_vocOrdersMode === 'day' ? params.day : label));
 
       // Sync VOC analysis period filter to match
-      if (_vocOrdersMode === 'week') {
+      if (_vocOrdersMode === 'day') {
+        if (params.day) vocSetDay(params.day);
+        else if (vocRawData.length) vocRender();
+
+      } else if (_vocOrdersMode === 'week') {
         var isoW = params.isoWeek || null;
         if (!isoW && params.week) isoW = (new Date().getFullYear()) + '-W' + String(params.week).padStart(2,'0');
         if (isoW) vocSetWeek(isoW);
@@ -9385,6 +9517,7 @@ function vocToggleTheme() {
 var vocSelectedWeek  = null;   // "2026-W15"
 var vocSelectedMonth = null;   // "2026-04"  (YYYY-MM, month 0-indexed stored separately)
 var vocSelectedYear  = null;
+var vocSelectedDay   = null;   // "YYYY-MM-DD" e.g. "2026-04-23"
 
 // ISO week number helper — returns {week, year}
 function vocISOWeek(d) {
@@ -9421,6 +9554,17 @@ function vocWeekBounds(str) {
 // Core filter — matches VOC rows to selected period using ISO week or calendar month
 function vocFilterByPeriod(rows) {
   if (!rows || !rows.length) return rows;
+
+  if (vocPeriod === 'day' && vocSelectedDay) {
+    // vocSelectedDay = "YYYY-MM-DD"
+    var dp = vocSelectedDay.split('-');
+    var dy = parseInt(dp[0],10), dmo = parseInt(dp[1],10)-1, ddt = parseInt(dp[2],10);
+    return rows.filter(function(r) {
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === dy && d.getMonth() === dmo && d.getDate() === ddt;
+    });
+  }
 
   if (vocPeriod === 'week' && vocSelectedWeek) {
     // VOC sheet Week col = plain number (14, 15, 45...)
@@ -9564,12 +9708,35 @@ function vocBuildPeriodDropdowns() {
   }
 }
 
+function vocSetDay(val) {
+  vocSelectedDay = val || null;
+  vocSelectedWeek = null;
+  vocSelectedMonth = null;
+  vocPeriod = val ? 'day' : 'yearly';
+  var wSel = document.getElementById('voc-week-select');
+  if (wSel) wSel.value = '';
+  var mSel = document.getElementById('voc-month-select');
+  if (mSel) mSel.value = '';
+  if (val) {
+    var d = new Date(val + 'T00:00:00');
+    var pl = document.getElementById('voc-period-label');
+    if (pl && !isNaN(d.getTime())) {
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      pl.textContent = String(d.getDate()).padStart(2,'0') + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    }
+  }
+  vocRender();
+}
+
 function vocSetWeek(val) {
   vocSelectedWeek  = val || null;
   vocSelectedMonth = null;
+  vocSelectedDay = null;
   vocPeriod = val ? 'week' : 'yearly';
   var mSel = document.getElementById('voc-month-select');
   if (mSel) mSel.value = '';
+  var dSel = document.getElementById('voc-day-select');
+  if (dSel) dSel.value = '';
   var pl = document.getElementById('voc-period-label');
   if (pl && val) {
     var m2 = val.match(/^(\d{4})-W(\d{1,2})$/);
@@ -9584,9 +9751,12 @@ function vocSetWeek(val) {
 function vocSetMonth(val) {
   vocSelectedMonth = val || null;
   vocSelectedWeek  = null;
+  vocSelectedDay = null;
   vocPeriod = val ? 'monthly' : 'yearly';
   var wSel = document.getElementById('voc-week-select');
   if (wSel) wSel.value = '';
+  var dSel = document.getElementById('voc-day-select');
+  if (dSel) dSel.value = '';
   if (val) {
     var MONTHSFULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     var mp = val.split('-');
@@ -9600,10 +9770,13 @@ function vocSetPeriod(p, btn) {
   vocPeriod = p;
   vocSelectedWeek  = null;
   vocSelectedMonth = null;
+  vocSelectedDay   = null;
   var wSel = document.getElementById('voc-week-select');
   var mSel = document.getElementById('voc-month-select');
+  var dSel = document.getElementById('voc-day-select');
   if (wSel) wSel.value = '';
   if (mSel) mSel.value = '';
+  if (dSel) dSel.value = '';
   var pl = document.getElementById('voc-period-label');
   if (pl) pl.textContent = 'This Year';
   vocRender();
@@ -9612,6 +9785,14 @@ function vocSetPeriod(p, btn) {
 // Legacy - kept for compatibility
 function vocGetPeriodBounds(offset) {
   var now = new Date();
+  if (vocPeriod === 'day' && vocSelectedDay) {
+    var dp = vocSelectedDay.split('-');
+    var dy = parseInt(dp[0],10), dmo = parseInt(dp[1],10)-1, ddt = parseInt(dp[2],10);
+    var d0 = new Date(dy, dmo, ddt, 0, 0, 0);
+    if (offset) d0 = new Date(d0.getTime() - offset * 86400000);
+    var d1 = new Date(d0.getTime() + 86399999);
+    return { from: d0, to: d1 };
+  }
   if (vocPeriod === 'week' && vocSelectedWeek) {
     var b = vocWeekBounds(vocSelectedWeek);
     if (offset && b) {
@@ -9664,7 +9845,7 @@ function vocRender() {
   var sf = document.getElementById('voc-store-filter').value;
 
   // ── Period filter: always apply. Default = this month if nothing selected ──
-  if (!vocSelectedWeek && !vocSelectedMonth && vocPeriod !== 'yearly') {
+  if (!vocSelectedWeek && !vocSelectedMonth && !vocSelectedDay && vocPeriod !== 'yearly' && vocPeriod !== 'day') {
     // Auto-select current month on first render
     var now = new Date();
     vocSelectedMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
@@ -9767,6 +9948,159 @@ function rcaIn(val, arr) {
   return arr.some(function(t){ return normRca(t) === n; });
 }
 
+// ── RCA MISMATCH CLASSIFIER ─────────────────────────────────────────
+// Detects when a customer complaint indicates a clear ops failure but
+// the RCA reply is generic / deflecting / vendor-blaming.
+// Returns { unsatisfied: bool, severity: 'high'|'med'|'low'|'none',
+//           commentTags: [...], replyTags: [...], reason: '...',
+//           notFilled: bool }
+//
+// IMPORTANT: Empty / not-filled RCAs are returned with notFilled=true and
+// unsatisfied=false (they're a separate category — RCA pending, not bad RCA).
+function vocRcaMismatch(comment, rcaReply, rcaCategory, issue) {
+  var out = {
+    unsatisfied:false, severity:'none', commentTags:[], replyTags:[],
+    reason:'', notFilled:false, score:0
+  };
+  var c = String(comment||'').toLowerCase().trim();
+  var rRaw = String(rcaReply||'').trim();
+  var r = rRaw.toLowerCase();
+  var cat = String(rcaCategory||'').toLowerCase().trim();
+  var iss = String(issue||'').toLowerCase();
+
+  // ── 0) Empty RCA = "Not Filled" — separate tracking, NOT unsatisfied
+  if (!rRaw || rRaw.length < 2 || r === '-' || r === 'na' || r === 'n/a' || r === 'nil' || r === 'none') {
+    out.notFilled = true;
+    return out; // unsatisfied stays false
+  }
+
+  // ── 1) Customer-complaint severity scoring
+  var severeWords = [
+    'mold','mould','moldy','fungus','fungal','rotten','rotting','rot ','spoil','spoiled','spoilt',
+    'expired','expiry','stale','smell','smelly','stink','stinking','foul','gone off','gone bad',
+    'dirty','muddy','mud','dust','dusty','soil',
+    'insect','worm','ant ','ants ','fly','flies','larva','larvae','cockroach',
+    'hair','plastic in','foreign object','contamin',
+    'damaged','damage','broken','crushed','leaking','leaked','torn','open seal','tampered','seal broken',
+    'wrong item','wrong product','missing','not delivered','short delivery','quantity less','less quantity',
+    'extra item','extra qty','duplicate','double charged',
+    'pack open','open pack','already opened','seal open','tampered seal'
+  ];
+  var medWords = [
+    'not fresh','fresh nahi','bad quality','poor quality','low quality','very bad','very poor',
+    'old stock','dated','near expiry','unripe','overripe','soft','squishy',
+    'small size','undersized','dull','color change','discolor','discoloured','discolored',
+    'wet','soggy','squashed','soggy box','overcooked','undercooked','melted','warm','cold',
+    'price wrong','wrong price','over charged','overcharged','high price'
+  ];
+
+  severeWords.forEach(function(w){ if (c.indexOf(w) !== -1) out.commentTags.push(w.trim()); });
+  medWords.forEach(function(w){ if (c.indexOf(w) !== -1) out.commentTags.push(w.trim()); });
+
+  if (out.commentTags.length > 0) {
+    var hasSevere = out.commentTags.some(function(w){
+      return severeWords.indexOf(w) !== -1 || severeWords.indexOf(w+' ') !== -1;
+    });
+    out.severity = hasSevere ? 'high' : 'med';
+  }
+
+  // ── 2) Reply quality scoring
+  // Deflecting / weak reply phrases
+  var deflectingReplies = [
+    'vendor to check','vendor check','asked vendor','vendor side','vendor responsib','vendor end','vendor will',
+    'will check','will look','will see','will verify','will confirm','will revert','will get back',
+    'feedback shared','feedback given','feedback to','shared with','informed only','only informed',
+    'fwd to','forwarded only','escalated only',
+    'pending','under review','to be checked','need to check','yet to check','not yet checked',
+    'no action','no comment','not applicable','nothing to say',
+    'qc to check','will train','will counsel'
+  ];
+  // Strong / corrective action phrases
+  var strongActions = [
+    'replaced','refund','refunded','refund issued','compensation','credit issued','credit note','reshipped','re-shipped','re shipped',
+    'reverse pick','blocked','removed from inventory','isolated','quarantined','disposed','disposal',
+    'destroyed','rejected','re-trained','re-counseled','rca closed','rca complete','closed','resolved',
+    'corrective action','capa','vendor debit','vendor return','batch isolated','stock pulled',
+    'verified with','confirmed with','cctv','stock removed','out of stock','blocked listing',
+    'training given','counselling done','counselling given','counseled','counselled','warning given',
+    'pip','disciplinary','penalty'
+  ];
+  // Root-cause explanation phrases — these indicate the RCA actually
+  // explains *why* it happened, which is a valid RCA even if no action listed.
+  var explanationPhrases = [
+    'while stowing','while picking','while packing','while qc','while inwarding','while staging','while ob',
+    'during stowing','during picking','during packing','during qc','during inward',
+    'wrong expiry','wrong barcode','wrong asin','wrong location','wrong slot','wrong bin','wrong scan','wrong pick',
+    'mistake by','error by','negligence','didn\'t check','didnt check','did not check','didn\'t verify','didnt verify','did not verify',
+    'missed','missed to','skipped','overlooked','not scanned','not verified',
+    'because','due to','reason was','reason is','root cause','rca:',
+    'aa done mistake','aa mistake','associate mistake','picker mistake','pkr mistake',
+    'stowed wrong','picked wrong','packed wrong','scanned wrong','marked wrong',
+    'expired stock','expired batch','near expiry','past expiry',
+    'damaged in','damaged during','spillage','spilled','leaked from','leak from'
+  ];
+
+  deflectingReplies.forEach(function(w){ if (r.indexOf(w) !== -1) out.replyTags.push(w); });
+  var strongHit  = strongActions.some(function(w){ return r.indexOf(w) !== -1; });
+  var explainHit = explanationPhrases.some(function(w){ return r.indexOf(w) !== -1; });
+
+  // ── 3) Decision logic
+  // A valid RCA = (explains root cause) OR (lists a corrective action).
+  // A bad RCA = deflects (vendor/will check) without any explanation/action.
+  var validRca = strongHit || explainHit;
+  var deflects = out.replyTags.length > 0;
+
+  // Skip non-severe comments — only flag when comment is real
+  if (out.severity === 'none') {
+    return out;
+  }
+
+  if (out.severity === 'high') {
+    if (deflects && !validRca) {
+      out.unsatisfied = true;
+      out.reason = 'Severe complaint ("' + out.commentTags.slice(0,2).join(', ') + '") → reply deflects without action ("' + out.replyTags[0] + '")';
+    } else if (!validRca && r.length < 15) {
+      out.unsatisfied = true;
+      out.reason = 'Severe complaint but reply is too short / generic';
+    }
+  } else if (out.severity === 'med') {
+    if (deflects && !validRca) {
+      out.unsatisfied = true;
+      out.reason = 'Quality complaint with weak reply ("' + out.replyTags[0] + '")';
+    }
+  }
+  return out;
+}
+
+// ── Detect copy-paste RCA replies — same exact reply used many times ───
+// Returns { groups: [ { text, count, stores: Set, rows: [...] } ] }
+function vocFindCopyPasteRCA(rows) {
+  var map = {};
+  rows.forEach(function(r) {
+    var rep = String(r.rca || '').trim();
+    if (!rep || rep.length < 8) return;     // ignore empty / trivially short
+    var norm = rep.toLowerCase().replace(/\s+/g, ' ').trim();
+    // ignore very generic 1-3 word replies — they're not "copy paste", they're just terse
+    if (norm.split(' ').length < 3) return;
+    if (!map[norm]) map[norm] = { text:rep, count:0, stores:{}, rows:[] };
+    map[norm].count++;
+    if (r.store) map[norm].stores[r.store] = (map[norm].stores[r.store]||0) + 1;
+    map[norm].rows.push(r);
+  });
+  var groups = Object.keys(map).map(function(k){
+    var g = map[k];
+    return {
+      text: g.text,
+      count: g.count,
+      stores: g.stores,
+      storeCount: Object.keys(g.stores).length,
+      rows: g.rows
+    };
+  }).filter(function(g){ return g.count >= 3; })          // 3+ uses = suspicious
+    .sort(function(a,b){ return b.count - a.count; });
+  return groups;
+}
+
 // ── PICKER RENDER — Top 15, store-filtered orders, correct % ─────────────
 function vocRenderPickerFiltered() {
   var sf = document.getElementById('voc-picker-store').value;
@@ -9779,18 +10113,22 @@ function vocRenderPickerFiltered() {
   var realOrders = getStoreOrders(effectiveSf);
   var ordersReady = realOrders > 0;
 
-  var mistakes = {}, pickerStoreMap = {}, pickerDetails = {};
+  var mistakes = {}, pickerStoreMap = {}, pickerDetails = {}, pickerUnsat = {};
   pickerRows.forEach(function(r) {
     // Use picker value; fall back to orderId or "(Unknown Picker)" so mistakes still show
     var pid = r.picker || '(Picker Not Filled)';
     mistakes[pid] = (mistakes[pid] || 0) + 1;
     pickerStoreMap[pid] = r.store;
     if (!pickerDetails[pid]) pickerDetails[pid] = [];
+    var mm = vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue);
+    if (mm.unsatisfied) pickerUnsat[pid] = (pickerUnsat[pid] || 0) + 1;
     pickerDetails[pid].push({
       orderId: r.orderId || '—',
       rca:     r.rca || r.rcaCategory || '—',
       issue:   r.issue || '—',
       product: r.product || '—',
+      comment: r.comment || '',
+      mismatch: mm,
       date:    r.date instanceof Date
                ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
                : String(r.date||'—')
@@ -9823,11 +10161,24 @@ function vocRenderPickerFiltered() {
   sorted.forEach(function(p, i) {
     var m          = mistakes[p] || 0;
     var details    = pickerDetails[p] || [];
+    var unsatN     = pickerUnsat[p] || 0;
     var pctOfOrders = ordersReady ? ((m / realOrders) * 100).toFixed(3) : '—';
     var pctNum     = ordersReady ? parseFloat(pctOfOrders) : 0;
     var bg         = rowBg[i % 2];
     var rankCol    = i === 0 ? '#ff6b35' : i === 1 ? '#ffd60a' : i === 2 ? '#06d6a0' : mutCol;
     var drawerId   = 'picker-drawer-' + i;
+
+    // ── Hover preview: short summary of comments + RCA replies (first 2)
+    var hoverPreview = details.slice(0, 2).map(function(d, di) {
+      var c = (d.comment || '(no customer comment)').replace(/\s+/g,' ').slice(0, 110);
+      var rep = (d.rca || '(no RCA reply)').replace(/\s+/g,' ').slice(0, 80);
+      return (di+1) + '. ' + d.product + '\n   💬 "' + c + '"\n   🛠 RCA: ' + rep + (d.mismatch.unsatisfied ? '  ⚠ UNSATISFIED' : '');
+    }).join('\n');
+    if (details.length > 2) hoverPreview += '\n   …and ' + (details.length - 2) + ' more — click to expand';
+
+    var unsatBadge = unsatN > 0
+      ? '<span title="Customer complaint severity does not match the RCA reply quality" style="background:rgba(192,57,43,0.18);color:'+(isDark?'#ff8a80':'#922B21')+';font-size:9px;padding:2px 7px;border-radius:8px;font-weight:800;letter-spacing:0.5px;margin-left:6px;border:1px solid rgba(192,57,43,0.35);">⚠ ' + unsatN + ' UNSAT RCA</span>'
+      : '';
 
     var risk = !ordersReady
       ? '<span style="color:'+mutCol+';font-size:10px;">—</span>'
@@ -9843,9 +10194,9 @@ function vocRenderPickerFiltered() {
         'onclick="var d=document.getElementById(\''+drawerId+'\');d.style.display=d.style.display===\'none\'?\'table-row\':\'none\';" '+
         'onmouseover="this.style.background=\''+hoverBg+'\'" '+
         'onmouseout="this.style.background=\''+bg+'\'" '+
-        'title="Click to see '+m+' mistake detail'+(m>1?'s':'')+'">' +
+        'title="'+hoverPreview.replace(/"/g,'&quot;')+'">' +
         '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+rankCol+';">#'+(i+1)+'</td>'+
-        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+txtCol+';">'+p+'</td>'+
+        '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:700;color:'+txtCol+';">'+p+unsatBadge+'</td>'+
         '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';color:'+mutCol+';">'+(pickerStoreMap[p]||'–')+'</td>'+
         '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:600;color:'+txtCol+';">'+(ordersReady?realOrders.toLocaleString():'—')+'</td>'+
         '<td style="padding:11px 14px;border-bottom:1px solid '+brdCol+';font-weight:800;color:#c0392b;">'+m+'</td>'+
@@ -9857,23 +10208,35 @@ function vocRenderPickerFiltered() {
     // Drawer row — hidden by default, expands below the picker row
     var drawerItems = details.map(function(d, di) {
       var rowBg2 = di%2===0 ? (isDark?'#1e1d30':'#f4f3ff') : (isDark?'#1a1928':'#ffffff');
-      return '<div style="padding:9px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:5px;border-left:3px solid #c0392b;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:12px;font-weight:700;color:'+txtCol+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(di+1)+'. '+d.product+'</div>'+
-          '<div style="font-size:11px;color:#c0392b;margin-top:2px;font-weight:600;">'+d.issue+'</div>'+
-          '<div style="font-size:10px;color:'+mutCol+';margin-top:2px;font-family:Courier New,monospace;">'+d.orderId+'</div>'+
-          '<div style="font-size:10px;color:'+mutCol+';margin-top:1px;font-style:italic;">'+d.rca+'</div>'+
+      var mm = d.mismatch;
+      var leftStripe = mm.unsatisfied ? '#c0392b' : (isDark ? '#4361ee' : '#4361ee');
+      var unsatRibbon = mm.unsatisfied
+        ? '<div style="background:linear-gradient(90deg,rgba(192,57,43,0.18),transparent);border:1px solid rgba(192,57,43,0.4);border-radius:6px;padding:6px 9px;margin-top:6px;font-size:11px;color:'+(isDark?'#ff8a80':'#922B21')+';font-weight:700;display:flex;align-items:center;gap:6px;"><span>⚠</span><span>UNSATISFIED RCA</span><span style="font-weight:500;color:'+mutCol+';font-size:10px;">— '+mm.reason+'</span></div>'
+        : '';
+      var commentBlock = d.comment
+        ? '<div style="margin-top:6px;padding:7px 10px;background:'+(isDark?'rgba(67,97,238,0.08)':'rgba(67,97,238,0.05)')+';border-left:2px solid '+(isDark?'#4cc9f0':'#4361ee')+';border-radius:5px;"><div style="font-size:9px;font-weight:800;letter-spacing:1px;color:'+(isDark?'#4cc9f0':'#4361ee')+';margin-bottom:2px;">💬 CUSTOMER COMMENT</div><div style="font-size:12px;color:'+txtCol+';font-style:italic;line-height:1.45;">"'+d.comment+'"</div></div>'
+        : '';
+      var replyBlock = '<div style="margin-top:6px;padding:7px 10px;background:'+(isDark?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.025)')+';border-left:2px solid '+(mm.unsatisfied?'#c0392b':(isDark?'#06d6a0':'#1a7a4a'))+';border-radius:5px;"><div style="font-size:9px;font-weight:800;letter-spacing:1px;color:'+(mm.unsatisfied?'#c0392b':(isDark?'#06d6a0':'#1a7a4a'))+';margin-bottom:2px;">🛠 RCA REPLY '+(mm.unsatisfied?'· FLAGGED':'')+'</div><div style="font-size:12px;color:'+txtCol+';line-height:1.45;">'+(d.rca||'(empty)')+'</div></div>';
+
+      return '<div style="padding:10px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:7px;border-left:3px solid '+leftStripe+';">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:12px;font-weight:700;color:'+txtCol+';">'+(di+1)+'. '+d.product+'</div>'+
+            '<div style="font-size:11px;color:#c0392b;margin-top:2px;font-weight:600;">'+d.issue+'</div>'+
+            '<div style="font-size:10px;color:'+mutCol+';margin-top:2px;font-family:Courier New,monospace;">'+d.orderId+'</div>'+
+          '</div>'+
+          '<div style="text-align:right;flex-shrink:0;font-size:10px;color:'+mutCol+';">'+d.date+'</div>'+
         '</div>'+
-        '<div style="text-align:right;flex-shrink:0;font-size:10px;color:'+mutCol+';">'+d.date+'</div>'+
+        commentBlock + replyBlock + unsatRibbon +
       '</div>';
     }).join('');
 
     rows.push(
       '<tr id="'+drawerId+'" style="display:none;">'+
         '<td colspan="7" style="padding:0;border-bottom:2px solid '+(isDark?'#4361ee':'#4361ee')+';background:'+(isDark?'rgba(67,97,238,0.05)':'rgba(67,97,238,0.03)'+';')+'">'+
-          '<div style="padding:10px 16px;">'+
-            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+(isDark?'#4cc9f0':'#4361ee')+';margin-bottom:8px;">📋 Mistake Details — '+p+'</div>'+
-            '<div style="max-height:280px;overflow-y:auto;">'+drawerItems+'</div>'+
+          '<div style="padding:12px 16px;">'+
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+(isDark?'#4cc9f0':'#4361ee')+';margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span>📋 Mistake Details — '+p+'</span>'+(unsatN>0?'<span style="background:rgba(192,57,43,0.18);color:'+(isDark?'#ff8a80':'#922B21')+';padding:2px 8px;border-radius:6px;font-size:9px;letter-spacing:0.5px;">⚠ '+unsatN+' UNSATISFIED RCA</span>':'')+'</div>'+
+            '<div style="max-height:340px;overflow-y:auto;">'+drawerItems+'</div>'+
           '</div>'+
         '</td>'+
       '</tr>'
@@ -9883,12 +10246,800 @@ function vocRenderPickerFiltered() {
   document.getElementById('voc-picker-body').innerHTML = rows.join('');
 }
 
+// ── DEEP DIVE — VOC week trend + area movement + RCA quality ────────────
+var _vocDDTab = 'trend';
+
+function vocOpenDeepDive() {
+  if (!vocRawData || !vocRawData.length) {
+    showToast('Load VOC data first');
+    return;
+  }
+  // Populate store dropdown
+  var stores = [...new Set(vocRawData.map(function(r){ return r.store; }))].filter(Boolean).sort();
+  var ddS = document.getElementById('voc-dd-store');
+  ddS.innerHTML = '<option value="all">All Stores</option>' +
+    stores.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('');
+  // Sync default with main store filter if set
+  var mainSf = (document.getElementById('voc-store-filter')||{}).value || 'all';
+  if (mainSf && mainSf !== 'all') ddS.value = mainSf;
+
+  // Populate area dropdown (unique rca categories)
+  var areas = [...new Set(vocRawData.map(function(r){ return r.rcaCategory || '(RCA Not Filled)'; }))].filter(Boolean).sort();
+  var ddA = document.getElementById('voc-dd-area');
+  ddA.innerHTML = '<option value="all">All RCA Areas</option>' +
+    areas.map(function(a){ return '<option value="'+a.replace(/"/g,'&quot;')+'">'+a+'</option>'; }).join('');
+
+  _vocDDTab = 'trend';
+  vocDDSyncTabStyle();
+
+  var m = document.getElementById('voc-deepdive-modal');
+  m.style.display = 'flex';
+  requestAnimationFrame(function(){ m.classList.add('open'); });
+
+  vocRenderDeepDive();
+}
+
+function vocCloseDeepDive() {
+  var m = document.getElementById('voc-deepdive-modal');
+  if (!m) return;
+  m.classList.remove('open');
+  m.style.display = 'none';
+}
+
+function vocDDTab(name) {
+  _vocDDTab = name;
+  vocDDSyncTabStyle();
+  vocRenderDeepDive();
+}
+
+function vocDDSyncTabStyle() {
+  var tabs = document.querySelectorAll('.voc-dd-tab');
+  tabs.forEach(function(t){
+    var active = t.getAttribute('data-tab') === _vocDDTab;
+    t.style.color = active ? '#fff' : '#8b8aad';
+    t.style.borderBottomColor = active ? '#4361ee' : 'transparent';
+  });
+}
+
+// ── Period bucketing helpers ────────────────────────────────────────────
+function _vocDDWeekKey(d) {
+  if (typeof vocISOWeekStr === 'function') {
+    try { return vocISOWeekStr(d); } catch (e) {}
+  }
+  var dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayN = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - dayN);
+  var y0 = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  var w = Math.ceil((((dt - y0)/86400000) + 1)/7);
+  return dt.getUTCFullYear() + '-W' + String(w).padStart(2,'0');
+}
+function _vocDDMonthKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+// Returns { curr:rows[], prev:rows[], currLabel, prevLabel, mode }
+function vocDDPartition(rows) {
+  var mode = (document.getElementById('voc-dd-compare')||{}).value || 'wk1';
+  var byWeek = {}, byMonth = {};
+  rows.forEach(function(r){
+    var d = r.date instanceof Date ? r.date : new Date(r.date);
+    if (isNaN(d.getTime())) return;
+    var wk = _vocDDWeekKey(d);
+    var mo = _vocDDMonthKey(d);
+    if (!byWeek[wk]) byWeek[wk] = [];
+    byWeek[wk].push(r);
+    if (!byMonth[mo]) byMonth[mo] = [];
+    byMonth[mo].push(r);
+  });
+  var wKeys = Object.keys(byWeek).sort();
+  var mKeys = Object.keys(byMonth).sort();
+
+  function joinKeys(keys, map) {
+    var out = [];
+    keys.forEach(function(k){ out = out.concat(map[k]||[]); });
+    return out;
+  }
+
+  if (mode === 'wk1') {
+    var c = wKeys.length ? wKeys[wKeys.length-1] : null;
+    var p = wKeys.length >= 2 ? wKeys[wKeys.length-2] : null;
+    return {
+      curr: c ? (byWeek[c]||[]) : [],
+      prev: p ? (byWeek[p]||[]) : [],
+      currLabel: c || '—',
+      prevLabel: p || '—',
+      mode: mode, byWeek: byWeek, byMonth: byMonth, wKeys: wKeys, mKeys: mKeys
+    };
+  }
+  if (mode === 'wk4') {
+    var last4 = wKeys.slice(-4);
+    var prev4 = wKeys.slice(-8, -4);
+    return {
+      curr: joinKeys(last4, byWeek),
+      prev: joinKeys(prev4, byWeek),
+      currLabel: last4.length ? last4[0]+' → '+last4[last4.length-1] : '—',
+      prevLabel: prev4.length ? prev4[0]+' → '+prev4[prev4.length-1] : '—',
+      mode: mode, byWeek: byWeek, byMonth: byMonth, wKeys: wKeys, mKeys: mKeys
+    };
+  }
+  if (mode === 'mo1') {
+    var cm = mKeys.length ? mKeys[mKeys.length-1] : null;
+    var pm = mKeys.length >= 2 ? mKeys[mKeys.length-2] : null;
+    return {
+      curr: cm ? (byMonth[cm]||[]) : [],
+      prev: pm ? (byMonth[pm]||[]) : [],
+      currLabel: cm || '—',
+      prevLabel: pm || '—',
+      mode: mode, byWeek: byWeek, byMonth: byMonth, wKeys: wKeys, mKeys: mKeys
+    };
+  }
+  if (mode === 'mo4') {
+    var lm4 = mKeys.slice(-4);
+    var pm4 = mKeys.slice(-8, -4);
+    return {
+      curr: joinKeys(lm4, byMonth),
+      prev: joinKeys(pm4, byMonth),
+      currLabel: lm4.length ? lm4[0]+' → '+lm4[lm4.length-1] : '—',
+      prevLabel: pm4.length ? pm4[0]+' → '+pm4[pm4.length-1] : '—',
+      mode: mode, byWeek: byWeek, byMonth: byMonth, wKeys: wKeys, mKeys: mKeys
+    };
+  }
+  // all time
+  return {
+    curr: rows, prev: [], currLabel: 'All Time', prevLabel: '—',
+    mode: mode, byWeek: byWeek, byMonth: byMonth, wKeys: wKeys, mKeys: mKeys
+  };
+}
+
+function vocDDFilteredRows() {
+  var sf = document.getElementById('voc-dd-store').value;
+  var af = document.getElementById('voc-dd-area').value;
+  var df = (document.getElementById('voc-dd-date-from')||{}).value || '';
+  var dt = (document.getElementById('voc-dd-date-to')  ||{}).value || '';
+  var rows = vocDedup(vocRawData);
+  if (sf !== 'all') rows = rows.filter(function(r){ return r.store === sf; });
+  if (af !== 'all') rows = rows.filter(function(r){
+    var cat = r.rcaCategory || '(RCA Not Filled)';
+    return cat === af;
+  });
+  if (df || dt) {
+    var fromT = df ? new Date(df + 'T00:00:00').getTime() : -Infinity;
+    var toT   = dt ? new Date(dt + 'T23:59:59').getTime() :  Infinity;
+    rows = rows.filter(function(r){
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      var t = d.getTime();
+      return t >= fromT && t <= toT;
+    });
+  }
+  return rows;
+}
+
+function vocDDClearDateRange() {
+  var df = document.getElementById('voc-dd-date-from');
+  var dt = document.getElementById('voc-dd-date-to');
+  if (df) df.value = '';
+  if (dt) dt.value = '';
+  vocRenderDeepDive();
+}
+
+function vocRenderDeepDive() {
+  var body = document.getElementById('voc-deepdive-body');
+  var summ = document.getElementById('voc-dd-summary');
+  if (!body) return;
+
+  // Dark theme is the canonical deep-dive look; keep tokens fixed for clarity
+  var t = {
+    txt: '#e8e6ff',
+    mut: '#8b8aad',
+    brd: '#2e2c45',
+    surf: '#1a1928',
+    surf2: '#13121f',
+    isDark: true
+  };
+
+  var rows = vocDDFilteredRows();
+  var sf = document.getElementById('voc-dd-store').value;
+  var af = document.getElementById('voc-dd-area').value;
+  var part = vocDDPartition(rows);
+
+  // Counts
+  var totalCnt = rows.length;
+  var unsatCnt = 0, notFilledCnt = 0;
+  rows.forEach(function(r){
+    var mm = vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue);
+    if (mm.notFilled) notFilledCnt++;
+    else if (mm.unsatisfied) unsatCnt++;
+  });
+  var cpGroups = vocFindCopyPasteRCA(rows);
+
+  // Update pills
+  var pill = document.getElementById('voc-dd-unsat-pill');
+  if (pill) { pill.style.display = unsatCnt > 0 ? 'inline-block' : 'none'; pill.textContent = unsatCnt; }
+  var pillNf = document.getElementById('voc-dd-nf-pill');
+  if (pillNf) { pillNf.style.display = notFilledCnt > 0 ? 'inline-block' : 'none'; pillNf.textContent = notFilledCnt; }
+  var pillCp = document.getElementById('voc-dd-cp-pill');
+  if (pillCp) { pillCp.style.display = cpGroups.length > 0 ? 'inline-block' : 'none'; pillCp.textContent = cpGroups.length; }
+
+  // Summary text
+  if (summ) {
+    summ.textContent = totalCnt + ' rows · ' + part.wKeys.length + ' weeks · ' +
+      unsatCnt + ' unsatisfied · ' + notFilledCnt + ' not-filled · ' + cpGroups.length + ' copy-paste groups' +
+      (sf !== 'all' ? ' · ' + sf : '') + (af !== 'all' ? ' · ' + af : '');
+  }
+
+  if (!totalCnt) {
+    body.innerHTML = '<div style="padding:60px 20px;text-align:center;color:'+t.mut+';font-family:Arial,Helvetica,sans-serif;"><div style="font-size:42px;margin-bottom:10px;">📭</div>No VOC rows match these filters.</div>';
+    return;
+  }
+
+  // Dispatch to tab renderer
+  if (_vocDDTab === 'trend')           body.innerHTML = vocDDRenderTrend(part, t);
+  else if (_vocDDTab === 'areas')      body.innerHTML = vocDDRenderAreas(part, t);
+  else if (_vocDDTab === 'stores')     body.innerHTML = vocDDRenderStores(part, t);
+  else if (_vocDDTab === 'unsat')      body.innerHTML = vocDDRenderUnsat(rows, t);
+  else if (_vocDDTab === 'copypaste')  body.innerHTML = vocDDRenderCopyPaste(cpGroups, t);
+  else if (_vocDDTab === 'notfilled')  body.innerHTML = vocDDRenderNotFilled(rows, t);
+}
+
+// ── DEEP DIVE: Weekly Trend ─────────────────────────────────────────────
+function vocDDRenderTrend(part, t) {
+  var weekKeys = part.wKeys, byWeek = part.byWeek;
+  if (weekKeys.length < 1) return '<div style="color:'+t.mut+';">No weekly data.</div>';
+
+  var counts = weekKeys.map(function(k){ return byWeek[k].length; });
+  var currN = part.curr.length;
+  var prevN = part.prev.length;
+  var diff  = currN - prevN;
+  var pctDiff = prevN ? ((diff/prevN)*100).toFixed(1) : (currN ? '∞' : '0');
+  var trendCol = diff > 0 ? '#c0392b' : diff < 0 ? '#1a7a4a' : '#7b78a8';
+  var trendArrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '–';
+  var compareLabel = {
+    wk1: 'This Week vs Prev Week',
+    wk4: 'Last 4 Weeks vs Prev 4 Weeks',
+    mo1: 'This Month vs Prev Month',
+    mo4: 'Last 4 Months vs Prev 4 Months',
+    all: 'All Time'
+  }[part.mode] || part.mode;
+  var trendVerdict = diff > 0
+    ? '<span style="color:#c0392b;">Increasing</span> — VOC went up by '+Math.abs(diff)+' cases ('+pctDiff+'%) — '+compareLabel
+    : diff < 0
+      ? '<span style="color:#1a7a4a;">Decreasing</span> — VOC dropped by '+Math.abs(diff)+' cases ('+Math.abs(pctDiff)+'%) — '+compareLabel
+      : '<span style="color:'+t.mut+';">Flat</span> — no change — '+compareLabel;
+  var avg = (counts.reduce(function(a,b){ return a+b; },0) / Math.max(counts.length,1)).toFixed(1);
+  var maxN = Math.max.apply(null, counts.length ? counts : [0]);
+  var peak = counts.length ? weekKeys[counts.indexOf(maxN)] : '—';
+
+  // Bar chart inline (svg-like via DIVs) — last 12 weeks
+  var maxBar = Math.max.apply(null, counts.length ? counts : [1]) || 1;
+  var show = Math.min(12, weekKeys.length);
+  var startIdx = weekKeys.length - show;
+  var displayWeeks = weekKeys.slice(startIdx);
+  var displayCounts = counts.slice(startIdx);
+
+  var bars = displayWeeks.map(function(wk, i) {
+    var c = displayCounts[i];
+    var h = Math.max(4, (c/maxBar) * 180);
+    var prev = i > 0 ? displayCounts[i-1] : null;
+    var col = prev === null ? '#4361ee' : c > prev ? '#c0392b' : c < prev ? '#1a7a4a' : '#7b78a8';
+    var miniLbl = wk.match(/W(\d+)/);
+    var lbl = miniLbl ? 'W'+miniLbl[1] : wk;
+    var unsatN = (byWeek[wk]||[]).filter(function(r){ var m=vocRcaMismatch(r.comment,r.rca,r.rcaCategory,r.issue); return m.unsatisfied; }).length;
+    return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:6px;min-width:0;">' +
+      '<div style="font-size:11px;font-weight:700;color:'+t.txt+';">'+c+'</div>' +
+      '<div style="width:100%;max-width:46px;height:'+h+'px;background:linear-gradient(180deg,'+col+',rgba(67,97,238,0.4));border-radius:6px 6px 0 0;position:relative;transition:height 0.4s ease;" title="'+wk+' · '+c+' cases · '+unsatN+' unsatisfied RCAs">' +
+        (unsatN > 0 ? '<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#c0392b;box-shadow:0 0 6px rgba(192,57,43,0.7);" title="'+unsatN+' unsatisfied"></div>' : '') +
+      '</div>' +
+      '<div style="font-size:10px;color:'+t.mut+';font-family:Arial,Helvetica,sans-serif;">'+lbl+'</div>' +
+    '</div>';
+  }).join('');
+
+  var html = '';
+  // Hero cards
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px;">';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px;border-top:3px solid '+trendCol+';"><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Current</div><div style="font-size:24px;font-weight:800;color:'+t.txt+';">'+currN+'</div><div style="font-size:11px;color:'+trendCol+';margin-top:4px;font-weight:700;">'+trendArrow+' '+pctDiff+'% vs prev</div><div style="font-size:10px;color:'+t.mut+';margin-top:2px;">'+part.currLabel+'</div></div>';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px;border-top:3px solid #7b78a8;"><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Previous</div><div style="font-size:24px;font-weight:800;color:'+t.txt+';">'+prevN+'</div><div style="font-size:11px;color:'+t.mut+';margin-top:4px;">'+part.prevLabel+'</div></div>';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px;border-top:3px solid #4361ee;"><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Avg / Week</div><div style="font-size:24px;font-weight:800;color:'+t.txt+';">'+avg+'</div><div style="font-size:11px;color:'+t.mut+';margin-top:4px;">across '+counts.length+' weeks</div></div>';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px;border-top:3px solid #ff6b35;"><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Peak Week</div><div style="font-size:24px;font-weight:800;color:'+t.txt+';">'+maxN+'</div><div style="font-size:11px;color:'+t.mut+';margin-top:4px;">'+peak+'</div></div>';
+  html += '</div>';
+
+  // Verdict banner
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px;">';
+  html += '<div style="font-size:28px;">'+(diff>0?'⚠️':diff<0?'✅':'➖')+'</div>';
+  html += '<div><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:2px;">Verdict</div><div style="font-size:15px;color:'+t.txt+';font-weight:700;line-height:1.4;">'+trendVerdict+'</div></div>';
+  html += '</div>';
+
+  // Bars
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:18px 20px;margin-bottom:18px;">';
+  html += '<div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:14px;">Weekly VOC Count <span style="font-weight:500;text-transform:none;letter-spacing:0;color:'+t.mut+';">— last '+show+' weeks · 🔴 dot = has unsatisfied RCA</span></div>';
+  html += '<div style="display:flex;gap:6px;align-items:flex-end;height:220px;padding:0 4px;">'+bars+'</div>';
+  html += '<div style="display:flex;gap:14px;margin-top:14px;padding-top:14px;border-top:1px dashed '+t.brd+';font-size:12px;color:'+t.mut+';flex-wrap:wrap;"><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;background:#c0392b;border-radius:2px;"></span>Increased vs prev</span><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;background:#1a7a4a;border-radius:2px;"></span>Decreased vs prev</span><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;background:#c0392b;border-radius:50%;"></span>Has unsatisfied RCA reply</span></div>';
+  html += '</div>';
+
+  return html;
+}
+
+// ── DEEP DIVE: Area Movement ────────────────────────────────────────────
+function vocDDRenderAreas(part, t) {
+  if (!part.curr.length && !part.prev.length) {
+    return '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:24px;color:'+t.mut+';text-align:center;">No data for this comparison.</div>';
+  }
+  function tally(arr) {
+    var m = {};
+    arr.forEach(function(r){
+      var k = r.rcaCategory || '(RCA Not Filled)';
+      m[k] = (m[k]||0) + 1;
+    });
+    return m;
+  }
+  var curM = tally(part.curr), prevM = tally(part.prev);
+  var allKeys = [...new Set(Object.keys(curM).concat(Object.keys(prevM)))];
+
+  var arr = allKeys.map(function(k){
+    var c = curM[k] || 0, p = prevM[k] || 0;
+    return { area:k, cur:c, prev:p, diff:c-p, pct: p ? ((c-p)/p*100) : (c?100:0) };
+  });
+
+  var impacted = arr.filter(function(x){ return x.diff > 0; }).sort(function(a,b){ return b.diff - a.diff; });
+  var improved = arr.filter(function(x){ return x.diff < 0; }).sort(function(a,b){ return a.diff - b.diff; });
+  var flat     = arr.filter(function(x){ return x.diff === 0; });
+
+  function renderList(list, color) {
+    if (!list.length) return '<div style="color:'+t.mut+';font-size:13px;padding:14px;text-align:center;">— none —</div>';
+    return list.slice(0, 12).map(function(x){
+      var w = Math.min(100, Math.abs(x.pct));
+      return '<div style="padding:11px 14px;background:'+t.surf2+';border-radius:10px;margin-bottom:8px;border-left:3px solid '+color+';">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px;">' +
+          '<div style="font-size:13px;font-weight:700;color:'+t.txt+';flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+x.area+'</div>' +
+          '<div style="font-size:14px;font-weight:800;color:'+color+';white-space:nowrap;">'+(x.diff>0?'+':'')+x.diff+' <span style="font-size:11px;color:'+t.mut+';font-weight:500;">('+(x.pct>=0?'+':'')+x.pct.toFixed(0)+'%)</span></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:14px;font-size:11.5px;color:'+t.mut+';margin-bottom:6px;"><span>Prev: <b style="color:'+t.txt+';">'+x.prev+'</b></span><span>Curr: <b style="color:'+t.txt+';">'+x.cur+'</b></span></div>' +
+        '<div style="height:6px;background:'+t.surf2+';border-radius:3px;overflow:hidden;border:1px solid '+t.brd+';"><div style="height:100%;width:'+w+'%;background:'+color+';border-radius:3px;transition:width 0.6s;"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  var html = '';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:13px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">';
+  html += '<div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:800;">Comparing</div>';
+  html += '<div style="font-size:13px;font-weight:700;color:'+t.txt+';"><b style="color:#4361ee;">'+part.currLabel+'</b> ('+part.curr.length+' cases) <span style="color:'+t.mut+';">vs</span> <b style="color:#7b78a8;">'+part.prevLabel+'</b> ('+part.prev.length+' cases)</div>';
+  html += '</div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-bottom:16px;">';
+  // Impacted
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px 18px;border-top:3px solid #c0392b;">';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:20px;">📈</span><div style="font-size:13px;color:#ff8a80;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">Areas Impacted ('+impacted.length+')</div></div>';
+  html += '<div style="font-size:12px;color:'+t.mut+';margin-bottom:10px;">RCA categories that got WORSE</div>';
+  html += renderList(impacted, '#c0392b');
+  html += '</div>';
+  // Improved
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:16px 18px;border-top:3px solid #1a7a4a;">';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="font-size:20px;">✅</span><div style="font-size:13px;color:#06d6a0;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">Areas Improved ('+improved.length+')</div></div>';
+  html += '<div style="font-size:12px;color:'+t.mut+';margin-bottom:10px;">RCA categories that got BETTER</div>';
+  html += renderList(improved, '#1a7a4a');
+  html += '</div>';
+  html += '</div>';
+
+  if (flat.length) {
+    html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:13px 18px;"><div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:6px;">No Change ('+flat.length+')</div><div style="font-size:12px;color:'+t.mut+';">'+flat.map(function(x){return x.area+' ('+x.cur+')';}).join(' · ')+'</div></div>';
+  }
+  return html;
+}
+
+// ── DEEP DIVE: Store Movement ────────────────────────────────────────────
+function vocDDRenderStores(part, t) {
+  if (!part.curr.length && !part.prev.length) {
+    return '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:24px;color:'+t.mut+';text-align:center;">No data for this comparison.</div>';
+  }
+  function tally(arr) {
+    var m = {};
+    arr.forEach(function(r){ var k = r.store || '(Unknown)'; m[k] = (m[k]||0)+1; });
+    return m;
+  }
+  var curM = tally(part.curr), prevM = tally(part.prev);
+  var allKeys = [...new Set(Object.keys(curM).concat(Object.keys(prevM)))];
+  var arr = allKeys.map(function(k){
+    var c = curM[k]||0, p = prevM[k]||0;
+    return { store:k, cur:c, prev:p, diff:c-p, pct: p ? ((c-p)/p*100) : (c?100:0) };
+  }).sort(function(a,b){ return a.diff - b.diff; });  // improved first (most negative)
+
+  var topImproved = arr.filter(function(x){ return x.diff < 0; }).slice(0, 5);
+  var topImpacted = arr.filter(function(x){ return x.diff > 0; }).sort(function(a,b){ return b.diff - a.diff; }).slice(0, 5);
+
+  var html = '';
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:13px 18px;margin-bottom:14px;font-size:13px;font-weight:700;color:'+t.txt+';"><b style="color:#4361ee;">'+part.currLabel+'</b> vs <b style="color:#7b78a8;">'+part.prevLabel+'</b> · '+arr.length+' stores</div>';
+
+  // Champions banner — stores with best improvement
+  if (topImproved.length) {
+    html += '<div style="background:linear-gradient(135deg,rgba(26,122,74,0.18),transparent);border:1px solid rgba(26,122,74,0.4);border-radius:14px;padding:14px 18px;margin-bottom:14px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="font-size:22px;">🏆</span><div style="font-size:13px;font-weight:800;color:#06d6a0;letter-spacing:0.5px;text-transform:uppercase;">Top Improved Stores</div></div>';
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    topImproved.forEach(function(x, i){
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+      html += '<div style="background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);border-radius:10px;padding:10px 14px;min-width:140px;"><div style="font-size:12px;font-weight:800;color:#06d6a0;">'+medal+' '+x.store+'</div><div style="font-size:11px;color:'+t.txt+';margin-top:3px;">'+x.prev+' → '+x.cur+' <b style="color:#06d6a0;">('+x.diff+', '+x.pct.toFixed(0)+'%)</b></div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  // Watchlist — stores with worst impact
+  if (topImpacted.length) {
+    html += '<div style="background:linear-gradient(135deg,rgba(192,57,43,0.18),transparent);border:1px solid rgba(192,57,43,0.4);border-radius:14px;padding:14px 18px;margin-bottom:14px;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="font-size:22px;">⚠️</span><div style="font-size:13px;font-weight:800;color:#ff8a80;letter-spacing:0.5px;text-transform:uppercase;">Watchlist — Most Impacted Stores</div></div>';
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    topImpacted.forEach(function(x, i){
+      html += '<div style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);border-radius:10px;padding:10px 14px;min-width:140px;"><div style="font-size:12px;font-weight:800;color:#ff8a80;">#'+(i+1)+' '+x.store+'</div><div style="font-size:11px;color:'+t.txt+';margin-top:3px;">'+x.prev+' → '+x.cur+' <b style="color:#ff8a80;">(+'+x.diff+', +'+x.pct.toFixed(0)+'%)</b></div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  // Full table
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;overflow:hidden;">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Arial,Helvetica,sans-serif;">';
+  html += '<thead><tr style="background:'+t.surf2+';"><th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Store</th><th style="padding:11px 14px;text-align:right;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Prev</th><th style="padding:11px 14px;text-align:right;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Curr</th><th style="padding:11px 14px;text-align:right;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Δ</th><th style="padding:11px 14px;text-align:right;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">% Δ</th><th style="padding:11px 14px;text-align:center;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Status</th></tr></thead><tbody>';
+  // Sort table by impact (worst first)
+  arr.sort(function(a,b){ return b.diff - a.diff; }).forEach(function(x, i){
+    var bg = i%2 === 0 ? t.surf : '#161525';
+    var col = x.diff > 0 ? '#ff8a80' : x.diff < 0 ? '#06d6a0' : t.mut;
+    var pill = x.diff > 0
+      ? '<span style="background:rgba(192,57,43,0.18);color:#ff8a80;font-size:10.5px;padding:3px 9px;border-radius:8px;font-weight:800;letter-spacing:0.3px;">📈 IMPACTED</span>'
+      : x.diff < 0
+        ? '<span style="background:rgba(26,122,74,0.18);color:#06d6a0;font-size:10.5px;padding:3px 9px;border-radius:8px;font-weight:800;letter-spacing:0.3px;">✅ IMPROVED</span>'
+        : '<span style="background:rgba(255,255,255,0.05);color:'+t.mut+';font-size:10.5px;padding:3px 9px;border-radius:8px;font-weight:800;letter-spacing:0.3px;">— FLAT</span>';
+    html += '<tr style="background:'+bg+';"><td style="padding:11px 14px;font-weight:700;color:'+t.txt+';border-bottom:1px solid '+t.brd+';">'+x.store+'</td><td style="padding:11px 14px;text-align:right;color:'+t.txt+';font-family:Arial,Helvetica,sans-serif;border-bottom:1px solid '+t.brd+';">'+x.prev+'</td><td style="padding:11px 14px;text-align:right;color:'+t.txt+';font-family:Arial,Helvetica,sans-serif;border-bottom:1px solid '+t.brd+';">'+x.cur+'</td><td style="padding:11px 14px;text-align:right;font-weight:800;color:'+col+';border-bottom:1px solid '+t.brd+';">'+(x.diff>0?'+':'')+x.diff+'</td><td style="padding:11px 14px;text-align:right;color:'+col+';border-bottom:1px solid '+t.brd+';">'+(x.pct>=0?'+':'')+x.pct.toFixed(0)+'%</td><td style="padding:11px 14px;text-align:center;border-bottom:1px solid '+t.brd+';">'+pill+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+// ── DEEP DIVE: Unsatisfied RCAs (clickable) ──────────────────────────────
+function vocDDRenderUnsat(rows, t) {
+  var unsat = rows.map(function(r){
+    return { row:r, m: vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue) };
+  }).filter(function(x){ return x.m.unsatisfied; });
+
+  if (!unsat.length) {
+    return '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:40px;text-align:center;color:'+t.mut+';"><div style="font-size:42px;margin-bottom:10px;">✅</div><div style="font-size:15px;font-weight:700;color:'+t.txt+';">No unsatisfied RCAs detected</div><div style="font-size:12.5px;color:'+t.mut+';margin-top:6px;line-height:1.5;">All replies in this filter look like they either explain the root cause or list a corrective action. <br/>Empty RCAs are tracked separately under "RCA Not Filled".</div></div>';
+  }
+
+  unsat.sort(function(a,b){
+    var sa = a.m.severity === 'high' ? 2 : a.m.severity === 'med' ? 1 : 0;
+    var sb = b.m.severity === 'high' ? 2 : b.m.severity === 'med' ? 1 : 0;
+    if (sb !== sa) return sb - sa;
+    var da = a.row.date instanceof Date ? a.row.date.getTime() : 0;
+    var db = b.row.date instanceof Date ? b.row.date.getTime() : 0;
+    return db - da;
+  });
+
+  // Stash full list so the click handler can retrieve a row by index
+  window._vocDDUnsatList = unsat;
+
+  var html = '';
+  html += '<div style="background:linear-gradient(135deg,rgba(192,57,43,0.12),transparent);border:1px solid rgba(192,57,43,0.35);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;">';
+  html += '<div style="font-size:28px;">⚠️</div>';
+  html += '<div><div style="font-size:13px;font-weight:800;color:#ff8a80;letter-spacing:0.3px;">'+unsat.length+' tickets — RCA reply does not match the complaint</div><div style="font-size:12px;color:'+t.mut+';margin-top:4px;line-height:1.5;"><b style="color:'+t.txt+';">Logic:</b> we flag a ticket only if the customer comment has a real ops complaint (mold, spoilage, missing, expired…) AND the reply deflects ("vendor to check", "will check", "pending") without explaining the root cause or listing a corrective action. Empty RCAs are excluded — they live in the "RCA Not Filled" tab.</div></div>';
+  html += '</div>';
+  html += '<div style="font-size:12px;color:'+t.mut+';margin-bottom:10px;">👇 Click any row to see full ticket details</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:9px;">';
+  unsat.slice(0, 80).forEach(function(x, i) {
+    var r = x.row, m = x.m;
+    var dateStr = r.date instanceof Date
+      ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+      : String(r.date||'—');
+    var sevPill = m.severity === 'high'
+      ? '<span style="background:rgba(192,57,43,0.2);color:#ff8a80;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:0.3px;">🔴 HIGH</span>'
+      : '<span style="background:rgba(217,119,6,0.2);color:#ffb74d;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:0.3px;">🟡 MED</span>';
+
+    html += '<div onclick="vocDDOpenUnsatDetail('+i+')" style="background:'+t.surf+';border:1px solid '+t.brd+';border-left:3px solid #c0392b;border-radius:12px;padding:13px 16px;cursor:pointer;transition:transform 0.12s,border-color 0.12s,box-shadow 0.12s;" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.borderColor=\'#ff8a80\';this.style.boxShadow=\'0 6px 18px rgba(192,57,43,0.2)\'" onmouseout="this.style.transform=\'\';this.style.borderColor=\''+t.brd+'\';this.style.borderLeftColor=\'#c0392b\';this.style.boxShadow=\'\'">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:7px;">';
+    html += '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'+sevPill+'<span style="font-size:13px;font-weight:800;color:'+t.txt+';">#'+(i+1)+' · '+(r.product||'(no product)')+'</span></div>';
+    html += '<div style="font-size:11.5px;color:'+t.mut+';">'+r.orderId+' · '+r.store+' · '+(r.picker||'no picker')+' · '+dateStr+'</div></div>';
+    html += '<div style="font-size:11px;color:#ff8a80;font-weight:700;text-align:right;background:rgba(192,57,43,0.1);padding:4px 10px;border-radius:6px;max-width:340px;">'+m.reason+'</div>';
+    html += '</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">';
+    html += '<div style="padding:9px 12px;background:rgba(67,97,238,0.08);border-left:2px solid #4cc9f0;border-radius:6px;"><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#4cc9f0;margin-bottom:3px;">💬 CUSTOMER</div><div style="font-size:12px;color:'+t.txt+';font-style:italic;line-height:1.45;">'+(r.comment ? '"'+_vocEsc(r.comment)+'"' : '<span style="opacity:0.6;">(no comment)</span>')+'</div></div>';
+    html += '<div style="padding:9px 12px;background:rgba(255,255,255,0.03);border-left:2px solid #c0392b;border-radius:6px;"><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:#ff8a80;margin-bottom:3px;">🛠 RCA REPLY · FLAGGED</div><div style="font-size:12px;color:'+t.txt+';line-height:1.45;">'+(r.rca ? _vocEsc(r.rca) : '<span style="opacity:0.6;">(empty)</span>')+'</div></div>';
+    html += '</div>';
+    html += '<div style="margin-top:7px;font-size:11px;color:'+t.mut+';"><b style="color:'+t.txt+';">Issue:</b> '+(r.issue||'—')+' &nbsp; · &nbsp; <b style="color:'+t.txt+';">RCA Category:</b> '+(r.rcaCategory||'(not filled)')+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  if (unsat.length > 80) {
+    html += '<div style="margin-top:14px;text-align:center;font-size:12px;color:'+t.mut+';padding:10px;">Showing first 80 of '+unsat.length+' unsatisfied RCAs. Narrow filters to see more.</div>';
+  }
+  return html;
+}
+
+// ── DEEP DIVE: RCA Not Filled list ───────────────────────────────────────
+function vocDDRenderNotFilled(rows, t) {
+  var nf = rows.filter(function(r){
+    return vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue).notFilled;
+  });
+  if (!nf.length) {
+    return '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:40px;text-align:center;color:'+t.mut+';"><div style="font-size:42px;margin-bottom:10px;">✅</div><div style="font-size:15px;font-weight:700;color:'+t.txt+';">Every ticket has an RCA filled in (within current filters)</div></div>';
+  }
+  // Apply per-tab text search if any
+  var q = (window._vocDDNfSearch || '').toLowerCase().trim();
+  var filtered = q ? nf.filter(function(r){
+    return (r.product||'').toLowerCase().indexOf(q) !== -1 ||
+           (r.orderId||'').toLowerCase().indexOf(q) !== -1 ||
+           (r.picker ||'').toLowerCase().indexOf(q) !== -1 ||
+           (r.comment||'').toLowerCase().indexOf(q) !== -1 ||
+           (r.store  ||'').toLowerCase().indexOf(q) !== -1;
+  }) : nf;
+
+  // Group by store
+  var byStore = {};
+  filtered.forEach(function(r){ var s = r.store||'(Unknown)'; if (!byStore[s]) byStore[s] = []; byStore[s].push(r); });
+  var storeKeys = Object.keys(byStore).sort(function(a,b){ return byStore[b].length - byStore[a].length; });
+
+  window._vocDDNotFilledList = filtered;
+
+  var html = '';
+  html += '<div style="background:linear-gradient(135deg,rgba(181,134,13,0.12),transparent);border:1px solid rgba(181,134,13,0.35);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;">';
+  html += '<div style="font-size:28px;">📝</div>';
+  html += '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#ffd166;letter-spacing:0.3px;">'+nf.length+' tickets — RCA reply is empty / not filled'+(q?' · '+filtered.length+' shown after search':'')+'</div><div style="font-size:12px;color:'+t.mut+';margin-top:4px;line-height:1.5;">These are <b>not</b> counted as "unsatisfied" — they\'re just missing a reply. Get them filled in first, then evaluate quality. Use the Store/Area/Date filters at the top of the modal to narrow down.</div></div>';
+  html += '</div>';
+
+  // Per-tab search
+  html += '<div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+  html += '<input id="voc-dd-nf-search" oninput="window._vocDDNfSearch=this.value;clearTimeout(window._vocDDNfTo);window._vocDDNfTo=setTimeout(vocRenderDeepDive,200);" value="'+_vocEsc(q)+'" placeholder="🔎 Quick search — product, order ID, picker, store, comment…" style="flex:1;min-width:240px;padding:9px 14px;border-radius:10px;border:1px solid '+t.brd+';background:'+t.surf+';color:'+t.txt+';font-family:Arial,Helvetica,sans-serif;font-size:13px;outline:none;">';
+  html += '<button onclick="window._vocDDNfSearch=\'\';document.getElementById(\'voc-dd-nf-search\').value=\'\';vocRenderDeepDive();" style="padding:9px 14px;border-radius:10px;border:1px solid '+t.brd+';background:'+t.surf+';color:'+t.mut+';font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;">Clear</button>';
+  html += '</div>';
+
+  // Store summary
+  html += '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;overflow:hidden;margin-bottom:14px;">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:'+t.surf2+';"><th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Store</th><th style="padding:11px 14px;text-align:right;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+t.mut+';">Pending RCAs</th></tr></thead><tbody>';
+  storeKeys.forEach(function(s, i){
+    var bg = i%2 === 0 ? t.surf : '#161525';
+    html += '<tr style="background:'+bg+';"><td style="padding:11px 14px;font-weight:700;color:'+t.txt+';border-bottom:1px solid '+t.brd+';">'+s+'</td><td style="padding:11px 14px;text-align:right;font-weight:800;color:#ffd166;border-bottom:1px solid '+t.brd+';">'+byStore[s].length+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // Recent list
+  var sorted = filtered.slice().sort(function(a,b){
+    var da = a.date instanceof Date ? a.date.getTime() : 0;
+    var db = b.date instanceof Date ? b.date.getTime() : 0;
+    return db - da;
+  });
+  html += '<div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:10px;">Recent (click row for details)</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:7px;">';
+  sorted.slice(0, 60).forEach(function(r, i){
+    var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : String(r.date||'—');
+    html += '<div onclick="vocDDOpenRowDetail('+i+',\'nf\')" style="background:'+t.surf+';border:1px solid '+t.brd+';border-left:3px solid #b5860d;border-radius:10px;padding:10px 14px;cursor:pointer;transition:border-color 0.12s;" onmouseover="this.style.borderColor=\'#ffd166\'" onmouseout="this.style.borderColor=\''+t.brd+'\';this.style.borderLeftColor=\'#b5860d\'">';
+    html += '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:'+t.txt+';">'+(r.product||'(no product)')+'</div><div style="font-size:11px;color:'+t.mut+';margin-top:2px;">'+r.orderId+' · '+r.store+' · '+(r.picker||'no picker')+'</div></div><div style="font-size:11px;color:'+t.mut+';">'+dateStr+'</div></div>';
+    if (r.comment) {
+      html += '<div style="margin-top:7px;padding:7px 10px;background:rgba(67,97,238,0.08);border-left:2px solid #4cc9f0;border-radius:5px;font-size:12px;color:'+t.txt+';font-style:italic;">💬 "'+_vocEsc(r.comment)+'"</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  if (filtered.length > 60) html += '<div style="margin-top:14px;text-align:center;font-size:12px;color:'+t.mut+';">Showing 60 of '+filtered.length+' — refine search or filters to see more.</div>';
+  return html;
+}
+
+// ── DEEP DIVE: Copy-Paste RCA detector ───────────────────────────────────
+function vocDDRenderCopyPaste(groups, t) {
+  if (!groups.length) {
+    return '<div style="background:'+t.surf+';border:1px solid '+t.brd+';border-radius:14px;padding:40px;text-align:center;color:'+t.mut+';"><div style="font-size:42px;margin-bottom:10px;">🎯</div><div style="font-size:15px;font-weight:700;color:'+t.txt+';">No copy-paste RCAs detected</div><div style="font-size:12.5px;color:'+t.mut+';margin-top:6px;">No reply text is reused 3+ times in this filter. Replies look unique.</div></div>';
+  }
+
+  window._vocDDCpGroups = groups;
+
+  var html = '';
+  html += '<div style="background:linear-gradient(135deg,rgba(255,107,53,0.12),transparent);border:1px solid rgba(255,107,53,0.35);border-radius:14px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;">';
+  html += '<div style="font-size:28px;">🔁</div>';
+  html += '<div><div style="font-size:13px;font-weight:800;color:#ff9966;letter-spacing:0.3px;">'+groups.length+' copy-paste RCA groups detected</div><div style="font-size:12px;color:'+t.mut+';margin-top:4px;line-height:1.5;">Same RCA reply pasted into 3+ different tickets — usually a sign the reply isn\'t being investigated case-by-case. Click a group to see all tickets that used it and which stores are repeating it.</div></div>';
+  html += '</div>';
+
+  html += '<div style="display:flex;flex-direction:column;gap:9px;">';
+  groups.slice(0, 50).forEach(function(g, gi){
+    var storeArr = Object.keys(g.stores).map(function(s){ return s+' ('+g.stores[s]+')'; });
+    var topStore = Object.keys(g.stores).sort(function(a,b){ return g.stores[b]-g.stores[a]; })[0];
+    var heat = g.count >= 20 ? '#c0392b' : g.count >= 10 ? '#ff6b35' : '#b5860d';
+    html += '<div onclick="vocDDExpandCp('+gi+')" style="background:'+t.surf+';border:1px solid '+t.brd+';border-left:3px solid '+heat+';border-radius:12px;padding:13px 16px;cursor:pointer;transition:border-color 0.12s;" onmouseover="this.style.borderColor=\''+heat+'\'" onmouseout="this.style.borderColor=\''+t.brd+'\';this.style.borderLeftColor=\''+heat+'\'">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:7px;">';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-size:13px;font-weight:800;color:'+t.txt+';margin-bottom:4px;">🔁 Used '+g.count+'× across '+g.storeCount+' store'+(g.storeCount>1?'s':'')+'</div>';
+    html += '<div style="font-size:12px;color:'+t.mut+';">Top store: <b style="color:'+t.txt+';">'+topStore+'</b> ('+g.stores[topStore]+' uses)</div>';
+    html += '</div>';
+    html += '<div style="background:'+heat+';color:#fff;font-size:13px;font-weight:800;padding:5px 12px;border-radius:8px;">'+g.count+'×</div>';
+    html += '</div>';
+    html += '<div style="margin-top:5px;padding:9px 12px;background:rgba(255,255,255,0.03);border-left:2px solid '+heat+';border-radius:6px;font-size:12px;color:'+t.txt+';font-style:italic;line-height:1.5;">"'+_vocEsc(g.text)+'"</div>';
+    html += '<div style="margin-top:7px;font-size:11px;color:'+t.mut+';"><b style="color:'+t.txt+';">Stores using this reply:</b> '+storeArr.join(' · ')+'</div>';
+    html += '<div id="voc-dd-cp-detail-'+gi+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed '+t.brd+';"></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  if (groups.length > 50) html += '<div style="margin-top:14px;text-align:center;font-size:12px;color:'+t.mut+';">Showing 50 of '+groups.length+' groups</div>';
+  return html;
+}
+
+function vocDDExpandCp(gi) {
+  var el = document.getElementById('voc-dd-cp-detail-'+gi);
+  if (!el) return;
+  var groups = window._vocDDCpGroups || [];
+  var g = groups[gi];
+  if (!g) return;
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  var t = { txt:'#e8e6ff', mut:'#8b8aad', brd:'#2e2c45', surf:'#1a1928', surf2:'#13121f' };
+  var html = '<div style="font-size:11px;color:'+t.mut+';letter-spacing:1px;text-transform:uppercase;font-weight:800;margin-bottom:8px;">Tickets using this reply</div>';
+  html += '<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">';
+  g.rows.slice(0, 50).forEach(function(r){
+    var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : String(r.date||'—');
+    html += '<div style="padding:8px 11px;background:'+t.surf2+';border-radius:6px;font-size:12px;color:'+t.txt+';"><b>'+(r.product||'?')+'</b> &nbsp;·&nbsp; <span style="color:'+t.mut+';">'+r.orderId+' · '+r.store+' · '+(r.picker||'no picker')+' · '+dateStr+'</span>'+(r.comment?'<div style="margin-top:4px;font-style:italic;color:'+t.mut+';">💬 "'+_vocEsc(r.comment).slice(0,140)+'"</div>':'')+'</div>';
+  });
+  if (g.rows.length > 50) html += '<div style="text-align:center;font-size:11px;color:'+t.mut+';padding:6px;">+ '+(g.rows.length-50)+' more</div>';
+  html += '</div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+  event && event.stopPropagation && event.stopPropagation();
+}
+
+// Open full detail for an unsatisfied or not-filled row
+function vocDDOpenUnsatDetail(idx) {
+  var x = (window._vocDDUnsatList || [])[idx];
+  if (!x) return;
+  _vocDDShowDetail(x.row, x.m, true);
+}
+function vocDDOpenRowDetail(idx, src) {
+  var list = src === 'nf' ? (window._vocDDNotFilledList||[]) : (window._vocDDUnsatList||[]);
+  var r = list[idx];
+  if (!r) return;
+  var row = src === 'nf' ? r : r.row;
+  var m   = src === 'nf' ? vocRcaMismatch(row.comment,row.rca,row.rcaCategory,row.issue) : r.m;
+  _vocDDShowDetail(row, m, src !== 'nf');
+}
+
+function _vocDDShowDetail(r, m, isUnsat) {
+  var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : String(r.date||'—');
+  var sevPill = isUnsat
+    ? (m.severity === 'high' ? '<span style="background:rgba(192,57,43,0.2);color:#ff8a80;font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;">🔴 HIGH SEVERITY</span>'
+       : '<span style="background:rgba(217,119,6,0.2);color:#ffb74d;font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;">🟡 MED SEVERITY</span>')
+    : '<span style="background:rgba(181,134,13,0.2);color:#ffd166;font-size:11px;padding:3px 10px;border-radius:8px;font-weight:800;">📝 RCA NOT FILLED</span>';
+
+  var html = '';
+  html += '<div style="padding:18px 22px;font-family:Arial,Helvetica,sans-serif;">';
+  html += '<div style="margin-bottom:14px;">'+sevPill+'</div>';
+  // Reason
+  if (isUnsat) {
+    html += '<div style="background:rgba(192,57,43,0.1);border-left:3px solid #c0392b;padding:11px 14px;border-radius:6px;margin-bottom:14px;"><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#ff8a80;margin-bottom:4px;">⚠ WHY IT WAS FLAGGED</div><div style="font-size:13px;color:#fff;line-height:1.5;">'+m.reason+'</div></div>';
+  }
+  // Customer comment
+  html += '<div style="background:rgba(67,97,238,0.1);border-left:3px solid #4cc9f0;padding:12px 14px;border-radius:6px;margin-bottom:10px;"><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#4cc9f0;margin-bottom:5px;">💬 CUSTOMER COMMENT</div><div style="font-size:14px;color:#fff;font-style:italic;line-height:1.55;">'+(r.comment ? '"'+_vocEsc(r.comment)+'"' : '<span style="opacity:0.6;font-style:normal;">(no comment)</span>')+'</div></div>';
+  // RCA reply
+  html += '<div style="background:rgba(255,255,255,0.04);border-left:3px solid '+(isUnsat?'#c0392b':'#b5860d')+';padding:12px 14px;border-radius:6px;margin-bottom:14px;"><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:'+(isUnsat?'#ff8a80':'#ffd166')+';margin-bottom:5px;">🛠 RCA REPLY</div><div style="font-size:14px;color:#fff;line-height:1.55;">'+(r.rca ? _vocEsc(r.rca) : '<span style="opacity:0.6;">(empty)</span>')+'</div></div>';
+  // Meta grid
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;font-size:12.5px;">';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Order ID</div><div style="color:#fff;font-weight:700;">'+r.orderId+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Store</div><div style="color:#fff;font-weight:700;">'+r.store+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Picker</div><div style="color:#fff;font-weight:700;">'+(r.picker||'—')+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Date</div><div style="color:#fff;font-weight:700;">'+dateStr+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;grid-column:1/-1;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Product</div><div style="color:#fff;font-weight:700;">'+(r.product||'—')+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">Issue</div><div style="color:#fff;font-weight:700;">'+(r.issue||'—')+'</div></div>';
+  html += '<div style="background:#1a1928;padding:10px 12px;border-radius:8px;"><div style="font-size:10px;color:#8b8aad;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">RCA Category</div><div style="color:#fff;font-weight:700;">'+(r.rcaCategory||'(not filled)')+'</div></div>';
+  html += '</div></div>';
+
+  vocOpenModal(isUnsat ? '⚠ Unsatisfied RCA — ' + (r.product||r.orderId) : '📝 RCA Not Filled — ' + (r.product||r.orderId),
+               r.orderId + ' · ' + r.store + ' · ' + dateStr, html);
+}
+
+// Tiny HTML escaper
+function _vocEsc(s) {
+  return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+
+// ── Excel export of Deep Dive ───────────────────────────────────────────
+function vocDDExportExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Excel library not loaded'); return; }
+  var rows = vocDDFilteredRows();
+  var part = vocDDPartition(rows);
+
+  // Build sheets
+  var wb = XLSX.utils.book_new();
+
+  // Sheet 1: Summary
+  var unsatRows = [], notFilledRows = [];
+  rows.forEach(function(r){
+    var m = vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue);
+    if (m.notFilled) notFilledRows.push(r);
+    else if (m.unsatisfied) unsatRows.push({ row:r, m:m });
+  });
+  var summary = [
+    ['VOC Deep Dive Export', ''],
+    ['Generated', new Date().toLocaleString()],
+    ['Compare mode', part.mode],
+    ['Current period', part.currLabel + ' (' + part.curr.length + ' rows)'],
+    ['Previous period', part.prevLabel + ' (' + part.prev.length + ' rows)'],
+    ['Store filter', (document.getElementById('voc-dd-store')||{}).value || 'all'],
+    ['Area filter', (document.getElementById('voc-dd-area')||{}).value || 'all'],
+    [''],
+    ['Total rows', rows.length],
+    ['Unsatisfied RCAs', unsatRows.length],
+    ['RCA Not Filled', notFilledRows.length],
+    ['Copy-paste groups (3+ uses)', vocFindCopyPasteRCA(rows).length]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), 'Summary');
+
+  // Sheet 2: Area Movement
+  function tally(arr, key) {
+    var m = {}; arr.forEach(function(r){ var k = r[key] || '(none)'; m[k] = (m[k]||0)+1; }); return m;
+  }
+  var curArea = tally(part.curr, 'rcaCategory');
+  var prevArea = tally(part.prev, 'rcaCategory');
+  var areaKeys = [...new Set(Object.keys(curArea).concat(Object.keys(prevArea)))];
+  var areaSheet = [['RCA Area','Previous','Current','Δ','% Δ','Status']];
+  areaKeys.forEach(function(k){
+    var c = curArea[k]||0, p = prevArea[k]||0, d = c-p;
+    var pct = p ? ((d/p)*100).toFixed(1)+'%' : (c?'+100%':'0%');
+    var st = d > 0 ? 'IMPACTED' : d < 0 ? 'IMPROVED' : 'FLAT';
+    areaSheet.push([k, p, c, d, pct, st]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(areaSheet), 'Area Movement');
+
+  // Sheet 3: Store Movement
+  var curStore = tally(part.curr, 'store');
+  var prevStore = tally(part.prev, 'store');
+  var storeKeys = [...new Set(Object.keys(curStore).concat(Object.keys(prevStore)))];
+  var storeSheet = [['Store','Previous','Current','Δ','% Δ','Status']];
+  storeKeys.forEach(function(k){
+    var c = curStore[k]||0, p = prevStore[k]||0, d = c-p;
+    var pct = p ? ((d/p)*100).toFixed(1)+'%' : (c?'+100%':'0%');
+    var st = d > 0 ? 'IMPACTED' : d < 0 ? 'IMPROVED' : 'FLAT';
+    storeSheet.push([k, p, c, d, pct, st]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(storeSheet), 'Store Movement');
+
+  // Sheet 4: Unsatisfied RCAs
+  var unsatSheet = [['Date','Store','Order ID','Picker','Product','Issue','RCA Category','Severity','Customer Comment','RCA Reply','Flag Reason']];
+  unsatRows.forEach(function(x){
+    var r = x.row;
+    var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB') : String(r.date||'');
+    unsatSheet.push([dateStr, r.store||'', r.orderId||'', r.picker||'', r.product||'', r.issue||'', r.rcaCategory||'', x.m.severity, r.comment||'', r.rca||'', x.m.reason]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(unsatSheet), 'Unsatisfied RCAs');
+
+  // Sheet 5: RCA Not Filled
+  var nfSheet = [['Date','Store','Order ID','Picker','Product','Issue','RCA Category','Customer Comment']];
+  notFilledRows.forEach(function(r){
+    var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB') : String(r.date||'');
+    nfSheet.push([dateStr, r.store||'', r.orderId||'', r.picker||'', r.product||'', r.issue||'', r.rcaCategory||'', r.comment||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(nfSheet), 'RCA Not Filled');
+
+  // Sheet 6: Copy-Paste RCAs
+  var cpGroups = vocFindCopyPasteRCA(rows);
+  var cpSheet = [['RCA Reply Text','Uses','Stores','Top Store','Sample Order IDs']];
+  cpGroups.forEach(function(g){
+    var topStore = Object.keys(g.stores).sort(function(a,b){ return g.stores[b]-g.stores[a]; })[0];
+    var sampleOrders = g.rows.slice(0,5).map(function(r){ return r.orderId; }).join(', ');
+    cpSheet.push([g.text, g.count, Object.keys(g.stores).length+' ('+Object.keys(g.stores).map(function(s){ return s+':'+g.stores[s]; }).join(', ')+')', topStore, sampleOrders]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cpSheet), 'Copy-Paste RCAs');
+
+  // Sheet 7: All filtered rows (raw)
+  var rawSheet = [['Date','Week','Store','Order ID','Picker','Product','Product Type','Issue','RCA Category','RCA Reply','Customer Comment']];
+  rows.forEach(function(r){
+    var dateStr = r.date instanceof Date ? r.date.toLocaleDateString('en-GB') : String(r.date||'');
+    rawSheet.push([dateStr, r.week||'', r.store||'', r.orderId||'', r.picker||'', r.product||'', r.productType||'', r.issue||'', r.rcaCategory||'', r.rca||'', r.comment||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawSheet), 'All Rows');
+
+  XLSX.writeFile(wb, 'VOC_DeepDive_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('📊 Excel exported — 7 sheets');
+}
+
 
 function vocPct(val,prev){
   if(!prev||prev===0)return'';
   var p=((val-prev)/prev*100).toFixed(1);
   return p>0?'<span style="color:#c0392b;font-size:11px;">▲ '+p+'%</span>':'<span style="color:#1a7a4a;font-size:11px;">▼ '+Math.abs(p)+'%</span>';
 }
+
 
 function vocCardWarning(label,val,sub,accentColor){
   var isDark = document.getElementById('page-voc').getAttribute('data-theme')==='dark';
@@ -10351,7 +11502,7 @@ function vocRenderProducts(rows) {
     prodIssues[k][r.issue||'?']=(prodIssues[k][r.issue||'?']||0)+1;
     prodTypes[k]=r.productType||'—';
     if(!prodOrderIds[k])prodOrderIds[k]=[];
-    prodOrderIds[k].push({orderId:r.orderId||'—',rca:r.rcaCategory||r.rca||'—',issue:r.issue||'—'});
+    prodOrderIds[k].push({orderId:r.orderId||'—',rcaCategory:r.rcaCategory||'—',rca:r.rca||'',comment:r.comment||'',issue:r.issue||'—'});
   });
   var sorted=Object.keys(prods).sort(function(a,b){return prods[b]-prods[a];}).slice(0,15);
   var totalVOC=rows.length||1;
@@ -10402,12 +11553,17 @@ function vocRenderProducts(rows) {
     // Drawer row with order details, same style as RCA tracker
     var orderItems = (prodOrderIds[k]||[]).map(function(o, oi) {
       var rowBg2 = oi%2===0 ? (isDark?'#1e1d30':'#f4f3ff') : (isDark?'#1a1928':'#ffffff');
-      return '<div style="padding:9px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:5px;border-left:3px solid '+drawerAccent+';display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:2px;">'+o.issue+'</div>'+
-          '<div style="font-size:10px;color:'+(isDark?'#4cc9f0':'#4361ee')+';font-family:Courier New,monospace;margin-bottom:2px;">'+o.orderId+'</div>'+
-          '<div style="font-size:10px;color:'+txtMut+';font-style:italic;">'+o.rca+'</div>'+
-        '</div>'+
+      var commentBlock = o.comment
+        ? '<div style="margin-top:6px;padding:6px 10px;background:'+(isDark?'rgba(67,97,238,0.08)':'rgba(67,97,238,0.05)')+';border-left:2px solid '+(isDark?'#4cc9f0':'#4361ee')+';border-radius:5px;"><div style="font-size:9px;font-weight:800;letter-spacing:1px;color:'+(isDark?'#4cc9f0':'#4361ee')+';margin-bottom:2px;">💬 CUSTOMER COMMENT</div><div style="font-size:11px;color:'+(isDark?'#e8e6ff':'#1a1830')+';font-style:italic;line-height:1.4;">&ldquo;'+o.comment+'&rdquo;</div></div>'
+        : '';
+      var rcaBlock = o.rca
+        ? '<div style="margin-top:5px;padding:6px 10px;background:'+(isDark?'rgba(192,57,43,0.08)':'rgba(192,57,43,0.05)')+';border-left:2px solid #c0392b;border-radius:5px;"><div style="font-size:9px;font-weight:800;letter-spacing:1px;color:#c0392b;margin-bottom:2px;">🛠 OUR RCA</div><div style="font-size:11px;color:'+(isDark?'#e8e6ff':'#1a1830')+';line-height:1.4;">'+o.rca+'</div></div>'
+        : '';
+      return '<div style="padding:9px 12px;background:'+rowBg2+';border-radius:8px;margin-bottom:7px;border-left:3px solid '+drawerAccent+';">' +
+        '<div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:2px;">'+o.issue+'</div>'+
+        '<div style="font-size:10px;color:'+(isDark?'#4cc9f0':'#4361ee')+';font-family:Courier New,monospace;margin-bottom:4px;">'+o.orderId+'</div>'+
+        '<div style="font-size:10px;color:'+txtMut+';font-style:italic;margin-bottom:4px;">'+o.rcaCategory+'</div>'+
+        commentBlock + rcaBlock +
       '</div>';
     }).join('');
 
@@ -11409,11 +12565,12 @@ function handleOrders(e) {
   var data    = sheet.getDataRange().getValues();
   var headers = data[0];
 
-  var monthColIdx=-1, weekColIdx=-1, ordersColIdx=-1, unitsColIdx=-1, storeColIdx=-1;
+  var dateColIdx=-1, monthColIdx=-1, weekColIdx=-1, ordersColIdx=-1, unitsColIdx=-1, storeColIdx=-1;
 
   for (var c = 0; c < headers.length; c++) {
     var h  = String(headers[c]).trim();
     var hl = h.toLowerCase();
+    if (hl === 'date' || hl === 'order date' || hl === 'day')            dateColIdx   = c;
     if (h === 'W' || hl === 'month' || hl === 'month name')              monthColIdx  = c;
     if (hl === 'week' || hl === 'week no' || hl === 'week number' ||
         hl === 'wk'   || hl === 'week_no')                               weekColIdx   = c;
@@ -11427,11 +12584,20 @@ function handleOrders(e) {
         hl === 'store name' || hl === 'site')                            storeColIdx  = c;
   }
 
+  var filterDay        = String(e.parameter.day        || '').trim();
   var filterMonthLabel = String(e.parameter.monthLabel || '').trim();
   var filterMonthName  = String(e.parameter.monthName  || '').trim();
   var filterYear       = String(e.parameter.year       || '').trim();
   var filterWeek       = String(e.parameter.week       || '').trim();
   var filterNorm       = filterMonthLabel ? (filterMonthName + ' - ' + filterYear) : '';
+
+  var targetDay = null;
+  if (filterDay) {
+    var dp = filterDay.split('-');
+    if (dp.length === 3) {
+      targetDay = { y: parseInt(dp[0],10), m: parseInt(dp[1],10)-1, d: parseInt(dp[2],10) };
+    }
+  }
 
   var totalOrders = 0, totalUnits = 0, storeMap = {};
 
@@ -11446,7 +12612,16 @@ function handleOrders(e) {
     var rowMonthNorm = normalizeMonthCell(rawMonthCell);
 
     var include = false;
-    if (filterNorm) {
+    if (targetDay && dateColIdx >= 0) {
+      var cellVal  = row[dateColIdx];
+      var cellDate = (cellVal instanceof Date) ? cellVal : new Date(cellVal);
+      if (!isNaN(cellDate.getTime()) &&
+          cellDate.getFullYear() === targetDay.y &&
+          cellDate.getMonth()    === targetDay.m &&
+          cellDate.getDate()     === targetDay.d) {
+        include = true;
+      }
+    } else if (filterNorm) {
       if (rowMonthNorm.toLowerCase() === filterNorm.toLowerCase()) include = true;
     } else if (filterWeek) {
       var rw = String(rawWeekCell).replace(/\D/g,'');
@@ -11465,12 +12640,15 @@ function handleOrders(e) {
     }
   }
 
+  var returnLabel = filterDay || filterNorm || (filterWeek ? 'Week ' + filterWeek : filterYear);
+
   return {
     status: 'ok', totalOrders: totalOrders, outboundUnits: totalUnits,
     stores: storeMap, monthLabel: filterNorm,
+    dayLabel:  filterDay  ? filterDay            : '',
     weekLabel: filterWeek ? 'Week ' + filterWeek : '',
     yearLabel: filterYear,
-    label: filterNorm || (filterWeek ? 'Week ' + filterWeek : filterYear)
+    label: returnLabel
   };
 }
 
