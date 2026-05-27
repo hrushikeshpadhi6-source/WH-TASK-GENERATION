@@ -1566,6 +1566,43 @@ to{width:65%;} }
 </head>
 <body>
 
+  <!-- Eid Mubarak Popup -->
+<div id="eidPopup" style="
+    display:flex;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.7);
+    z-index:9999;
+    justify-content:center;
+    align-items:center;">
+
+    <div style="
+        background: linear-gradient(135deg, #1a472a, #2d6a4f);
+        border: 3px solid gold;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        color: white;
+        max-width: 400px;">
+
+        <div style="font-size:60px">🌙⭐</div>
+        <h1 style="color:gold; font-size:36px">Eid Mubarak!</h1>
+        <p style="font-size:18px">Wishing you joy, peace and blessings</p>
+        <p style="color:gold">— DMS Pro Team —</p>
+        <br>
+        <button onclick="document.getElementById('eidPopup').style.display='none'" style="
+            background:gold;
+            color:black;
+            border:none;
+            padding:10px 30px;
+            border-radius:10px;
+            font-size:16px;
+            cursor:pointer">
+            Enter DMS Pro ✨
+        </button>
+    </div>
+</div>
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo-wrap">
