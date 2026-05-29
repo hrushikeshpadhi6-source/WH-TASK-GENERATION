@@ -141,6 +141,8 @@ canvas{max-height:160px;}
 .meter-fill{height:100%;border-radius:50px;position:relative;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);}
 .meter-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,0.5);border-radius:50px;}
 .meter-gap{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);}
+.var-pill{display:inline-flex;align-items:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;border:1px solid;letter-spacing:0.3px;white-space:nowrap;}
+.meter-div{height:1px;background:var(--border);margin:13px 0 12px;}
 
 /* LEADERBOARD */
 .lb-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
@@ -338,6 +340,34 @@ tbody tr{transition:background 0.15s;}
 [data-theme="light"] .meter-num-lbl{color:var(--muted);}
 [data-theme="light"] .sec-hdr{color:#3a3860;}
 [data-theme="light"] #dlv-eta{color:#06a87a !important;background:rgba(6,168,122,0.12) !important;border-color:rgba(6,168,122,0.3) !important;}
+
+/* ── TRADING TERMINAL (Store Performance candlesticks) ── */
+.rank-term{position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#08070f,#0c0b1a) padding-box,
+            linear-gradient(135deg,rgba(34,211,238,0.55),rgba(124,58,237,0.18)) border-box;
+  border:1px solid transparent;border-top:1px solid transparent;
+  box-shadow:0 6px 26px rgba(0,0,0,0.35),inset 0 0 60px rgba(34,211,238,0.03);}
+.rank-term::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 60% at 50% -10%,rgba(34,211,238,0.07),transparent 60%);}
+[data-theme="light"] .rank-term{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.08);}
+[data-theme="light"] .rank-term::before{display:none;}
+.rank-term-hdr{font-size:9px;margin-bottom:6px;gap:10px;flex-wrap:wrap;}
+.rt-title{color:var(--muted);}
+[data-theme="light"] .rt-title{color:#3a3860;}
+.rt-live{display:inline-flex;align-items:center;gap:6px;color:#ff5470;font-weight:800;
+  letter-spacing:2.5px;font-family:'DM Mono',monospace;font-size:9px;}
+.rt-live i{width:7px;height:7px;border-radius:50%;background:#ff5470;
+  box-shadow:0 0 9px #ff5470;animation:rtBlink 1.4s ease-in-out infinite;}
+@keyframes rtBlink{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.2;transform:scale(0.7);}}
+.rt-quote{font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:0.4px;
+  color:var(--muted);text-transform:none;font-weight:600;display:inline-flex;gap:7px;align-items:center;
+  padding:3px 9px;border:1px solid var(--border);border-radius:7px;background:rgba(255,255,255,0.03);}
+[data-theme="light"] .rt-quote{background:rgba(0,0,0,0.03);}
+.rt-quote b{color:var(--text);font-weight:800;}
+.rt-quote .up{color:#06d6a0;font-weight:800;}
+.rt-quote .dn{color:#ff5470;font-weight:800;}
+.rt-quote .sep{opacity:0.35;}
+#rank-card canvas{cursor:crosshair;}
 
 
 /* ── CLOCK ANIMATIONS ── */
@@ -622,10 +652,14 @@ tbody tr{transition:background 0.15s;}
     </div>
   </div>
 
-  <!-- STORE PERFORMANCE RANKING TRENDLINE -->
-  <div class="chart-card ani3" style="margin-bottom:14px;">
-    <div class="sec-hdr" style="justify-content:space-between;align-items:center;">
-      <span>📈 Store Performance Ranking</span>
+  <!-- STORE PERFORMANCE RANKING — CANDLESTICK TERMINAL -->
+  <div class="chart-card ani3 rank-term" id="rank-card" style="margin-bottom:14px;">
+    <div class="sec-hdr rank-term-hdr" style="justify-content:space-between;align-items:center;border-bottom:none;">
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
+        <span class="rt-live"><i></i>LIVE</span>
+        <span class="rt-title">Store Performance — Market View</span>
+        <span class="rt-quote" id="rt-quote"></span>
+      </div>
       <select id="rank-metric" class="fsel" style="font-size:11px;padding:5px 10px;" onchange="smRender()" title="Choose the metric to rank by">
         <option value="sla">By SLA %</option>
         <option value="score">By Score</option>
@@ -633,7 +667,7 @@ tbody tr{transition:background 0.15s;}
         <option value="ibTph">By IB TPH</option>
       </select>
     </div>
-    <canvas id="sm-rank" style="height:230px;max-height:230px;"></canvas>
+    <canvas id="sm-rank" style="height:272px;max-height:272px;width:100%;"></canvas>
   </div>
 
   <!-- LEADERBOARD -->
@@ -1097,6 +1131,16 @@ function smDrawMeters(rows){
     var statusC=pct>=100?'#06d6a0':pct>=80?'#ffd60a':pct>=50?'#ff6b35':hasFc?'#ef4444':'#6b69a0';
     var gap=fcOrders>0?fcOrders-actual:0;
     var gapU=fcUnits>0?fcUnits-actualUnits:0;
+    // ── Variance % (actual vs FC target): + = over target, − = under ──
+    var ordVar=fcOrders>0?((actual-fcOrders)/fcOrders*100):null;
+    var unitVar=fcUnits>0?((actualUnits-fcUnits)/fcUnits*100):null;
+    function vpill(v){ if(v===null) return ''; var c=v>=0?'#06d6a0':'#ef4444';
+      return '<span class="var-pill" style="color:'+c+';border-color:'+c+'55;background:'+c+'14;">'+(v>=0?'▲ +':'▼ ')+v.toFixed(1)+'%</span>'; }
+    // ── LATE SLAM V2 (count + rate %) ──
+    var lateSlam=sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
+    var lsPct=actual>0?(lateSlam/actual*100):0;
+    var lsCol=lsPct<=1?'#06d6a0':lsPct<=3?'#ffd60a':'#ef4444';
+    var lsStatus=lateSlam===0?'✅ Zero':lsPct<=1?'✅ Healthy':lsPct<=3?'⚠️ Watch':'🔴 High';
 
     return '<div class="meter-card" style="--mc:'+col+';">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'+
@@ -1111,7 +1155,7 @@ function smDrawMeters(rows){
         '<div class="meter-num-item"><div class="meter-num-lbl">Achieved</div><div class="meter-num-val" style="color:'+mCol+';">'+(fcOrders>0?Math.min(pct,100).toFixed(1)+'%':'—')+'</div></div>'+
       '</div>'+
       '<div class="meter-track"><div class="meter-fill" style="width:'+(fcOrders>0?Math.min(pct,100).toFixed(1):0)+'%;background:linear-gradient(90deg,'+mCol+'99,'+mCol+');"></div></div>'+
-      '<div class="meter-gap" style="margin-bottom:12px;">'+(fcOrders>0?(gap>0?'Gap: <span style="color:#ef4444;">-'+fmt(Math.round(gap))+'</span>':'Over FC: <span style="color:#06d6a0;">+'+fmt(Math.round(Math.abs(gap)))+'</span>')+' orders':'<span style="color:var(--muted);">Fetch FC to compare</span>')+'</div>'+
+      '<div class="meter-gap" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+(fcOrders>0?((gap>0?'Gap: <span style="color:#ef4444;">-'+fmt(Math.round(gap))+'</span>':'Over FC: <span style="color:#06d6a0;">+'+fmt(Math.round(Math.abs(gap)))+'</span>')+' orders <span style="opacity:.35;">·</span> <span style="color:var(--muted);font-size:8.5px;letter-spacing:1px;">VAR</span> '+vpill(ordVar)):'<span style="color:var(--muted);">Fetch FC to compare</span>')+'</div>'+
       // Units row
       '<div style="font-size:8px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">📤 UNITS</div>'+
       '<div class="meter-nums" style="margin-bottom:8px;">'+
@@ -1120,7 +1164,19 @@ function smDrawMeters(rows){
         '<div class="meter-num-item"><div class="meter-num-lbl">Achieved</div><div class="meter-num-val" style="color:'+mColU+';">'+(fcUnits>0?Math.min(pctU,100).toFixed(1)+'%':'—')+'</div></div>'+
       '</div>'+
       '<div class="meter-track"><div class="meter-fill" style="width:'+(fcUnits>0?Math.min(pctU,100).toFixed(1):0)+'%;background:linear-gradient(90deg,'+mColU+'99,'+mColU+');"></div></div>'+
-      '<div class="meter-gap">'+(fcUnits>0?(gapU>0?'Gap: <span style="color:#ef4444;">-'+fmt(Math.round(gapU))+'</span>':'Over FC: <span style="color:#06d6a0;">+'+fmt(Math.round(Math.abs(gapU)))+'</span>')+' units':'<span style="color:var(--muted);">Fetch FC to compare</span>')+'</div>'+
+      '<div class="meter-gap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+(fcUnits>0?((gapU>0?'Gap: <span style="color:#ef4444;">-'+fmt(Math.round(gapU))+'</span>':'Over FC: <span style="color:#06d6a0;">+'+fmt(Math.round(Math.abs(gapU)))+'</span>')+' units <span style="opacity:.35;">·</span> <span style="color:var(--muted);font-size:8.5px;letter-spacing:1px;">VAR</span> '+vpill(unitVar)):'<span style="color:var(--muted);">Fetch FC to compare</span>')+'</div>'+
+      // LATE SLAM V2 row
+      '<div class="meter-div"></div>'+
+      '<div style="font-size:8px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">'+
+        '<span>🚚 Late Slam V2</span><span style="color:'+lsCol+';font-size:9px;letter-spacing:0.5px;">'+lsStatus+'</span>'+
+      '</div>'+
+      '<div class="meter-nums" style="margin-bottom:8px;">'+
+        '<div class="meter-num-item"><div class="meter-num-lbl">Late Slams</div><div class="meter-num-val" style="color:'+lsCol+';">'+fmt(lateSlam)+'</div></div>'+
+        '<div class="meter-num-item"><div class="meter-num-lbl">Of Orders</div><div class="meter-num-val" style="color:var(--muted);">'+fmt(actual)+'</div></div>'+
+        '<div class="meter-num-item"><div class="meter-num-lbl">Slam %</div><div class="meter-num-val" style="color:'+lsCol+';">'+lsPct.toFixed(2)+'%</div></div>'+
+      '</div>'+
+      '<div class="meter-track"><div class="meter-fill" style="width:'+Math.min(lsPct,100).toFixed(1)+'%;background:linear-gradient(90deg,'+lsCol+'99,'+lsCol+');"></div></div>'+
+      '<div class="meter-gap">'+(lateSlam===0?'<span style="color:#06d6a0;">Zero late slams 🎉</span>':fmt(lateSlam)+' late of '+fmt(actual)+' orders <span style="opacity:.35;">·</span> <span style="color:'+lsCol+';font-weight:800;">'+lsPct.toFixed(2)+'%</span> slam rate')+'</div>'+
     '</div>';
   }).join('')+'</div>';
   container.innerHTML=html;
@@ -1206,43 +1262,258 @@ function smSetLbLayout(m){
 (function(){ var m='row'; try{ m=localStorage.getItem('sm_lb_layout')||'row'; }catch(e){} smSetLbLayout(m); })();
 
 // ═══════════════════════════════════════════════
-// STORE PERFORMANCE RANKING — TRENDLINE
+// STORE PERFORMANCE RANKING — CANDLESTICK TERMINAL
 // ═══════════════════════════════════════════════
+var smRankRAF=null;
 function smRankChart(){
   var cv=document.getElementById('sm-rank'); if(!cv) return;
+  var ctx=cv.getContext('2d');
   var metric=(document.getElementById('rank-metric')||{}).value||'sla';
-  var data=(smLbData||[]).slice();
-  if(!data.length){ if(smCh.rank){smCh.rank.destroy();smCh.rank=null;} return; }
-  data.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
-  var labels=data.map(function(d){return d.store;});
-  var vals=data.map(function(d){return Number(d[metric])||0;});
+  var raw=(smLbData||[]).slice();
+  if(smRankRAF){cancelAnimationFrame(smRankRAF);smRankRAF=null;}
+  // legacy Chart.js instance cleanup (in case)
+  if(smCh.rank&&smCh.rank.destroy){try{smCh.rank.destroy();}catch(e){} smCh.rank=null;}
+
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  // palette
+  var C={
+    bull:'#06d6a0', bear:'#ff5470', ma:'#22d3ee',
+    bullGlow:'rgba(6,214,160,0.55)', bearGlow:'rgba(255,84,112,0.5)',
+    grid:isLight?'rgba(0,0,0,0.055)':'rgba(255,255,255,0.045)',
+    gridX:isLight?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.025)',
+    axis:isLight?'#7c7aa0':'#5f5d92', tick:isLight?'#9694b8':'#46446e',
+    bench:isLight?'#b45309':'#8b8fc4',
+    tickerHi:isLight?'#b45309':'#ff9e57',
+    tipBg:isLight?'rgba(255,255,255,0.97)':'rgba(13,12,26,0.96)',
+    tipBd:isLight?'rgba(0,0,0,0.12)':'rgba(34,211,238,0.35)',
+    tipTx:isLight?'#1a1830':'#e8e6ff'
+  };
+
+  if(!raw.length){ ctx.clearRect(0,0,cv.width,cv.height); var q=document.getElementById('rt-quote'); if(q)q.innerHTML=''; return; }
+  raw.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
   var isPct=(metric==='sla');
   function fmtV(v){ return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : fmt(v)); }
-  var ptColors=vals.map(function(v){
-    if(metric==='sla')   return v>=99?'#06d6a0':v>=95?'#ffd60a':'#ef4444';
-    if(metric==='score') return v>=85?'#06d6a0':v>=70?'#ffd60a':'#ef4444';
-    return '#22d3ee';
+
+  var vals=raw.map(function(d){return Number(d[metric])||0;});
+  var nC=vals.length;
+  // benchmark = median (robust to outliers) → green above, red below
+  var sorted=vals.slice().sort(function(a,b){return a-b;});
+  var mid=Math.floor(sorted.length/2);
+  var bench=sorted.length%2? sorted[mid] : (sorted[mid-1]+sorted[mid])/2;
+  var vmax=Math.max.apply(null,vals), vmin=Math.min.apply(null,vals);
+  var range=(vmax-vmin)||Math.max(vmax,1);
+  function hsh(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0)/4294967295;}
+
+  var candles=raw.map(function(d){
+    var close=Number(d[metric])||0, open=bench;
+    var rnd=hsh(d.store+metric);
+    var wj=range*(0.045+rnd*0.05);
+    return {store:d.store, val:close, open:open, close:close, bull:close>=open,
+      hi:Math.max(open,close)+wj, lo:Math.min(open,close)-wj*0.75,
+      vol:Number(d.orders)||Number(d.inbound)||(close+1)};
   });
-  var isLight=document.documentElement.getAttribute('data-theme')==='light';
-  var xColor=isLight?'#b45309':'#ff9e57';
-  if(smCh.rank) smCh.rank.destroy();
-  var labelPlugin={ id:'rankLabels', afterDatasetsDraw:function(c){
-    var ctx=c.ctx, meta=c.getDatasetMeta(0);
-    ctx.save(); ctx.font='700 11px "DM Mono",monospace'; ctx.textAlign='center'; ctx.textBaseline='bottom';
-    meta.data.forEach(function(pt,i){ ctx.fillStyle=ptColors[i]; ctx.fillText(fmtV(vals[i]), pt.x, pt.y-9); });
+  var volMax=Math.max.apply(null,candles.map(function(c){return c.vol;}))||1;
+
+  // quote strip
+  var top=raw[0], low=raw[nC-1];
+  var qel=document.getElementById('rt-quote');
+  if(qel){
+    qel.innerHTML='<b>TOP</b> '+top.store+' <span class="up">'+fmtV(Number(top[metric])||0)+' \u25B2</span>'+
+      '<span class="sep">|</span><b>LOW</b> '+low.store+' <span class="dn">'+fmtV(Number(low[metric])||0)+' \u25BC</span>';
+  }
+
+  // geometry (recomputed each draw to survive resize)
+  function geom(){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var W=cv.clientWidth||cv.parentNode.clientWidth||640, H=cv.clientHeight||272;
+    if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){
+      cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    }
+    return {dpr:dpr,W:W,H:H};
+  }
+
+  function draw(p, mouse){
+    var g=geom(), W=g.W, H=g.H;
+    ctx.setTransform(g.dpr,0,0,g.dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    var padR=54, padL=10, padTop=30;
+    var xAxisY=H-22, volBase=xAxisY-8, volH=34, volTop=volBase-volH;
+    var plotBot=volTop-12, plotTop=padTop;
+    var plotL=padL, plotR=W-padR, plotW=plotR-plotL;
+
+    // value domain with padding
+    var dHi=Math.max(vmax,bench), dLo=Math.min(vmin,bench);
+    var span=(dHi-dLo)||1; dHi+=span*0.16; dLo-=span*0.16;
+    function Y(v){ return plotBot-(v-dLo)/(dHi-dLo)*(plotBot-plotTop); }
+
+    var slot=plotW/nC;
+    function X(i){ return plotL+slot*(i+0.5); }
+    var bw=Math.min(slot*0.46,34);
+
+    // ── grid + right price axis ──
+    ctx.lineWidth=1; ctx.font='600 9.5px "DM Mono",monospace'; ctx.textBaseline='middle';
+    var steps=4;
+    for(var s=0;s<=steps;s++){
+      var vv=dLo+(dHi-dLo)*(s/steps), yy=Y(vv);
+      ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(plotL,yy); ctx.lineTo(plotR,yy); ctx.stroke();
+      ctx.fillStyle=C.tick; ctx.textAlign='left';
+      ctx.fillText(isPct?vv.toFixed(0):(vv>=1000?(vv/1000).toFixed(1)+'k':vv.toFixed(0)), plotR+7, yy);
+    }
+    // faint vertical separators
+    ctx.strokeStyle=C.gridX;
+    for(var i=0;i<nC;i++){ var vx=X(i); ctx.beginPath(); ctx.moveTo(vx,plotTop); ctx.lineTo(vx,volBase); ctx.stroke(); }
+
+    // ── benchmark (median) dashed line ──
+    var by=Y(bench);
+    ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle=C.bench; ctx.globalAlpha=0.7; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(plotL,by); ctx.lineTo(plotR,by); ctx.stroke(); ctx.restore();
+    ctx.fillStyle=C.bench; ctx.font='700 9px "DM Mono",monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText('MEDIAN '+fmtV(bench), plotL+4, by-3);
+
+    var ease=function(x){return 1-Math.pow(1-x,3);};
+    var stagger=0.5;
+
+    // ── volume bars ──
+    candles.forEach(function(c,i){
+      var cp=ease(Math.max(0,Math.min(1,(p*(1+stagger)-(i/nC)*stagger))));
+      var x=X(i), vh=(c.vol/volMax)*volH*cp;
+      ctx.fillStyle=c.bull?'rgba(6,214,160,0.22)':'rgba(255,84,112,0.22)';
+      ctx.fillRect(x-bw/2, volBase-vh, bw, vh);
+    });
+
+    // ── candles ──
+    candles.forEach(function(c,i){
+      var cp=ease(Math.max(0,Math.min(1,(p*(1+stagger)-(i/nC)*stagger))));
+      var x=X(i), col=c.bull?C.bull:C.bear, glow=c.bull?C.bullGlow:C.bearGlow;
+      var yOpen=Y(c.open), yClose=Y(c.close);
+      var animClose=c.open+(c.close-c.open)*cp;
+      var yAC=Y(animClose);
+      var yHi=Y(c.open+(c.hi-c.open)*cp), yLo=Y(c.open+(c.lo-c.open)*cp);
+      // wick
+      ctx.strokeStyle=col; ctx.lineWidth=1.6; ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.moveTo(x,yHi); ctx.lineTo(x,yLo); ctx.stroke();
+      ctx.globalAlpha=1;
+      // body
+      var byTop=Math.min(yOpen,yAC), bh=Math.max(Math.abs(yAC-yOpen),2);
+      ctx.save();
+      ctx.shadowColor=glow; ctx.shadowBlur=14;
+      ctx.fillStyle=col;
+      roundRect(ctx,x-bw/2,byTop,bw,bh,3); ctx.fill();
+      ctx.restore();
+      // inner sheen
+      ctx.fillStyle='rgba(255,255,255,0.16)';
+      roundRect(ctx,x-bw/2,byTop,bw,Math.min(bh,3.2),2); ctx.fill();
+    });
+
+    // ── moving-average overlay (through closes) ──
+    var reveal=plotL+plotW*Math.max(0,Math.min(1,p*1.15));
+    ctx.save();
+    ctx.beginPath(); ctx.rect(plotL,plotTop-6,reveal-plotL,plotBot-plotTop+12); ctx.clip();
+    ctx.beginPath();
+    candles.forEach(function(c,i){ var x=X(i),y=Y(c.close); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.strokeStyle=C.ma; ctx.lineWidth=2; ctx.shadowColor=C.ma; ctx.shadowBlur=10;
+    ctx.lineJoin='round'; ctx.stroke();
     ctx.restore();
-  }};
-  smCh.rank=new Chart(cv,{type:'line',
-    data:{labels:labels,datasets:[{data:vals,borderColor:'#22d3ee',borderWidth:2.5,
-      pointBackgroundColor:ptColors,pointBorderColor:isLight?'#fff':'#0b0a16',pointBorderWidth:1.5,
-      pointRadius:5,pointHoverRadius:7,tension:0.35,fill:true,backgroundColor:'rgba(34,211,238,0.10)'}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,left:6,right:6}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return fmtV(x.parsed.y);}}}},
-      scales:{
-        x:{ticks:{color:xColor,font:{weight:'800',size:12,family:'DM Mono'}},grid:{display:false},border:{display:false}},
-        y:{display:false,grace:'18%'}
-      }},
-    plugins:[labelPlugin]});
+
+    // ── value tags + ticker labels ──
+    ctx.textBaseline='alpha'; 
+    candles.forEach(function(c,i){
+      var cp=ease(Math.max(0,Math.min(1,(p*(1+stagger)-(i/nC)*stagger))));
+      if(cp<0.55) return;
+      var x=X(i), col=c.bull?C.bull:C.bear;
+      // value pill above candle top
+      var topY=Y(Math.max(c.open,c.close))-12;
+      ctx.font='800 11px "DM Mono",monospace'; ctx.textAlign='center';
+      ctx.globalAlpha=Math.min(1,(cp-0.55)/0.45);
+      ctx.fillStyle=col; ctx.fillText(fmtV(c.val), x, topY);
+      ctx.globalAlpha=1;
+      // ticker
+      ctx.font='800 12px "DM Mono",monospace'; ctx.fillStyle=C.tickerHi; ctx.textBaseline='middle';
+      ctx.fillText(c.store, x, xAxisY+11);
+      ctx.textBaseline='alpha';
+    });
+
+    // ── last price line + tag (the bottom/last ranked = "current") ──
+    var lc=candles[nC-1], ly=Y(lc.close);
+    if(p>0.7){
+      ctx.save(); ctx.globalAlpha=(p-0.7)/0.3;
+      ctx.setLineDash([3,4]); ctx.strokeStyle=lc.bull?C.bull:C.bear; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(plotL,ly); ctx.lineTo(plotR,ly); ctx.stroke(); ctx.setLineDash([]);
+      // tag on right axis
+      var tg=fmtV(lc.close), tw=ctx.measureText(tg).width+12;
+      ctx.fillStyle=lc.bull?C.bull:C.bear;
+      roundRect(ctx,plotR+2,ly-9,Math.max(tw,46),18,3); ctx.fill();
+      ctx.fillStyle=isLight?'#fff':'#08070f'; ctx.font='800 9.5px "DM Mono",monospace';
+      ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(tg,plotR+8,ly+0.5);
+      ctx.restore();
+    }
+
+    // ── crosshair + tooltip ──
+    if(mouse && p>=1){
+      var idx=Math.max(0,Math.min(nC-1,Math.round((mouse.x-plotL)/slot-0.5)));
+      var cx=X(idx), c=candles[idx];
+      ctx.save(); ctx.setLineDash([2,3]); ctx.strokeStyle=isLight?'rgba(0,0,0,0.3)':'rgba(255,255,255,0.3)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx,plotTop); ctx.lineTo(cx,volBase); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(plotL,mouse.y); ctx.lineTo(plotR,mouse.y); ctx.stroke();
+      ctx.restore();
+      // tooltip
+      var pd=((c.close-bench)/(bench||1)*100);
+      var lines=[
+        {t:c.store+(c.bull?'  \u25B2':'  \u25BC'), c:c.bull?C.bull:C.bear, b:1},
+        {t:'VAL   '+fmtV(c.close), c:C.tipTx},
+        {t:'HIGH  '+fmtV(c.hi)+'   LOW '+fmtV(Math.max(0,c.lo)), c:C.tipTx},
+        {t:'vs MED '+(pd>=0?'+':'')+pd.toFixed(2)+'%', c:c.bull?C.bull:C.bear},
+        {t:'VOL   '+fmt(Math.round(c.vol)), c:C.tipTx}
+      ];
+      ctx.font='600 10px "DM Mono",monospace';
+      var tw2=0; lines.forEach(function(l){tw2=Math.max(tw2,ctx.measureText(l.t).width);});
+      var bwid=tw2+22, bht=lines.length*15+12;
+      var tx=cx+14; if(tx+bwid>plotR) tx=cx-14-bwid; if(tx<plotL) tx=plotL+2;
+      var ty=Math.max(plotTop,Math.min(mouse.y-bht/2,plotBot-bht));
+      ctx.fillStyle=C.tipBg; ctx.strokeStyle=C.tipBd; ctx.lineWidth=1;
+      roundRect(ctx,tx,ty,bwid,bht,7); ctx.fill(); ctx.stroke();
+      lines.forEach(function(l,k){
+        ctx.fillStyle=l.c; ctx.font=(l.b?'800 ':'600 ')+(l.b?'11px':'10px')+' "DM Mono",monospace';
+        ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillText(l.t, tx+11, ty+14+k*15);
+      });
+      // highlight dot
+      ctx.fillStyle=c.bull?C.bull:C.bear; ctx.beginPath(); ctx.arc(cx,Y(c.close),3.5,0,7); ctx.fill();
+    }
+
+    // last-candle live pulse (after entrance)
+    if(p>=1){
+      var t=(performance.now()/700)%1, pr=4+t*9;
+      ctx.save(); ctx.globalAlpha=(1-t)*0.7;
+      ctx.strokeStyle=lc.bull?C.bull:C.bear; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(X(nC-1),Y(lc.close),pr,0,7); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle=lc.bull?C.bull:C.bear; ctx.beginPath(); ctx.arc(X(nC-1),Y(lc.close),3,0,7); ctx.fill();
+    }
+  }
+
+  function roundRect(c,x,y,w,h,r){ r=Math.min(r,w/2,h/2); c.beginPath();
+    c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+  // animation loop
+  var dur=1150, start=performance.now(), mouse=null;
+  function frame(now){
+    var p=Math.min(1,(now-start)/dur);
+    draw(p, mouse);
+    if(p<1){ smRankRAF=requestAnimationFrame(frame); }
+    else { smRankRAF=requestAnimationFrame(function loop(){ draw(1,mouse); smRankRAF=requestAnimationFrame(loop); }); }
+  }
+  smRankRAF=requestAnimationFrame(frame);
+
+  // interaction (rebind cleanly on each render)
+  cv.onmousemove=function(e){ var r=cv.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; };
+  cv.onmouseleave=function(){ mouse=null; };
+
+  // resize → re-render (debounced, single binding)
+  if(window.__smRankResize) window.removeEventListener('resize',window.__smRankResize);
+  var rt; window.__smRankResize=function(){ clearTimeout(rt); rt=setTimeout(function(){ smRankChart(); },180); };
+  window.addEventListener('resize',window.__smRankResize);
 }
 
 // ═══════════════════════════════════════════════
