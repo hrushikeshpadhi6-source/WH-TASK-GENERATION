@@ -1675,7 +1675,7 @@ to{width:65%;} }
       </div>
       <div class="login-field">
         <label>Store / Location</label>
-        <input type="text" id="su-store" placeholder="e.g. HP World — Bhubaneswar">
+        <input type="text" id="su-store" placeholder="e.g. QAA7">
       </div>
       <div class="login-field">
         <label>Password</label>
@@ -12488,6 +12488,24 @@ async function _dmsNotifyAdmin(req) {
   } catch(e) { console.warn('Admin email alert failed:', e); }
 }
 
+// Email the 6-digit OTP code directly to the person signing up.
+async function _dmsEmailOtpToUser(req) {
+  if (!EMAILJS_READY) { console.warn('EmailJS not configured — OTP not emailed.'); return false; }
+  if (!window.emailjs) { _loadEmailJs(); await new Promise(function(r){ setTimeout(r, 1200); }); }
+  if (!window.emailjs) { console.warn('EmailJS SDK not loaded yet — OTP not emailed.'); return false; }
+  try {
+    await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      to_email:  req.email,
+      to_name:   req.name || 'there',
+      passcode:  req.code,
+      req_name:  req.name,
+      req_email: req.email,
+      req_store: req.store
+    }, { publicKey: EMAILJS.publicKey });
+    return true;
+  } catch(e) { console.warn('OTP email to user failed:', e); return false; }
+}
+
 // ── small helpers ──────────────────────────────────────────────
 function authMsg(id, text, type) {
   var el = document.getElementById(id);
@@ -12603,7 +12621,7 @@ async function authStartSignup() {
       if (users.some(function(x){ return x.email === email; })) throw { code: 'auth/email-already-in-use' };
     }
     var code = genOtp();
-    _pendingSignup = { name: name, email: email, store: store, pass: p1, code: code, expires: Date.now() + 24*60*60*1000, adminGated: true };
+    _pendingSignup = { name: name, email: email, store: store, pass: p1, code: code, expires: Date.now() + OTP_TTL_MS };
 
     // The admin's own account is auto-approved — no waiting, no code needed.
     if (email === ADMIN_EMAIL) {
@@ -12612,14 +12630,17 @@ async function authStartSignup() {
       return;
     }
 
-    // Everyone else: file a request for the admin to review & approve.
-    await _dmsSubmitRequest(_pendingSignup);
+    // Everyone else: email the 6-digit code straight to the person's inbox
+    // (and still log the request so it shows in the Admin panel for records).
+    var sent = await _dmsEmailOtpToUser(_pendingSignup);
+    try { await _dmsSubmitRequest(_pendingSignup); } catch(e){}
     _savePending();
     authBusy('btn-signup', false);
-    _showAwaitingApproval(email);
+    _showOtpSent(email, sent);
     clearOtpBoxes();
     authSwitchTab('otp');
-    authMsg('login-msg', '');
+    startResendCooldown();
+    authMsg('login-msg', sent ? '' : '⚠️ Couldn\u2019t email the code automatically \u2014 ask the administrator for it (Admin panel).', sent ? 'info' : 'error');
   } catch(err) {
     authBusy('btn-signup', false);
     authMsg('login-msg', '❌ ' + authErr(err), 'error');
@@ -12635,8 +12656,18 @@ function _clearPending() {
   try { localStorage.removeItem(PENDING_KEY); } catch(e){}
 }
 
-// ── OTP screen copy for the admin-approval flow ──────────────────
-function _showAwaitingApproval(email) {
+// ── OTP screen copy when the code was emailed to the user ────────
+function _showOtpSent(email, sent) {
+  document.getElementById('otp-headline').textContent = sent ? 'Check your inbox' : 'Almost there';
+  document.getElementById('otp-sub').innerHTML = sent
+    ? 'We emailed a 6-digit code to<br><span class="otp-email">' + email + '</span><br><span style="font-size:11px;color:#8b8aad;">Can\u2019t find it? Check your spam / promotions folder.</span>'
+    : 'We couldn\u2019t send the email automatically for<br><span class="otp-email">' + email + '</span>.<br>Ask the administrator for your <b>6-digit code</b> (Admin panel) and enter it below.';
+  document.getElementById('btn-verify').textContent = 'Verify & Create Account →';
+  var rw = document.getElementById('otp-resend-wrap'); if (rw) rw.style.display = '';
+  var dh = document.getElementById('otp-demo-hint'); if (dh) dh.style.display = 'none';
+}
+
+function _showAwaitingApprovalDISABLED(email) {
   document.getElementById('otp-headline').textContent = 'Request sent to administrator';
   document.getElementById('otp-sub').innerHTML =
     'Your request for <span class="otp-email">' + email + '</span> was sent for approval.<br>' +
@@ -12719,11 +12750,13 @@ async function _dmsCreateAccount(ps) {
   }
 }
 
-// ── re-send the request alert to the admin (same code) ─────────
+// ── re-send the OTP code to the user (same code) ───────────────
 async function authResendOtp() {
   if (!_pendingSignup) return;
+  var sent = await _dmsEmailOtpToUser(_pendingSignup);
   try { await _dmsSubmitRequest(_pendingSignup); } catch(e){}
-  authMsg('login-msg', 'ℹ️ Your request was re-sent to the administrator.', 'info');
+  startResendCooldown();
+  authMsg('login-msg', sent ? '\ud83d\udce7 Code re-sent to ' + _pendingSignup.email + '.' : '\u26a0\ufe0f Couldn\u2019t email the code \u2014 ask the administrator (Admin panel).', sent ? 'success' : 'error');
 }
 function startResendCooldown() {
   var link = document.getElementById('otp-resend');
@@ -12960,7 +12993,7 @@ document.addEventListener('click', function(e) {
       var ps = JSON.parse(raw);
       if (!ps || (ps.expires && Date.now() > ps.expires)) { _clearPending(); return false; }
       _pendingSignup = ps;
-      _showAwaitingApproval(ps.email);
+      _showOtpSent(ps.email, true);
       clearOtpBoxes();
       authSwitchTab('otp');
       return true;
