@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store Metrics — HP World DMS PRO</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500;600&display=swap');
 
@@ -152,12 +153,46 @@ canvas{max-height:160px;}
 .lb-chips{display:flex;flex-wrap:nowrap;gap:3px;flex:1;overflow:hidden;}
 .chip{display:flex;flex-direction:column;align-items:center;padding:4px 3px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:7px;transition:all 0.2s;cursor:default;flex:1 1 0;min-width:0;}
 .chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
-.chip-l{font-size:8px;color:#c4c2e0;text-transform:uppercase;letter-spacing:0.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;}
-[data-theme='light'] .chip-l{color:#1e1b4b;font-weight:900;letter-spacing:0.5px;}
+.chip-l{font-size:7.5px;color:#d8d6f2;text-transform:uppercase;letter-spacing:0.2px;font-weight:800;white-space:normal;word-break:break-word;line-height:1.05;height:17px;display:flex;align-items:center;justify-content:center;max-width:100%;text-align:center;}
+[data-theme='light'] .chip-l{color:#181544;font-weight:900;letter-spacing:0.2px;}
 [data-theme='light'] td{color:#0d0c1a;opacity:1;}
 [data-theme='light'] .kpi-lbl{color:#4a4870;font-weight:900;}
 [data-theme='light'] .kpi-sub{color:#5a5888;}
-.chip-v{font-size:11px;font-weight:800;font-family:'DM Mono',monospace;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;}
+.chip-v{font-size:10px;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:-0.2px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center;}
+
+/* LEADERBOARD — CARD LAYOUT (store on top, chips grid below) */
+.lb-head{display:contents;}
+.lb-wrap.cards .lb-row{flex-direction:column;align-items:stretch;gap:12px;padding:16px 18px;border-left-width:5px;}
+.lb-wrap.cards .lb-row:hover{transform:none;}
+.lb-wrap.cards .lb-head{display:flex;align-items:center;gap:12px;}
+.lb-wrap.cards .lb-medal{font-size:22px;width:28px;}
+.lb-wrap.cards .lb-store{font-size:18px;letter-spacing:0.5px;}
+.lb-wrap.cards .lb-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:7px;flex:none;overflow:visible;}
+.lb-wrap.cards .chip{padding:7px 5px;}
+.lb-wrap.cards .chip-l{height:auto;min-height:13px;font-size:8px;letter-spacing:0.4px;}
+.lb-wrap.cards .chip-v{font-size:13px;margin-top:4px;}
+@media(max-width:680px){
+  .lb-wrap.cards .lb-chips{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));}
+}
+
+/* LEADERBOARD — BOARD LAYOUT (centered store header + divided metric strip) */
+.lb-wrap.board .lb-row{flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;
+  border:1.5px solid var(--sc,var(--accent));border-radius:12px;background:rgba(8,7,18,0.55);
+  box-shadow:0 0 20px -9px var(--sc,var(--accent));}
+[data-theme='light'] .lb-wrap.board .lb-row{background:rgba(255,255,255,0.6);}
+.lb-wrap.board .lb-row:hover{transform:none;box-shadow:0 0 26px -6px var(--sc,var(--accent));}
+.lb-wrap.board .lb-head{display:flex;justify-content:center;align-items:center;gap:9px;padding:8px 10px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0));border-bottom:1px solid var(--sc,var(--accent));}
+.lb-wrap.board .lb-medal{font-size:16px;width:auto;}
+.lb-wrap.board .lb-store{font-size:15px;letter-spacing:1.5px;text-transform:uppercase;color:var(--sc,var(--accent));text-shadow:0 0 12px var(--sc,transparent);}
+.lb-wrap.board .lb-chips{display:flex;flex-wrap:nowrap;gap:0;overflow:hidden;flex:none;}
+.lb-wrap.board .chip{flex:1 1 0;min-width:0;border:none;border-right:1px solid var(--border);border-radius:0;background:rgba(255,255,255,0.025);padding:8px 2px;}
+[data-theme='light'] .lb-wrap.board .chip{background:rgba(0,0,0,0.02);}
+.lb-wrap.board .chip:last-child{border-right:none;}
+.lb-wrap.board .chip:hover{transform:none;box-shadow:none;background:rgba(255,255,255,0.06);}
+.lb-wrap.board .chip-l{height:auto;min-height:0;font-size:6.5px;color:var(--cc,#d8d6f2);opacity:1;letter-spacing:0;white-space:nowrap;word-break:normal;font-weight:800;}
+[data-theme='light'] .lb-wrap.board .chip-l{color:#181544;}
+.lb-wrap.board .chip-v{font-size:10px;margin-top:4px;white-space:nowrap;letter-spacing:-0.3px;}
 
 /* TABLE */
 .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
@@ -587,11 +622,30 @@ tbody tr{transition:background 0.15s;}
     </div>
   </div>
 
+  <!-- STORE PERFORMANCE RANKING TRENDLINE -->
+  <div class="chart-card ani3" style="margin-bottom:14px;">
+    <div class="sec-hdr" style="justify-content:space-between;align-items:center;">
+      <span>📈 Store Performance Ranking</span>
+      <select id="rank-metric" class="fsel" style="font-size:11px;padding:5px 10px;" onchange="smRender()" title="Choose the metric to rank by">
+        <option value="sla">By SLA %</option>
+        <option value="score">By Score</option>
+        <option value="orders">By Orders</option>
+        <option value="ibTph">By IB TPH</option>
+      </select>
+    </div>
+    <canvas id="sm-rank" style="height:230px;max-height:230px;"></canvas>
+  </div>
+
   <!-- LEADERBOARD -->
   <div class="lb-wrap ani3">
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;">
-      <span>🏆 Store Leaderboard — Ranked by Points</span>
+      <span>🏆 Store Leaderboard — Ranked by Points <span id="lb-date-label" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:800;letter-spacing:0.3px;color:var(--accent);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:7px;padding:3px 9px;margin-left:6px;text-transform:none;white-space:nowrap;"></span></span>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:3px;margin-right:2px;">
+          <button class="pb on" id="lb-lay-row" onclick="smSetLbLayout('row')" title="Compact rows">☰ Rows</button>
+          <button class="pb" id="lb-lay-card" onclick="smSetLbLayout('card')" title="Card view — store on top">▦ Cards</button>
+          <button class="pb" id="lb-lay-board" onclick="smSetLbLayout('board')" title="Board view — centered header + metric strip">▣ Board</button>
+        </div>
         <input type="date" id="voc-date-filter" class="fsel" style="font-size:11px;padding:5px 10px;" title="Filter VOC by specific date">
         <select id="voc-period-sel" class="fsel" style="font-size:11px;padding:5px 10px;">
           <option value="all">VOC — All Dates</option>
@@ -608,8 +662,14 @@ tbody tr{transition:background 0.15s;}
   <!-- RAW TABLE -->
   <div class="tbl-wrap ani3">
     <div class="tbl-hdr">
-      <div class="sec-hdr" style="margin:0;border:none;padding:0;">📋 Raw Data</div>
-      <div class="f-status" id="sm-rows"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="sec-hdr" style="margin:0;border:none;padding:0;">📋 Raw Data</div>
+        <span id="sm-period-label" style="font-size:11px;font-weight:800;letter-spacing:0.5px;font-family:'DM Mono',monospace;color:var(--accent);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:8px;padding:4px 11px;white-space:nowrap;"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div class="f-status" id="sm-rows"></div>
+        <button id="sm-export-btn" onclick="smExportExcel()" class="copy-btn" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap;">⬇ Export Excel</button>
+      </div>
     </div>
     <div class="tbl-scroll">
       <table><thead id="sm-th"></thead><tbody id="sm-tb"><tr><td class="empty">Loading…</td></tr></tbody></table>
@@ -650,7 +710,7 @@ function smGoBack(){
   if (window.history.length > 1) { history.back(); return; }
   window.location.href = 'index.html';
 }
-var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[];
+var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[];
 
 // ═══════════════════════════════════════════════
 // THEME
@@ -841,8 +901,95 @@ function smRender(){
   if(!smData.length)return;
   var rows=smFilter();
   document.getElementById('sm-status').textContent=rows.length+' rows';
+  var pl=document.getElementById('sm-period-label'); if(pl) pl.textContent=smPeriodLabel();
+  var ld=document.getElementById('lb-date-label'); if(ld) ld.textContent='📅 '+smActivePeriodText();
   smKPI(rows); smCharts(rows); smLeaderboard(rows); smTable(rows);
-  smDrawMeters(rows);
+  smDrawMeters(rows); try{ smRankChart(); }catch(e){ console.warn('rank chart skipped:', e); }
+}
+
+// ═══════════════════════════════════════════════
+// PERIOD LABEL + EXCEL EXPORT
+// ═══════════════════════════════════════════════
+function smActivePeriodText(){
+  var pvSel=document.getElementById('sm-pval');
+  var pTxt=(pvSel&&pvSel.selectedIndex>=0)?pvSel.options[pvSel.selectedIndex].text:'';
+  if(smPeriod==='all'||!pTxt||pTxt==='— All —'){
+    var ds=smData.map(gDate).filter(Boolean).sort();
+    if(ds.length){ var a=ds[0], b=ds[ds.length-1]; return a===b?a:(a+' → '+b); }
+    return 'All dates';
+  }
+  return pTxt;
+}
+function smPeriodLabel(){
+  var pvSel=document.getElementById('sm-pval');
+  var pTxt=(pvSel&&pvSel.selectedIndex>=0)?pvSel.options[pvSel.selectedIndex].text:'— All —';
+  var blank=(!pTxt||pTxt==='— All —');
+  var pName=smPeriod==='all'?'All dates':(blank?('All '+smPeriod+'s'):pTxt);
+  var sSel=document.getElementById('sm-store');
+  var sTxt=(sSel&&sSel.selectedIndex>=0)?sSel.options[sSel.selectedIndex].text:'All Stores';
+  return '📅 '+pName+'  ·  '+sTxt;
+}
+function smPeriodKey(r,mode){
+  if(mode==='day')   return gDate(r);
+  if(mode==='week')  return gWeek(r)||gDate(r);
+  if(mode==='month') return gMonth(r)||(gDate(r)?gDate(r).slice(0,7):'');
+  return 'All';
+}
+function smBuildSummary(rows,mode){
+  var groups={};
+  rows.forEach(function(r){
+    var key=smPeriodKey(r,mode)||'(blank)';
+    var store=gStore(r)||'(blank)';
+    var gk=key+'||'+store;
+    if(!groups[gk]) groups[gk]={period:key,store:store,rows:[]};
+    groups[gk].rows.push(r);
+  });
+  var hdr=['Period','Store','Records','Total Inbound','Vendor','Transs','Orders','Outbound Units','Late Slam','LS Rate %','Avg UPO','Avg SLA %','IB TPH','OB TPH'];
+  var out=[hdr];
+  Object.keys(groups).sort().forEach(function(gk){
+    var rs=groups[gk].rows;
+    var orders=sum(rs.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
+    var ls=sum(rs.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
+    out.push([
+      groups[gk].period, groups[gk].store, rs.length,
+      Math.round(sum(rs.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);}))),
+      Math.round(sum(rs.map(function(r){return gNum(r,['VENDOR','Vendor','D']);}))),
+      Math.round(sum(rs.map(function(r){return gNum(r,['TRANSS','Transs','E']);}))),
+      Math.round(orders),
+      Math.round(sum(rs.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}))),
+      Math.round(ls),
+      orders>0?+(ls/orders*100).toFixed(2):0,
+      +avg(rs.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})).toFixed(2),
+      +toP(avg(rs.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}))).toFixed(2),
+      +avg(rs.map(function(r){return gNum(r,['IB TPH','O']);})).toFixed(1),
+      +avg(rs.map(function(r){return gNum(r,['OB TPH','P']);})).toFixed(1)
+    ]);
+  });
+  return out;
+}
+function smExportExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
+  if(!smData.length){ alert('Load data first, then export.'); return; }
+  var rows=smFilter();
+  if(!rows.length){ alert('No rows match the current filter — nothing to export.'); return; }
+  var mode=(document.getElementById('sm-export-mode')||{}).value||'raw';
+  var btn=document.getElementById('sm-export-btn'); var lbl=btn?btn.textContent:'';
+  if(btn){ btn.textContent='⏳ Exporting…'; btn.disabled=true; }
+  try {
+    var wb=XLSX.utils.book_new();
+    if(mode!=='raw'){
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(smBuildSummary(rows,mode)), 'Summary by '+mode);
+    }
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Raw Data');
+    var stamp=new Date().toISOString().slice(0,10);
+    var fname='StoreMetrics_'+(mode==='raw'?'raw':'by-'+mode)+'_'+stamp+'.xlsx';
+    XLSX.writeFile(wb, fname);
+    if(btn){ btn.textContent='✅ Exported'; setTimeout(function(){ btn.textContent=lbl; btn.disabled=false; },2000); }
+  } catch(e){
+    console.error('Export failed:', e);
+    alert('Export failed: '+(e&&e.message||e));
+    if(btn){ btn.textContent=lbl; btn.disabled=false; }
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1044,12 +1191,67 @@ function smCharts(rows){
 }
 
 // ═══════════════════════════════════════════════
+// LEADERBOARD LAYOUT TOGGLE (rows / cards)
+// ═══════════════════════════════════════════════
+var smLbLayout='row';
+function smSetLbLayout(m){
+  smLbLayout=m;
+  var w=document.querySelector('.lb-wrap');
+  if(w){ w.classList.remove('cards','board'); if(m==='card')w.classList.add('cards'); if(m==='board')w.classList.add('board'); }
+  [['lb-lay-row','row'],['lb-lay-card','card'],['lb-lay-board','board']].forEach(function(p){
+    var b=document.getElementById(p[0]); if(b) b.classList.toggle('on', m===p[1]);
+  });
+  try{ localStorage.setItem('sm_lb_layout', m); }catch(e){}
+}
+(function(){ var m='row'; try{ m=localStorage.getItem('sm_lb_layout')||'row'; }catch(e){} smSetLbLayout(m); })();
+
+// ═══════════════════════════════════════════════
+// STORE PERFORMANCE RANKING — TRENDLINE
+// ═══════════════════════════════════════════════
+function smRankChart(){
+  var cv=document.getElementById('sm-rank'); if(!cv) return;
+  var metric=(document.getElementById('rank-metric')||{}).value||'sla';
+  var data=(smLbData||[]).slice();
+  if(!data.length){ if(smCh.rank){smCh.rank.destroy();smCh.rank=null;} return; }
+  data.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
+  var labels=data.map(function(d){return d.store;});
+  var vals=data.map(function(d){return Number(d[metric])||0;});
+  var isPct=(metric==='sla');
+  function fmtV(v){ return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : fmt(v)); }
+  var ptColors=vals.map(function(v){
+    if(metric==='sla')   return v>=99?'#06d6a0':v>=95?'#ffd60a':'#ef4444';
+    if(metric==='score') return v>=85?'#06d6a0':v>=70?'#ffd60a':'#ef4444';
+    return '#22d3ee';
+  });
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  var xColor=isLight?'#b45309':'#ff9e57';
+  if(smCh.rank) smCh.rank.destroy();
+  var labelPlugin={ id:'rankLabels', afterDatasetsDraw:function(c){
+    var ctx=c.ctx, meta=c.getDatasetMeta(0);
+    ctx.save(); ctx.font='700 11px "DM Mono",monospace'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    meta.data.forEach(function(pt,i){ ctx.fillStyle=ptColors[i]; ctx.fillText(fmtV(vals[i]), pt.x, pt.y-9); });
+    ctx.restore();
+  }};
+  smCh.rank=new Chart(cv,{type:'line',
+    data:{labels:labels,datasets:[{data:vals,borderColor:'#22d3ee',borderWidth:2.5,
+      pointBackgroundColor:ptColors,pointBorderColor:isLight?'#fff':'#0b0a16',pointBorderWidth:1.5,
+      pointRadius:5,pointHoverRadius:7,tension:0.35,fill:true,backgroundColor:'rgba(34,211,238,0.10)'}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,left:6,right:6}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return fmtV(x.parsed.y);}}}},
+      scales:{
+        x:{ticks:{color:xColor,font:{weight:'800',size:12,family:'DM Mono'}},grid:{display:false},border:{display:false}},
+        y:{display:false,grace:'18%'}
+      }},
+    plugins:[labelPlugin]});
+}
+
+// ═══════════════════════════════════════════════
 // LEADERBOARD
 // ═══════════════════════════════════════════════
 function smLeaderboard(rows){
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   if(!stores.length){document.getElementById('sm-lb').innerHTML='<div class="empty">No data</div>';return;}
-  function ch(l,v,c){return '<div class="chip"><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
+  function ch(l,v,c){return '<div class="chip" style="--cc:'+c+';"><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
 
   // Pre-read VOC filter once for all stores
   var pvVoc=document.getElementById('sm-pval').value;
@@ -1089,7 +1291,7 @@ function smLeaderboard(rows){
     var ptsScore = Math.min(pts/100,1)*30;
     var ibScore  = ibTph>0?Math.min(ibTph/145,1.1)*15:0; // up to 16.5 if TPH>145
     var vocScore = Math.max(0,15-voc*3);
-    var score    = slaScore+ptsScore+ibScore+vocScore;
+    var score    = Math.min(slaScore+ptsScore+ibScore+vocScore, 100);
 
     return{store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, score:score,
       inbound:sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);})),
@@ -1106,6 +1308,7 @@ function smLeaderboard(rows){
   }).sort(function(a,b){return b.score-a.score;});
 
   var medals=['🥇','🥈','🥉'];
+  smLbData=data;
   document.getElementById('sm-lb').innerHTML=data.map(function(d,i){
     var col  = SC[d.store]||'#8b8aad';
     var slaC = d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
@@ -1115,8 +1318,10 @@ function smLeaderboard(rows){
     // Score colour: green ≥85, yellow ≥70, red <70
     var scoreC = d.score>=85?'#06d6a0':d.score>=70?'#ffd60a':'#ef4444';
     return '<div class="lb-row" style="--sc:'+col+';">'+
-      '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
-      '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>'+
+      '<div class="lb-head">'+
+        '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
+        '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>'+
+      '</div>'+
       '<div class="lb-chips">'+
         ch('SLA',d.sla.toFixed(2)+'%',slaC)+
         ch('Inbound',fmt(d.inbound),'#06d6a0')+
