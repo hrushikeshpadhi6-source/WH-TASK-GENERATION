@@ -1711,6 +1711,15 @@ to{width:65%;} }
       <div class="auth-switch-text"><span class="auth-link" onclick="authSwitchTab('signup')">← Back</span></div>
     </div>
 
+    <!-- ── SCREEN: ACCOUNT STATUS (under review / rejected / blocked) ── -->
+    <div class="auth-screen" id="auth-screen-status" style="text-align:center;">
+      <div id="auth-status-icon" style="font-size:54px;margin-bottom:10px;line-height:1;">⏳</div>
+      <div id="auth-status-head" style="font-family:'Syne',sans-serif;font-size:21px;font-weight:800;margin-bottom:12px;color:#ffd60a;">Account under review</div>
+      <div id="auth-status-sub" style="font-size:13px;color:#8b8aad;line-height:1.7;margin-bottom:24px;"></div>
+      <button class="login-btn login-btn-primary" onclick="authSwitchTab('login')">← Back to Sign In</button>
+      <div class="auth-switch-text" id="auth-status-help" style="margin-top:14px;"></div>
+    </div>
+
     <div class="login-footer-text">© 2026 HP World · ENWPP9081D/2019</div>
   </div>
 </div>
@@ -12478,6 +12487,7 @@ async function _dmsNotifyAdmin(req) {
   if (!EMAILJS_READY || !window.emailjs) return;
   try {
     await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      email:    ADMIN_EMAIL,
       to_email: ADMIN_EMAIL,
       to_name:  'Admin',
       passcode: req.code,
@@ -12495,6 +12505,7 @@ async function _dmsEmailOtpToUser(req) {
   if (!window.emailjs) { console.warn('EmailJS SDK not loaded yet — OTP not emailed.'); return false; }
   try {
     await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      email:     req.email,
       to_email:  req.email,
       to_name:   req.name || 'there',
       passcode:  req.code,
@@ -12535,6 +12546,8 @@ function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 // ── tab / screen switching ─────────────────────────────────────
 function authSwitchTab(which) {
   authMsg('login-msg', '');
+  var statusScreen = document.getElementById('auth-screen-status');
+  if (statusScreen) statusScreen.classList.remove('active');
   ['login','signup','otp'].forEach(function(s){
     document.getElementById('auth-screen-' + s).classList.toggle('active', s === which);
   });
@@ -12568,6 +12581,121 @@ function authShowLogin() {
   authSwitchTab('login');
 }
 
+// When we sign a non-approved user out to show a status screen, this flag tells
+// onAuthStateChanged's "signed-out" branch NOT to bounce back to the login form.
+var _authStatusLock = false;
+// True while an account is being created — onAuthStateChanged stays out of the
+// way so the new (auto-signed-in) user isn't shown the app before we gate them.
+var _creatingAccount = false;
+
+// ── show the account-status screen (pending / rejected / blocked) ──
+function authShowStatus(status, name, data) {
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('app-shell').style.display     = 'none';
+  document.getElementById('session-badge').style.display = 'none';
+  var m = document.getElementById('logout-menu'); if (m) m.style.display = 'none';
+  authMsg('login-msg', '');
+  authBusy('btn-login', false);
+  document.getElementById('auth-tabs').style.display = 'none';
+  ['login','signup','otp'].forEach(function(s){
+    var el = document.getElementById('auth-screen-' + s); if (el) el.classList.remove('active');
+  });
+  var nm = name ? (', ' + name) : '';
+  var conf = ({
+    pending:  { icon:'⏳', color:'#ffd60a',
+      head:'Account under review',
+      sub:'Thanks'+nm+'! Your account was created and is now <b style="color:#ffd60a;">waiting for administrator approval</b>.<br>You\u2019ll be able to sign in as soon as it\u2019s approved.',
+      help:'Already approved? <span class="auth-link" onclick="authSwitchTab(\'login\')">Try signing in</span>' },
+    rejected: { icon:'⛔', color:'#f72585',
+      head:'Signup rejected',
+      sub:'Sorry'+nm+'. Your access request was <b style="color:#f72585;">not approved</b> by the administrator, so this email can\u2019t be used to sign in.<br>Please contact the administrator if you believe this is a mistake.',
+      help:'' },
+    blocked:  { icon:'🚫', color:'#f72585',
+      head:'Account blocked',
+      sub:'Your account has been <b style="color:#f72585;">blocked</b> by the administrator.<br>Please contact them to restore your access.',
+      help:'' }
+  })[status] || { icon:'ℹ️', color:'#8b8aad', head:'Account status', sub:'Please contact the administrator.', help:'' };
+  document.getElementById('auth-status-icon').textContent = conf.icon;
+  var h = document.getElementById('auth-status-head'); h.textContent = conf.head; h.style.color = conf.color;
+  document.getElementById('auth-status-sub').innerHTML = conf.sub;
+  document.getElementById('auth-status-help').innerHTML = conf.help;
+  document.getElementById('auth-screen-status').classList.add('active');
+}
+
+// ── GATEKEEPER: decide what a signed-in Firebase user may do ───
+// Reads users/{uid}.status →  approved: enter app · pending/rejected/blocked:
+// sign out + show the matching status screen. Legacy users with no status
+// field are treated as approved so existing accounts are never locked out.
+async function _gateUser(user) {
+  var emailLc = (user.email || '').toLowerCase();
+  // The admin account is always allowed straight in.
+  if (emailLc === ADMIN_EMAIL) {
+    try {
+      await fbDB.collection('users').doc(user.uid).set({
+        name: user.displayName || 'Administrator', email: emailLc,
+        status: 'approved', role: 'admin',
+        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch(e){}
+    authShowApp(user.displayName || 'Administrator');
+    return;
+  }
+  var data = null;
+  try {
+    var doc = await fbDB.collection('users').doc(user.uid).get();
+    if (doc.exists) data = doc.data();
+  } catch(e) { console.warn('Status check failed:', e); }
+  var status = (data && data.status) || 'approved';   // legacy / missing → approved
+  var nm = (data && data.name) || user.displayName || emailLc.split('@')[0];
+
+  if (status === 'approved') {
+    try { fbDB.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() }); } catch(e){}
+    authShowApp(nm);
+    _maybeShowReminder(user.uid, data);
+  } else {
+    // Not allowed in — sign the session out and show the status screen.
+    _authStatusLock = true;
+    authShowStatus(status, nm, data);
+    try { await fbAuth.signOut(); } catch(e){}
+  }
+}
+
+// ── show a pending reminder from the admin once, on next login ──
+function _maybeShowReminder(uid, data) {
+  var r = data && data.reminder;
+  if (!r || !r.text || r.seen) return;
+  setTimeout(function(){
+    if (typeof showToast === 'function') showToast('📣 Admin: ' + r.text);
+    else alert('📣 Reminder from administrator:\n\n' + r.text);
+  }, 1400);
+  try { if (FIREBASE_READY) fbDB.collection('users').doc(uid).update({ 'reminder.seen': true }); } catch(e){}
+}
+
+// ── ADMIN: send a reminder to a user (stored on doc + emailed) ──
+async function _dmsSendReminder(u, msg) {
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('users').doc(u.id).update({ reminder: { text: msg, at: Date.now(), seen: false } }); } catch(e){ console.warn(e); }
+  } else {
+    var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
+    users.forEach(function(x){ if (x.email === u.email) x.reminder = { text: msg, at: Date.now(), seen: false }; });
+    localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+  }
+  // Best-effort email via EmailJS (uses your existing template).
+  if (EMAILJS_READY) {
+    if (!window.emailjs) { _loadEmailJs(); await new Promise(function(r){ setTimeout(r, 1200); }); }
+    if (window.emailjs) {
+      try {
+        await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+          email: u.email, to_email: u.email, to_name: u.name || 'there',
+          message: msg, passcode: msg, req_name: u.name, req_email: u.email, req_store: u.store || ''
+        }, { publicKey: EMAILJS.publicKey });
+        return true;
+      } catch(e) { console.warn('Reminder email failed:', e); return false; }
+    }
+  }
+  return false;
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────
 async function authLogin() {
   var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
@@ -12585,8 +12713,17 @@ async function authLogin() {
       var u = users.find(function(x){ return x.email === email; });
       if (!u) throw { code: 'auth/user-not-found' };
       if (u.passHash !== await sha256(pass)) throw { code: 'auth/wrong-password' };
+      var st = u.status || 'approved';
+      if (email === ADMIN_EMAIL) st = 'approved';
+      if (st !== 'approved') {
+        window._dmsFreshLogin = false;
+        authBusy('btn-login', false);
+        authShowStatus(st, u.name, u);
+        return;
+      }
       localStorage.setItem(DEMO_SESSION_KEY, email);
       authMsg('login-msg', '✅ Welcome back, ' + u.name + '!', 'success');
+      _maybeShowReminder(null, u);
       setTimeout(function(){ authShowApp(u.name); }, 500);
     }
   } catch(err) {
@@ -12720,26 +12857,45 @@ async function _dmsCreateAccount(ps) {
   authBusy('btn-verify', true, 'Creating account…');
   window._dmsFreshLogin = true;
   try {
+    var isAdmin = (ps.email === ADMIN_EMAIL);
+    var newStatus = isAdmin ? 'approved' : 'pending';
     if (FIREBASE_READY) {
+      _creatingAccount = true;   // hold onAuthStateChanged off until we've gated
       var cred = await fbAuth.createUserWithEmailAndPassword(ps.email, ps.pass);
       await cred.user.updateProfile({ displayName: ps.name });
       try {
         await fbDB.collection('users').doc(cred.user.uid).set({
           name: ps.name, email: ps.email, store: ps.store,
+          status: newStatus, role: isAdmin ? 'admin' : 'user',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch(fsErr) { console.warn('Profile save skipped:', fsErr); }
-      try { if (ps.email !== ADMIN_EMAIL && ps.reqId) await fbDB.collection('signup_requests').doc(ps.reqId).update({ status: 'completed' }); } catch(e){}
-      // onAuthStateChanged shows the app
+      try { if (!isAdmin && ps.reqId) await fbDB.collection('signup_requests').doc(ps.reqId).update({ status: 'completed' }); } catch(e){}
+      if (isAdmin) {
+        _creatingAccount = false;
+        authShowApp(ps.name);
+      } else {
+        // Account exists but is pending: show "under review" and sign the
+        // transient session out so they can't reach the app until approved.
+        authBusy('btn-verify', false);
+        authShowStatus('pending', ps.name, null);
+        try { await fbAuth.signOut(); } catch(e){}
+        _creatingAccount = false;
+      }
     } else {
       var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
-      users.push({ name: ps.name, email: ps.email, store: ps.store, passHash: await sha256(ps.pass) });
+      users.push({ name: ps.name, email: ps.email, store: ps.store, passHash: await sha256(ps.pass), status: newStatus, createdAt: Date.now() });
       localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
-      localStorage.setItem(DEMO_SESSION_KEY, ps.email);
       var reqs = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]').filter(function(r){return r.email!==ps.email;});
       localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
-      authMsg('login-msg', '✅ Account created! Welcome, ' + ps.name + '.', 'success');
-      setTimeout(function(){ authShowApp(ps.name); }, 600);
+      if (newStatus === 'approved') {
+        localStorage.setItem(DEMO_SESSION_KEY, ps.email);
+        authMsg('login-msg', '✅ Account created! Welcome, ' + ps.name + '.', 'success');
+        setTimeout(function(){ authShowApp(ps.name); }, 600);
+      } else {
+        authBusy('btn-verify', false);
+        authShowStatus('pending', ps.name, null);
+      }
     }
     _clearPending();
   } catch(err) {
@@ -12893,6 +13049,152 @@ window.dmsDeleteRequest = async function(id){
   window.dmsRenderRequests();
 };
 
+// ════════════════════════════════════════════════════════════════
+//  ADMIN · USER MANAGEMENT  (pending / active / blocked / rejected)
+//  Source of truth: the "users" collection (status field).
+// ════════════════════════════════════════════════════════════════
+var _dmsUserTab   = 'pending';
+var _dmsUsersCache = [];
+function _ms(t){ try { return t && t.toMillis ? t.toMillis() : (typeof t === 'number' ? t : 0); } catch(e){ return 0; } }
+function _dmsCat(u){
+  var s = (u.email && u.email.toLowerCase() === ADMIN_EMAIL) ? 'approved' : (u.status || 'approved');
+  if (s === 'pending')  return 'pending';
+  if (s === 'blocked')  return 'blocked';
+  if (s === 'rejected') return 'rejected';
+  return 'active';
+}
+function _dmsUserCard(u){
+  var cat = _dmsCat(u);
+  var isAdmin = (u.email && u.email.toLowerCase() === ADMIN_EMAIL);
+  var badge = ({ pending:'<span style="color:#ffd60a;">● Pending</span>', active:'<span style="color:#06d6a0;">● Active</span>',
+    blocked:'<span style="color:#f72585;">● Blocked</span>', rejected:'<span style="color:#f72585;">● Rejected</span>' })[cat];
+  var id = _esc(u.id);
+  var rows = '<div style="font-size:12px;color:#b8b6d9;margin-bottom:2px;">📧 '+_esc(u.email)+'</div>'
+    + (u.store ? '<div style="font-size:12px;color:#b8b6d9;margin-bottom:2px;">🏬 '+_esc(u.store)+'</div>' : '')
+    + (u.lastLogin ? '<div style="font-size:11px;color:#8b8aad;">🕑 last login '+_esc(_fmtTime(u.lastLogin))+'</div>'
+        : (u.createdAt ? '<div style="font-size:11px;color:#8b8aad;">🕑 '+_esc(_fmtTime(u.createdAt))+'</div>' : ''));
+  var actions = '';
+  if (cat === 'pending')      actions = '<button class="dms-ubtn" style="background:linear-gradient(135deg,#06d6a0,#049e77);color:#fff;border:none;" onclick="window.dmsUserApprove(\''+id+'\')">✓ Approve</button><button class="dms-ubtn" style="color:#f72585;" onclick="window.dmsUserReject(\''+id+'\')">✗ Reject</button>';
+  else if (cat === 'active')  actions = '<button class="dms-ubtn" style="color:#f72585;" onclick="window.dmsUserBlock(\''+id+'\')">🚫 Block</button><button class="dms-ubtn" style="color:#4cc9f0;" onclick="window.dmsUserRemind(\''+id+'\')">📣 Remind</button>';
+  else if (cat === 'blocked') actions = '<button class="dms-ubtn" style="background:linear-gradient(135deg,#06d6a0,#049e77);color:#fff;border:none;" onclick="window.dmsUserUnblock(\''+id+'\')">✓ Unblock</button>';
+  else                        actions = '<button class="dms-ubtn" style="color:#06d6a0;" onclick="window.dmsUserApprove(\''+id+'\')">↺ Re-approve</button>';
+  var adminTag = isAdmin ? '<span style="font-size:9px;background:rgba(255,107,53,0.2);border:1px solid rgba(255,107,53,0.4);color:#ff6b35;padding:2px 7px;border-radius:10px;margin-left:6px;font-family:\'DM Mono\',monospace;">ADMIN</span>' : '';
+  return '<div class="dms-ucard"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">'
+    + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+'</div>'
+    + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>'
+    + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>') + '</div>';
+}
+function _dmsPaintUsers(){
+  var box = document.getElementById('dms-users-list'); if (!box) return;
+  var groups = { pending:[], active:[], blocked:[], rejected:[] };
+  _dmsUsersCache.forEach(function(u){ groups[_dmsCat(u)].push(u); });
+  ['pending','active','blocked','rejected'].forEach(function(k){
+    var n = document.querySelector('.dms-utab-n[data-n="'+k+'"]'); if (n) n.textContent = groups[k].length;
+  });
+  document.querySelectorAll('.dms-utab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === _dmsUserTab); });
+  var cnt = document.getElementById('dms-req-count');
+  if (cnt) cnt.textContent = groups.pending.length ? '· '+groups.pending.length+' awaiting approval' : '';
+  var list = (groups[_dmsUserTab] || []).slice();
+  list.sort(function(a,b){ return _ms(b.createdAt) - _ms(a.createdAt); });
+  if (!list.length) { box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">No '+_dmsUserTab+' users.</div>'; return; }
+  box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;">' + list.map(_dmsUserCard).join('') + '</div>';
+}
+window.dmsSetUserTab = function(t){ _dmsUserTab = t; _dmsPaintUsers(); };
+window.dmsRenderUsers = async function(){
+  var box = document.getElementById('dms-users-list'); if (!box) return;
+  if (FIREBASE_READY) {
+    var cu = fbAuth.currentUser;
+    if (!cu || (cu.email||'').toLowerCase() !== ADMIN_EMAIL) {
+      box.innerHTML = '<div style="color:#ffd60a;font-size:13px;line-height:1.6;">⚠️ Sign in with the <b>admin account</b> ('+_esc(ADMIN_EMAIL)+') to manage users.</div>';
+      return;
+    }
+    box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+    try {
+      var snap = await fbDB.collection('users').get();
+      _dmsUsersCache = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+    } catch(e){ box.innerHTML = '<div style="color:#f72585;font-size:13px;">Could not load users: '+_esc(e.message)+'</div>'; return; }
+  } else {
+    _dmsUsersCache = JSON.parse(localStorage.getItem(DEMO_USERS_KEY)||'[]').map(function(u){ return Object.assign({ id: u.email }, u); });
+  }
+  _dmsPaintUsers();
+};
+async function _dmsSetStatus(id, status){
+  if (FIREBASE_READY) {
+    var patch = { status: status };
+    if (status === 'approved') patch.approvedAt = firebase.firestore.FieldValue.serverTimestamp();
+    try { await fbDB.collection('users').doc(id).update(patch); }
+    catch(e){ alert('Failed: '+e.message); return; }
+  } else {
+    var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY)||'[]');
+    users.forEach(function(x){ if (x.email === id) x.status = status; });
+    localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+    if (status === 'blocked' || status === 'rejected') {
+      try { if (localStorage.getItem(DEMO_SESSION_KEY) === id) localStorage.removeItem(DEMO_SESSION_KEY); } catch(e){}
+    }
+  }
+  window.dmsRenderUsers();
+}
+window.dmsUserApprove = function(id){ _dmsSetStatus(id, 'approved'); };
+window.dmsUserReject  = function(id){ if (confirm('Reject this sign-up?\nThey will NOT be able to log in, and this email stays locked.')) _dmsSetStatus(id, 'rejected'); };
+window.dmsUserBlock   = function(id){ if (confirm('Block this user?\nThey cannot log in until you unblock them.')) _dmsSetStatus(id, 'blocked'); };
+window.dmsUserUnblock = function(id){ _dmsSetStatus(id, 'approved'); };
+window.dmsUserRemind  = async function(id){
+  var u = _dmsUsersCache.find(function(x){ return x.id === id; }); if (!u) return;
+  var msg = prompt('Reminder message for ' + (u.name || u.email) + ':', '');
+  if (msg == null || !msg.trim()) return;
+  var ok = await _dmsSendReminder(u, msg.trim());
+  alert(ok ? '📣 Reminder emailed to ' + u.email : '✓ Saved — they\u2019ll see it in-app on next login.\n(Email could not be sent automatically.)');
+};
+
+// ── ADMIN · PENDING OTP CODES (backup when email fails) ─────────
+function _paintCodes(reqs){
+  var box = document.getElementById('dms-codes-list'); if (!box) return;
+  reqs = reqs.slice().sort(function(a,b){ return _ms(b.createdAt) - _ms(a.createdAt); });
+  if (!reqs.length) { box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">No codes waiting. (A code shows here only until that person finishes verifying.)</div>'; return; }
+  box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">' + reqs.map(function(r){
+    return '<div class="dms-ucard"><div style="font-size:14px;font-weight:700;color:#fff;">'+_esc(r.name)+'</div>'
+      + '<div style="font-size:12px;color:#b8b6d9;margin:2px 0;">📧 '+_esc(r.email)+'</div>'
+      + '<div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:600;letter-spacing:6px;color:#ff6b35;background:#0f0e17;border:1px dashed rgba(255,107,53,0.4);border-radius:10px;padding:10px;text-align:center;margin:8px 0;">'+_esc(r.code)+'</div>'
+      + '<div style="font-size:10px;color:#8b8aad;text-align:center;">give this code to the person if their email didn\u2019t arrive</div></div>';
+  }).join('') + '</div>';
+}
+window.dmsRenderCodes = async function(){
+  var box = document.getElementById('dms-codes-list'); if (!box) return;
+  if (FIREBASE_READY) {
+    var cu = fbAuth.currentUser;
+    if (!cu || (cu.email||'').toLowerCase() !== ADMIN_EMAIL) {
+      box.innerHTML = '<div style="color:#ffd60a;font-size:13px;">⚠️ Admin only.</div>'; return;
+    }
+    box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+    try {
+      var snap = await fbDB.collection('signup_requests').get();
+      var reqs = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); })
+        .filter(function(r){ return (r.status || 'pending') !== 'completed'; });
+      _paintCodes(reqs);
+    } catch(e){ box.innerHTML = '<div style="color:#f72585;font-size:13px;">Could not load: '+_esc(e.message)+'</div>'; }
+  } else {
+    _paintCodes(JSON.parse(localStorage.getItem('dms_demo_requests')||'[]'));
+  }
+};
+window.dmsClearCodes = async function(){
+  var box = document.getElementById('dms-codes-list');
+  if (!confirm('Clear ALL pending sign-up codes?\nThis removes the code records below (it does NOT delete any user accounts).')) return;
+  if (FIREBASE_READY) {
+    var cu = fbAuth.currentUser;
+    if (!cu || (cu.email||'').toLowerCase() !== ADMIN_EMAIL) { alert('Admin only.'); return; }
+    if (box) box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">Clearing…</div>';
+    try {
+      var snap = await fbDB.collection('signup_requests').get();
+      var batch = fbDB.batch();
+      snap.docs.forEach(function(d){ batch.delete(d.ref); });
+      await batch.commit();
+    } catch(e){ alert('Failed: ' + e.message); }
+  } else {
+    localStorage.removeItem('dms_demo_requests');
+  }
+  window.dmsRenderCodes();
+};
+
 // ── OTP box behaviour (auto-advance / paste / backspace) ───────
 function clearOtpBoxes() {
   document.querySelectorAll('.otp-box').forEach(function(b){ b.value = ''; b.classList.remove('filled'); });
@@ -13002,14 +13304,11 @@ document.addEventListener('click', function(e) {
 
   if (FIREBASE_READY) {
     fbAuth.onAuthStateChanged(async function(user){
+      if (_creatingAccount) return;   // creation flow manages the UI itself
       if (user) {
-        var nm = user.displayName || (user.email || '').split('@')[0];
-        try {
-          var doc = await fbDB.collection('users').doc(user.uid).get();
-          if (doc.exists && doc.data().name) nm = doc.data().name;
-        } catch(e) {}
-        authShowApp(nm);
+        await _gateUser(user);
       } else {
+        if (_authStatusLock) { _authStatusLock = false; return; }
         authShowLogin();
         _restorePending();
       }
@@ -13021,7 +13320,12 @@ document.addEventListener('click', function(e) {
     if (email) {
       var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
       var u = users.find(function(x){ return x.email === email; });
-      if (u) { authShowApp(u.name); return; }
+      if (u) {
+        var st = (email === ADMIN_EMAIL) ? 'approved' : (u.status || 'approved');
+        if (st === 'approved') { authShowApp(u.name); _maybeShowReminder(null, u); return; }
+        localStorage.removeItem(DEMO_SESSION_KEY);
+        authShowStatus(st, u.name, u); return;
+      }
     }
     authShowLogin();
     _restorePending();
@@ -13538,17 +13842,52 @@ function handleScanningASIN(e) {
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:14px;font-weight:700;color:#fff;">🔐 Account Requests <span id="dms-req-count" style="font-family:'DM Mono',monospace;font-size:11px;color:#ff6b35;"></span></div>
-          <div style="font-size:11px;color:#8b8aad;">Approve a person, then give them the 6-digit code to finish signing up.</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;">📨 Pending Sign-up Codes <span style="font-family:'DM Mono',monospace;font-size:11px;color:#ffd60a;">· email backup</span></div>
+          <div style="font-size:11px;color:#8b8aad;">If a person's OTP email didn't arrive, read their 6-digit code here and pass it to them.</div>
         </div>
-        <button onclick="window.dmsRenderRequests&&window.dmsRenderRequests()"
-          style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#4361ee,#2f4bd4);
-          color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="window.dmsClearCodes&&window.dmsClearCodes()"
+            style="padding:8px 16px;border-radius:8px;border:1px solid #2e2c45;background:transparent;
+            color:#f72585;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear all</button>
+          <button onclick="window.dmsRenderCodes&&window.dmsRenderCodes()"
+            style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#4361ee,#2f4bd4);
+            color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+        </div>
       </div>
-      <div id="dms-requests-list" style="padding:18px 24px;">
+      <div id="dms-codes-list" style="padding:18px 24px;">
         <div style="color:#8b8aad;font-size:13px;">Loading…</div>
       </div>
     </div>
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">👥 User Management <span id="dms-req-count" style="font-family:'DM Mono',monospace;font-size:11px;color:#ff6b35;"></span></div>
+          <div style="font-size:11px;color:#8b8aad;">Approve or reject sign-ups · block, unblock &amp; remind active users.</div>
+        </div>
+        <button onclick="window.dmsRenderUsers&&window.dmsRenderUsers()"
+          style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#4361ee,#2f4bd4);
+          color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+      </div>
+      <div style="display:flex;gap:6px;padding:14px 24px 0;flex-wrap:wrap;" id="dms-user-tabs">
+        <button class="dms-utab" data-tab="pending"  onclick="window.dmsSetUserTab('pending')">⏳ Pending <span class="dms-utab-n" data-n="pending">0</span></button>
+        <button class="dms-utab" data-tab="active"   onclick="window.dmsSetUserTab('active')">✅ Active <span class="dms-utab-n" data-n="active">0</span></button>
+        <button class="dms-utab" data-tab="blocked"  onclick="window.dmsSetUserTab('blocked')">🚫 Blocked <span class="dms-utab-n" data-n="blocked">0</span></button>
+        <button class="dms-utab" data-tab="rejected" onclick="window.dmsSetUserTab('rejected')">⛔ Rejected <span class="dms-utab-n" data-n="rejected">0</span></button>
+      </div>
+      <div id="dms-users-list" style="padding:18px 24px;">
+        <div style="color:#8b8aad;font-size:13px;">Loading…</div>
+      </div>
+    </div>
+    <style id="dms-um-css">
+      .dms-utab { padding:8px 14px; border:1px solid #2e2c45; background:rgba(15,14,23,0.6); color:#8b8aad;
+        font-family:'Syne',sans-serif; font-size:12px; font-weight:700; border-radius:9px 9px 0 0; cursor:pointer; transition:all .15s; }
+      .dms-utab:hover { color:#e8e6ff; border-color:#4361ee; }
+      .dms-utab.active { background:linear-gradient(135deg,#4361ee,#2f4bd4); color:#fff; border-color:transparent; }
+      .dms-utab-n { display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; font-family:'DM Mono',monospace;
+        font-size:11px; background:rgba(0,0,0,0.3); border-radius:9px; }
+      .dms-ucard { background:rgba(15,14,23,0.6); border:1px solid #2e2c45; border-radius:12px; padding:16px; }
+      .dms-ubtn { flex:1; padding:9px; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; cursor:pointer; border:1px solid #2e2c45; background:transparent; }
+    </style>
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;
       padding:20px 24px;margin-bottom:28px;">
       <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
@@ -14122,6 +14461,8 @@ var DSTPRO = (function() {
       document.getElementById('dstpro-admin-dash').style.display='block';
       renderAdminDash();
       if(window.dmsRenderRequests)window.dmsRenderRequests();
+      if(window.dmsRenderCodes)window.dmsRenderCodes();
+      if(window.dmsRenderUsers)window.dmsRenderUsers();
       syncLogs();
     }
     else{document.getElementById('dstpro-admin-gate').style.display='flex';document.getElementById('dstpro-admin-dash').style.display='none';}
