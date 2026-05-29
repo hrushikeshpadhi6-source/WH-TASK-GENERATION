@@ -12,6 +12,11 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
+<!-- ── Firebase SDK (compat build) ─────────────────────────────── -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
 :root {
   --bg: #0f0e17;
@@ -1603,6 +1608,30 @@ to{width:65%;} }
         </button>
     </div>
 </div>
+<style id="auth-extra-css">
+.auth-tabs { display:flex; gap:6px; background:rgba(15,14,23,0.6); border:1px solid rgba(46,44,69,0.8); border-radius:12px; padding:5px; margin-bottom:22px; }
+.auth-tab { flex:1; padding:11px 8px; border:none; background:transparent; color:#8b8aad; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.3px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
+.auth-tab.active { background:linear-gradient(135deg,#4361ee,#7209b7); color:#fff; box-shadow:0 4px 16px rgba(67,97,238,0.35); }
+.auth-screen { display:none; }
+.auth-screen.active { display:block; animation:authScreenIn 0.3s ease; }
+@keyframes authScreenIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+.auth-row-end { text-align:right; margin:-4px 0 16px; }
+.auth-link { color:#4cc9f0; font-size:12px; font-weight:700; cursor:pointer; transition:color 0.2s; }
+.auth-link:hover { color:#ff6b35; text-decoration:underline; }
+.auth-switch-text { font-size:12.5px; color:#8b8aad; text-align:center; margin-top:16px; line-height:1.7; }
+.login-btn-primary:disabled { opacity:0.55; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+/* OTP */
+.otp-headline { font-size:19px; font-weight:800; color:#e8e6ff; text-align:center; letter-spacing:-0.3px; margin-bottom:6px; }
+.otp-sub { font-size:13px; color:#8b8aad; text-align:center; line-height:1.6; margin-bottom:24px; }
+.otp-email { color:#4cc9f0; font-weight:700; word-break:break-all; }
+.otp-inputs { display:flex; gap:9px; justify-content:center; margin-bottom:18px; }
+.otp-box { width:46px; height:56px; text-align:center; font-family:'DM Mono',monospace; font-size:24px; font-weight:500; color:#e8e6ff; background:rgba(15,14,23,0.7); border:1.5px solid rgba(46,44,69,0.9); border-radius:11px; outline:none; transition:border-color 0.15s, box-shadow 0.15s; }
+.otp-box:focus { border-color:#4361ee; box-shadow:0 0 0 3px rgba(67,97,238,0.2); }
+.otp-box.filled { border-color:#06d6a0; }
+.otp-demo-hint { font-family:'DM Mono',monospace; font-size:12px; color:#ffd60a; background:rgba(255,214,10,0.08); border:1px dashed rgba(255,214,10,0.35); border-radius:10px; padding:10px 12px; text-align:center; margin-bottom:16px; line-height:1.6; }
+.otp-timer { color:#8b8aad; font-family:'DM Mono',monospace; }
+@media(max-width:420px){ .otp-box{ width:42px; height:52px; font-size:21px; } }
+</style>
 <div id="login-overlay">
   <div class="login-card">
     <div class="login-logo-wrap">
@@ -1610,13 +1639,78 @@ to{width:65%;} }
       <div class="login-title">DMS PRO</div>
       <div class="login-sub">HP World · Dark Store Management System</div>
     </div>
-    <div class="login-msg" id="login-msg"></div>
-    <div class="login-field">
-      <label>Password</label>
-      <div style="position:relative;"><input type="password" id="login-pass" placeholder="Enter password"
-        autofocus onkeydown="if(event.key==='Enter')authLogin()"><button type="button" onclick="var i=document.getElementById('login-pass');var b=this;i.type=i.type==='password'?'text':'password';b.innerHTML=i.type==='password'?'👁':'🙈';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted);padding:0;line-height:1;">👁</button></div>
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="authSwitchTab('login')">Sign In</button>
+      <button class="auth-tab" id="tab-signup" onclick="authSwitchTab('signup')">Create Account</button>
     </div>
-    <button class="login-btn login-btn-primary" onclick="authLogin()">Sign In →</button>
+
+    <div class="login-msg" id="login-msg"></div>
+
+    <!-- ── SCREEN: LOGIN ────────────────────────────────────── -->
+    <div class="auth-screen active" id="auth-screen-login">
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@example.com" autocomplete="username"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <div class="login-pw-wrapper"><input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')authLogin()"><button type="button" class="login-pw-toggle" onclick="authTogglePw('login-pass',this)">👁</button></div>
+      </div>
+      <div class="auth-row-end"><span class="auth-link" onclick="authForgot()">Forgot password?</span></div>
+      <button class="login-btn login-btn-primary" id="btn-login" onclick="authLogin()">Sign In →</button>
+      <div class="auth-switch-text">No account yet? <span class="auth-link" onclick="authSwitchTab('signup')">Create one</span></div>
+    </div>
+
+    <!-- ── SCREEN: SIGNUP ───────────────────────────────────── -->
+    <div class="auth-screen" id="auth-screen-signup">
+      <div class="login-field">
+        <label>Full Name</label>
+        <input type="text" id="su-name" placeholder="Hrushikesh Padhi" autocomplete="name">
+      </div>
+      <div class="login-field">
+        <label>Email</label>
+        <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="login-field">
+        <label>Store / Location</label>
+        <input type="text" id="su-store" placeholder="e.g. HP World — Bhubaneswar">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <div class="login-pw-wrapper"><input type="password" id="su-pass" placeholder="Min. 6 characters" autocomplete="new-password"><button type="button" class="login-pw-toggle" onclick="authTogglePw('su-pass',this)">👁</button></div>
+      </div>
+      <div class="login-field">
+        <label>Confirm Password</label>
+        <div class="login-pw-wrapper"><input type="password" id="su-pass2" placeholder="Re-enter password" autocomplete="new-password"
+          onkeydown="if(event.key==='Enter')authStartSignup()"><button type="button" class="login-pw-toggle" onclick="authTogglePw('su-pass2',this)">👁</button></div>
+      </div>
+      <button class="login-btn login-btn-primary" id="btn-signup" onclick="authStartSignup()">Send Verification Code →</button>
+      <div class="auth-switch-text">Already have an account? <span class="auth-link" onclick="authSwitchTab('login')">Sign in</span></div>
+    </div>
+
+    <!-- ── SCREEN: OTP VERIFY ───────────────────────────────── -->
+    <div class="auth-screen" id="auth-screen-otp">
+      <div class="otp-headline" id="otp-headline">Check your inbox</div>
+      <div class="otp-sub" id="otp-sub">We sent a 6-digit code to<br><span id="otp-email-target" class="otp-email">—</span></div>
+      <div class="otp-inputs" id="otp-inputs">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="0">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="1">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="2">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="3">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="4">
+        <input class="otp-box" maxlength="1" inputmode="numeric" data-i="5">
+      </div>
+      <div class="otp-demo-hint" id="otp-demo-hint" style="display:none;"></div>
+      <button class="login-btn login-btn-primary" id="btn-verify" onclick="authVerifyOtp()">Verify &amp; Create Account →</button>
+      <div class="auth-switch-text">
+        <span id="otp-resend-wrap">Didn't get it? <span class="auth-link" id="otp-resend" onclick="authResendOtp()">Resend code</span></span>
+        <span id="otp-timer" class="otp-timer"></span>
+      </div>
+      <div class="auth-switch-text"><span class="auth-link" onclick="authSwitchTab('signup')">← Back</span></div>
+    </div>
+
     <div class="login-footer-text">© 2026 HP World · ENWPP9081D/2019</div>
   </div>
 </div>
@@ -12304,94 +12398,523 @@ function vocExportExcel() {
 
 </div><!-- /app-shell -->
 <script>
-// ── SIMPLE PASSWORD LOGIN + 15-MIN IDLE TIMEOUT ───────────────
-var CORRECT_PASSWORD = 'Darkstore@123';
-var SESSION_KEY      = 'hp_auth_session';
-var IDLE_TIMEOUT_MS  = 15 * 60 * 1000; // 15 minutes
-var _idleTimer       = null;
-var _lastActivity    = Date.now();
+// ═══════════════════════════════════════════════════════════════
+//  DMS PRO — AUTH:  Signup → Email OTP → Account → Login
+//  Backend: Firebase Authentication + Firestore
+// ═══════════════════════════════════════════════════════════════
+//
+//  ┌─────────────────────────────────────────────────────────────┐
+//  │  STEP 1 — PASTE YOUR FIREBASE CONFIG BELOW                    │
+//  │  Firebase console → Project settings → "Your apps" → Config   │
+//  └─────────────────────────────────────────────────────────────┘
+var firebaseConfig = {
+  apiKey:            "AIzaSyBAKX9NbuCVI8V5-I_l0VrlgAtgV3fw2n0",
+  authDomain:        "hp-world-darkstore.firebaseapp.com",
+  projectId:         "hp-world-darkstore",
+  storageBucket:     "hp-world-darkstore.firebasestorage.app",
+  messagingSenderId: "447476873264",
+  appId:             "1:447476873264:web:c40b4e4bcfb4bd07f195f5",
+  measurementId:     "G-LFCZ4GK2JV"
+};
+//  STEP 2 — In Firebase console: Authentication → Sign-in method →
+//           enable "Email/Password". Create a Firestore database.
+//  STEP 3 — Install the "Trigger Email from Firestore" extension
+//           (collection name: "mail") and connect your SMTP / Gmail.
+//           That extension is what actually delivers the OTP email.
+//  Until all 3 are done the app runs in DEMO MODE: accounts are kept
+//  in this browser only and the OTP is shown on-screen for testing.
+// ───────────────────────────────────────────────────────────────
 
+var FIREBASE_READY = (firebaseConfig.apiKey.indexOf('PASTE') === -1) && (typeof firebase !== 'undefined');
+var fbAuth = null, fbDB = null;
+var OTP_TTL_MS       = 10 * 60 * 1000;  // code valid 10 minutes
+var RESEND_COOLDOWN  = 30;              // seconds between resends
+var DEMO_USERS_KEY   = 'hp_demo_users';
+var DEMO_SESSION_KEY = 'hp_demo_session';
+
+if (FIREBASE_READY) {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    fbAuth = firebase.auth();
+    fbDB   = firebase.firestore();
+    // Stay logged in until manual sign-out
+    fbAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+  } catch(e) { console.error('Firebase init failed:', e); FIREBASE_READY = false; }
+}
+
+var _pendingSignup = null;   // { name, email, store, pass, code, expires }
+var _resendTimer   = null;
+var PENDING_KEY    = 'dms_pending_signup';
+
+// ── ADMIN-GATED SIGNUP ─────────────────────────────────────────
+// When someone signs up, their request + code go to the admin (Firestore
+// "signup_requests" + optional email alert). The admin reviews it in the
+// Admin Panel, approves, and hands the code to the person. The signer never
+// sees their own code, so nobody gets in without the admin's approval.
+var ADMIN_EMAIL = 'hrushikeshpadhi6@gmail.com';
+
+// ── EmailJS (optional) — for the email ALERT to the admin ──────
+//  Paste your 3 EmailJS values to enable email alerts. Until then the
+//  in-app Admin "Account Requests" list works on its own (no email needed).
+var EMAILJS = {
+  publicKey:  "aJtsnx0Tld8yShpx_",
+  serviceId:  "service_33maa0p",
+  templateId: "template_ccrxjsf"
+};
+var EMAILJS_READY = (EMAILJS.publicKey.indexOf('PASTE') === -1);
+// Load the EmailJS SDK on demand only when keys are configured (keeps the
+// page free of any external dependency until you actually set EmailJS up).
+function _loadEmailJs() {
+  if (!EMAILJS_READY || window.emailjs || document.getElementById('emailjs-sdk')) return;
+  var s = document.createElement('script');
+  s.id = 'emailjs-sdk';
+  s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+  document.head.appendChild(s);
+}
+_loadEmailJs();
+
+// Email the admin that a new request arrived (no-op if EmailJS not set up).
+async function _dmsNotifyAdmin(req) {
+  if (!EMAILJS_READY || !window.emailjs) return;
+  try {
+    await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      to_email: ADMIN_EMAIL,
+      to_name:  'Admin',
+      passcode: req.code,
+      req_name: req.name,
+      req_email: req.email,
+      req_store: req.store
+    }, { publicKey: EMAILJS.publicKey });
+  } catch(e) { console.warn('Admin email alert failed:', e); }
+}
+
+// ── small helpers ──────────────────────────────────────────────
 function authMsg(id, text, type) {
   var el = document.getElementById(id);
   if (!el) return;
-  el.textContent   = text;
+  el.innerHTML     = text;
   el.className     = 'login-msg ' + (type || 'info');
   el.style.display = text ? 'block' : 'none';
 }
+function authBusy(btnId, busy, label) {
+  var b = document.getElementById(btnId); if (!b) return;
+  b.disabled = busy;
+  if (busy) { b.dataset._lbl = b.textContent; b.textContent = '⏳ ' + (label || 'Please wait…'); }
+  else if (b.dataset._lbl) { b.textContent = b.dataset._lbl; }
+}
+function authTogglePw(id, btn) {
+  var i = document.getElementById(id);
+  i.type = i.type === 'password' ? 'text' : 'password';
+  btn.textContent = i.type === 'password' ? '👁' : '🙈';
+}
+async function sha256(str) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+function genOtp() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
-function authShowApp() {
-  document.getElementById('login-overlay').style.display = 'none';
-  document.getElementById('eidPopup').style.display = 'flex';
-  document.getElementById('app-shell').style.display     = 'block';
-  document.getElementById('session-badge').style.display = 'flex';
-  try { sessionStorage.setItem(SESSION_KEY, String(Date.now())); } catch(e) {}
-  authResetIdleTimer();
+// ── tab / screen switching ─────────────────────────────────────
+function authSwitchTab(which) {
+  authMsg('login-msg', '');
+  ['login','signup','otp'].forEach(function(s){
+    document.getElementById('auth-screen-' + s).classList.toggle('active', s === which);
+  });
+  var showTabs = (which === 'login' || which === 'signup');
+  document.getElementById('auth-tabs').style.display = showTabs ? 'flex' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', which === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', which === 'signup');
+  setTimeout(function(){
+    var f = which === 'login' ? 'login-email' : which === 'signup' ? 'su-name' : null;
+    if (f) { var el = document.getElementById(f); if (el) el.focus(); }
+    if (which === 'otp') { var ob = document.querySelector('.otp-box'); if (ob) ob.focus(); }
+  }, 320);
 }
 
+// ── show / hide app ────────────────────────────────────────────
+function authShowApp(displayName) {
+  document.getElementById('login-overlay').style.display = 'none';
+  var eid = document.getElementById('eidPopup'); if (eid) eid.style.display = 'flex';
+  document.getElementById('app-shell').style.display     = 'block';
+  document.getElementById('session-badge').style.display = 'flex';
+  if (displayName) {
+    var nm = document.querySelector('#session-badge .sb-name');
+    if (nm) nm.textContent = displayName;
+  }
+}
 function authShowLogin() {
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('app-shell').style.display     = 'none';
   document.getElementById('session-badge').style.display = 'none';
-  var m = document.getElementById('logout-menu');
-  if (m) m.style.display = 'none';
-  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
-  clearTimeout(_idleTimer);
-  // Focus password field
-  setTimeout(function() {
-    var p = document.getElementById('login-pass');
-    if (p) { p.value = ''; p.focus(); }
-  }, 300);
+  var m = document.getElementById('logout-menu'); if (m) m.style.display = 'none';
+  authSwitchTab('login');
 }
 
-function authLogin() {
-  var pass = (document.getElementById('login-pass').value || '').trim();
-  if (!pass) { authMsg('login-msg', '⚠️ Enter the password.', 'error'); return; }
-  if (pass === CORRECT_PASSWORD) {
-    authMsg('login-msg', '✅ Welcome to DMS PRO!', 'success');
-    setTimeout(authShowApp, 600);
-  } else {
-    authMsg('login-msg', '❌ Incorrect password. Try again.', 'error');
+// ── LOGIN ──────────────────────────────────────────────────────
+async function authLogin() {
+  var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  var pass  = (document.getElementById('login-pass').value  || '');
+  if (!validEmail(email)) { authMsg('login-msg', '⚠️ Enter a valid email.', 'error'); return; }
+  if (!pass)              { authMsg('login-msg', '⚠️ Enter your password.', 'error'); return; }
+  authBusy('btn-login', true, 'Signing in…');
+  window._dmsFreshLogin = true;
+  try {
+    if (FIREBASE_READY) {
+      await fbAuth.signInWithEmailAndPassword(email, pass);
+      // onAuthStateChanged handles showing the app
+    } else {
+      var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
+      var u = users.find(function(x){ return x.email === email; });
+      if (!u) throw { code: 'auth/user-not-found' };
+      if (u.passHash !== await sha256(pass)) throw { code: 'auth/wrong-password' };
+      localStorage.setItem(DEMO_SESSION_KEY, email);
+      authMsg('login-msg', '✅ Welcome back, ' + u.name + '!', 'success');
+      setTimeout(function(){ authShowApp(u.name); }, 500);
+    }
+  } catch(err) {
+    window._dmsFreshLogin = false;
+    authBusy('btn-login', false);
+    authMsg('login-msg', '❌ ' + authErr(err), 'error');
     document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
   }
 }
 
+// ── SIGNUP → send OTP ──────────────────────────────────────────
+async function authStartSignup() {
+  var name  = (document.getElementById('su-name').value  || '').trim();
+  var email = (document.getElementById('su-email').value || '').trim().toLowerCase();
+  var store = (document.getElementById('su-store').value || '').trim();
+  var p1    = (document.getElementById('su-pass').value  || '');
+  var p2    = (document.getElementById('su-pass2').value || '');
+  if (!name)               { authMsg('login-msg', '⚠️ Enter your full name.', 'error'); return; }
+  if (!validEmail(email))  { authMsg('login-msg', '⚠️ Enter a valid email.', 'error'); return; }
+  if (!store)              { authMsg('login-msg', '⚠️ Enter your store / location.', 'error'); return; }
+  if (p1.length < 6)       { authMsg('login-msg', '⚠️ Password must be at least 6 characters.', 'error'); return; }
+  if (p1 !== p2)           { authMsg('login-msg', '⚠️ Passwords do not match.', 'error'); return; }
+
+  authBusy('btn-signup', true, 'Submitting…');
+  try {
+    // Guard against an email that already has an account
+    if (FIREBASE_READY) {
+      var methods = await fbAuth.fetchSignInMethodsForEmail(email);
+      if (methods && methods.length) throw { code: 'auth/email-already-in-use' };
+    } else {
+      var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
+      if (users.some(function(x){ return x.email === email; })) throw { code: 'auth/email-already-in-use' };
+    }
+    var code = genOtp();
+    _pendingSignup = { name: name, email: email, store: store, pass: p1, code: code, expires: Date.now() + 24*60*60*1000, adminGated: true };
+
+    // The admin's own account is auto-approved — no waiting, no code needed.
+    if (email === ADMIN_EMAIL) {
+      authBusy('btn-signup', false);
+      await _dmsCreateAccount(_pendingSignup);
+      return;
+    }
+
+    // Everyone else: file a request for the admin to review & approve.
+    await _dmsSubmitRequest(_pendingSignup);
+    _savePending();
+    authBusy('btn-signup', false);
+    _showAwaitingApproval(email);
+    clearOtpBoxes();
+    authSwitchTab('otp');
+    authMsg('login-msg', '');
+  } catch(err) {
+    authBusy('btn-signup', false);
+    authMsg('login-msg', '❌ ' + authErr(err), 'error');
+  }
+}
+
+// ── persist the in-progress request so a refresh doesn't lose it ──
+function _savePending() {
+  try { if (_pendingSignup) localStorage.setItem(PENDING_KEY, JSON.stringify(_pendingSignup)); } catch(e){}
+}
+function _clearPending() {
+  _pendingSignup = null;
+  try { localStorage.removeItem(PENDING_KEY); } catch(e){}
+}
+
+// ── OTP screen copy for the admin-approval flow ──────────────────
+function _showAwaitingApproval(email) {
+  document.getElementById('otp-headline').textContent = 'Request sent to administrator';
+  document.getElementById('otp-sub').innerHTML =
+    'Your request for <span class="otp-email">' + email + '</span> was sent for approval.<br>' +
+    'The administrator will share your <b>6-digit access code</b> with you. Enter it below once you receive it.';
+  document.getElementById('btn-verify').textContent = 'Verify & Create Account →';
+  var rw = document.getElementById('otp-resend-wrap'); if (rw) rw.style.display = 'none';
+  var tm = document.getElementById('otp-timer'); if (tm) tm.textContent = '';
+  var dh = document.getElementById('otp-demo-hint'); if (dh) dh.style.display = 'none';
+}
+
+// ── submit a signup request for admin approval ─────────────────
+async function _dmsSubmitRequest(ps) {
+  if (FIREBASE_READY) {
+    // Each request gets its own auto-ID doc (so re-submitting never collides).
+    var ref = await fbDB.collection('signup_requests').add({
+      name: ps.name, email: ps.email, store: ps.store, code: ps.code,
+      status: 'pending', device: (navigator.userAgent || '').slice(0,120),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (_pendingSignup) _pendingSignup.reqId = ref.id;
+    await _dmsNotifyAdmin(ps);
+  } else {
+    var reqs = JSON.parse(localStorage.getItem('dms_demo_requests') || '[]');
+    reqs = reqs.filter(function(r){ return r.email !== ps.email; });
+    reqs.push({ id: 'demo_'+Date.now(), name: ps.name, email: ps.email, store: ps.store, code: ps.code, status: 'pending', createdAt: Date.now() });
+    localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+    var dh = document.getElementById('otp-demo-hint');
+    if (dh) { dh.style.display = 'block';
+      dh.innerHTML = 'DEMO MODE — admin would receive code <b style="color:#ff6b35;font-size:15px;letter-spacing:2px">' + ps.code + '</b>'; }
+  }
+}
+
+// ── verify OTP → create the account ────────────────────────────
+async function authVerifyOtp() {
+  if (!_pendingSignup) { authSwitchTab('signup'); return; }
+  var entered = Array.prototype.map.call(document.querySelectorAll('.otp-box'), function(b){return b.value;}).join('');
+  if (entered.length < 6) { authMsg('login-msg', '⚠️ Enter all 6 digits.', 'error'); return; }
+  if (_pendingSignup.expires && Date.now() > _pendingSignup.expires) {
+    authMsg('login-msg', '⏰ This request expired — please sign up again.', 'error'); return;
+  }
+  if (entered !== _pendingSignup.code) {
+    authMsg('login-msg', '❌ Incorrect code. Ask the administrator to confirm your access code.', 'error');
+    clearOtpBoxes(); return;
+  }
+  try { await _dmsCreateAccount(_pendingSignup); } catch(e) {}
+}
+
+// ── create the Firebase account (used by verify + admin auto-approve) ─
+async function _dmsCreateAccount(ps) {
+  authBusy('btn-verify', true, 'Creating account…');
+  window._dmsFreshLogin = true;
+  try {
+    if (FIREBASE_READY) {
+      var cred = await fbAuth.createUserWithEmailAndPassword(ps.email, ps.pass);
+      await cred.user.updateProfile({ displayName: ps.name });
+      try {
+        await fbDB.collection('users').doc(cred.user.uid).set({
+          name: ps.name, email: ps.email, store: ps.store,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch(fsErr) { console.warn('Profile save skipped:', fsErr); }
+      try { if (ps.email !== ADMIN_EMAIL && ps.reqId) await fbDB.collection('signup_requests').doc(ps.reqId).update({ status: 'completed' }); } catch(e){}
+      // onAuthStateChanged shows the app
+    } else {
+      var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
+      users.push({ name: ps.name, email: ps.email, store: ps.store, passHash: await sha256(ps.pass) });
+      localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+      localStorage.setItem(DEMO_SESSION_KEY, ps.email);
+      var reqs = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]').filter(function(r){return r.email!==ps.email;});
+      localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+      authMsg('login-msg', '✅ Account created! Welcome, ' + ps.name + '.', 'success');
+      setTimeout(function(){ authShowApp(ps.name); }, 600);
+    }
+    _clearPending();
+  } catch(err) {
+    window._dmsFreshLogin = false;
+    authBusy('btn-verify', false);
+    authMsg('login-msg', '❌ ' + authErr(err), 'error');
+    throw err;
+  }
+}
+
+// ── re-send the request alert to the admin (same code) ─────────
+async function authResendOtp() {
+  if (!_pendingSignup) return;
+  try { await _dmsSubmitRequest(_pendingSignup); } catch(e){}
+  authMsg('login-msg', 'ℹ️ Your request was re-sent to the administrator.', 'info');
+}
+function startResendCooldown() {
+  var link = document.getElementById('otp-resend');
+  var tmr  = document.getElementById('otp-timer');
+  var left = RESEND_COOLDOWN;
+  link.classList.add('disabled'); link.style.opacity = '0.45'; link.style.pointerEvents = 'none';
+  clearInterval(_resendTimer);
+  tmr.textContent = ' · wait ' + left + 's';
+  _resendTimer = setInterval(function(){
+    left--;
+    if (left <= 0) {
+      clearInterval(_resendTimer);
+      link.classList.remove('disabled'); link.style.opacity = '1'; link.style.pointerEvents = 'auto';
+      tmr.textContent = '';
+    } else { tmr.textContent = ' · wait ' + left + 's'; }
+  }, 1000);
+}
+
+// ── forgot password ────────────────────────────────────────────
+async function authForgot() {
+  var email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  if (!validEmail(email)) { authMsg('login-msg', 'ℹ️ Type your email above first, then tap “Forgot password”.', 'info'); return; }
+  if (FIREBASE_READY) {
+    try { await fbAuth.sendPasswordResetEmail(email);
+      authMsg('login-msg', '📧 Password reset link sent to ' + email + '.', 'success');
+    } catch(err) { authMsg('login-msg', '❌ ' + authErr(err), 'error'); }
+  } else {
+    authMsg('login-msg', 'ℹ️ Password reset works once Firebase is configured.', 'info');
+  }
+}
+
+// ── ADMIN: account-requests management ─────────────────────────
+function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _fmtTime(t){
+  try {
+    var d = t && t.toDate ? t.toDate() : (typeof t === 'number' ? new Date(t) : null);
+    return d ? d.toLocaleString() : '';
+  } catch(e){ return ''; }
+}
+function _reqCardHtml(r){
+  var st = r.status || 'pending';
+  var badge = st==='approved' ? '<span style="color:#06d6a0;">● Approved</span>'
+            : st==='rejected' ? '<span style="color:#f72585;">● Rejected</span>'
+            : st==='completed'? '<span style="color:#4cc9f0;">● Account created</span>'
+            : '<span style="color:#ffd60a;">● Pending</span>';
+  var codeBlock = (st==='pending' || st==='approved')
+    ? '<div style="font-family:\'DM Mono\',monospace;font-size:22px;font-weight:600;letter-spacing:6px;color:#ff6b35;background:#0f0e17;border:1px dashed rgba(255,107,53,0.4);border-radius:10px;padding:10px 14px;text-align:center;margin:10px 0;">'+_esc(r.code)+'</div><div style="font-size:11px;color:#8b8aad;text-align:center;margin-bottom:10px;">↑ give this code to the person</div>'
+    : '';
+  var actions='';
+  if (st==='pending') {
+    actions = '<button onclick="window.dmsApproveRequest(\''+_esc(r.id)+'\')" style="flex:1;padding:9px;border:none;border-radius:8px;background:linear-gradient(135deg,#06d6a0,#049e77);color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">✓ Approve</button>'
+            + '<button onclick="window.dmsRejectRequest(\''+_esc(r.id)+'\')" style="flex:1;padding:9px;border:1px solid #2e2c45;border-radius:8px;background:transparent;color:#f72585;font-family:Syne,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">✗ Reject</button>';
+  } else {
+    actions = '<button onclick="window.dmsDeleteRequest(\''+_esc(r.id)+'\')" style="flex:1;padding:9px;border:1px solid #2e2c45;border-radius:8px;background:transparent;color:#8b8aad;font-family:Syne,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">🗑 Remove from list</button>';
+  }
+  return '<div style="background:rgba(15,14,23,0.6);border:1px solid #2e2c45;border-radius:12px;padding:16px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">' +
+      '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(r.name)+'</div>'+
+      '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>' +
+    '<div style="font-size:12px;color:#b8b6d9;margin-bottom:2px;">📧 '+_esc(r.email)+'</div>' +
+    '<div style="font-size:12px;color:#b8b6d9;margin-bottom:2px;">🏬 '+_esc(r.store)+'</div>' +
+    '<div style="font-size:11px;color:#8b8aad;">🕑 '+_esc(_fmtTime(r.createdAt))+'</div>' +
+    codeBlock +
+    '<div style="display:flex;gap:8px;margin-top:8px;">'+actions+'</div></div>';
+}
+function _renderReqList(reqs){
+  var box = document.getElementById('dms-requests-list');
+  var cnt = document.getElementById('dms-req-count');
+  if (!box) return;
+  var pendingN = reqs.filter(function(r){return (r.status||'pending')==='pending';}).length;
+  if (cnt) cnt.textContent = pendingN ? '· '+pendingN+' pending' : '';
+  if (!reqs.length) { box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">No account requests yet.</div>'; return; }
+  // pending first, then others; newest first within group
+  var order={pending:0,approved:1,completed:2,rejected:3};
+  reqs.sort(function(a,b){
+    var oa=order[a.status||'pending'], ob=order[b.status||'pending'];
+    if(oa!==ob) return oa-ob;
+    var ta=(a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():(typeof a.createdAt==='number'?a.createdAt:0));
+    var tb=(b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():(typeof b.createdAt==='number'?b.createdAt:0));
+    return tb-ta;
+  });
+  box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">' +
+    reqs.map(_reqCardHtml).join('') + '</div>';
+}
+window.dmsRenderRequests = async function(){
+  var box = document.getElementById('dms-requests-list');
+  if (!box) return;
+  if (FIREBASE_READY) {
+    var cu = fbAuth.currentUser;
+    if (!cu || (cu.email||'').toLowerCase() !== ADMIN_EMAIL) {
+      box.innerHTML = '<div style="color:#ffd60a;font-size:13px;line-height:1.6;">⚠️ To see account requests, sign in to the app with the <b>admin account</b> ('+_esc(ADMIN_EMAIL)+'), then open this panel.</div>';
+      return;
+    }
+    box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+    try {
+      var snap = await fbDB.collection('signup_requests').get();
+      var reqs = snap.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); });
+      _renderReqList(reqs);
+    } catch(e){
+      box.innerHTML = '<div style="color:#f72585;font-size:13px;">Could not load requests: '+_esc(e.message)+'</div>';
+    }
+  } else {
+    var reqs2 = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]');
+    _renderReqList(reqs2);
+  }
+};
+window.dmsApproveRequest = async function(id){
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('signup_requests').doc(id).update({ status:'approved' }); } catch(e){ alert('Failed: '+e.message); }
+  } else {
+    var reqs = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]');
+    reqs.forEach(function(r){ if(r.id===id) r.status='approved'; });
+    localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+  }
+  window.dmsRenderRequests();
+};
+window.dmsRejectRequest = async function(id){
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('signup_requests').doc(id).update({ status:'rejected' }); } catch(e){ alert('Failed: '+e.message); }
+  } else {
+    var reqs = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]');
+    reqs.forEach(function(r){ if(r.id===id) r.status='rejected'; });
+    localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+  }
+  window.dmsRenderRequests();
+};
+window.dmsDeleteRequest = async function(id){
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('signup_requests').doc(id).delete(); } catch(e){ alert('Failed: '+e.message); }
+  } else {
+    var reqs = JSON.parse(localStorage.getItem('dms_demo_requests')||'[]').filter(function(r){return r.id!==id;});
+    localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+  }
+  window.dmsRenderRequests();
+};
+
+// ── OTP box behaviour (auto-advance / paste / backspace) ───────
+function clearOtpBoxes() {
+  document.querySelectorAll('.otp-box').forEach(function(b){ b.value = ''; b.classList.remove('filled'); });
+  var f = document.querySelector('.otp-box'); if (f) f.focus();
+}
+function setupOtpBoxes() {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.otp-box'));
+  boxes.forEach(function(box, idx){
+    box.addEventListener('input', function(){
+      box.value = box.value.replace(/[^0-9]/g, '').slice(0,1);
+      box.classList.toggle('filled', !!box.value);
+      if (box.value && boxes[idx+1]) boxes[idx+1].focus();
+    });
+    box.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !box.value && boxes[idx-1]) boxes[idx-1].focus();
+      if (e.key === 'Enter') authVerifyOtp();
+    });
+    box.addEventListener('paste', function(e){
+      e.preventDefault();
+      var digits = (e.clipboardData.getData('text')||'').replace(/[^0-9]/g,'').slice(0,6).split('');
+      digits.forEach(function(d,i){ if (boxes[i]) { boxes[i].value = d; boxes[i].classList.add('filled'); } });
+      var next = boxes[Math.min(digits.length, 5)]; if (next) next.focus();
+    });
+  });
+}
+
+// ── friendly error text ────────────────────────────────────────
+function authErr(err) {
+  var c = (err && err.code) || '';
+  switch (c) {
+    case 'auth/email-already-in-use': return 'An account with this email already exists. Try signing in.';
+    case 'auth/invalid-email':        return 'That email address looks invalid.';
+    case 'auth/user-not-found':       return 'No account found for this email. Create one first.';
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':   return 'Incorrect email or password.';
+    case 'auth/too-many-requests':    return 'Too many attempts — please wait a moment and retry.';
+    case 'auth/weak-password':        return 'Password is too weak (min 6 characters).';
+    case 'auth/network-request-failed': return 'Network error — check your connection.';
+    default: return (err && err.message) ? err.message : 'Something went wrong. Please try again.';
+  }
+}
+
+// ── logout ─────────────────────────────────────────────────────
 function authShowLogout() {
   var m = document.getElementById('logout-menu');
   if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
 }
-
-function authLogout() {
-  var m = document.getElementById('logout-menu');
-  if (m) m.style.display = 'none';
-  authShowLogin();
-  showToast('👋 Signed out');
+async function authLogout() {
+  var m = document.getElementById('logout-menu'); if (m) m.style.display = 'none';
+  try {
+    if (FIREBASE_READY) { await fbAuth.signOut(); }
+    else { localStorage.removeItem(DEMO_SESSION_KEY); authShowLogin(); }
+  } catch(e) { authShowLogin(); }
+  if (typeof showToast === 'function') showToast('👋 Signed out');
 }
-
-// ── Idle timeout ───────────────────────────────────────────────
-function authResetIdleTimer() {
-  clearTimeout(_idleTimer);
-  _lastActivity = Date.now();
-  _idleTimer = setTimeout(function() {
-    // Check app-shell is visible (user is logged in)
-    var shell = document.getElementById('app-shell');
-    if (shell && shell.style.display !== 'none') {
-      authShowLogin();
-      // Show a brief toast before login overlay appears
-      showToast('🔒 Session expired after 15 min idle — please login again');
-    }
-  }, IDLE_TIMEOUT_MS);
-}
-
-// Track any user activity
-['mousemove','keydown','mousedown','touchstart','scroll','click'].forEach(function(evt) {
-  document.addEventListener(evt, function() {
-    var shell = document.getElementById('app-shell');
-    if (shell && shell.style.display !== 'none') {
-      authResetIdleTimer();
-    }
-  }, { passive: true });
-});
 
 document.addEventListener('click', function(e) {
   var menu  = document.getElementById('logout-menu');
@@ -12423,15 +12946,53 @@ document.addEventListener('click', function(e) {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',inject); else inject();
 })();
 
-// ── Boot: restore session or show login ────────────────────────
+// ── Boot: wire OTP inputs + restore session ────────────────────
 (function() {
   document.getElementById('app-shell').style.display = 'none';
-  var ok = false;
-  try {
-    var ts = parseInt(sessionStorage.getItem(SESSION_KEY));
-    if (ts && (Date.now() - ts) < IDLE_TIMEOUT_MS) ok = true;
-  } catch(e) {}
-  if (ok) authShowApp(); else authShowLogin();
+  setupOtpBoxes();
+
+  // Restore an in-progress signup request (so a refresh while waiting for the
+  // admin's code keeps the user on the OTP screen with everything intact).
+  function _restorePending() {
+    try {
+      var raw = localStorage.getItem(PENDING_KEY);
+      if (!raw) return false;
+      var ps = JSON.parse(raw);
+      if (!ps || (ps.expires && Date.now() > ps.expires)) { _clearPending(); return false; }
+      _pendingSignup = ps;
+      _showAwaitingApproval(ps.email);
+      clearOtpBoxes();
+      authSwitchTab('otp');
+      return true;
+    } catch(e) { return false; }
+  }
+
+  if (FIREBASE_READY) {
+    fbAuth.onAuthStateChanged(async function(user){
+      if (user) {
+        var nm = user.displayName || (user.email || '').split('@')[0];
+        try {
+          var doc = await fbDB.collection('users').doc(user.uid).get();
+          if (doc.exists && doc.data().name) nm = doc.data().name;
+        } catch(e) {}
+        authShowApp(nm);
+      } else {
+        authShowLogin();
+        _restorePending();
+      }
+    });
+  } else {
+    // DEMO MODE — restore by saved email
+    var email = null;
+    try { email = localStorage.getItem(DEMO_SESSION_KEY); } catch(e){}
+    if (email) {
+      var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]');
+      var u = users.find(function(x){ return x.email === email; });
+      if (u) { authShowApp(u.name); return; }
+    }
+    authShowLogin();
+    _restorePending();
+  }
 })();
 
 
@@ -12925,32 +13486,36 @@ function handleScanningASIN(e) {
   <div id="dstpro-admin-gate" style="display:flex;align-items:center;justify-content:center;
     min-height:calc(100vh - 60px);padding:20px;">
     <div style="background:rgba(26,25,40,0.97);border:1px solid rgba(67,97,238,0.3);
-      border-radius:20px;padding:40px;width:100%;max-width:360px;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
-      <div style="text-align:center;margin-bottom:28px;">
-        <div style="font-size:48px;margin-bottom:12px;">🛡️</div>
-        <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;">Admin Access</div>
-        <div style="font-size:12px;color:#8b8aad;">Enter admin password to continue</div>
+      border-radius:20px;padding:40px;width:100%;max-width:380px;box-shadow:0 24px 80px rgba(0,0,0,0.6);text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">🛡️</div>
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">Administrators only</div>
+      <div style="font-size:13px;color:#8b8aad;line-height:1.6;margin-bottom:24px;">
+        The Admin Panel is locked to the administrator account.<br>
+        Sign in to the app as the <b style="color:#b8b6d9;">administrator</b>, then open this panel.
       </div>
-      <div id="dstpro-admin-gate-msg" style="display:none;padding:10px 14px;border-radius:8px;
-        font-size:13px;font-weight:600;margin-bottom:14px;"></div>
-      <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;
-          text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Password</label>
-        <input type="password" id="dstpro-admin-pass" placeholder="Admin password"
-          style="width:100%;background:rgba(15,14,23,0.7);border:1px solid rgba(46,44,69,0.9);
-          border-radius:10px;padding:13px 16px;font-family:'Syne',sans-serif;font-size:14px;
-          color:#e8e6ff;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter')dstproAdminLogin()">
-      </div>
-      <button onclick="dstproAdminLogin()"
+      <button onclick="dstproAdminClose()"
         style="width:100%;padding:14px;border-radius:12px;border:none;
         background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;
         font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
-        box-shadow:0 4px 20px rgba(67,97,238,0.4);">Enter Admin Panel →</button>
+        box-shadow:0 4px 20px rgba(67,97,238,0.4);">← Back to app</button>
     </div>
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">🔐 Account Requests <span id="dms-req-count" style="font-family:'DM Mono',monospace;font-size:11px;color:#ff6b35;"></span></div>
+          <div style="font-size:11px;color:#8b8aad;">Approve a person, then give them the 6-digit code to finish signing up.</div>
+        </div>
+        <button onclick="window.dmsRenderRequests&&window.dmsRenderRequests()"
+          style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#4361ee,#2f4bd4);
+          color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+      </div>
+      <div id="dms-requests-list" style="padding:18px 24px;">
+        <div style="color:#8b8aad;font-size:13px;">Loading…</div>
+      </div>
+    </div>
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;
       padding:20px 24px;margin-bottom:28px;">
       <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
@@ -13298,7 +13863,7 @@ function handleScanningASIN(e) {
 <!-- ── JAVASCRIPT (DSTPRO namespace) ──────────────────────────── -->
 <script>
 var DSTPRO = (function() {
-  var ADMIN_PASSWORD = 'HPAdmin@2026';
+  // Admin Panel is now gated by Firebase login (admin email), not a password.
   var LOG_KEY        = 'dstpro_activity_log';
   var USER_KEY       = 'dstpro_user_info';
   var ADMIN_SESS_KEY = 'dstpro_admin_sess';
@@ -13329,14 +13894,8 @@ var DSTPRO = (function() {
   }
 
   function _patchLoginForm(){
-    var card=document.querySelector('.login-card');
-    if(!card||document.getElementById('dstpro-login-fields'))return;
-    var c=document.createElement('div'); c.id='dstpro-login-fields';
-    c.innerHTML='<div class="dstpro-lf"><label>Full Name *</label><input type="text" id="dstpro-inp-name" placeholder="Your full name" autocomplete="name"></div>';
-    var pw=card.querySelector('.login-field');
-    if(pw)card.insertBefore(c,pw); else card.prepend(c);
-    var nameEl=document.getElementById('dstpro-inp-name');
-    if(nameEl)nameEl.addEventListener('keydown',function(e){if(e.key==='Enter'){var p=document.getElementById('login-pass');if(p)p.focus();}});
+    // No-op: the new signup flow already collects the user's full name,
+    // so we no longer inject a name field into the login card.
   }
 
   function _patchLogoutMenu(){
@@ -13349,30 +13908,22 @@ var DSTPRO = (function() {
   }
 
   function _hookLogin(){
-    var orig=window.authLogin;
-    window.authLogin=function(){
-      var nameEl=document.getElementById('dstpro-inp-name');
-      var name=nameEl?nameEl.value.trim():'';
-      if(!name){
-        var msg=document.getElementById('login-msg');
-        if(msg){msg.textContent='⚠️ Please enter your full name.';msg.className='login-msg error';msg.style.display='block';}
-        if(nameEl)nameEl.focus(); return;
-      }
+    // The new auth system passes the authenticated user's name straight into
+    // authShowApp(name). We wrap it to capture that name, update the badge,
+    // and log the activity — but only on a FRESH sign-in (not a page reload).
+    var origShow=window.authShowApp;
+    window.authShowApp=function(displayName){
+      origShow(displayName);
+      var name=displayName||_user.name||'User';
       _user.name=name; _user.empId='';
       try{localStorage.setItem(USER_KEY,JSON.stringify(_user));}catch(e){}
-      var origShow=window.authShowApp;
-      window.authShowApp=function(){
-        origShow();
-        // Update session badge with user's name
-        var badge=document.getElementById('session-badge');
-        if(badge){var nm=badge.querySelector('.sb-name');if(nm)nm.textContent=name;}
-        // Log login activity
+      var badge=document.getElementById('session-badge');
+      if(badge){var nm=badge.querySelector('.sb-name');if(nm)nm.textContent=name;}
+      if(window._dmsFreshLogin){
+        window._dmsFreshLogin=false;
         logActivity('Login','Signed In');
-        // Send login to Google Sheets via image-ping (same pattern as existing app)
         _sendLoginToSheet(name);
-        window.authShowApp=origShow;
-      };
-      orig();
+      }
     };
   }
   // ── Google Sheets activity log URL ────────────────────────────────
@@ -13518,33 +14069,33 @@ var DSTPRO = (function() {
   }
 
   /* ADMIN */
+  function _isAdminUser(){
+    try {
+      var adminEmail=(window.ADMIN_EMAIL||'').toLowerCase();
+      if(!adminEmail) return false;
+      if(window.FIREBASE_READY && window.fbAuth){
+        var u=fbAuth.currentUser;
+        return !!(u && (u.email||'').toLowerCase()===adminEmail);
+      }
+      var em=localStorage.getItem('dms_demo_session');
+      return !!(em && em.toLowerCase()===adminEmail);
+    } catch(e){ return false; }
+  }
   function openAdminPanel(){
     _loadLogs();
     document.getElementById('dstpro-admin-panel').style.display='block';
-    var ok=false; try{ok=!!sessionStorage.getItem(ADMIN_SESS_KEY);}catch(e){}
-    if(ok){
+    if(_isAdminUser()){
       document.getElementById('dstpro-admin-gate').style.display='none';
       document.getElementById('dstpro-admin-dash').style.display='block';
       renderAdminDash();
-      // Pull all activity from Google Sheet so the admin sees rows from every device.
+      if(window.dmsRenderRequests)window.dmsRenderRequests();
       syncLogs();
     }
     else{document.getElementById('dstpro-admin-gate').style.display='flex';document.getElementById('dstpro-admin-dash').style.display='none';}
   }
   function adminLogin(){
-    var pass=(document.getElementById('dstpro-admin-pass').value||'').trim();
-    var msg=document.getElementById('dstpro-admin-gate-msg');
-    if(pass===ADMIN_PASSWORD){
-      try{sessionStorage.setItem(ADMIN_SESS_KEY,'1');}catch(e){}
-      document.getElementById('dstpro-admin-gate').style.display='none';
-      document.getElementById('dstpro-admin-dash').style.display='block';
-      renderAdminDash();
-      // Pull all activity from Google Sheet so the admin sees rows from every device.
-      syncLogs();
-    } else {
-      msg.textContent='❌ Incorrect password.'; msg.className='login-msg error'; msg.style.display='block';
-      document.getElementById('dstpro-admin-pass').value='';
-    }
+    // Re-check after the admin signs in (the gate button just re-runs the check).
+    openAdminPanel();
   }
   function adminClose(){ document.getElementById('dstpro-admin-panel').style.display='none'; }
   function _getFiltered(){
