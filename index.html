@@ -25,6 +25,8 @@
   --surface2: #222136;
   --surface3: #2a2840;
   --dark: #0a0914;
+  --ui: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --display: 'Syne', sans-serif;
   --accent: #ff6b35;
   --accent2: #4361ee;
   --accent3: #7209b7;
@@ -43,12 +45,16 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: 'Syne', sans-serif;
+  font-family: var(--ui);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
 }
+/* Display headings keep the Syne personality; body, data & inputs use a clean neutral face */
+h1, h2, h3, h4, .results-header h3, .task-card h3, .login-title { font-family: var(--display); }
+table, th, td, p, .results-body, input, textarea, select,
+.select-field, .input-field, .form-group input, .form-group textarea { font-family: var(--ui); }
 body::before {
   content: '';
   position: fixed; inset: 0;
@@ -112,6 +118,10 @@ body::before {
 #live-clock .clock-time { color: var(--text2); font-weight: 500; }
 
 .task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:18px; }
+.task-section-head { grid-column:1 / -1; display:flex; align-items:center; gap:14px; margin-top:14px; }
+.task-section-head:first-child { margin-top:0; }
+.task-section-head .tsh-label { font-family:'Syne',sans-serif; font-size:12px; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+.task-section-head .tsh-line { flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
 .task-card {
   background: var(--surface); border:1px solid var(--border);
   border-radius:var(--radius-lg); padding:28px; cursor:pointer;
@@ -308,7 +318,7 @@ body::before {
   font-size:13px; font-weight:600; cursor:pointer; color:var(--text2);
   transition:all 0.2s; margin-bottom:32px; text-decoration:none;
 }
-.back-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.back-btn:hover { background:var(--accent2); color:#fff; border-color:var(--accent2); }
 .task-header { display:flex; align-items:flex-start; gap:18px; margin-bottom:36px; padding-bottom:28px; border-bottom:1px solid var(--border); }
 .task-header-icon { font-size:52px; line-height:1; flex-shrink:0; }
 .task-header h2 {
@@ -348,7 +358,7 @@ body::before {
   padding:10px 14px; font-family:'Syne',sans-serif; font-size:14px;
   color:var(--text); outline:none; cursor:pointer; transition:border-color 0.2s,box-shadow 0.2s;
 }
-.select-field:focus,.input-field:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,0.15); }
+.select-field:focus,.input-field:focus { border-color:var(--accent2); box-shadow:0 0 0 3px rgba(67,97,238,0.15); }
 .btn {
   display:inline-flex; align-items:center; gap:8px; padding:12px 26px;
   border-radius:10px; font-family:'Syne',sans-serif; font-size:13px;
@@ -360,7 +370,7 @@ body::before {
 .btn-accent { background:linear-gradient(135deg,var(--accent),#c43d04); color:#fff; box-shadow:0 4px 20px rgba(255,107,53,0.4); }
 .btn-accent:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(255,107,53,0.5); }
 .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text2); }
-.btn-outline:hover { border-color:var(--accent); color:var(--accent); background:rgba(255,107,53,0.08); }
+.btn-outline:hover { border-color:var(--accent2); color:var(--accent2); background:rgba(67,97,238,0.08); }
 .btn-green { background:linear-gradient(135deg,var(--green),#04a07a); color:#000; box-shadow:0 4px 20px rgba(6,214,160,0.3); }
 .btn-green:hover { transform:translateY(-2px); }
 .btn:disabled { opacity:0.35; cursor:not-allowed; transform:none !important; }
@@ -399,7 +409,8 @@ tr:hover td { background:rgba(255,107,53,0.04); }
 .barcode-labels-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
 .barcode-label { background:#fff; border:2px solid #222; border-radius:8px; padding:14px 12px; text-align:center; page-break-inside:avoid; }
 .barcode-label svg { max-width:100%; }
-.barcode-label .bl-asin { font-family:'DM Mono',monospace; font-size:13px; font-weight:700; margin-top:6px; letter-spacing:1.5px; color:#000; }
+.barcode-label .bl-asin { font-family:Arial,Helvetica,sans-serif; font-size:19px; font-weight:800; margin-top:6px; letter-spacing:0.5px; color:#000; word-break:break-all; }
+.barcode-label .bl-name { font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:700; color:#444; margin-top:4px; line-height:1.35; }
 .barcode-label .bl-num { font-size:10px; color:#666; margin-top:3px; font-family:'DM Mono',monospace; }
 .mapper-box { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
 .mapper-box h4 { font-size:14px; font-weight:700; margin-bottom:14px; color:#fff; }
@@ -409,7 +420,7 @@ tr:hover td { background:rgba(255,107,53,0.04); }
 .form-group { margin-bottom:20px; }
 .form-group label { display:block; font-size:11px; font-weight:700; letter-spacing:1.5px; margin-bottom:8px; text-transform:uppercase; color:var(--text2); }
 .form-group input,.form-group textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color 0.2s; resize:vertical; }
-.form-group input:focus,.form-group textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,107,53,0.15); }
+.form-group input:focus,.form-group textarea:focus { border-color:var(--accent2); box-shadow:0 0 0 3px rgba(67,97,238,0.15); }
 .form-group textarea { min-height:120px; }
 .contact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; max-width:600px; }
 .contact-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; text-align:center; }
@@ -639,7 +650,7 @@ footer span { color:var(--accent); }
 #page-voc  { padding-bottom: 0; }
 .filter-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
 .ftab { padding:8px 18px; border-radius:40px; border:1px solid var(--border); background:var(--surface2); font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.18s; color:var(--text2); }
-.ftab.active,.ftab:hover { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 4px 16px rgba(255,107,53,0.35); }
+.ftab.active,.ftab:hover { background:var(--accent2); color:#fff; border-color:var(--accent2); box-shadow:0 4px 16px rgba(67,97,238,0.35); }
 .stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; margin-bottom:24px; }
 .stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; position:relative; overflow:hidden; }
 .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
@@ -729,8 +740,8 @@ footer span { color:var(--accent); }
 .ci-asin-badge {
   display:inline-flex; align-items:center; gap:6px;
   background:#fff7ed; border:1px solid #fed7aa; border-radius:8px;
-  padding:4px 12px; font-family:'DM Mono',monospace; font-size:13px;
-  font-weight:700; color:#c2410c; margin-bottom:10px;
+  padding:5px 14px; font-family:Arial,Helvetica,sans-serif; font-size:18px;
+  font-weight:800; letter-spacing:0.5px; color:#c2410c; margin-bottom:10px;
 }
 .si-asin-badge { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
 .ci-title { font-size:14px; font-weight:700; color:#1a1830; margin-bottom:10px; line-height:1.4; }
@@ -1038,11 +1049,15 @@ to{width:65%;} }
 }
 
 @media print {
-  body { background:#fff !important; color:#000 !important; }
+  body { background:#fff !important; color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body::before { display:none; }
   .header,.back-btn,.btn-row,.upload-zone,.file-ok,.ctrl-row { display:none !important; }
   .results-panel { border:none; }
   .barcode-label { page-break-inside:avoid; }
+  /* QR sheets (Audit by ASIN / Consolidation): one grid page per sheet */
+  .qr-page { break-after: page; page-break-after: always; }
+  .qr-page:last-child { break-after: auto; page-break-after: auto; }
+  .qr-card, .label-card { break-inside: avoid; page-break-inside: avoid; }
 }
 @media (max-width:640px) {
   /* Header */
@@ -1571,43 +1586,6 @@ to{width:65%;} }
 </head>
 <body>
 
-  <!-- Eid Mubarak Popup -->
-<div id="eidPopup" style="
-    display:none;
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.7);
-    z-index:9999;
-    justify-content:center;
-    align-items:center;">
-
-    <div style="
-        background: linear-gradient(135deg, #1a472a, #2d6a4f);
-        border: 3px solid gold;
-        border-radius: 20px;
-        padding: 40px;
-        text-align: center;
-        color: white;
-        max-width: 400px;">
-
-        <div style="font-size:60px">🌙⭐</div>
-        <h1 style="color:gold; font-size:36px">Eid Mubarak!</h1>
-        <p style="font-size:18px">Wishing you joy, peace and blessings</p>
-        <p style="color:gold">— DMS Pro Team —</p>
-        <br>
-        <button onclick="document.getElementById('eidPopup').style.display='none'" style="
-            background:gold;
-            color:black;
-            border:none;
-            padding:10px 30px;
-            border-radius:10px;
-            font-size:16px;
-            cursor:pointer">
-            Enter DMS Pro ✨
-        </button>
-    </div>
-</div>
 <style id="auth-extra-css">
 .auth-tabs { display:flex; gap:6px; background:rgba(15,14,23,0.6); border:1px solid rgba(46,44,69,0.8); border-radius:12px; padding:5px; margin-bottom:22px; }
 .auth-tab { flex:1; padding:11px 8px; border:none; background:transparent; color:#8b8aad; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:0.3px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
@@ -1970,82 +1948,81 @@ to{width:65%;} }
   </div>
 
   <div class="task-grid">
+    <div class="task-section-head" id="sec-movement"><span class="tsh-label">Stock Movement</span><span class="tsh-line"></span></div>
     <div class="task-card" style="--card-color:#e8500a" onclick="openTask('consolidation')">
-      <div class="card-num">Task 01</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconShuffle 2s ease-in-out infinite;">🔀</span>
       <h3>Consolidation</h3>
       <p>Group ASINs spread across multiple locations and generate consolidation task lists.</p>
       <span class="card-arrow">→</span>
     </div>
+    <div class="task-card" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
+      
+      <span class="card-icon" style="display:inline-block;animation:iconSlowCrawl 3.5s ease-in-out infinite;">🐢</span>
+      <h3>Slow Moving Items</h3>
+      <p>Identify items aged over 90 days requiring attention, relocation, or clearance.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-section-head" id="sec-audits"><span class="tsh-label">Audits &amp; Counts</span><span class="tsh-line"></span></div>
     <div class="task-card" style="--card-color:#1a5cff" onclick="openTask('audit-loc')">
-      <div class="card-num">Task 02</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconPinDrop 2.2s ease-in-out infinite;">📍</span>
       <h3>Audit by Location</h3>
       <p>Generate 90 random locations across Frozen, Chiller, Hazmat, Ambient, HRV & Mixed zones.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#c9a227" onclick="openTask('audit-asin')">
-      <div class="card-num">Task 03</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconZoomSearch 2.5s ease-in-out infinite;">🔎</span>
       <h3>Audit by ASIN</h3>
       <p>Pick 60 random ASINs from inventory for physical stock count verification.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
-      <div class="card-num">Task 04</div>
-      <span class="card-icon" style="display:inline-block;animation:iconSlowCrawl 3.5s ease-in-out infinite;">🐢</span>
-      <h3>Slow Moving Items</h3>
-      <p>Identify items aged over 90 days requiring attention, relocation, or clearance.</p>
-      <span class="card-arrow">→</span>
-    </div>
-    <div class="task-card" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
-      <div class="card-num">Task 05</div>
-      <span class="card-icon" style="display:inline-block;animation:iconScanSweep 2.4s ease-in-out infinite;">🏷️</span>
-      <h3>YSM Barcode Task</h3>
-      <p>Generate individual scannable barcode labels for each unit. One label per item.</p>
-      <span class="card-arrow">→</span>
-    </div>
     <div class="task-card" style="--card-color:#0f766e" onclick="openTask('report')">
-      <div class="card-num">Task 06</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconChartGrow 2.2s ease-in-out infinite;">📊</span>
       <h3>Inventory Report</h3>
       <p>Generate a professional inventory audit report with Excel & PDF output.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#e11d48" onclick="openTask('lateslam')">
-      <div class="card-num">Task 07</div>
-      <span class="card-icon" style="display:inline-block;animation:iconTimerTick 2s ease-in-out infinite;">⏱️</span>
-      <h3>Late Slam Calculator</h3>
-      <p>Upload orders → fetch forecast → full 30-min slot variance report per store.</p>
+
+    <div class="task-section-head" id="sec-labels"><span class="tsh-label">Labels &amp; Barcodes</span><span class="tsh-line"></span></div>
+    <div class="task-card" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
+      
+      <span class="card-icon" style="display:inline-block;animation:iconScanSweep 2.4s ease-in-out infinite;">🏷️</span>
+      <h3>YSM Barcode Task</h3>
+      <p>Generate individual scannable barcode labels for each unit. One label per item.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#d97706" onclick="openTask('catalog-issue')">
-      <div class="card-num">Task 08</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconClipFlip 3s ease-in-out infinite;">📋</span>
       <h3>Catalog Issue Items</h3>
       <p>Avoid VOC and Late Slam – Move Fast to Special Bin. Auto-fetch from Google Sheet.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#0284c7" onclick="openTask('scanning-issue')">
-      <div class="card-num">Task 09</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconMicroFocus 2.8s ease-in-out infinite;">🔬</span>
       <h3>Scanning Issue Items</h3>
       <p>Identify scanning problem ASINs from Google Sheet and generate barcode labels.</p>
       <span class="card-arrow">→</span>
     </div>
-
     <div class="task-card" style="--card-color:#16a34a" onclick="openTask('locid')">
-      <div class="card-num">Task 10</div>
+      
       <span class="card-icon" style="display:inline-block;animation:iconTagSwing 2.5s ease-in-out infinite;">🏷️</span>
       <h3>Location ID Maker</h3>
       <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#1F3864" onclick="openTask('gatepass')">
-      <div class="card-num">Task 11</div>
-      <span class="card-icon" style="display:inline-block;animation:iconTruckRoll 2.2s ease-in-out infinite;">🚚</span>
-      <h3>Reverse Transshipment Gate Pass</h3>
-      <p>Fill the form &amp; export a print-ready Word file for the gate.</p>
+
+    <div class="task-section-head" id="sec-performance"><span class="tsh-label">Performance &amp; Analytics</span><span class="tsh-line"></span></div>
+    <div class="task-card" style="--card-color:#e11d48" onclick="openTask('lateslam')">
+      
+      <span class="card-icon" style="display:inline-block;animation:iconTimerTick 2s ease-in-out infinite;">⏱️</span>
+      <h3>Late Slam Calculator</h3>
+      <p>Upload orders → fetch forecast → full 30-min slot variance report per store.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#06d6a0" onclick="openTask('voc')">
@@ -2094,6 +2071,15 @@ to{width:65%;} }
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🏪</span>
       <h3 style="background:linear-gradient(135deg,#7b78a8,#4361ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Store Metrics</h3>
       <p>Live store-wise KPIs — orders, inbound, OB/IB TPH, SLA, UPO, removals &amp; performance trends.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
+    <div class="task-section-head" id="sec-ops"><span class="tsh-label">Ops &amp; Support</span><span class="tsh-line"></span></div>
+    <div class="task-card" style="--card-color:#1F3864" onclick="openTask('gatepass')">
+      
+      <span class="card-icon" style="display:inline-block;animation:iconTruckRoll 2.2s ease-in-out infinite;">🚚</span>
+      <h3>Reverse Transshipment Gate Pass</h3>
+      <p>Fill the form &amp; export a print-ready Word file for the gate.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
@@ -2443,13 +2429,22 @@ to{width:65%;} }
   }
   .ysm-label-print svg { width: 100% !important; height: 1.2in !important; }
   .ysm-label-print .lp-asin {
-    font-family: "Courier New", monospace;
-    font-size: 16pt; font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 22pt; font-weight: 900;
     margin-top: 6pt; letter-spacing: 1pt;
   }
   .ysm-label-print .lp-name {
     font-family: Arial, sans-serif; font-size: 9pt;
     color: #333; margin-top: 3pt; text-align: center;
+  }
+}
+
+@media print {
+  /* Scanning Issue print areas (matched barcodes + manual barcodes) */
+  #si-barcode-print-area, #si-barcode-print-area *,
+  #si-manual-print-area, #si-manual-print-area * { visibility: visible !important; }
+  #si-barcode-print-area, #si-manual-print-area {
+    position: fixed !important; top: 0; left: 0; width: 100%;
   }
 }
 </style>
@@ -3006,6 +3001,38 @@ to{width:65%;} }
     <button class="btn btn-accent" onclick="siPrintBarcodes()" id="si-print-btn" style="display:none">🖨️ Print Barcode Labels</button>
     <button class="btn btn-primary" onclick="siExportWord()" id="si-word-btn" style="display:none">⬇ Export Word (.docx)</button>
     <button class="btn btn-green" onclick="ciExportExcel('scanning')" id="si-excel-btn" style="display:none">⬇ Export Excel</button>
+  </div>
+
+  <!-- Manual Barcode Maker -->
+  <div class="si-manual-box" style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;padding:18px;margin-bottom:18px;">
+    <div>
+      <div style="font-weight:800;color:#1a1830;font-size:16px;">🔧 Manual Barcode Maker</div>
+      <div style="font-size:12px;color:#7b78a8;margin-top:2px;">Type an ASIN + quantity to make CODE128 barcodes instantly — or use bulk paste for many at once (one per line, optionally <code>ASIN, Item name, Qty</code>).</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px;">
+      <div style="flex:1;min-width:200px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#3d3a6b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Single ASIN</label>
+        <input id="si-manual-asin" type="text" placeholder="e.g. B000LQJJPK" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:11px 14px;font-family:Arial,sans-serif;font-size:14px;color:#1a1830;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){event.preventDefault();siManualAdd();}">
+      </div>
+      <div style="width:90px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:#3d3a6b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Qty</label>
+        <input id="si-manual-qty" type="number" min="1" value="1" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:11px 12px;font-family:Arial,sans-serif;font-size:14px;color:#1a1830;outline:none;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){event.preventDefault();siManualAdd();}">
+      </div>
+      <button class="btn btn-primary" onclick="siManualAdd()">➕ Make Barcode</button>
+    </div>
+    <div style="margin-top:14px;">
+      <label style="display:block;font-size:11px;font-weight:700;color:#3d3a6b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Bulk paste — one per line · <code>ASIN, Item name, Qty</code> (name &amp; qty optional)</label>
+      <textarea id="si-manual-bulk" rows="4" placeholder="B000LQJJPK
+B07XYZ1234, Optional item name, 3
+B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:13px;color:#1a1830;outline:none;box-sizing:border-box;resize:vertical;"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn btn-primary" onclick="siManualBulk()">⚡ Generate All</button>
+        <button class="btn btn-accent" onclick="siManualPrint()" id="si-manual-print-btn" style="display:none">🖨️ Print Labels</button>
+        <button class="btn btn-outline" onclick="siManualClear()" id="si-manual-clear-btn" style="display:none">✕ Clear</button>
+      </div>
+    </div>
+    <div id="si-manual-out" class="barcode-labels-wrap" style="margin-top:16px;"></div>
+    <div id="si-manual-print-area" style="display:none"></div>
   </div>
   <div id="si-fetch-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
 
@@ -3829,6 +3856,16 @@ function dashSearchFilter() {
     card.style.display = match ? '' : 'none';
     if (match) visible++;
   });
+  // Hide a section header when every card under it (until the next header) is hidden
+  document.querySelectorAll('.task-grid .task-section-head').forEach(function(head) {
+    var anyVisible = false;
+    var el = head.nextElementSibling;
+    while (el && !el.classList.contains('task-section-head')) {
+      if (el.classList.contains('task-card') && el.style.display !== 'none') { anyVisible = true; break; }
+      el = el.nextElementSibling;
+    }
+    head.style.display = (q && !anyVisible) ? 'none' : '';
+  });
   if (nomatch) nomatch.style.display = (q && visible === 0) ? 'block' : 'none';
 }
 function dashSearchClear() {
@@ -4034,24 +4071,23 @@ function generateConsolidation() {
       : hasMore10 && exactCounts.length === 0 ? 'More than 10 locations'
       : 'Locations: ' + selectedCounts.join(', ') + (selectedBays.length ? ' · Bay: ' + selectedBays.join(', ') : '');
 
-    const panel = document.createElement('div');
-    panel.className = 'results-panel';
-    panel.innerHTML = '<div class="results-header"><h3>🔀 Consolidation Task</h3><span class="results-count">' + results.length + ' ASINs · ' + filterLabel + ' · ' + getNowString() + '</span></div><div class="results-body"><div class="stats-row"><div class="stat-card"><div class="sv">' + results.length + '</div><div class="sl">Matched ASINs</div></div><div class="stat-card"><div class="sv" style="font-size:13px">' + (selectedCounts.length ? selectedCounts.join(', ') : '2') + '</div><div class="sl">Location Count</div></div>' + (selectedBays.length > 0 ? '<div class="stat-card"><div class="sv" style="font-size:11px">' + selectedBays.join(', ') + '</div><div class="sl">Bay Filter</div></div>' : '') + '</div><div class="label-grid" id="consolidation-qr-grid"></div>' + signatureBarHTML() + '</div>';
-    document.getElementById('out-consolidation').appendChild(panel);
+    const statsHTML = '<div class="stats-row"><div class="stat-card"><div class="sv">' + results.length + '</div><div class="sl">Matched ASINs</div></div><div class="stat-card"><div class="sv" style="font-size:13px">' + (selectedCounts.length ? selectedCounts.join(', ') : '2') + '</div><div class="sl">Location Count</div></div>' + (selectedBays.length > 0 ? '<div class="stat-card"><div class="sv" style="font-size:11px">' + selectedBays.join(', ') + '</div><div class="sl">Bay Filter</div></div>' : '') + '</div>';
 
-    const grid = panel.querySelector('#consolidation-qr-grid');
-    results.forEach((item, idx) => {
-      const card = document.createElement('div');
-      card.className = 'label-card';
-      card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
-      const n = item.count;
-      const priority = (n>10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
-      const pColor = priority==='HIGH'?'#e8500a':priority==='MEDIUM'?'#c9a227':'#1a7a4a';
-      card.innerHTML = '<div style="font-size:9px;font-weight:700;color:#fff;background:' + pColor + ';border-radius:3px;padding:2px 6px;margin-bottom:4px;">' + priority + ' · ' + item.count + 'L</div><div id="qr-c-' + idx + '" style="display:flex;justify-content:center;"></div><div class="asin-txt" style="color:#000 !important;background:#fff;font-size:10px;font-weight:800;margin-top:4px;">' + item.asin + '</div>';
-      grid.appendChild(card);
-      try {
-        new QRCode(document.getElementById('qr-c-' + idx), { text: item.asin, width: 100, height: 100, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-      } catch(e) {}
+    buildQRSheet({
+      container: document.getElementById('out-consolidation'),
+      idPrefix: 'consolidation-qr-grid',
+      title: '🔀 Consolidation Task',
+      headerExtra: ' · ' + filterLabel,
+      infoHTML: statsHTML,
+      items: results,
+      qrText: item => item.asin,
+      topHTML: (item) => {
+        const n = item.count;
+        const priority = (n>10||n>=8)?'HIGH':n>=5?'MEDIUM':'LOW';
+        const pColor = priority==='HIGH'?'#e8500a':priority==='MEDIUM'?'#c9a227':'#1a7a4a';
+        return qrBadge(priority + ' · ' + item.count + 'L', pColor);
+      },
+      bottomHTML: item => '<div class="asin-txt" style="color:#000 !important;background:#fff;margin-top:2px;">' + item.asin + '</div>'
     });
     document.getElementById('export-consolidation').style.display = 'flex';
     showToast('✅ ' + results.length + ' ASINs matched');
@@ -4211,32 +4247,19 @@ function generateAuditAsin() {
     showLoading('audit-asin', false);
     if (!picked.length) { showToast('No ASINs found in known zones'); return; }
 
-    const nowStr = getNowString();
-    const PAGE_SIZE = 32;
-    const pageGroups = [];
-    for (let i = 0; i < picked.length; i += PAGE_SIZE)
-      pageGroups.push(picked.slice(i, i + PAGE_SIZE));
-
-    const panel = document.createElement('div');
-    panel.innerHTML = '<div class="results-panel"><div class="results-header"><h3>🔎 ASIN Audit Sheet</h3><span class="results-count">' + picked.length + ' ASINs · ' + nowStr + ' · ' + pageGroups.length + ' pages</span></div><div class="results-body"><div class="alert alert-info" style="margin-bottom:16px">' + picked.length + ' random ASINs across known zones only — ' + pageGroups.length + ' pages × 32. Different every time!</div>' + pageGroups.map((grp,pi) => '<div style="font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;color:var(--muted)' + (pi>0?';margin-top:24px':'') + '">Page ' + (pi+1) + ' — #' + (pi*32+1) + ' to #' + Math.min((pi+1)*32, picked.length) + '</div><div class="label-grid" id="audit-asin-grid-p' + (pi+1) + '"></div>' + (pi < pageGroups.length-1 ? '<hr style="margin:16px 0;border-color:var(--border)">' : '')).join('') + signatureBarHTML() + '</div></div>';
-    document.getElementById('out-audit-asin').appendChild(panel);
-
-    picked.forEach((asin, idx) => {
-      const row  = asinMap[asin] || {};
-      const pageIdx = Math.floor(idx / PAGE_SIZE) + 1;
-      const gridEl  = document.getElementById('audit-asin-grid-p' + pageIdx);
-      if (!gridEl) return;
-      const card = document.createElement('div');
-      card.className = 'label-card';
-      card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
-      const loc  = locCol ? String(row[locCol]||'').trim() : '';
-      const zone = detectZone(loc);
-      const zoneBadge = '<div style="font-size:8px;font-weight:700;color:#fff;background:' + zoneColor(zone) + ';border-radius:3px;padding:1px 4px;margin-bottom:2px;">' + zone + '</div>';
-      card.innerHTML = '<div style="font-size:7px;color:var(--muted);margin-bottom:1px;">#' + String(idx+1).padStart(2,'0') + '</div>' + zoneBadge + '<div id="qr-a-' + idx + '" style="display:flex;justify-content:center;"></div><div class="asin-txt">' + asin + '</div>';
-      gridEl.appendChild(card);
-      try {
-        new QRCode(document.getElementById('qr-a-' + idx), { text: asin, width: 68, height: 68, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M });
-      } catch(e) {}
+    buildQRSheet({
+      container: document.getElementById('out-audit-asin'),
+      idPrefix: 'audit-asin-grid',
+      title: '🔎 ASIN Audit Sheet',
+      infoHTML: '<div class="alert alert-info" style="margin-bottom:16px">' + picked.length + ' random ASINs across known zones only — ' + Math.ceil(picked.length/32) + ' pages × 32. Different every time!</div>',
+      items: picked.map(asin => ({ asin, row: asinMap[asin] || {} })),
+      qrText: item => item.asin,
+      topHTML: (item, idx) => {
+        const loc  = locCol ? String(item.row[locCol]||'').trim() : '';
+        const zone = detectZone(loc);
+        return '<div style="font-size:7px;color:var(--muted);margin-bottom:1px;">#' + String(idx+1).padStart(2,'0') + '</div>' + qrBadge(zone, zoneColor(zone));
+      },
+      bottomHTML: item => '<div class="asin-txt">' + item.asin + '</div>'
     });
 
     document.getElementById('export-audit-asin').style.display = 'flex';
@@ -4251,6 +4274,110 @@ function zoneColor(zone) {
     'T-Bin':'#be185d', 'H-Bin':'#1e40af', 'R-Bin':'#065f46'
   };
   return map[zone] || '#64748b';
+}
+
+// ── SHARED QR SHEET RENDERER ────────────────────────────────────
+// Builds a paginated QR sheet (32 cards/page, 8-col grid, 68px QR) used by
+// Audit-by-ASIN and Consolidation so both stay visually identical.
+// opts: { container, idPrefix, title, headerExtra, infoHTML, items,
+//         qrText(item), topHTML(item, idx), bottomHTML(item) }
+function buildQRSheet(opts) {
+  const items   = opts.items || [];
+  const PAGE    = 32;
+  const prefix  = opts.idPrefix;
+  const pages   = [];
+  for (let i = 0; i < items.length; i += PAGE) pages.push(items.slice(i, i + PAGE));
+
+  const panel = document.createElement('div');
+  panel.className = 'results-panel';
+  panel.innerHTML =
+    '<div class="results-header"><h3>' + opts.title + '</h3>' +
+    '<span class="results-count">' + items.length + ' ASINs · ' + getNowString() +
+    ' · ' + pages.length + ' pages' + (opts.headerExtra || '') + '</span></div>' +
+    '<div class="results-body">' + (opts.infoHTML || '') +
+    pages.map(function(grp, pi) {
+      return '<div class="qr-page">' +
+        '<div style="font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;color:var(--muted)' +
+        (pi > 0 ? ';margin-top:24px' : '') + '">Page ' + (pi + 1) + ' — #' +
+        (pi * PAGE + 1) + ' to #' + Math.min((pi + 1) * PAGE, items.length) + '</div>' +
+        '<div class="label-grid" id="' + prefix + '-p' + (pi + 1) + '"></div>' +
+        (pi < pages.length - 1 ? '<hr style="margin:16px 0;border-color:var(--border)">' : '') +
+        '</div>';
+    }).join('') + signatureBarHTML() + '</div>';
+  opts.container.appendChild(panel);
+
+  items.forEach(function(item, idx) {
+    const pageIdx = Math.floor(idx / PAGE) + 1;
+    const grid = panel.querySelector('#' + prefix + '-p' + pageIdx);
+    if (!grid) return;
+    const card = document.createElement('div');
+    card.className = 'label-card qr-card';
+    card.style.cssText = 'background:#fff !important;border:1px solid #d5d2f0;border-radius:8px;padding:6px 4px;text-align:center;';
+    card.innerHTML =
+      (opts.topHTML ? opts.topHTML(item, idx) : '') +
+      '<div id="' + prefix + '-qr-' + idx + '" style="display:flex;justify-content:center;"></div>' +
+      (opts.bottomHTML ? opts.bottomHTML(item) : '');
+    grid.appendChild(card);
+    try {
+      new QRCode(document.getElementById(prefix + '-qr-' + idx), {
+        text: opts.qrText(item), width: 68, height: 68,
+        colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.M
+      });
+    } catch(e) {}
+  });
+  return pages.length;
+}
+
+// Print-safe badge — has a border so it stays legible even in B&W print
+function qrBadge(text, bg) {
+  return '<div style="font-size:8px;font-weight:700;color:#fff;background:' + bg +
+    ';border:0.5px solid rgba(0,0,0,0.25);border-radius:3px;padding:1px 4px;margin-bottom:2px;' +
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact;">' + text + '</div>';
+}
+
+// ── SHARED QR SHEET PDF EXPORT ──────────────────────────────────
+// Captures every "<prefix>-p<n>" grid as its own A4 landscape page.
+async function exportQRSheetPDF(gridPrefix, title) {
+  showToast('Building PDF...');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 5, usableW = pageW - margin*2, usableH = pageH - margin*2 - 18;
+  const nowStr = getNowString();
+  const grids = Array.from(document.querySelectorAll('[id^="' + gridPrefix + '-p"]'))
+    .filter(function(g){ return g.children.length; });
+  const totalPages = grids.length;
+  if (!totalPages) { showToast('Nothing to export'); return; }
+  const COLS = 8, CARD_W = 100, CARD_H = 125, GAP = 3;
+  const CONTAINER_W = COLS*CARD_W + (COLS-1)*GAP + 16;
+  for (let p = 0; p < totalPages; p++) {
+    if (p > 0) pdf.addPage();
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + CONTAINER_W + 'px;display:grid;grid-template-columns:repeat(' + COLS + ',' + CARD_W + 'px);gap:' + GAP + 'px;padding:8px;background:#fff;box-sizing:border-box;';
+    Array.from(grids[p].children).forEach(function(card) {
+      const clone = card.cloneNode(true);
+      clone.style.cssText = 'width:' + CARD_W + 'px;height:' + CARD_H + 'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:5px 4px;text-align:center;';
+      wrap.appendChild(clone);
+    });
+    document.body.appendChild(wrap);
+    await new Promise(function(r){ setTimeout(r, 300); });
+    const canvas = await html2canvas(wrap, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+    document.body.removeChild(wrap);
+    const imgH = (canvas.height*usableW)/canvas.width;
+    if (imgH <= usableH) pdf.addImage(canvas.toDataURL('image/jpeg',0.93), 'JPEG', margin, margin, usableW, imgH);
+    else { const scale = usableH/imgH; pdf.addImage(canvas.toDataURL('image/jpeg',0.93), 'JPEG', margin, margin, usableW*scale, usableH); }
+    const footerY = pageH - 10;
+    pdf.setFontSize(6); pdf.setTextColor(120);
+    pdf.text(title + ' · Page ' + (p+1) + ' of ' + totalPages + ' · ' + nowStr, margin, footerY);
+    if (p === totalPages-1) {
+      pdf.setFontSize(7); pdf.setTextColor(50);
+      pdf.text('Checked By AA: ______________________', margin, footerY - 5);
+      pdf.text('TL / Supervisor: ______________________', pageW/2, footerY - 5);
+    }
+  }
+  pdf.save(title.replace(/\s+/g,'_') + '_' + new Date().toISOString().split('T')[0] + '.pdf');
+  showToast('PDF — all pages done!');
 }
 
 // TASK 4: SLOW MOVING
@@ -4369,7 +4496,7 @@ function generateYSM() {
       const wrapper = document.createElement('div');
       wrapper.style.cssText = 'background:#fff;border:2px solid #222;border-radius:6px;padding:12px 16px 10px 16px;display:flex;flex-direction:column;align-items:center;width:100%;box-sizing:border-box;';
       const svgId = 'ysm-bc-' + idx;
-      wrapper.innerHTML = '<svg id="' + svgId + '" style="width:100%;display:block"></svg><div style="font-family:\'Courier New\',monospace;font-weight:900;font-size:17px;margin-top:8px;letter-spacing:2px;color:#000">' + lbl.asin + '</div>' + (lbl.itemName ? '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#444;margin-top:4px;text-align:center"><span style="color:#c43d04;font-size:13px;font-weight:800">(R.S.L)</span> — ' + lbl.itemName + '</div>' : '');
+      wrapper.innerHTML = '<svg id="' + svgId + '" style="width:100%;display:block"></svg><div style="font-family:Arial,Helvetica,sans-serif;font-weight:900;font-size:24px;margin-top:8px;letter-spacing:1px;color:#000">' + lbl.asin + '</div>' + (lbl.itemName ? '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:#444;margin-top:4px;text-align:center"><span style="color:#c43d04;font-size:13px;font-weight:800">(R.S.L)</span> — ' + lbl.itemName + '</div>' : '');
       stack.appendChild(wrapper);
       try {
         JsBarcode('#' + svgId, lbl.asin, { format: 'CODE128', width: 3, height: 100, displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 10, marginTop: 8, marginBottom: 8, marginLeft: 14, marginRight: 14 });
@@ -4415,8 +4542,8 @@ async function exportYSMPDF() {
     if (bcRaw && bcRaw.width > 0) {
       pdf.addImage(bcRaw.toDataURL('image/png'), 'PNG', 5, 3, W_mm-10, 28);
     }
-    pdf.setFont('courier','bold');
-    pdf.setFontSize(13);
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(18);
     pdf.setTextColor(0,0,0);
     pdf.text(asin, W_mm/2, 37, {align:'center'});
     pdf.setFont('helvetica','bold');
@@ -4464,17 +4591,17 @@ async function exportYSMWord() {
       let x=ML+Math.floor((CW-bu*bars.length)/2);
       ctx.fillStyle='#000';
       for(const b of bars){if(b==='1')ctx.fillRect(x,MT,bu,BAR_H);x+=bu;}
-      ctx.font='bold 16px "Courier New",monospace';
+      ctx.font='900 30px Arial,Helvetica,sans-serif';
       ctx.textAlign='center'; ctx.fillStyle='#000';
-      ctx.fillText(asin,W/2,MT+BAR_H+22);
-      ctx.font='bold 13px Arial,sans-serif';
+      ctx.fillText(asin,W/2,MT+BAR_H+32);
+      ctx.font='bold 14px Arial,sans-serif';
       const words=combined.split(' '); let l1='',l2='';
       for(const w of words){
         const t=(l1+' '+w).trim();
         if(ctx.measureText(t).width<=CW) l1=t; else l2=(l2+' '+w).trim();
       }
-      if(l1)ctx.fillText(l1,W/2,MT+BAR_H+40);
-      if(l2)ctx.fillText(l2,W/2,MT+BAR_H+56);
+      if(l1)ctx.fillText(l1,W/2,MT+BAR_H+54);
+      if(l2)ctx.fillText(l2,W/2,MT+BAR_H+70);
       const b64=cvs.toDataURL('image/png').split(',')[1];
       const bin=atob(b64); const arr=new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
@@ -4968,89 +5095,11 @@ async function exportA4PDF(el, title) {
 }
 
 async function exportAuditAsinPDF(title) {
-  showToast('Building PDF...');
-  const {jsPDF} = window.jspdf;
-  const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const margin = 5, usableW = pageW-margin*2, usableH = pageH-margin*2-18;
-  const nowStr = getNowString();
-  const totalPages=document.querySelectorAll('[id^="audit-asin-grid-p"]').length || 3;
-  for (let p=0; p<totalPages; p++) {
-    const gridEl = document.getElementById('audit-asin-grid-p'+(p+1));
-    if (!gridEl||!gridEl.children.length) continue;
-    if (p>0) pdf.addPage();
-    const COLS=8, CARD_W=100, CARD_H=125, GAP=3;
-    const CONTAINER_W = COLS*CARD_W+(COLS-1)*GAP+16;
-    const wrap = document.createElement('div');
-    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
-    Array.from(gridEl.children).forEach(card => {
-      const clone = card.cloneNode(true);
-      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:5px 4px;text-align:center;';
-      wrap.appendChild(clone);
-    });
-    document.body.appendChild(wrap);
-    await new Promise(r=>setTimeout(r,300));
-    const canvas = await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
-    document.body.removeChild(wrap);
-    const imgH=(canvas.height*usableW)/canvas.width;
-    if(imgH<=usableH) pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,imgH);
-    else { const scale=usableH/imgH; pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW*scale,usableH); }
-    const footerY = pageH - 10;
-    pdf.setFontSize(6); pdf.setTextColor(120);
-    pdf.text(title+' · Page '+(p+1)+' of '+totalPages+' · '+nowStr, margin, footerY);
-    if (p === totalPages-1) {
-      pdf.setFontSize(7); pdf.setTextColor(50);
-      pdf.text('Checked By AA: ______________________', margin, footerY - 5);
-      pdf.text('TL / Supervisor: ______________________', pageW/2, footerY - 5);
-    }
-  }
-  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
-  showToast('PDF - all pages done!');
+  return exportQRSheetPDF('audit-asin-grid', title);
 }
 
 async function exportConsolidationPDF(title) {
-  showToast('Building PDF...');
-  const {jsPDF} = window.jspdf;
-  const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-  const margin=5, usableW=pageW-margin*2, usableH=pageH-margin*2-18;
-  const nowStr = getNowString();
-  const grid = document.getElementById('consolidation-qr-grid');
-  if (!grid||!grid.children.length) { showToast('Nothing to export'); return; }
-  const allCards=Array.from(grid.children), PAGE_SIZE=21;
-  const COLS=7, CARD_W=110, CARD_H=140, GAP=4;
-  const CONTAINER_W=COLS*CARD_W+(COLS-1)*GAP+16;
-  const totalPages=Math.ceil(allCards.length/PAGE_SIZE);
-  for (let p=0; p<totalPages; p++) {
-    if(p>0) pdf.addPage();
-    const chunk=allCards.slice(p*PAGE_SIZE,(p+1)*PAGE_SIZE);
-    const wrap=document.createElement('div');
-    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:'+CONTAINER_W+'px;display:grid;grid-template-columns:repeat('+COLS+','+CARD_W+'px);gap:'+GAP+'px;padding:8px;background:#fff;box-sizing:border-box;';
-    chunk.forEach(card=>{
-      const clone=card.cloneNode(true);
-      clone.style.cssText='width:'+CARD_W+'px;height:'+CARD_H+'px;overflow:hidden;box-sizing:border-box;background:#fff;border:1px solid #ccc;border-radius:6px;padding:5px 4px;text-align:center;';
-      wrap.appendChild(clone);
-    });
-    document.body.appendChild(wrap);
-    await new Promise(r=>setTimeout(r,300));
-    const canvas=await html2canvas(wrap,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
-    document.body.removeChild(wrap);
-    const imgH=(canvas.height*usableW)/canvas.width;
-    if(imgH<=usableH) pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW,imgH);
-    else { const scale=usableH/imgH; pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',margin,margin,usableW*scale,usableH); }
-    const footerY = pageH - 10;
-    pdf.setFontSize(6); pdf.setTextColor(120);
-    pdf.text(title+' · Page '+(p+1)+' of '+totalPages+' · '+nowStr, margin, footerY);
-    if (p === totalPages-1) {
-      pdf.setFontSize(7); pdf.setTextColor(50);
-      pdf.text('Checked By AA: ______________________', margin, footerY - 5);
-      pdf.text('TL / Supervisor: ______________________', pageW/2, footerY - 5);
-    }
-  }
-  pdf.save(title.replace(/\s+/g,'_')+'_'+new Date().toISOString().split('T')[0]+'.pdf');
-  showToast('Consolidation PDF done!');
+  return exportQRSheetPDF('consolidation-qr-grid', title);
 }
 
 function sendFeedback() {
@@ -6930,7 +6979,17 @@ function ciMatchAndRender(mode, asins) {
 }
 
 // ── Render results for both modes ────────────────────────────
+// Safety cap: a single location can hold a huge qty; printing one label per
+// unit unbounded would freeze the browser / blow up the PDF. Cap per location.
+var CI_MAX_PER_LOC = 50;
+var _ciCapped = false;
+function ciUnitCount(qty) {
+  var n = Math.max(1, Math.round(Number(qty)) || 1);
+  if (n > CI_MAX_PER_LOC) { _ciCapped = true; return CI_MAX_PER_LOC; }
+  return n;
+}
 function ciRenderResults(mode, list) {
+  _ciCapped = false;
   var outId = mode === 'catalog' ? 'out-catalog' : 'out-scanning';
   var outEl = document.getElementById(outId);
   if (!outEl) return;
@@ -6963,21 +7022,25 @@ function ciRenderResults(mode, list) {
     var cardsHTML = '';
     list.forEach(function(item, idx) {
       item.locs.forEach(function(l, li) {
-        var globalId = 'ci-qr-' + idx + '-' + li;
-        cardsHTML +=
-          '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 6px;' +
-          'text-align:center;background:#fff;page-break-inside:avoid;break-inside:avoid;min-width:0;overflow:hidden;">' +
-          // ASIN badge
-          '<div style="display:block;background:#fff7ed;border:1px solid #fed7aa;' +
-          'border-radius:6px;padding:2px 6px;font-family:\'DM Mono\',monospace;font-size:10px;' +
-          'font-weight:700;color:#c2410c;margin-bottom:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;">' + item.asin + '</div>' +
-          // QR code (location already validated — always show)
-          '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>' +
-          // Location
-          '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:800;color:#1a1830;margin-top:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;line-height:1.4;padding:0 2px;">' + l.loc + '</div>' +
-          '<div style="font-size:9px;color:#d97706;font-weight:700;margin-top:2px;">' + Math.round(l.qty) + ' units</div>' +
-          '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">' + l.zone + '</div>' +
-          '</div>';
+        // One QR label per physical unit in inventory (qty), capped for safety
+        var units = ciUnitCount(l.qty);
+        for (var u = 0; u < units; u++) {
+          var globalId = 'ci-qr-' + idx + '-' + li + '-' + u;
+          cardsHTML +=
+            '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 6px;' +
+            'text-align:center;background:#fff;page-break-inside:avoid;break-inside:avoid;min-width:0;overflow:hidden;">' +
+            // ASIN badge
+            '<div style="display:block;background:#fff7ed;border:1px solid #fed7aa;' +
+            'border-radius:6px;padding:3px 6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;' +
+            'font-weight:800;letter-spacing:0.3px;color:#c2410c;margin-bottom:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;">' + item.asin + '</div>' +
+            // QR code (location already validated — always show)
+            '<div id="' + globalId + '" style="display:flex;justify-content:center;margin:4px 0;"></div>' +
+            // Location
+            '<div style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:800;color:#1a1830;margin-top:6px;word-break:break-all;overflow-wrap:break-word;white-space:normal;line-height:1.4;padding:0 2px;">' + l.loc + '</div>' +
+            '<div style="font-size:9px;color:#d97706;font-weight:700;margin-top:2px;">Unit ' + (u+1) + ' / ' + units + '</div>' +
+            '<div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">' + l.zone + '</div>' +
+            '</div>';
+        }
       });
     });
 
@@ -7008,18 +7071,24 @@ function ciRenderResults(mode, list) {
 
     list.forEach(function(item, idx) {
       item.locs.forEach(function(l, li) {
+        // One barcode per physical unit in inventory (qty), capped for safety
+        var units = ciUnitCount(l.qty);
+        var chips = '';
+        for (var u = 0; u < units; u++) {
+          chips +=
+            '<div class="ci-loc-chip si-loc-chip">' +
+            '<svg id="si-bc-' + idx + '-' + li + '-' + u + '" style="width:100%;max-width:130px;display:block;margin:0 auto 4px;"></svg>' +
+            '<div class="loc-name">' + l.loc + '</div>' +
+            '<div class="loc-qty" style="color:#0284c7;">Unit ' + (u+1) + ' / ' + units + '</div>' +
+            '<div class="loc-zone">' + l.zone + '</div>' +
+            '</div>';
+        }
         html2 +=
           '<div class="ci-item-card si-item-card" data-asin="' + item.asin + '">' +
           '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">' +
           '<span class="ci-asin-badge si-asin-badge">' + item.asin + '</span>' +
           '</div>' +
-          '<div class="ci-loc-grid">' +
-          '<div class="ci-loc-chip si-loc-chip">' +
-          '<svg id="si-bc-' + idx + '-' + li + '" style="width:100%;max-width:130px;display:block;margin:0 auto 4px;"></svg>' +
-          '<div class="loc-name">' + l.loc + '</div>' +
-          '<div class="loc-qty" style="color:#0284c7;">' + Math.round(l.qty) + ' units</div>' +
-          '<div class="loc-zone">' + l.zone + '</div>' +
-          '</div></div></div>';
+          '<div class="ci-loc-grid">' + chips + '</div></div>';
       });
     });
 
@@ -7031,34 +7100,41 @@ function ciRenderResults(mode, list) {
   setTimeout(function() {
     list.forEach(function(item, idx) {
       item.locs.forEach(function(l, li) {
-        if (isCatalog) {
-          var qrEl = document.getElementById('ci-qr-' + idx + '-' + li);
-          if (qrEl && !qrEl.hasChildNodes()) {
-            try {
-              new QRCode(qrEl, {
-                text: item.asin,
-                width: 110, height: 110,
-                colorDark: '#000000', colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-              });
-              var img = qrEl.querySelector('img');
-              if (img) { img.style.maxWidth = '100%'; img.style.height = 'auto'; img.style.display = 'block'; img.style.margin = '0 auto'; }
-            } catch(e) {}
-          }
-        } else {
-          var bcEl = document.getElementById('si-bc-' + idx + '-' + li);
-          if (bcEl) {
-            try {
-              JsBarcode('#si-bc-' + idx + '-' + li, item.asin, {
-                format: 'CODE128', width: 2, height: 60,
-                displayValue: false, background: '#ffffff',
-                lineColor: '#000000', margin: 5
-              });
-            } catch(e) {}
+        var units = ciUnitCount(l.qty);
+        for (var u = 0; u < units; u++) {
+          if (isCatalog) {
+            var qrEl = document.getElementById('ci-qr-' + idx + '-' + li + '-' + u);
+            if (qrEl && !qrEl.hasChildNodes()) {
+              try {
+                new QRCode(qrEl, {
+                  text: item.asin,
+                  width: 110, height: 110,
+                  colorDark: '#000000', colorLight: '#ffffff',
+                  correctLevel: QRCode.CorrectLevel.H
+                });
+                var img = qrEl.querySelector('img');
+                if (img) { img.style.maxWidth = '100%'; img.style.height = 'auto'; img.style.display = 'block'; img.style.margin = '0 auto'; }
+              } catch(e) {}
+            }
+          } else {
+            var bcId = 'si-bc-' + idx + '-' + li + '-' + u;
+            var bcEl = document.getElementById(bcId);
+            if (bcEl) {
+              try {
+                JsBarcode('#' + bcId, item.asin, {
+                  format: 'CODE128', width: 2, height: 60,
+                  displayValue: false, background: '#ffffff',
+                  lineColor: '#000000', margin: 5
+                });
+              } catch(e) {}
+            }
           }
         }
       });
     });
+    if (_ciCapped) {
+      showToast('⚠️ Capped at ' + CI_MAX_PER_LOC + ' labels per location to keep printing fast.');
+    }
   }, 100);
 }
 
@@ -7202,7 +7278,135 @@ function siPrintBarcodes() {
   }, 200);
 }
 
-// ── Export Scanning Issue barcodes as Word (.docx) ───────────
+// ── MANUAL BARCODE MAKER (scanning issue) ─────────────────────
+var siManualLabels = [];
+var SI_MANUAL_MAX = 300;
+function _siCleanAsin(s) { return String(s || '').trim(); }
+function _siPush(asin, name, qty) {
+  qty = Math.max(1, parseInt(qty, 10) || 1);
+  for (var i = 0; i < qty; i++) {
+    if (siManualLabels.length >= SI_MANUAL_MAX) return false;
+    siManualLabels.push({ asin: asin, name: name, copy: i + 1, total: qty });
+  }
+  return true;
+}
+function siManualAdd() {
+  var input = document.getElementById('si-manual-asin');
+  var qtyEl = document.getElementById('si-manual-qty');
+  var raw = _siCleanAsin(input.value);
+  if (!raw) { showToast('⚠️ Enter an ASIN'); return; }
+  // allow "ASIN, name" in the single field too
+  var parts = raw.split(/[,\t]/);
+  var asin = _siCleanAsin(parts[0]);
+  var name = parts.length > 1 ? _siCleanAsin(parts.slice(1).join(',')) : '';
+  if (!asin) { showToast('⚠️ Enter a valid ASIN'); return; }
+  var qty = Math.max(1, parseInt(qtyEl ? qtyEl.value : '1', 10) || 1);
+  var ok = _siPush(asin, name, qty);
+  input.value = '';
+  if (qtyEl) qtyEl.value = '1';
+  input.focus();
+  siManualRender();
+  if (!ok) showToast('⚠️ Reached the ' + SI_MANUAL_MAX + '-label limit.');
+}
+function siManualBulk() {
+  var ta = document.getElementById('si-manual-bulk');
+  var lines = (ta.value || '').split(/\r?\n/);
+  var added = 0, hitCap = false;
+  lines.forEach(function(line) {
+    var t = _siCleanAsin(line);
+    if (!t) return;
+    var parts = t.split(/[,\t]/).map(function(s){ return _siCleanAsin(s); });
+    var asin = parts[0];
+    if (!asin) return;
+    var name = '', qty = 1;
+    if (parts.length >= 2) {
+      var last = parts[parts.length - 1];
+      if (/^\d+$/.test(last)) {                 // last field is a number → qty
+        qty = parseInt(last, 10) || 1;
+        name = parts.slice(1, parts.length - 1).join(', ');
+      } else {
+        name = parts.slice(1).join(', ');
+      }
+    }
+    var before = siManualLabels.length;
+    var ok = _siPush(asin, name, qty);
+    added += siManualLabels.length - before;
+    if (!ok) hitCap = true;
+  });
+  if (!added) { showToast('⚠️ Paste at least one ASIN'); return; }
+  ta.value = '';
+  siManualRender();
+  showToast('✅ ' + added + ' barcode' + (added > 1 ? 's' : '') + ' added' + (hitCap ? ' (limit ' + SI_MANUAL_MAX + ')' : ''));
+}
+function siManualClear() {
+  siManualLabels = [];
+  siManualRender();
+}
+function siManualRender() {
+  var out = document.getElementById('si-manual-out');
+  var printBtn = document.getElementById('si-manual-print-btn');
+  var clearBtn = document.getElementById('si-manual-clear-btn');
+  out.innerHTML = '';
+  if (!siManualLabels.length) {
+    if (printBtn) printBtn.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'none';
+    return;
+  }
+  siManualLabels.forEach(function(lbl, idx) {
+    var card = document.createElement('div');
+    card.className = 'barcode-label';
+    card.innerHTML = '<svg id="si-manual-bc-' + idx + '"></svg>' +
+      '<div class="bl-asin">' + lbl.asin + '</div>' +
+      (lbl.name ? '<div class="bl-name">' + lbl.name + '</div>' : '') +
+      (lbl.total > 1 ? '<div style="font-size:10px;color:#0284c7;font-weight:700;margin-top:2px;">Copy ' + lbl.copy + ' / ' + lbl.total + '</div>' : '');
+    out.appendChild(card);
+  });
+  siManualLabels.forEach(function(lbl, idx) {
+    try {
+      JsBarcode('#si-manual-bc-' + idx, lbl.asin, {
+        format: 'CODE128', width: 2, height: 80,
+        displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 8
+      });
+    } catch(e) {
+      try {
+        JsBarcode('#si-manual-bc-' + idx, lbl.asin.replace(/[^A-Z0-9\-\.\ ]/gi, ''), {
+          format: 'CODE128', width: 2, height: 80,
+          displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 8
+        });
+      } catch(e2) {}
+    }
+  });
+  if (printBtn) printBtn.style.display = '';
+  if (clearBtn) clearBtn.style.display = '';
+}
+function siManualPrint() {
+  if (!siManualLabels.length) { showToast('Make a barcode first'); return; }
+  var printArea = document.getElementById('si-manual-print-area');
+  if (!printArea) return;
+  var html = '';
+  siManualLabels.forEach(function(lbl, idx) {
+    html += '<div class="ysm-label-print">' +
+      '<svg id="si-manual-print-bc-' + idx + '"></svg>' +
+      '<div class="lp-asin">' + lbl.asin + '</div>' +
+      (lbl.name ? '<div class="lp-name">' + lbl.name + '</div>' : '') +
+      '</div>';
+  });
+  printArea.innerHTML = html;
+  printArea.style.display = 'block';
+  setTimeout(function() {
+    siManualLabels.forEach(function(lbl, idx) {
+      try {
+        JsBarcode('#si-manual-print-bc-' + idx, lbl.asin, {
+          format: 'CODE128', width: 3, height: 100,
+          displayValue: false, background: '#ffffff', lineColor: '#000000', margin: 10
+        });
+      } catch(e) {}
+    });
+    setTimeout(function() { window.print(); printArea.style.display = 'none'; }, 300);
+  }, 200);
+}
+
+
 // Same format as YSM Word export: 1 label per page, CODE128 barcode + ASIN + location info
 async function siExportWord() {
   var list = ciState['scanning'].matched;
@@ -7266,12 +7470,12 @@ async function siExportWord() {
       }
 
       // ASIN text
-      ctx.font = 'bold 16px "Courier New",monospace';
+      ctx.font = '900 30px Arial,Helvetica,sans-serif';
       ctx.textAlign = 'center'; ctx.fillStyle = '#000';
-      ctx.fillText(asin, W/2, MT+BAR_H+22);
+      ctx.fillText(asin, W/2, MT+BAR_H+32);
 
       // Location + qty + zone text
-      ctx.font = 'bold 13px Arial,sans-serif';
+      ctx.font = 'bold 14px Arial,sans-serif';
       ctx.fillStyle = '#333';
       // Wrap line2 if too long
       var words = line2.split(' '), l1='', l2='';
@@ -7280,8 +7484,8 @@ async function siExportWord() {
         if (ctx.measureText(t).width <= CW) l1 = t;
         else l2 = (l2+' '+words[wi]).trim();
       }
-      if (l1) ctx.fillText(l1, W/2, MT+BAR_H+40);
-      if (l2) ctx.fillText(l2, W/2, MT+BAR_H+56);
+      if (l1) ctx.fillText(l1, W/2, MT+BAR_H+54);
+      if (l2) ctx.fillText(l2, W/2, MT+BAR_H+70);
 
       var b64 = cvs.toDataURL('image/png').split(',')[1];
       var bin = atob(b64);
@@ -8315,9 +8519,6 @@ var OCCASIONS = [
   // UAE / Qatar National Days (common in Amazon Gulf sites)
   { m:12, d:2,  icon:'🇦🇪', title:"UAE National Day", msg:"Proud to serve in this great nation. Happy National Day!", color:'rgba(0,100,0,0.12)', border:'rgba(0,200,0,0.35)' },
   { m:12, d:18, icon:'🇶🇦', title:"Qatar National Day", msg:"Celebrating Qatar's great journey. Happy National Day!", color:'rgba(139,0,0,0.12)', border:'rgba(200,0,0,0.35)' },
-  // Eid (approximate - changes yearly, these are placeholders)
-  { m:3,  d:30, icon:'🌙', title:"Eid Mubarak", msg:"Wishing everyone a blessed and joyful Eid!", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
-  { m:6,  d:6,  icon:'🌙', title:"Eid Mubarak", msg:"Eid Mubarak! May this day bring peace and happiness.", color:'rgba(255,215,0,0.12)', border:'rgba(255,215,0,0.35)' },
 ];
 
 var POSITIVE_MSGS = [
@@ -12432,6 +12633,32 @@ var firebaseConfig = {
 //           That extension is what actually delivers the OTP email.
 //  Until all 3 are done the app runs in DEMO MODE: accounts are kept
 //  in this browser only and the OTP is shown on-screen for testing.
+//
+//  ┌─ SECURITY — LOCK DOWN FIRESTORE (do this!) ──────────────────┐
+//  │  By default Firestore may be open to the world. Paste these   │
+//  │  rules in Firebase console → Firestore → Rules so only        │
+//  │  signed-in users read, and users only touch their own doc.    │
+//  │  Admin (your email) can manage signup_requests + users.       │
+//  │                                                                │
+//  │  rules_version = '2';                                          │
+//  │  service cloud.firestore {                                     │
+//  │   match /databases/{db}/documents {                           │
+//  │    function isAdmin() {                                        │
+//  │      return request.auth != null &&                            │
+//  │        request.auth.token.email == 'YOUR_ADMIN_EMAIL';         │
+//  │    }                                                           │
+//  │    match /users/{uid} {                                        │
+//  │      allow read, write: if request.auth != null &&            │
+//  │        (request.auth.uid == uid || isAdmin());                 │
+//  │    }                                                           │
+//  │    match /signup_requests/{id} {                              │
+//  │      allow create: if true;                                    │
+//  │      allow read, update, delete: if isAdmin();                 │
+//  │    }                                                           │
+//  │    match /mail/{id} { allow create: if true; }                │
+//  │   }                                                            │
+//  │  }                                                             │
+//  └────────────────────────────────────────────────────────────┘
 // ───────────────────────────────────────────────────────────────
 
 var FIREBASE_READY = (firebaseConfig.apiKey.indexOf('PASTE') === -1) && (typeof firebase !== 'undefined');
@@ -12565,7 +12792,6 @@ function authSwitchTab(which) {
 // ── show / hide app ────────────────────────────────────────────
 function authShowApp(displayName) {
   document.getElementById('login-overlay').style.display = 'none';
-  var eid = document.getElementById('eidPopup'); if (eid) eid.style.display = 'flex';
   document.getElementById('app-shell').style.display     = 'block';
   document.getElementById('session-badge').style.display = 'flex';
   if (displayName) {
@@ -12622,6 +12848,33 @@ function authShowStatus(status, name, data) {
   document.getElementById('auth-screen-status').classList.add('active');
 }
 
+// ── LIVE GUARD: if THIS signed-in user is blocked/rejected while
+//    they're using the app, boot them to the status screen instantly
+//    (real-time, no refresh). Listens to their own users/{uid} doc. ──
+var _dmsStatusUnsub = null;
+function _dmsWatchMyStatus(user){
+  if (!FIREBASE_READY || !user) return;
+  if (_dmsStatusUnsub) { try { _dmsStatusUnsub(); } catch(e){} _dmsStatusUnsub = null; }
+  var emailLc = (user.email || '').toLowerCase();
+  if (emailLc === ADMIN_EMAIL) return;   // admin never self-locks
+  _dmsStatusUnsub = fbDB.collection('users').doc(user.uid).onSnapshot(function(doc){
+    if (!doc.exists) return;
+    var d  = doc.data() || {};
+    var st = d.status || 'approved';
+    if (st === 'approved') return;       // still allowed — do nothing
+    // No longer approved → lock them out immediately.
+    try { _dmsStatusUnsub && _dmsStatusUnsub(); } catch(e){}
+    _dmsStatusUnsub = null;
+    _authStatusLock = true;
+    var nm2 = d.name || user.displayName || emailLc.split('@')[0];
+    authShowStatus(st, nm2, d);
+    try { fbAuth.signOut(); } catch(e){}
+  }, function(err){ console.warn('status watch:', err); });
+}
+function _dmsStopWatchMyStatus(){
+  if (_dmsStatusUnsub) { try { _dmsStatusUnsub(); } catch(e){} _dmsStatusUnsub = null; }
+}
+
 // ── GATEKEEPER: decide what a signed-in Firebase user may do ───
 // Reads users/{uid}.status →  approved: enter app · pending/rejected/blocked:
 // sign out + show the matching status screen. Legacy users with no status
@@ -12652,6 +12905,7 @@ async function _gateUser(user) {
     try { fbDB.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() }); } catch(e){}
     authShowApp(nm);
     _maybeShowReminder(user.uid, data);
+    _dmsWatchMyStatus(user);
   } else {
     // Not allowed in — sign the session out and show the status screen.
     _authStatusLock = true;
@@ -12937,7 +13191,7 @@ async function authForgot() {
   if (!validEmail(email)) { authMsg('login-msg', 'ℹ️ Type your email above first, then tap “Forgot password”.', 'info'); return; }
   if (FIREBASE_READY) {
     try { await fbAuth.sendPasswordResetEmail(email);
-      authMsg('login-msg', '📧 Password reset link sent to ' + email + '.', 'success');
+      authMsg('login-msg', '📧 If an account exists for ' + email + ', a reset link is on its way — check your inbox and spam folder.', 'success');
     } catch(err) { authMsg('login-msg', '❌ ' + authErr(err), 'error'); }
   } else {
     authMsg('login-msg', 'ℹ️ Password reset works once Firebase is configured.', 'info');
@@ -12952,6 +13206,7 @@ function _fmtTime(t){
     return d ? d.toLocaleString() : '';
   } catch(e){ return ''; }
 }
+var _dmsReqCache = [];
 function _reqCardHtml(r){
   var st = r.status || 'pending';
   var badge = st==='approved' ? '<span style="color:#06d6a0;">● Approved</span>'
@@ -12968,6 +13223,9 @@ function _reqCardHtml(r){
   } else {
     actions = '<button onclick="window.dmsDeleteRequest(\''+_esc(r.id)+'\')" style="flex:1;padding:9px;border:1px solid #2e2c45;border-radius:8px;background:transparent;color:#8b8aad;font-family:Syne,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">🗑 Remove from list</button>';
   }
+  var createLoginRow = (st==='pending' || st==='approved')
+    ? '<button onclick="window.dmsCreateLoginReq(\''+_esc(r.id)+'\')" style="width:100%;margin-top:8px;padding:9px;border:1px solid rgba(255,107,53,0.5);border-radius:8px;background:rgba(255,107,53,0.12);color:#ff6b35;font-family:Syne,sans-serif;font-weight:700;font-size:12px;cursor:pointer;">\ud83d\udd11 Create login &amp; set password</button>'
+    : '';
   return '<div style="background:rgba(15,14,23,0.6);border:1px solid #2e2c45;border-radius:12px;padding:16px;">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">' +
       '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(r.name)+'</div>'+
@@ -12976,9 +13234,10 @@ function _reqCardHtml(r){
     '<div style="font-size:12px;color:#b8b6d9;margin-bottom:2px;">🏬 '+_esc(r.store)+'</div>' +
     '<div style="font-size:11px;color:#8b8aad;">🕑 '+_esc(_fmtTime(r.createdAt))+'</div>' +
     codeBlock +
-    '<div style="display:flex;gap:8px;margin-top:8px;">'+actions+'</div></div>';
+    '<div style="display:flex;gap:8px;margin-top:8px;">'+actions+'</div>' + createLoginRow + '</div>';
 }
 function _renderReqList(reqs){
+  _dmsReqCache = reqs || [];
   var box = document.getElementById('dms-requests-list');
   var cnt = document.getElementById('dms-req-count');
   if (!box) return;
@@ -13082,7 +13341,8 @@ function _dmsUserCard(u){
   return '<div class="dms-ucard"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">'
     + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+'</div>'
     + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>'
-    + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>') + '</div>';
+    + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>'
+        + '<button onclick="window.dmsCreateLoginUser(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,107,53,0.45);border-radius:8px;background:rgba(255,107,53,0.1);color:#ff6b35;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Set / create password</button>') + '</div>';
 }
 function _dmsPaintUsers(){
   var box = document.getElementById('dms-users-list'); if (!box) return;
@@ -13144,6 +13404,62 @@ window.dmsUserRemind  = async function(id){
   if (msg == null || !msg.trim()) return;
   var ok = await _dmsSendReminder(u, msg.trim());
   alert(ok ? '📣 Reminder emailed to ' + u.email : '✓ Saved — they\u2019ll see it in-app on next login.\n(Email could not be sent automatically.)');
+};
+
+// ── ADMIN: create a real login + set a password — no email/OTP needed ──
+// Uses a SECONDARY Firebase app so creating the account never disturbs the
+// admin's own signed-in session. Hand the email + password to the person and
+// they can sign in immediately.
+var _dmsSecondaryApp = null;
+function _dmsSecondaryAuth(){
+  if (!_dmsSecondaryApp) {
+    _dmsSecondaryApp = firebase.initializeApp(firebaseConfig, 'dmsAdminSecondary');
+  }
+  return _dmsSecondaryApp.auth();
+}
+async function _dmsCreateLoginFor(info){
+  if (!FIREBASE_READY) { alert('Setting a password manually needs Firebase to be live (not demo mode).'); return; }
+  var email = (info.email || '').trim().toLowerCase();
+  if (!validEmail(email)) { alert('No valid email on this record.'); return; }
+  var nm = info.name || email.split('@')[0];
+  var pass = prompt('Set a password for ' + nm + '\n(' + email + ')\n\nThey will sign in with this email + password — no OTP needed.\nMinimum 6 characters:', '');
+  if (pass == null) return;
+  pass = pass.trim();
+  if (pass.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  var sAuth = _dmsSecondaryAuth();
+  try {
+    var cred = await sAuth.createUserWithEmailAndPassword(email, pass);
+    try { await cred.user.updateProfile({ displayName: nm }); } catch(e){}
+    try {
+      await fbDB.collection('users').doc(cred.user.uid).set({
+        name: nm, email: email, store: info.store || '',
+        status: 'approved', role: 'user',
+        createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdByAdmin: true
+      }, { merge: true });
+    } catch(e){ console.warn('profile save:', e); }
+    if (info.reqId) { try { await fbDB.collection('signup_requests').doc(info.reqId).update({ status: 'completed' }); } catch(e){} }
+    try { await sAuth.signOut(); } catch(e){}
+    alert('\u2705 Login created!\n\nGive these to ' + nm + ':\n\n\u2709 Email:  ' + email + '\n\ud83d\udd11 Password:  ' + pass + '\n\nThey can sign in right now \u2014 no email or OTP needed.');
+    if (window.dmsRenderRequests) window.dmsRenderRequests();
+    if (window.dmsRenderUsers)    window.dmsRenderUsers();
+  } catch(err){
+    try { await sAuth.signOut(); } catch(e){}
+    if (err && err.code === 'auth/email-already-in-use') {
+      var np = prompt('This email already has a login account.\n\nFirebase can\u2019t overwrite a password from here. To set a NEW one, open:\nFirebase console \u2192 Authentication \u2192 Users \u2192 (this user) \u2192 Reset password.\n\nOr tap OK to copy the email so you can find it fast:', email);
+      return;
+    }
+    alert('Could not create login: ' + (err && err.message ? err.message : err));
+  }
+}
+window.dmsCreateLoginReq = function(id){
+  var r = (_dmsReqCache || []).find(function(x){ return x.id === id; });
+  if (r) _dmsCreateLoginFor({ name:r.name, email:r.email, store:r.store, reqId:r.id });
+};
+window.dmsCreateLoginUser = function(id){
+  var u = (_dmsUsersCache || []).find(function(x){ return x.id === id; });
+  if (u) _dmsCreateLoginFor({ name:u.name, email:u.email, store:u.store });
 };
 
 // ── ADMIN · PENDING OTP CODES (backup when email fails) ─────────
@@ -13308,6 +13624,7 @@ document.addEventListener('click', function(e) {
       if (user) {
         await _gateUser(user);
       } else {
+        _dmsStopWatchMyStatus();
         if (_authStatusLock) { _authStatusLock = false; return; }
         authShowLogin();
         _restorePending();
@@ -15182,9 +15499,9 @@ var DSTPRO = (function() {
     var grid=document.querySelector('.task-grid');
     if(!grid)return;
     var cards=[
-      {id:'fast-moving',col:'#e8500a',icon:'🚀',anim:'rocketLaunch 2s ease-in-out infinite',num:'NEW',title:'Fast Moving ASIN',desc:'Rank top ASINs by pick frequency from H &amp; I locations.'},
-      {id:'inv-audit',col:'#7c3aed',icon:'🔍',anim:'auditScan 2.5s ease-in-out infinite',num:'NEW',title:'Inventory Audit',desc:'Match audit list vs real-time inventory — highlight missing &amp; mismatches.'},
-      {id:'top-performer',col:'#b5860d',icon:'🏆',anim:'trophyShine 2.2s ease-in-out infinite',num:'NEW',title:'Top Performer',desc:'Auto-rank Top 3 Pickers &amp; Top 3 Stowers from outbound/stow file.'}
+      {id:'fast-moving',col:'#e8500a',icon:'🚀',anim:'rocketLaunch 2s ease-in-out infinite',num:'NEW',title:'Fast Moving ASIN',desc:'Rank top ASINs by pick frequency from H &amp; I locations.',before:'#sec-audits'},
+      {id:'inv-audit',col:'#7c3aed',icon:'🔍',anim:'auditScan 2.5s ease-in-out infinite',num:'NEW',title:'Inventory Audit',desc:'Match audit list vs real-time inventory — highlight missing &amp; mismatches.',before:'#sec-labels'},
+      {id:'top-performer',col:'#b5860d',icon:'🏆',anim:'trophyShine 2.2s ease-in-out infinite',num:'NEW',title:'Top Performer',desc:'Auto-rank Top 3 Pickers &amp; Top 3 Stowers from outbound/stow file.',before:'#sec-ops'}
     ];
     cards.forEach(function(card){
       if(document.getElementById('dstpro-card-'+card.id))return;
@@ -15195,8 +15512,9 @@ var DSTPRO = (function() {
       div.innerHTML='<div class="card-num" style="color:'+card.col+';">'+card.num+'</div>'+
         '<span class="card-icon" style="display:inline-block;animation:'+card.anim+';">'+card.icon+'</span>'+
         '<h3>'+card.title+'</h3><p>'+card.desc+'</p><span class="card-arrow">→</span>';
-      var fb=grid.querySelector('[onclick*="feedback"]');
-      if(fb)grid.insertBefore(div,fb); else grid.appendChild(div);
+      var anchor=card.before?grid.querySelector(card.before):null;
+      if(anchor)grid.insertBefore(div,anchor);
+      else { var fb=grid.querySelector('[onclick*="feedback"]'); if(fb)grid.insertBefore(div,fb); else grid.appendChild(div); }
     });
     // Footer injection for new pages
     ['page-fast-moving','page-inv-audit','page-top-performer'].forEach(function(id){
@@ -15593,6 +15911,17 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
 
 })();
 </script>
+
+<!-- Visual-only polish (no logic) -->
+<style id="dmspro-visual-polish">
+  /* Calm the constantly-animating card icons for users who ask for less motion */
+  @media (prefers-reduced-motion: reduce) {
+    .card-icon { animation: none !important; }
+    .task-card { animation: none !important; }
+    .task-card:hover { transform: none !important; }
+    * { scroll-behavior: auto !important; }
+  }
+</style>
 
 </body>
 </html>
