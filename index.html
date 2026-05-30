@@ -12839,6 +12839,10 @@ function authShowStatus(status, name, data) {
     blocked:  { icon:'🚫', color:'#f72585',
       head:'Account blocked',
       sub:'Your account has been <b style="color:#f72585;">blocked</b> by the administrator.<br>Please contact them to restore your access.',
+      help:'' },
+    removed:  { icon:'🗑️', color:'#f72585',
+      head:'Account removed',
+      sub:'Your account has been <b style="color:#f72585;">removed</b> by the administrator.<br>Please contact them if you need access again.',
       help:'' }
   })[status] || { icon:'ℹ️', color:'#8b8aad', head:'Account status', sub:'Please contact the administrator.', help:'' };
   document.getElementById('auth-status-icon').textContent = conf.icon;
@@ -12858,11 +12862,11 @@ function _dmsWatchMyStatus(user){
   var emailLc = (user.email || '').toLowerCase();
   if (emailLc === ADMIN_EMAIL) return;   // admin never self-locks
   _dmsStatusUnsub = fbDB.collection('users').doc(user.uid).onSnapshot(function(doc){
-    if (!doc.exists) return;
-    var d  = doc.data() || {};
-    var st = d.status || 'approved';
-    if (st === 'approved') return;       // still allowed — do nothing
-    // No longer approved → lock them out immediately.
+    var d = {}, st;
+    if (!doc.exists) { st = 'removed'; }      // admin deleted the account
+    else { d = doc.data() || {}; st = d.status || 'approved'; }
+    if (st === 'approved') return;            // still allowed — do nothing
+    // No longer approved (blocked / rejected / removed) → lock out instantly.
     try { _dmsStatusUnsub && _dmsStatusUnsub(); } catch(e){}
     _dmsStatusUnsub = null;
     _authStatusLock = true;
@@ -12893,12 +12897,16 @@ async function _gateUser(user) {
     authShowApp(user.displayName || 'Administrator');
     return;
   }
-  var data = null;
+  var data = null, readOk = true, docFound = false;
   try {
     var doc = await fbDB.collection('users').doc(user.uid).get();
+    docFound = doc.exists;
     if (doc.exists) data = doc.data();
-  } catch(e) { console.warn('Status check failed:', e); }
-  var status = (data && data.status) || 'approved';   // legacy / missing → approved
+  } catch(e) { readOk = false; console.warn('Status check failed:', e); }
+  // doc exists → use its status (legacy doc w/o status = approved).
+  // doc confirmed missing (read OK but not found) → treated as removed.
+  // read error → stay lenient (approved) so a network blip never locks people out.
+  var status = (data && data.status) || (readOk && !docFound ? 'removed' : 'approved');
   var nm = (data && data.name) || user.displayName || emailLc.split('@')[0];
 
   if (status === 'approved') {
@@ -13342,7 +13350,8 @@ function _dmsUserCard(u){
     + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+'</div>'
     + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>'
     + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>'
-        + '<button onclick="window.dmsCreateLoginUser(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,107,53,0.45);border-radius:8px;background:rgba(255,107,53,0.1);color:#ff6b35;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Set / create password</button>') + '</div>';
+        + '<button onclick="window.dmsCreateLoginUser(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,107,53,0.45);border-radius:8px;background:rgba(255,107,53,0.1);color:#ff6b35;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Set / create password</button>'
+        + '<button onclick="window.dmsUserRemove(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(247,37,133,0.4);border-radius:8px;background:rgba(247,37,133,0.08);color:#f72585;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\uddd1 Remove user</button>') + '</div>';
 }
 function _dmsPaintUsers(){
   var box = document.getElementById('dms-users-list'); if (!box) return;
@@ -13398,6 +13407,34 @@ window.dmsUserApprove = function(id){ _dmsSetStatus(id, 'approved'); };
 window.dmsUserReject  = function(id){ if (confirm('Reject this sign-up?\nThey will NOT be able to log in, and this email stays locked.')) _dmsSetStatus(id, 'rejected'); };
 window.dmsUserBlock   = function(id){ if (confirm('Block this user?\nThey cannot log in until you unblock them.')) _dmsSetStatus(id, 'blocked'); };
 window.dmsUserUnblock = function(id){ _dmsSetStatus(id, 'approved'); };
+window.dmsUserRemove = async function(id){
+  var u = (_dmsUsersCache || []).find(function(x){ return x.id === id; });
+  var who = u ? (u.name || u.email) : 'this user';
+  if (!confirm('Remove ' + who + ' from the list?\n\nThey will disappear from here and lose access to the app immediately.\n\nNote: to also delete their sign-in permanently, remove them from\nFirebase console → Authentication → Users.')) return;
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('users').doc(id).delete(); }
+    catch(e){ alert('Failed: ' + e.message); return; }
+    // Also clear any lingering sign-up request(s) for this email.
+    var em = (u && u.email ? u.email : '').trim().toLowerCase();
+    if (em) {
+      try {
+        var snap = await fbDB.collection('signup_requests').where('email', '==', em).get();
+        var batch = fbDB.batch();
+        snap.docs.forEach(function(d){ batch.delete(d.ref); });
+        if (snap.size) await batch.commit();
+      } catch(e){ console.warn('request cleanup:', e); }
+    }
+  } else {
+    var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY) || '[]').filter(function(x){ return x.email !== id; });
+    localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+    var reqs = JSON.parse(localStorage.getItem('dms_demo_requests') || '[]').filter(function(r){ return (r.email || '').toLowerCase() !== id.toLowerCase(); });
+    localStorage.setItem('dms_demo_requests', JSON.stringify(reqs));
+    try { if (localStorage.getItem(DEMO_SESSION_KEY) === id) localStorage.removeItem(DEMO_SESSION_KEY); } catch(e){}
+  }
+  window.dmsRenderUsers();
+  if (window.dmsRenderRequests) window.dmsRenderRequests();
+  if (window.dmsRenderCodes)    window.dmsRenderCodes();
+};
 window.dmsUserRemind  = async function(id){
   var u = _dmsUsersCache.find(function(x){ return x.id === id; }); if (!u) return;
   var msg = prompt('Reminder message for ' + (u.name || u.email) + ':', '');
