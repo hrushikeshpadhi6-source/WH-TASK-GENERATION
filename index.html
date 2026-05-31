@@ -4562,9 +4562,63 @@ async function exportYSMPDF() {
   showToast('✅ PDF done! ' + ysmLabels.length + ' labels.');
 }
 
+// Auto-fit item-name text into a label so it never gets clipped on Word export.
+// Draws `text` centered, shrinking the font from maxFont down to minFont and
+// wrapping across up to maxLines lines until everything fits within `maxW`.
+function bcDrawFittedName(ctx, text, cx, topY, maxW, opts) {
+  opts = opts || {};
+  var maxFont  = opts.maxFont  || 13;
+  var minFont  = opts.minFont  || 8;
+  var maxLines = opts.maxLines || 3;
+  var weight   = opts.weight   || 'bold';
+  var family   = opts.family   || 'Arial,sans-serif';
+  text = (text || '').trim();
+  if (!text) return;
+
+  function wrap(fs) {
+    ctx.font = weight + ' ' + fs + 'px ' + family;
+    var words = text.split(/\s+/), lines = [], cur = '';
+    for (var i = 0; i < words.length; i++) {
+      var word = words[i];
+      var test = cur ? cur + ' ' + word : word;
+      if (ctx.measureText(test).width <= maxW) { cur = test; continue; }
+      if (cur) lines.push(cur);
+      cur = word;
+      // hard-break a single word that's wider than the label
+      if (ctx.measureText(cur).width > maxW) {
+        var part = '';
+        for (var c = 0; c < word.length; c++) {
+          var t2 = part + word[c];
+          if (ctx.measureText(t2).width <= maxW) { part = t2; }
+          else { if (part) lines.push(part); part = word[c]; }
+        }
+        cur = part;
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  var fs = maxFont, lines = wrap(fs);
+  while (lines.length > maxLines && fs > minFont) { fs--; lines = wrap(fs); }
+  // still too many lines at min size — truncate last visible line with an ellipsis
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    var last = lines[maxLines - 1];
+    while (last.length && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    lines[maxLines - 1] = last + '…';
+  }
+
+  ctx.font = weight + ' ' + fs + 'px ' + family;
+  ctx.textAlign = 'center';
+  var lh = fs + 3, y = topY;
+  for (var li = 0; li < lines.length; li++) { ctx.fillText(lines[li], cx, y); y += lh; }
+}
+
 async function exportYSMWord() {
   if (!ysmLabels.length) { showToast('⚠️ Generate labels first'); return; }
   showToast('⏳ Generating Word file...');
+  try{ await document.fonts.load('500 22px "DM Mono"'); await document.fonts.ready; }catch(e){}
   try {
     if (!window.JSZip) {
       await new Promise((res,rej) => {
@@ -4576,7 +4630,7 @@ async function exportYSMWord() {
     const P128=['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
 
     function makeLabelPNG(asin, combined) {
-      const W=406,H=244,ML=37,MT=37,CW=349,BAR_H=116;
+      const W=406,H=244,ML=37,MT=16,CW=349,BAR_H=96;
       const cvs=document.createElement('canvas');
       cvs.width=W; cvs.height=H;
       const ctx=cvs.getContext('2d');
@@ -4591,17 +4645,13 @@ async function exportYSMWord() {
       let x=ML+Math.floor((CW-bu*bars.length)/2);
       ctx.fillStyle='#000';
       for(const b of bars){if(b==='1')ctx.fillRect(x,MT,bu,BAR_H);x+=bu;}
-      ctx.font='900 30px Arial,Helvetica,sans-serif';
+      ctx.font='bold 22px "DM Mono",monospace';
       ctx.textAlign='center'; ctx.fillStyle='#000';
-      ctx.fillText(asin,W/2,MT+BAR_H+32);
-      ctx.font='bold 14px Arial,sans-serif';
-      const words=combined.split(' '); let l1='',l2='';
-      for(const w of words){
-        const t=(l1+' '+w).trim();
-        if(ctx.measureText(t).width<=CW) l1=t; else l2=(l2+' '+w).trim();
-      }
-      if(l1)ctx.fillText(l1,W/2,MT+BAR_H+54);
-      if(l2)ctx.fillText(l2,W/2,MT+BAR_H+70);
+      try{ctx.letterSpacing='2px';}catch(e){}
+      ctx.fillText(asin,W/2,MT+BAR_H+26);
+      try{ctx.letterSpacing='0px';}catch(e){}
+      ctx.fillStyle='#000';
+      bcDrawFittedName(ctx, combined, W/2, MT+BAR_H+46, CW, { maxFont:13, minFont:8, maxLines:2, family:'"Helvetica Neue",Helvetica,Arial,sans-serif' });
       const b64=cvs.toDataURL('image/png').split(',')[1];
       const bin=atob(b64); const arr=new Uint8Array(bin.length);
       for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
@@ -7427,6 +7477,7 @@ async function siExportWord() {
 
   if (!labels.length) { showToast('No labels to export'); return; }
   showToast('⏳ Building Word file…');
+  try{ await document.fonts.load('500 22px "DM Mono"'); await document.fonts.ready; }catch(e){}
 
   try {
     // Load JSZip if not already loaded
@@ -7445,7 +7496,7 @@ async function siExportWord() {
     // Draw one label PNG per label entry
     // Canvas: 406×244px  same as YSM
     function makeSILabelPNG(asin, line2) {
-      var W=406, H=244, ML=37, MT=20, CW=349, BAR_H=116;
+      var W=406, H=244, ML=37, MT=16, CW=349, BAR_H=96;
       var cvs = document.createElement('canvas');
       cvs.width = W; cvs.height = H;
       var ctx = cvs.getContext('2d');
@@ -7470,22 +7521,15 @@ async function siExportWord() {
       }
 
       // ASIN text
-      ctx.font = '900 30px Arial,Helvetica,sans-serif';
+      ctx.font = 'bold 22px "DM Mono",monospace';
       ctx.textAlign = 'center'; ctx.fillStyle = '#000';
-      ctx.fillText(asin, W/2, MT+BAR_H+32);
+      try{ctx.letterSpacing='2px';}catch(e){}
+      ctx.fillText(asin, W/2, MT+BAR_H+26);
+      try{ctx.letterSpacing='0px';}catch(e){}
 
-      // Location + qty + zone text
-      ctx.font = 'bold 14px Arial,sans-serif';
+      // Item name — auto-fit so long names never get clipped
       ctx.fillStyle = '#333';
-      // Wrap line2 if too long
-      var words = line2.split(' '), l1='', l2='';
-      for (var wi=0; wi<words.length; wi++) {
-        var t = (l1+' '+words[wi]).trim();
-        if (ctx.measureText(t).width <= CW) l1 = t;
-        else l2 = (l2+' '+words[wi]).trim();
-      }
-      if (l1) ctx.fillText(l1, W/2, MT+BAR_H+54);
-      if (l2) ctx.fillText(l2, W/2, MT+BAR_H+70);
+      bcDrawFittedName(ctx, line2, W/2, MT+BAR_H+46, CW, { maxFont:13, minFont:8, maxLines:2, family:'"Helvetica Neue",Helvetica,Arial,sans-serif' });
 
       var b64 = cvs.toDataURL('image/png').split(',')[1];
       var bin = atob(b64);
