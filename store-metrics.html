@@ -146,6 +146,20 @@ canvas{max-height:160px;}
 
 /* LEADERBOARD */
 .lb-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+/* SCORE CALCULATION RUBRIC */
+.score-rubric{margin-top:16px;border-top:1px dashed var(--border);padding-top:14px;}
+.sr-head{font-size:11px;font-weight:800;color:var(--text);letter-spacing:0.3px;margin-bottom:12px;}
+.sr-head span{font-weight:600;color:var(--muted);letter-spacing:0;}
+.sr-head b{color:var(--accent);}
+.sr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;}
+.sr-item{display:flex;align-items:center;gap:10px;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:10px;padding:9px 12px;}
+.sr-item.sr-perfect{border-color:rgba(6,214,160,0.45);background:rgba(6,214,160,0.07);}
+.sr-w{font-family:'DM Mono',monospace;font-size:18px;font-weight:800;min-width:38px;text-align:center;flex-shrink:0;}
+.sr-tx{display:flex;flex-direction:column;line-height:1.2;}
+.sr-tx b{font-size:12px;font-weight:800;color:var(--text);}
+.sr-tx i{font-size:9.5px;font-style:normal;color:var(--muted);margin-top:1px;}
+.sr-note{margin-top:11px;font-size:10.5px;color:var(--muted);line-height:1.5;font-family:'DM Mono',monospace;}
+.sr-note b{color:var(--text);font-weight:800;}
 .lb-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;
   margin-bottom:10px;border-left:5px solid var(--sc,var(--accent));background:var(--chip-bg);
   transition:all 0.25s;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
@@ -691,6 +705,18 @@ tbody tr{transition:background 0.15s;}
       </div>
     </div>
     <div id="sm-lb"><div class="empty">Loading…</div></div>
+    <div class="score-rubric">
+      <div class="sr-head">🧮 Score Calculation <span>— 5 sections, each worth <b>100</b> full marks. Final score = average of all 5 sections, as a <b>%</b>.</span></div>
+      <div class="sr-grid">
+        <div class="sr-item"><span class="sr-w" style="color:#ef4444;">−15</span><div class="sr-tx"><b>Short</b><i>per short-pick</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#f97316;">−10</span><div class="sr-tx"><b>Skip</b><i>per skipped order</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#eab308;">−5</span><div class="sr-tx"><b>Late Slam</b><i>per late slam</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#06d6a0;font-size:12px;">5·10·15·20</span><div class="sr-tx"><b>SLA</b><i>98+ −5 · 94+ −10 · 90+ −15 · &lt;90 −20</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#0891b2;font-size:12px;">10·20·30</span><div class="sr-tx"><b>IB TPH</b><i>140+ ok · 130+ −10 · 100+ −20 · 70+ −30 · &lt;70 −40</i></div></div>
+        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#7c3aed;">÷5</span><div class="sr-tx"><b>Final %</b><i>average of sections</i></div></div>
+      </div>
+      <div class="sr-note"><b>Each section starts at 100.</b> Count mistakes lose marks per occurrence (Short −15, Skip −10, Late Slam −5). <b>SLA</b> &amp; <b>IB TPH</b> deduct by tier — the further below target, the bigger the cut. <b>Final = (Short + Skip + Late Slam + SLA + IB TPH) ÷ 5.</b> Hover any candle in the Market View chart for a store's full breakdown.</div>
+    </div>
   </div>
 
   <!-- RAW TABLE -->
@@ -1228,6 +1254,28 @@ var CO={responsive:true,maintainAspectRatio:false,
   scales:{x:{ticks:{color:'#6b69a0',font:{size:9},maxRotation:40},grid:{color:'rgba(128,128,128,0.1)'}},
           y:{ticks:{color:'#6b69a0',font:{size:9}},grid:{color:'rgba(128,128,128,0.1)'},beginAtZero:true}}};
 
+// Plugin: draw each bar's value on top of the bar
+var barValueLabels={
+  id:'barValueLabels',
+  afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx;
+    var labelCols=['#7d96ff','#2ee6b0','#ffd60a','#ff8a5c'];
+    chart.data.datasets.forEach(function(ds,di){
+      var meta=chart.getDatasetMeta(di);
+      if(meta.hidden) return;
+      meta.data.forEach(function(bar,i){
+        var v=ds.data[i];
+        if(v==null||v===0) return;
+        ctx.save();
+        ctx.fillStyle=labelCols[di%labelCols.length];
+        ctx.font='800 9.5px "DM Mono",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText(Math.round(v), bar.x, bar.y-3);
+        ctx.restore();
+      });
+    });
+  }
+};
 function smCharts(rows){
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   var ib=stores.map(function(s){return avg(rows.filter(function(r){return gStore(r)===s;}).map(function(r){return gNum(r,['IB TPH','O']);}));});
@@ -1235,7 +1283,8 @@ function smCharts(rows){
   if(smCh.c4)smCh.c4.destroy();
   smCh.c4=new Chart(document.getElementById('sm-c4'),{type:'bar',
     data:{labels:stores,datasets:[{label:'IB TPH',data:ib,backgroundColor:'rgba(67,97,238,0.75)',borderRadius:5},{label:'OB TPH',data:ob,backgroundColor:'rgba(6,214,160,0.75)',borderRadius:5}]},
-    options:Object.assign({},CO)});
+    options:Object.assign({},CO),
+    plugins:[barValueLabels]});
 
   var qr=stores.map(function(s){return sum(rows.filter(function(r){return gStore(r)===s;}).map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));});
   var dr=stores.map(function(s){return sum(rows.filter(function(r){return gStore(r)===s;}).map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));});
@@ -1265,6 +1314,35 @@ function smSetLbLayout(m){
 // STORE PERFORMANCE RANKING — CANDLESTICK TERMINAL
 // ═══════════════════════════════════════════════
 var smRankRAF=null;
+// ── Tiered deductions ──────────────────────────────────────
+// IB TPH: ≥140 ok · 130–139 −10 · 100–129 −20 · 70–99 −30 · <70 −40
+function tphDeduct(t){
+  if(t<=0)    return 0;   // no data → no penalty
+  if(t>=140)  return 0;
+  if(t>=130)  return 10;
+  if(t>=100)  return 20;
+  if(t>=70)   return 30;
+  return 40;
+}
+// SLA: 100 ok · 98–99.99 −5 · 94–97.99 −10 · 90–93.99 −15 · <90 −20
+function slaDeduct(s){
+  if(s<=0)    return 0;   // no data → no penalty
+  if(s>=100)  return 0;
+  if(s>=98)   return 5;
+  if(s>=94)   return 10;
+  if(s>=90)   return 15;
+  return 20;
+}
+// Shared advantages / disadvantages builder for a store data row
+function smStorePC(d){
+  var pros=[], cons=[];
+  if(d.short>0) cons.push('Short '+d.short+' (-'+(d.short*15)+')'); else pros.push('No shorts');
+  if(d.skip>0)  cons.push('Skip '+d.skip+' (-'+(d.skip*10)+')');  else pros.push('No skips');
+  if(d.ls>0)    cons.push('Late Slam '+d.ls+' (-'+(d.ls*5)+')');  else pros.push('No late slams');
+  if(d.sla>0){ var sd=slaDeduct(d.sla); if(sd>0) cons.push('SLA '+d.sla.toFixed(1)+'% (-'+sd+')'); else pros.push('SLA '+d.sla.toFixed(1)+'%'); }
+  if(d.ibTph>0){ var td=tphDeduct(d.ibTph); if(td>0) cons.push('IB TPH '+d.ibTph.toFixed(0)+' (-'+td+')'); else pros.push('IB TPH '+d.ibTph.toFixed(0)); }
+  return {pros:pros, cons:cons};
+}
 function smRankChart(){
   var cv=document.getElementById('sm-rank'); if(!cv) return;
   var ctx=cv.getContext('2d');
@@ -1292,7 +1370,7 @@ function smRankChart(){
   if(!raw.length){ ctx.clearRect(0,0,cv.width,cv.height); var q=document.getElementById('rt-quote'); if(q)q.innerHTML=''; return; }
   raw.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
   var isPct=(metric==='sla');
-  function fmtV(v){ return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : fmt(v)); }
+  function fmtV(v){ return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : metric==='score'? v.toFixed(1)+'%' : fmt(v)); }
 
   var vals=raw.map(function(d){return Number(d[metric])||0;});
   var nC=vals.length;
@@ -1310,7 +1388,7 @@ function smRankChart(){
     var wj=range*(0.045+rnd*0.05);
     return {store:d.store, val:close, open:open, close:close, bull:close>=open,
       hi:Math.max(open,close)+wj, lo:Math.min(open,close)-wj*0.75,
-      vol:Number(d.orders)||Number(d.inbound)||(close+1)};
+      vol:Number(d.orders)||Number(d.inbound)||(close+1), data:d};
   });
   var volMax=Math.max.apply(null,candles.map(function(c){return c.vol;}))||1;
 
@@ -1456,15 +1534,17 @@ function smRankChart(){
       ctx.beginPath(); ctx.moveTo(cx,plotTop); ctx.lineTo(cx,volBase); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(plotL,mouse.y); ctx.lineTo(plotR,mouse.y); ctx.stroke();
       ctx.restore();
-      // tooltip
-      var pd=((c.close-bench)/(bench||1)*100);
-      var lines=[
-        {t:c.store+(c.bull?'  \u25B2':'  \u25BC'), c:c.bull?C.bull:C.bear, b:1},
-        {t:'VAL   '+fmtV(c.close), c:C.tipTx},
-        {t:'HIGH  '+fmtV(c.hi)+'   LOW '+fmtV(Math.max(0,c.lo)), c:C.tipTx},
-        {t:'vs MED '+(pd>=0?'+':'')+pd.toFixed(2)+'%', c:c.bull?C.bull:C.bear},
-        {t:'VOL   '+fmt(Math.round(c.vol)), c:C.tipTx}
-      ];
+      // tooltip — advantages / disadvantages for this store
+      var pc=smStorePC(c.data||{});
+      var lines=[{t:c.store+'   '+fmtV(c.val), c:c.bull?C.bull:C.bear, b:1}];
+      if(pc.cons.length){
+        lines.push({t:'DISADVANTAGES', c:C.bear, b:1});
+        pc.cons.forEach(function(x){ lines.push({t:'\u2717 '+x, c:C.bear}); });
+      }
+      if(pc.pros.length){
+        lines.push({t:'ADVANTAGES', c:C.bull, b:1});
+        pc.pros.forEach(function(x){ lines.push({t:'\u2713 '+x, c:C.bull}); });
+      }
       ctx.font='600 10px "DM Mono",monospace';
       var tw2=0; lines.forEach(function(l){tw2=Math.max(tw2,ctx.measureText(l.t).width);});
       var bwid=tw2+22, bht=lines.length*15+12;
@@ -1522,7 +1602,7 @@ function smRankChart(){
 function smLeaderboard(rows){
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   if(!stores.length){document.getElementById('sm-lb').innerHTML='<div class="empty">No data</div>';return;}
-  function ch(l,v,c){return '<div class="chip" style="--cc:'+c+';"><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
+  function ch(l,v,c,t){return '<div class="chip" style="--cc:'+c+';"'+(t?' title="'+t+'"':'')+'><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
 
   // Pre-read VOC filter once for all stores
   var pvVoc=document.getElementById('sm-pval').value;
@@ -1552,19 +1632,33 @@ function smLeaderboard(rows){
     var sla   = toP(slaR);
     var pts   = toP(sr.length>0?ptsR/sr.length:0);
     var voc   = storeVoc(s);
+    var skip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
+    var short = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
 
-    // ── Composite Score (max 100 pts) ──────────────────────────
-    // SLA    : 40 pts  — quality delivery (target ≥99%)
-    // Points : 30 pts  — existing KPI data from sheet
-    // IB TPH : 15 pts  — inbound productivity (target 145, bonus if above)
-    // VOC    : 15 pts  — customer complaints (-3 per VOC, min 0)
-    var slaScore = Math.min(sla/100,1)*40;
-    var ptsScore = Math.min(pts/100,1)*30;
-    var ibScore  = ibTph>0?Math.min(ibTph/145,1.1)*15:0; // up to 16.5 if TPH>145
-    var vocScore = Math.max(0,15-voc*3);
-    var score    = Math.min(slaScore+ptsScore+ibScore+vocScore, 100);
+    // ── Section-based Score — each section = 100 full marks ─────
+    // Mistake sections lose marks PER occurrence (heavier mistake = bigger weight):
+    //   Short     : −15 per short      (most critical)
+    //   Skip      : −10 per skip
+    //   Late Slam : −5  per late slam
+    // Performance sections are scored as the achievement % itself:
+    //   SLA    : = SLA% achieved              (cap 100)
+    //   IB TPH : = IB TPH / 140 target × 100  (cap 100)
+    // Final score = average of all 5 sections → a % (0–100).
+    var secShort = Math.max(0, 100 - short*15);
+    var secSkip  = Math.max(0, 100 - skip*10);
+    var secSlam  = Math.max(0, 100 - ls*5);
+    var secSla   = Math.max(0, 100 - slaDeduct(sla));   // tiered: see slaDeduct()
+    var secTph   = Math.max(0, 100 - tphDeduct(ibTph)); // tiered: see tphDeduct()
+    var sections = [
+      {k:'Short',     v:secShort, note:short+' short × −15'},
+      {k:'Skip',      v:secSkip,  note:skip+' skip × −10'},
+      {k:'Late Slam', v:secSlam,  note:ls+' late slam × −5'},
+      {k:'SLA',       v:secSla,   note:sla.toFixed(1)+'% (−'+slaDeduct(sla)+')'},
+      {k:'IB TPH',    v:secTph,   note:ibTph.toFixed(0)+' (−'+tphDeduct(ibTph)+')'}
+    ];
+    var score = sections.reduce(function(a,x){return a+x.v;},0)/sections.length;
 
-    return{store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, score:score,
+    return{store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, score:score, sections:sections,
       inbound:sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);})),
       transs: sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);})),
       vendor: sum(sr.map(function(r){return gNum(r,['VENDOR','Vendor','D']);})),
@@ -1573,21 +1667,31 @@ function smLeaderboard(rows){
       upo:    avg(sr.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})),
       obTph:  avg(sr.map(function(r){return gNum(r,['OB TPH','P']);})),
       ls:ls,
-      skip:   sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);})),
-      short:  sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}))
+      skip:   skip,
+      short:  short
     };
+  }).filter(function(d){
+    // Skip stores with no activity at all (no inbound, no outbound, no orders) — e.g. QDD3
+    return d.inbound>0 || d.obUnits>0 || d.orders>0;
   }).sort(function(a,b){return b.score-a.score;});
 
   var medals=['🥇','🥈','🥉'];
   smLbData=data;
+  function smProsCons(d){
+    var pc=smStorePC(d);
+    var t='⭐ '+d.store+'  —  Score '+d.score.toFixed(1)+'%';
+    if(pc.cons.length) t+='\n\n⚠ DISADVANTAGES:\n'+pc.cons.map(function(x){return '✗ '+x;}).join('\n');
+    if(pc.pros.length) t+='\n\n👍 ADVANTAGES:\n'+pc.pros.map(function(x){return '✓ '+x;}).join('\n');
+    return t.replace(/"/g,'&quot;');
+  }
   document.getElementById('sm-lb').innerHTML=data.map(function(d,i){
     var col  = SC[d.store]||'#8b8aad';
     var slaC = d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
     var lsC  = d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#ef4444';
     var vocC = d.voc===0?'#06d6a0':d.voc<=3?'#ffd60a':'#f72585';
     var ibC  = d.ibTph>=145?'#06d6a0':d.ibTph>=100?'#ffd60a':'#ef4444';
-    // Score colour: green ≥85, yellow ≥70, red <70
-    var scoreC = d.score>=85?'#06d6a0':d.score>=70?'#ffd60a':'#ef4444';
+    // Score colour: green ≥90, yellow ≥70, red <70
+    var scoreC = d.score>=90?'#06d6a0':d.score>=70?'#ffd60a':'#ef4444';
     return '<div class="lb-row" style="--sc:'+col+';">'+
       '<div class="lb-head">'+
         '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
@@ -1608,7 +1712,7 @@ function smLeaderboard(rows){
         ch('Short',d.short,d.short>0?'#ef4444':'#06d6a0')+
         ch('VOC',d.voc,vocC)+
         ch('Sh.Pts',d.pts>0?d.pts.toFixed(1)+'%':'0%','#a855f7')+
-        ch('Score',d.score.toFixed(1),scoreC)+
+        ch('Score',d.score.toFixed(1)+'%',scoreC)+
       '</div></div>';
   }).join('');
 }
