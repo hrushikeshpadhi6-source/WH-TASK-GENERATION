@@ -694,13 +694,14 @@ tbody tr{transition:background 0.15s;}
           <button class="pb" id="lb-lay-card" onclick="smSetLbLayout('card')" title="Card view — store on top">▦ Cards</button>
           <button class="pb" id="lb-lay-board" onclick="smSetLbLayout('board')" title="Board view — centered header + metric strip">▣ Board</button>
         </div>
-        <input type="date" id="voc-date-filter" class="fsel" style="font-size:11px;padding:5px 10px;" title="Filter VOC by specific date">
-        <select id="voc-period-sel" class="fsel" style="font-size:11px;padding:5px 10px;">
+        <input type="date" id="voc-date-filter" class="fsel" style="font-size:11px;padding:5px 10px;" title="Filter VOC by specific date" onchange="if(window.smVocRaw&&smVocRaw.length){if(this.value){var p=document.getElementById('voc-period-sel');if(p&&p.value==='all')p.value='day';}smUpdateVocStatus();smLeaderboard(smFilter());}">
+        <select id="voc-period-sel" class="fsel" style="font-size:11px;padding:5px 10px;" onchange="if(window.smVocRaw&&smVocRaw.length){smUpdateVocStatus();smLeaderboard(smFilter());}">
           <option value="all">VOC — All Dates</option>
           <option value="day">VOC — Selected Date</option>
           <option value="week">VOC — This Week</option>
           <option value="month">VOC — This Month</option>
         </select>
+        <span id="voc-status" style="display:none;align-items:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.2px;white-space:nowrap;"></span>
         <button onclick="smFetchVOC()" id="voc-flt-btn" style="background:linear-gradient(135deg,#f72585,#7c3aed);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(247,37,133,0.3);">🎙 Fetch VOC</button>
       </div>
     </div>
@@ -771,6 +772,23 @@ function smGoBack(){
   window.location.href = 'index.html';
 }
 var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[];
+var smVocMinDate='', smVocMaxDate='';
+// Updates the small VOC-range status pill next to the VOC controls.
+function smUpdateVocStatus(){
+  var el=document.getElementById('voc-status'); if(!el) return;
+  if(!smVocRaw||!smVocRaw.length){ el.textContent=''; el.style.display='none'; return; }
+  var fmt=function(d){ if(!d) return '—'; var p=d.split('-'); return p[2]+'/'+p[1]; };
+  var period=(document.getElementById('voc-period-sel')||{}).value||'all';
+  var df=(document.getElementById('voc-date-filter')||{}).value||'';
+  el.style.display='inline-flex';
+  if(period==='day' && df && (df<smVocMinDate || df>smVocMaxDate)){
+    el.innerHTML='⚠ No VOC on '+fmt(df)+' · latest '+fmt(smVocMaxDate);
+    el.style.color='#f72585';
+  } else {
+    el.innerHTML='VOC data: '+fmt(smVocMinDate)+' → '+fmt(smVocMaxDate);
+    el.style.color='var(--muted, #8a8aa0)';
+  }
+}
 
 // ═══════════════════════════════════════════════
 // THEME
@@ -1239,6 +1257,21 @@ function smFetchVOC(){
       smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date});
     });
 
+    // Compute available VOC date range and surface it to the user.
+    // Only accept well-formed ISO dates (some sheet cells contain junk like "########").
+    var allDates = smVocRaw.map(function(v){return v.date;})
+      .filter(function(d){return /^\d{4}-\d{2}-\d{2}$/.test(d);}).sort();
+    smVocMinDate = allDates[0] || '';
+    smVocMaxDate = allDates[allDates.length-1] || '';
+    var df = document.getElementById('voc-date-filter');
+    if (df) {
+      // Constrain the picker to the real range and default it to the latest day with data.
+      if (smVocMinDate) df.min = smVocMinDate;
+      if (smVocMaxDate) df.max = smVocMaxDate;
+      if (!df.value && smVocMaxDate) df.value = smVocMaxDate;
+    }
+    smUpdateVocStatus();
+
     var rows=smFilter(); smLeaderboard(rows);
   };
   var s=document.createElement('script');s.id='j-'+cb;
@@ -1604,18 +1637,38 @@ function smLeaderboard(rows){
   if(!stores.length){document.getElementById('sm-lb').innerHTML='<div class="empty">No data</div>';return;}
   function ch(l,v,c,t){return '<div class="chip" style="--cc:'+c+';"'+(t?' title="'+t+'"':'')+'><div class="chip-l">'+l+'</div><div class="chip-v" style="color:'+c+';">'+v+'</div></div>';}
 
-  // Pre-read VOC filter once for all stores
-  var pvVoc=document.getElementById('sm-pval').value;
+  // ── VOC count per store ──────────────────────────────────────
+  // Uses the dedicated VOC toolbar controls (voc-period-sel + voc-date-filter),
+  // NOT the main metrics date. Defaults to "all" so data always shows even when
+  // the selected metrics date has no VOC rows yet.
+  var vocPeriod = document.getElementById('voc-period-sel') ? document.getElementById('voc-period-sel').value : 'all';
+  var vocDateInput = document.getElementById('voc-date-filter') ? document.getElementById('voc-date-filter').value : '';
+  // For day/week/month, anchor on the VOC date picker; fall back to the main date.
+  var vocAnchor = vocDateInput || document.getElementById('sm-pval').value || '';
+  // Precompute week boundaries (Mon–Sun) around the anchor date.
+  var vocWeekStart = '', vocWeekEnd = '';
+  if (vocPeriod === 'week' && vocAnchor) {
+    var ad = new Date(vocAnchor + 'T00:00:00');
+    if (!isNaN(ad)) {
+      var dow = (ad.getDay() + 6) % 7; // 0 = Monday
+      var ws = new Date(ad); ws.setDate(ad.getDate() - dow);
+      var we = new Date(ws); we.setDate(ws.getDate() + 6);
+      var iso = function(d){ return d.toISOString().split('T')[0]; };
+      vocWeekStart = iso(ws); vocWeekEnd = iso(we);
+    }
+  }
   function storeVoc(s){
     if(!smVocRaw.length)return 0;
     var seen={};var cnt=0;
     smVocRaw.forEach(function(v){
       if(v.store!==s)return;
-      if(pvVoc!=='all'){
-        if(smPeriod==='day'&&v.date!==pvVoc)return;
-        if(smPeriod==='year'&&!v.date.startsWith(pvVoc))return;
-        if(smPeriod==='month'&&v.date.substring(0,7)!==pvVoc.substring(0,7))return;
+      if(vocPeriod==='day'   && (!vocAnchor || v.date!==vocAnchor)) return;
+      if(vocPeriod==='month' && (!vocAnchor || v.date.substring(0,7)!==vocAnchor.substring(0,7))) return;
+      if(vocPeriod==='week'){
+        if(!v.date) return;
+        if(vocWeekStart && (v.date < vocWeekStart || v.date > vocWeekEnd)) return;
       }
+      // vocPeriod==='all' → no date filter (count everything)
       var k=v.orderId+'|'+v.asin;
       if(!seen[k]){seen[k]=true;cnt++;}
     });
