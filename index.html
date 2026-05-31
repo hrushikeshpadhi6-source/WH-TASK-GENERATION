@@ -2603,9 +2603,9 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#a5cdd7d0d6cdcccec0d6cdd5c4c1cdcc93e5c9ccd3c08bc6cac8">
+    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#90f8e2e5e3f8f9fbf5e3f8e0f1f4f8f9a6d0fcf9e6f5bef3fffd">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="a8c0dadddbc0c1c3cddbc0d8c9ccc0c19ee8c4c1decd86cbc7c5">[email&#160;protected]</span></div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="f09882858398999b9583988091949899c6b09c998695de939f9d">[email&#160;protected]</span></div></div>
     </a>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
@@ -3028,6 +3028,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
         <button class="btn btn-primary" onclick="siManualBulk()">⚡ Generate All</button>
         <button class="btn btn-accent" onclick="siManualPrint()" id="si-manual-print-btn" style="display:none">🖨️ Print Labels</button>
+        <button class="btn btn-primary" onclick="siManualExportWord()" id="si-manual-word-btn" style="display:none">⬇ Export Word (.docx)</button>
         <button class="btn btn-outline" onclick="siManualClear()" id="si-manual-clear-btn" style="display:none">✕ Clear</button>
       </div>
     </div>
@@ -3541,7 +3542,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
   <div class="loader-fill" id="top-loader-fill"></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 
 // ── PREMIUM ANALOG + DIGITAL CLOCK ────────────────────────────
 (function() {
@@ -7396,9 +7397,11 @@ function siManualRender() {
   var out = document.getElementById('si-manual-out');
   var printBtn = document.getElementById('si-manual-print-btn');
   var clearBtn = document.getElementById('si-manual-clear-btn');
+  var wordBtn = document.getElementById('si-manual-word-btn');
   out.innerHTML = '';
   if (!siManualLabels.length) {
     if (printBtn) printBtn.style.display = 'none';
+    if (wordBtn) wordBtn.style.display = 'none';
     if (clearBtn) clearBtn.style.display = 'none';
     return;
   }
@@ -7427,6 +7430,7 @@ function siManualRender() {
     }
   });
   if (printBtn) printBtn.style.display = '';
+  if (wordBtn) wordBtn.style.display = '';
   if (clearBtn) clearBtn.style.display = '';
 }
 function siManualPrint() {
@@ -7454,6 +7458,183 @@ function siManualPrint() {
     });
     setTimeout(function() { window.print(); printArea.style.display = 'none'; }, 300);
   }, 200);
+}
+
+// ── Manual Barcode Maker → Word export ────────────────────────
+// Same format as the ASIN-issue / YSM Word export: 1 label per page,
+// CODE128 barcode + ASIN + item name. Exports every label (all copies).
+async function siManualExportWord() {
+  if (!siManualLabels.length) { showToast('⚠️ Make a barcode first'); return; }
+
+  // One page per label entry (copies included, matching what's on screen)
+  var labels = siManualLabels.map(function(lbl) {
+    var line2 = lbl.name || '';
+    if (lbl.total > 1) line2 = (line2 ? line2 + '  ·  ' : '') + 'Copy ' + lbl.copy + ' / ' + lbl.total;
+    return { asin: lbl.asin, title: line2 };
+  });
+
+  showToast('⏳ Building Word file…');
+  try{ await document.fonts.load('500 22px "DM Mono"'); await document.fonts.ready; }catch(e){}
+
+  try {
+    if (!window.JSZip) {
+      await new Promise(function(res, rej) {
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    // CODE128 bar patterns (same lookup table as ASIN-issue / YSM)
+    var P128 = ['11011001100','11001101100','11001100110','10010011000','10010001100','10001001100','10011001000','10011000100','10001100100','11001001000','11001000100','11000100100','10110011100','10011011100','10011001110','10111001100','10011101100','10011100110','11001110010','11001011100','11001001110','11011100100','11001110100','11101101110','11101001100','11100101100','11100100110','11101100100','11100110100','11100110010','11011011000','11011000110','11000110110','10100011000','10001011000','10001000110','10110001000','10001101000','10001100010','11010001000','11000101000','11000100010','10110111000','10110001110','10001101110','10111011000','10111000110','10001110110','11101110110','11010001110','11000101110','11011101000','11011100010','11011101110','11101011000','11101000110','11100010110','11101101000','11101100010','11100011010','11101111010','11001000010','11110001010','10100110000','10100001100','10010110000','10010000110','10000101100','10000100110','10110010000','10110000100','10011010000','10011000010','10000110100','10000110010','11000010010','11001010000','11110111010','11000010100','10001111010','10100111100','10010111100','10010011110','10111100100','10011110100','10011110010','11110100100','11110010100','11110010010','11011011110','11011110110','11110110110','10101111000','10100011110','10001011110','10111101000','10111100010','11110101000','11110100010','10111011110','10111101110','11101011110','11110101110','11010000100','11010010000','11010011100','1100011101011'];
+
+    function makeSILabelPNG(asin, line2) {
+      var W=406, H=244, ML=37, MT=16, CW=349, BAR_H=96;
+      var cvs = document.createElement('canvas');
+      cvs.width = W; cvs.height = H;
+      var ctx = cvs.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+
+      var vals = {};
+      for (var ci=0; ci<95; ci++) vals[String.fromCharCode(ci+32)] = ci;
+      var codes = [104], chk = 104;
+      for (var ci2=0; ci2<asin.length; ci2++) {
+        var v = vals[asin[ci2]] || 0;
+        codes.push(v); chk += v*(ci2+1);
+      }
+      codes.push(chk % 103); codes.push(106);
+      var bars = codes.map(function(c) { return P128[Math.min(c,106)]; }).join('');
+      var bu = Math.max(1, Math.floor(CW / bars.length));
+      var x  = ML + Math.floor((CW - bu*bars.length) / 2);
+      ctx.fillStyle = '#000';
+      for (var bi=0; bi<bars.length; bi++) {
+        if (bars[bi] === '1') ctx.fillRect(x, MT, bu, BAR_H);
+        x += bu;
+      }
+
+      ctx.font = 'bold 22px "DM Mono",monospace';
+      ctx.textAlign = 'center'; ctx.fillStyle = '#000';
+      try{ctx.letterSpacing='2px';}catch(e){}
+      ctx.fillText(asin, W/2, MT+BAR_H+26);
+      try{ctx.letterSpacing='0px';}catch(e){}
+
+      ctx.fillStyle = '#333';
+      bcDrawFittedName(ctx, line2, W/2, MT+BAR_H+46, CW, { maxFont:13, minFont:8, maxLines:2, family:'"Helvetica Neue",Helvetica,Arial,sans-serif' });
+
+      var b64 = cvs.toDataURL('image/png').split(',')[1];
+      var bin = atob(b64);
+      var arr = new Uint8Array(bin.length);
+      for (var pi=0; pi<bin.length; pi++) arr[pi] = bin.charCodeAt(pi);
+      return arr;
+    }
+
+    var pngs = [];
+    labels.forEach(function(lbl) {
+      var line2 = lbl.title || lbl.asin;
+      pngs.push(makeSILabelPNG(lbl.asin, line2));
+    });
+
+    var n   = pngs.length;
+    var zip = new JSZip();
+
+    zip.file('[Content_Types].xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Default Extension="png" ContentType="image/png"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>');
+
+    zip.file('_rels/.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>');
+
+    var wRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    for (var ri=0; ri<n; ri++) {
+      wRels += '<Relationship Id="rId'+(9+ri)+'" ' +
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ' +
+        'Target="media/image'+(ri+1)+'.png"/>';
+    }
+    wRels += '</Relationships>';
+    zip.file('word/_rels/document.xml.rels', wRels);
+
+    for (var pi2=0; pi2<n; pi2++) {
+      zip.file('word/media/image'+(pi2+1)+'.png', pngs[pi2]);
+    }
+
+    var ANS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+              'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+    var body = '';
+    for (var li=0; li<n; li++) {
+      var isLast = (li === n-1);
+      var rId    = 'rId' + (9+li);
+      body += '<w:p>' +
+        '<w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="center"/></w:pPr>' +
+        '<w:r><w:drawing><wp:inline ' + ANS + '>' +
+        '<wp:extent cx="1828800" cy="1097280"/>' +
+        '<wp:docPr id="'+(li+1)+'" name="Label '+(li+1)+'"/>' +
+        '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+        '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+        '<pic:pic><pic:nvPicPr>' +
+        '<pic:cNvPr id="0" name="barcode.png"/><pic:cNvPicPr/>' +
+        '</pic:nvPicPr>' +
+        '<pic:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+        '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1828800" cy="1097280"/></a:xfrm>' +
+        '<a:prstGeom prst="rect"/></pic:spPr>' +
+        '</pic:pic></a:graphicData></a:graphic>' +
+        '</wp:inline></w:drawing>' +
+        (isLast ? '' : '<w:br w:type="page"/>') +
+        '</w:r></w:p>';
+    }
+
+    var docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ' +
+      'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+      'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+      'xmlns:v="urn:schemas-microsoft-com:vml" ' +
+      'xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+      'xmlns:w10="urn:schemas-microsoft-com:office:word" ' +
+      'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
+      'mc:Ignorable="w14 wp14">' +
+      '<w:body>' + body +
+      '<w:sectPr>' +
+      '<w:pgSz w:w="2880" w:h="1728"/>' +
+      '<w:pgMar w:top="0" w:right="0" w:bottom="0" w:left="0" ' +
+      'w:header="144" w:footer="144" w:gutter="0"/>' +
+      '<w:cols w:space="720"/><w:docGrid w:linePitch="360"/>' +
+      '</w:sectPr>' +
+      '</w:body></w:document>';
+
+    zip.file('word/document.xml', docXml);
+
+    var blob = await zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = 'ManualBarcodes_' + new Date().toISOString().split('T')[0] + '.docx';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ Word (.docx) ready — ' + n + ' barcode labels!');
+    try { logActivity('Manual Barcode Maker', 'Exported Word (' + n + ' labels)'); } catch(e) {}
+
+  } catch(err) {
+    console.error(err);
+    showToast('❌ Word export error: ' + err.message);
+  }
 }
 
 
