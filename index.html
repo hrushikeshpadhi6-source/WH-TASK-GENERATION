@@ -2603,10 +2603,22 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-info-grid">
-    <a class="contact-info-card" href="/cdn-cgi/l/email-protection#90f8e2e5e3f8f9fbf5e3f8e0f1f4f8f9a6d0fcf9e6f5bef3fffd">
+    <a class="contact-info-card" id="contact-email-card" href="#" data-cfemail-ignore="1">
       <div class="cic-icon" style="background:#fff3ed;">📧</div>
-      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value"><span class="__cf_email__" data-cfemail="f09882858398999b9583988091949899c6b09c998695de939f9d">[email&#160;protected]</span></div></div>
+      <div class="cic-text"><div class="cic-label">Email</div><div class="cic-value" id="contact-email-value">loading…</div></div>
     </a>
+    <script>
+      // Assembled at runtime from parts so Cloudflare email-obfuscation can't
+      // rewrite it to "[email protected]" in the static HTML.
+      (function(){
+        var u = ['hrushikeshpadhi6','live','com'];
+        var addr = u[0] + String.fromCharCode(64) + u[1] + '.' + u[2];
+        var card = document.getElementById('contact-email-card');
+        var val  = document.getElementById('contact-email-value');
+        if (val)  val.textContent = addr;
+        if (card) card.setAttribute('href', 'mailto:' + addr);
+      })();
+    </script>
     <a class="contact-info-card" href="https://www.linkedin.com/in/hrushikesh-padhi-99597aa4/" target="_blank">
       <div class="cic-icon" style="background:#eff6ff;">💼</div>
       <div class="cic-text"><div class="cic-label">LinkedIn</div><div class="cic-value">Hrushikesh Padhi</div></div>
@@ -3542,7 +3554,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
   <div class="loader-fill" id="top-loader-fill"></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 
 // ── PREMIUM ANALOG + DIGITAL CLOCK ────────────────────────────
 (function() {
