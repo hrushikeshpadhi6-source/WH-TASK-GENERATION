@@ -70,8 +70,10 @@ body::before {
   border-bottom: 1px solid var(--border);
   padding: 0 40px; height: 68px;
   display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 200;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
 }
+/* Header is fixed → push the app content down so nothing hides under it */
+#app-shell { padding-top: 68px; }
 .header-logo {
   display:flex; align-items:center; gap:10px;
   font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#fff;
@@ -79,7 +81,16 @@ body::before {
   transition: opacity 0.2s;
 }
 .header-logo:hover { opacity: 0.85; }
-.header-logo .dot { color: var(--accent); }
+.header-logo .dot {
+  background: linear-gradient(90deg,#ff6b35,#f72585,#ffb347,#ff6b35);
+  background-size: 250% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: proShine 3.2s linear infinite;
+}
+@keyframes proShine {
+  to { background-position: 250% center; }
+}
 .header-badge {
   font-family: 'DM Mono', monospace; font-size:11px;
   background: linear-gradient(135deg,rgba(255,107,53,0.2),rgba(67,97,238,0.2));
@@ -9881,7 +9892,50 @@ async function vocCheckAccess() {
   document.getElementById('voc-gate').style.display='none';
   document.getElementById('voc-dashboard').style.display='block';
   document.getElementById('voc-user-label').textContent=uname.toUpperCase();
+  _vocStartStatusWatch(uname);
   vocFetchData();
+}
+
+// ── REAL-TIME ACCESS WATCH ───────────────────────────────────────
+// While a user is on the VOC dashboard, we listen to their voc_users doc.
+// The moment the admin blocks (or their status drops below approved), they
+// are locked out instantly — no refresh needed.
+var _vocStatusUnsub = null;
+function _vocStopStatusWatch(){ if(_vocStatusUnsub){ try{ _vocStatusUnsub(); }catch(e){} _vocStatusUnsub=null; } }
+function _vocStartStatusWatch(uname){
+  _vocStopStatusWatch();
+  var isLegacy = VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname)!==-1;
+  if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
+    _vocStatusUnsub = fbDB.collection('voc_users').doc(uname).onSnapshot(function(doc){
+      var st = doc.exists ? (doc.data().status||'pending') : null;
+      if (st === 'blocked')            { _vocLockOut('blocked'); }
+      else if (st === 'pending')       { _vocLockOut('pending'); }
+      else if (st === null && !isLegacy){ _vocLockOut('blocked'); } // record deleted
+    }, function(err){ console.warn('VOC status watch:', err); });
+  } else if (!isLegacy) {
+    // Demo mode: poll localStorage so a local block still kicks in.
+    _vocStatusUnsub = (function(){
+      var iv = setInterval(function(){
+        var du = _vocDemoUsers();
+        var st = du[uname] ? (du[uname].status||'pending') : null;
+        if (st === 'blocked' || st === null) _vocLockOut('blocked');
+        else if (st === 'pending') _vocLockOut('pending');
+      }, 2500);
+      return function(){ clearInterval(iv); };
+    })();
+  }
+}
+function _vocLockOut(reason){
+  _vocStopStatusWatch();
+  var dash = document.getElementById('voc-dashboard'); if (dash) dash.style.display='none';
+  var su   = document.getElementById('voc-signup-card'); if (su) su.style.display='none';
+  var gate = document.getElementById('voc-gate');
+  if (gate) { gate.style.display='block'; var card=gate.querySelector('div'); if(card) card.style.display='block'; }
+  vocCurrentUser = '';
+  var inp = document.getElementById('voc-username-input'); if (inp) inp.value='';
+  try { window.scrollTo(0,0); } catch(e){}
+  if (reason === 'pending') _vocMsg('voc-gate-msg','⏳ Your access is no longer active — it is under review by the administrator.','warn');
+  else _vocMsg('voc-gate-msg','🚫 Your access has just been <b>blocked</b> by the administrator.','err');
 }
 
 // ── VOC SIGNUP / REQUEST ACCESS ──────────────────────────────────
@@ -9994,7 +10048,7 @@ window.vocAdminRender = async function(){
     try {
       var snap = await fbDB.collection('voc_users').get();
       _vocAdminCache = snap.docs.map(function(d){ return Object.assign({ username:d.id }, d.data()); });
-    } catch(e){ box.innerHTML = '<div style="color:#f72585;font-size:13px;">Could not load: '+_vocAdminEsc(e.message)+'</div>'; return; }
+    } catch(e){ box.innerHTML = '<div style="color:#f72585;font-size:13px;line-height:1.7;">⚠️ <b>'+_vocAdminEsc(e.message)+'</b><br>Your Firestore security rules don\u2019t allow the <code style="background:#13121f;padding:1px 6px;border-radius:5px;">voc_users</code> collection yet.<br>Open <b>Firebase Console → Firestore → Rules</b> and add a rule for it (see the snippet your developer provided), then Publish and Refresh.</div>'; return; }
   } else {
     var du = _vocDemoUsers();
     _vocAdminCache = Object.keys(du).map(function(k){ return du[k]; });
