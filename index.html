@@ -9297,7 +9297,40 @@ if (document.readyState === 'loading') {
         onkeydown="if(event.key==='Enter')vocCheckAccess()"
         onfocus="this.style.borderColor='#06d6a0'" onblur="this.style.borderColor='#d5d2f0'">
       <button onclick="vocCheckAccess()" style="width:100%;padding:14px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ff6b35,#c43d04);color:#fff;box-shadow:0 4px 20px rgba(255,107,53,0.35);transition:all 0.2s;">Access VOC Dashboard →</button>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #d5d2f0;font-size:12px;color:#7b78a8;">
+        Don't have access yet?
+        <a onclick="vocShowSignup()" style="color:#4361ee;font-weight:700;cursor:pointer;text-decoration:underline;">Request access</a>
+      </div>
       <div style="font-size:11px;color:#7b78a8;margin-top:14px;font-family:'DM Mono',monospace;">Authorised personnel only · DMS PRO</div>
+    </div>
+
+    <!-- VOC SIGNUP / REQUEST-ACCESS FORM -->
+    <div id="voc-signup-card" style="display:none;max-width:420px;margin:40px auto 0;background:#fff;border:1px solid #d5d2f0;border-radius:20px;padding:36px 36px;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+      <div style="text-align:center;margin-bottom:22px;">
+        <div style="font-size:42px;margin-bottom:10px;">📝</div>
+        <div style="font-size:19px;font-weight:800;color:#1a1830;">Request VOC Access</div>
+        <div style="font-size:12.5px;color:#7b78a8;margin-top:4px;line-height:1.5;">Submit your details. The administrator will review and approve your access.</div>
+      </div>
+      <div id="voc-signup-msg" style="display:none;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.5;"></div>
+      <div id="voc-signup-fields">
+        <label style="display:block;font-size:11px;font-weight:700;color:#7b78a8;letter-spacing:0.5px;margin-bottom:5px;">FULL NAME</label>
+        <input type="text" id="voc-su-name" placeholder="e.g. Rishi Kumar" autocomplete="off"
+          style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:12px 15px;font-family:'Syne',sans-serif;font-size:14px;color:#1a1830;outline:none;margin-bottom:14px;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#4361ee'" onblur="this.style.borderColor='#d5d2f0'">
+        <label style="display:block;font-size:11px;font-weight:700;color:#7b78a8;letter-spacing:0.5px;margin-bottom:5px;">USERNAME <span style="font-weight:500;text-transform:none;">(you'll log in with this)</span></label>
+        <input type="text" id="voc-su-username" placeholder="e.g. rishi1" autocomplete="off"
+          style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:12px 15px;font-family:'Syne',sans-serif;font-size:14px;color:#1a1830;outline:none;margin-bottom:14px;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#4361ee'" onblur="this.style.borderColor='#d5d2f0'">
+        <label style="display:block;font-size:11px;font-weight:700;color:#7b78a8;letter-spacing:0.5px;margin-bottom:5px;">EMAIL</label>
+        <input type="email" id="voc-su-email" placeholder="e.g. rishi@example.com" autocomplete="off"
+          style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;border-radius:10px;padding:12px 15px;font-family:'Syne',sans-serif;font-size:14px;color:#1a1830;outline:none;margin-bottom:18px;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')vocSubmitRequest()"
+          onfocus="this.style.borderColor='#4361ee'" onblur="this.style.borderColor='#d5d2f0'">
+        <button id="voc-su-submit" onclick="vocSubmitRequest()" style="width:100%;padding:14px;border-radius:12px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#06d6a0,#059d77);color:#fff;box-shadow:0 4px 20px rgba(6,214,160,0.32);transition:all 0.2s;">Submit for Review →</button>
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <a onclick="vocHideSignup()" style="font-size:12px;color:#7b78a8;cursor:pointer;text-decoration:underline;">← Back to login</a>
+      </div>
     </div>
   </div>
 
@@ -9800,22 +9833,254 @@ var VOC_NON_OPS = [
 var VOC_NOT_STORE = ['NOT for our store'];
 
 // ── AUTH ─────────────────────────────────────────────
-function vocCheckAccess() {
+// Legacy always-allowed usernames (kept working). New users are stored in
+// Firestore collection "voc_users" (doc id = username), with a status of
+// pending / approved / blocked. Admin approves them in the Admin Panel.
+function _vocMsg(id, text, kind){
+  var el = document.getElementById(id); if(!el) return;
+  el.innerHTML = text; el.style.display = 'block';
+  var m = {
+    err:  ['rgba(247,37,133,0.1)','rgba(247,37,133,0.3)','#c0392b'],
+    ok:   ['rgba(6,214,160,0.1)','rgba(6,214,160,0.35)','#059d77'],
+    warn: ['rgba(255,180,0,0.12)','rgba(255,180,0,0.4)','#b67d00'],
+    info: ['rgba(67,97,238,0.1)','rgba(67,97,238,0.3)','#4361ee']
+  }[kind] || ['rgba(67,97,238,0.1)','rgba(67,97,238,0.3)','#4361ee'];
+  el.style.background = m[0]; el.style.border = '1px solid ' + m[1]; el.style.color = m[2];
+}
+function _vocDemoUsers(){ try { return JSON.parse(localStorage.getItem('voc_users_demo')||'{}'); } catch(e){ return {}; } }
+function _vocSaveDemoUsers(o){ localStorage.setItem('voc_users_demo', JSON.stringify(o||{})); }
+
+// Look up a username's VOC status. Returns 'approved' | 'pending' | 'blocked' | 'none'.
+async function _vocLookupStatus(uname){
+  if (VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname) !== -1) return 'approved';
+  if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && typeof fbDB !== 'undefined' && fbDB) {
+    try {
+      var doc = await fbDB.collection('voc_users').doc(uname).get();
+      if (doc.exists) return (doc.data().status || 'pending');
+      return 'none';
+    } catch(e){ console.warn('VOC lookup failed:', e); return 'none'; }
+  }
+  var du = _vocDemoUsers();
+  return du[uname] ? (du[uname].status || 'pending') : 'none';
+}
+
+async function vocCheckAccess() {
   var rawVal = document.getElementById('voc-username-input').value || '';
   var uname = rawVal.trim().toLowerCase();
-  var el = document.getElementById('voc-gate-msg');
+  if (!uname) { _vocMsg('voc-gate-msg','⚠️ Please enter your username.','err'); return; }
 
+  _vocMsg('voc-gate-msg','⏳ Checking access…','info');
+  var status = await _vocLookupStatus(uname);
 
+  if (status === 'blocked') { _vocMsg('voc-gate-msg','🚫 Your access has been blocked by the administrator.','err'); return; }
+  if (status === 'pending') { _vocMsg('voc-gate-msg','⏳ Your request is <b>under review</b>. Please wait for the administrator to approve it.','warn'); return; }
+  if (status !== 'approved') { _vocMsg('voc-gate-msg','❌ Username not authorised. Use <b>Request access</b> to sign up.','err'); return; }
 
-  if (!uname) { el.textContent='⚠️ Please enter your username.'; el.style.display='block'; el.style.background='rgba(247,37,133,0.1)'; el.style.border='1px solid rgba(247,37,133,0.3)'; el.style.color='#c0392b'; return; }
-  if (VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname)===-1) {
-    el.textContent='❌ Access denied. Username not authorised.'; el.style.display='block'; el.style.background='rgba(247,37,133,0.1)'; el.style.border='1px solid rgba(247,37,133,0.3)'; el.style.color='#c0392b'; return;
-  }
+  document.getElementById('voc-gate-msg').style.display='none';
   vocCurrentUser = uname;
   document.getElementById('voc-gate').style.display='none';
   document.getElementById('voc-dashboard').style.display='block';
   document.getElementById('voc-user-label').textContent=uname.toUpperCase();
   vocFetchData();
+}
+
+// ── VOC SIGNUP / REQUEST ACCESS ──────────────────────────────────
+function vocShowSignup(){
+  document.getElementById('voc-gate').querySelector('div').style.display='none';
+  document.getElementById('voc-signup-card').style.display='block';
+}
+function vocHideSignup(){
+  document.getElementById('voc-signup-card').style.display='none';
+  document.getElementById('voc-gate').querySelector('div').style.display='block';
+}
+async function vocSubmitRequest(){
+  var name  = (document.getElementById('voc-su-name').value||'').trim();
+  var uname = (document.getElementById('voc-su-username').value||'').trim().toLowerCase();
+  var email = (document.getElementById('voc-su-email').value||'').trim();
+  if (!name)  { _vocMsg('voc-signup-msg','⚠️ Please enter your full name.','err'); return; }
+  if (!uname) { _vocMsg('voc-signup-msg','⚠️ Please choose a username.','err'); return; }
+  if (!/^[a-z0-9_.]{3,20}$/.test(uname)) { _vocMsg('voc-signup-msg','⚠️ Username must be 3–20 chars: letters, numbers, _ or . only.','err'); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { _vocMsg('voc-signup-msg','⚠️ Please enter a valid email.','err'); return; }
+
+  var btn = document.getElementById('voc-su-submit');
+  btn.disabled = true; var old = btn.textContent; btn.textContent = 'Submitting…';
+
+  try {
+    // already exists?
+    var existing = await _vocLookupStatus(uname);
+    if (existing === 'approved') { _vocMsg('voc-signup-msg','✅ That username is already approved — just log in.','ok'); btn.disabled=false; btn.textContent=old; return; }
+    if (existing === 'pending')  { _vocMsg('voc-signup-msg','⏳ That username already has a request under review.','warn'); btn.disabled=false; btn.textContent=old; return; }
+    if (existing === 'blocked')  { _vocMsg('voc-signup-msg','🚫 That username is blocked. Contact the administrator.','err'); btn.disabled=false; btn.textContent=old; return; }
+
+    var rec = { username: uname, fullName: name, email: email, status: 'pending', createdAt: Date.now() };
+    if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
+      await fbDB.collection('voc_users').doc(uname).set({
+        username: uname, fullName: name, email: email, status: 'pending',
+        createdAt: (firebase.firestore.FieldValue.serverTimestamp ? firebase.firestore.FieldValue.serverTimestamp() : Date.now())
+      });
+    } else {
+      var du = _vocDemoUsers(); du[uname] = rec; _vocSaveDemoUsers(du);
+    }
+    try { if (window.DSTPRO && DSTPRO.log) DSTPRO.log('VOC Analysis','Access requested: '+uname); } catch(e){}
+    document.getElementById('voc-signup-fields').style.display='none';
+    _vocMsg('voc-signup-msg','✅ Request submitted! Your access is now <b>under review</b>. You\u2019ll be able to log in with <b>'+uname+'</b> once the administrator approves it.','ok');
+  } catch(err){
+    console.error(err);
+    _vocMsg('voc-signup-msg','❌ Could not submit: '+(err.message||err),'err');
+    btn.disabled=false; btn.textContent=old;
+  }
+}
+
+// ── ADMIN: VOC access approvals ──────────────────────────────────
+var _vocAdminTab = 'pending';
+var _vocAdminCache = [];
+window.vocAdminSetTab = function(tab){
+  _vocAdminTab = tab;
+  document.querySelectorAll('#voc-admin-tabs .voc-atab').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-tab')===tab);
+  });
+  _vocAdminPaint();
+};
+function _vocAdminEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _vocAdminPaint(){
+  var box = document.getElementById('voc-admin-list'); if(!box) return;
+  var counts = { pending:0, approved:0, blocked:0 };
+  _vocAdminCache.forEach(function(u){ var s=u.status||'pending'; if(counts[s]!=null) counts[s]++; });
+  document.querySelectorAll('#voc-admin-tabs .voc-atab-n').forEach(function(n){
+    var k=n.getAttribute('data-n'); n.textContent = counts[k]||0;
+  });
+  var cnt = document.getElementById('voc-admin-count');
+  if (cnt) cnt.textContent = counts.pending ? '· '+counts.pending+' pending' : '';
+  var list = _vocAdminCache.filter(function(u){ return (u.status||'pending')===_vocAdminTab; })
+    .sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+  if (!list.length) { box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">No '+_vocAdminTab+' requests.</div>'; return; }
+  box.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">' +
+    list.map(function(u){
+      var when = u.createdAt ? new Date(typeof u.createdAt==='object'&&u.createdAt.seconds? u.createdAt.seconds*1000 : u.createdAt).toLocaleString() : '';
+      var st = u.status||'pending';
+      var stColor = st==='approved'?'#06d6a0':st==='blocked'?'#f72585':'#ffd60a';
+      var actions='';
+      if (st==='pending') {
+        actions = '<button class="voc-abtn" style="border-color:#06d6a0;color:#06d6a0;" onclick="window.vocAdminApprove(\''+_vocAdminEsc(u.username)+'\')">✅ Approve</button>'+
+                  '<button class="voc-abtn" style="border-color:#f72585;color:#f72585;" onclick="window.vocAdminBlock(\''+_vocAdminEsc(u.username)+'\')">🚫 Block</button>';
+      } else if (st==='approved') {
+        actions = '<button class="voc-abtn" style="border-color:#f72585;color:#f72585;" onclick="window.vocAdminBlock(\''+_vocAdminEsc(u.username)+'\')">🚫 Block</button>'+
+                  '<button class="voc-abtn" style="border-color:#8b8aad;color:#8b8aad;" onclick="window.vocAdminDelete(\''+_vocAdminEsc(u.username)+'\')">🗑 Delete</button>';
+      } else {
+        actions = '<button class="voc-abtn" style="border-color:#06d6a0;color:#06d6a0;" onclick="window.vocAdminApprove(\''+_vocAdminEsc(u.username)+'\')">✅ Unblock</button>'+
+                  '<button class="voc-abtn" style="border-color:#8b8aad;color:#8b8aad;" onclick="window.vocAdminDelete(\''+_vocAdminEsc(u.username)+'\')">🗑 Delete</button>';
+      }
+      return '<div class="voc-acard">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+          '<div style="font-size:15px;font-weight:800;color:#fff;">'+_vocAdminEsc(u.fullName||u.username)+'</div>'+
+          '<span style="font-size:10px;font-weight:700;color:'+stColor+';border:1px solid '+stColor+';border-radius:20px;padding:2px 9px;text-transform:uppercase;">'+st+'</span>'+
+        '</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:#06d6a0;margin-bottom:3px;">@'+_vocAdminEsc(u.username)+'</div>'+
+        '<div style="font-size:12px;color:#b8b6d9;margin-bottom:3px;word-break:break-all;">✉ '+_vocAdminEsc(u.email||'—')+'</div>'+
+        (when?'<div style="font-size:10.5px;color:#8b8aad;margin-bottom:12px;">'+when+'</div>':'<div style="margin-bottom:12px;"></div>')+
+        '<div style="display:flex;gap:8px;">'+actions+'</div>'+
+      '</div>';
+    }).join('') + '</div>';
+}
+window.vocAdminRender = async function(){
+  var box = document.getElementById('voc-admin-list'); if(!box) return;
+  if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
+    var cu = fbAuth.currentUser;
+    if (!cu || (cu.email||'').toLowerCase() !== ADMIN_EMAIL) {
+      box.innerHTML = '<div style="color:#ffd60a;font-size:13px;line-height:1.6;">⚠️ Sign in with the <b>admin account</b> to manage VOC access.</div>';
+      return;
+    }
+    box.innerHTML = '<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+    try {
+      var snap = await fbDB.collection('voc_users').get();
+      _vocAdminCache = snap.docs.map(function(d){ return Object.assign({ username:d.id }, d.data()); });
+    } catch(e){ box.innerHTML = '<div style="color:#f72585;font-size:13px;">Could not load: '+_vocAdminEsc(e.message)+'</div>'; return; }
+  } else {
+    var du = _vocDemoUsers();
+    _vocAdminCache = Object.keys(du).map(function(k){ return du[k]; });
+  }
+  if (!document.querySelector('#voc-admin-tabs .voc-atab.active')) window.vocAdminSetTab('pending');
+  else _vocAdminPaint();
+};
+async function _vocAdminSetStatus(uname, status){
+  if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
+    try { await fbDB.collection('voc_users').doc(uname).update({ status: status }); }
+    catch(e){ alert('Failed: '+e.message); }
+  } else {
+    var du = _vocDemoUsers(); if (du[uname]) { du[uname].status = status; _vocSaveDemoUsers(du); }
+  }
+  window.vocAdminRender();
+}
+window.vocAdminApprove = function(u){ _vocAdminSetStatus(u,'approved'); };
+window.vocAdminBlock   = function(u){ _vocAdminSetStatus(u,'blocked'); };
+window.vocAdminDelete  = async function(u){
+  if (!confirm('Delete VOC access record for "'+u+'"? They will need to request access again.')) return;
+  if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
+    try { await fbDB.collection('voc_users').doc(u).delete(); } catch(e){ alert('Failed: '+e.message); }
+  } else {
+    var du = _vocDemoUsers(); delete du[u]; _vocSaveDemoUsers(du);
+  }
+  window.vocAdminRender();
+};
+
+// ── COLUMN INTEGRITY GUARD ───────────────────────────────────────
+// The app ALWAYS reads sheet data by COLUMN NAME (never by position), so
+// reordering columns never corrupts data. This guard simply notifies the
+// admin when the sheet's column structure changes vs what we last saw, so
+// they're aware of a possible data mismatch. On OK we remember the new layout.
+var VOC_EXPECTED_COLS = ['store','date','orderId','asin','issue','rcaCategory','rca','picker','product','productType','week','comment'];
+function vocColumnGuard(firstRow){
+  if (!firstRow || typeof firstRow !== 'object') return;
+  var current = Object.keys(firstRow);
+  var curSet  = current.slice().sort().join('|');
+
+  var baseline = null;
+  try { baseline = JSON.parse(localStorage.getItem('voc_cols_baseline')||'null'); } catch(e){}
+  // First run ever: seed the baseline silently (use whatever the sheet returns).
+  if (!baseline || !baseline.length) {
+    localStorage.setItem('voc_cols_baseline', JSON.stringify(current));
+    return;
+  }
+  var baseSet = baseline.slice().sort().join('|');
+  if (baseSet === curSet) return; // no change → no warning
+
+  // Compute the diff
+  var added   = current.filter(function(c){ return baseline.indexOf(c)===-1; });
+  var removed = baseline.filter(function(c){ return current.indexOf(c)===-1; });
+  // Are any columns the app actually needs now missing?
+  var missingNeeded = VOC_EXPECTED_COLS.filter(function(c){ return current.indexOf(c)===-1; });
+
+  _vocShowColumnWarning(added, removed, missingNeeded, function(){
+    // On OK → remember the new layout so we don't keep nagging.
+    localStorage.setItem('voc_cols_baseline', JSON.stringify(current));
+  });
+}
+function _vocShowColumnWarning(added, removed, missingNeeded, onOk){
+  var old = document.getElementById('voc-col-warn-modal'); if (old) old.remove();
+  var chip = function(arr,color){ return arr.map(function(c){ return '<span style="display:inline-block;font-family:\'DM Mono\',monospace;font-size:12px;background:'+color+'22;border:1px solid '+color+'55;color:'+color+';border-radius:7px;padding:3px 9px;margin:3px 4px 0 0;">'+c+'</span>'; }).join(''); }
+  var rows = '';
+  if (missingNeeded.length) rows += '<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#f72585;margin-bottom:4px;">⚠ Columns the dashboard needs are missing / renamed:</div>'+chip(missingNeeded,'#f72585')+'</div>';
+  if (removed.length)       rows += '<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#ffb400;margin-bottom:4px;">➖ Removed / renamed columns:</div>'+chip(removed,'#ffb400')+'</div>';
+  if (added.length)         rows += '<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#06d6a0;margin-bottom:4px;">➕ New columns:</div>'+chip(added,'#06d6a0')+'</div>';
+
+  var modal = document.createElement('div');
+  modal.id = 'voc-col-warn-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:\'Syne\',sans-serif;';
+  modal.innerHTML =
+    '<div style="position:absolute;inset:0;background:rgba(5,4,14,0.75);backdrop-filter:blur(6px);"></div>'+
+    '<div style="position:relative;z-index:1;background:#1a1928;border:1px solid #2e2c45;border-radius:18px;width:100%;max-width:480px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'+
+        '<div style="font-size:34px;">⚠️</div>'+
+        '<div><div style="font-size:17px;font-weight:800;color:#fff;">Sheet columns changed</div>'+
+        '<div style="font-size:12px;color:#8b8aad;margin-top:2px;">The main Google Sheet\u2019s column layout is different from before.</div></div>'+
+      '</div>'+
+      '<div style="background:#13121f;border:1px solid #2e2c45;border-radius:12px;padding:16px;margin-bottom:16px;">'+rows+
+        '<div style="font-size:12px;color:#b8b6d9;line-height:1.6;border-top:1px solid #2e2c45;padding-top:10px;margin-top:4px;">✅ Don\u2019t worry — the dashboard reads every value <b>by column name</b>, so as long as the names above are intact the data stays correct. If a needed column shows in red, rename it back in the sheet.</div>'+
+      '</div>'+
+      '<button id="voc-col-warn-ok" style="width:100%;padding:13px;border-radius:11px;border:none;font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;">OK, continue with column-name mapping</button>'+
+    '</div>';
+  document.body.appendChild(modal);
+  document.getElementById('voc-col-warn-ok').onclick = function(){ try{ onOk&&onOk(); }catch(e){} modal.remove(); };
 }
 
 // ── STATUS DISPLAY ───────────────────────────────────────────────
@@ -9859,6 +10124,10 @@ function vocFetchData() {
     { action: 'voc' },
     function(data) {
       if (data && Array.isArray(data.rows) && data.rows.length) {
+        // ── COLUMN INTEGRITY GUARD ──────────────────────────────
+        // Warn if the sheet's columns changed (added / removed / renamed).
+        // Regardless, we always map by COLUMN NAME below so data stays correct.
+        vocColumnGuard(data.rows[0]);
         vocRawData = data.rows.map(function(r) {
           return {
             store:       String(r.store       || '').trim(),
@@ -14430,6 +14699,36 @@ function handleScanningASIN(e) {
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <!-- ── VOC ACCESS APPROVALS ─────────────────────────────────── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">🎙️ VOC Access Approvals <span id="voc-admin-count" style="font-family:'DM Mono',monospace;font-size:11px;color:#06d6a0;"></span></div>
+          <div style="font-size:11px;color:#8b8aad;">Approve or block people who requested VOC Analytics access. Approved users log in with their username.</div>
+        </div>
+        <button onclick="window.vocAdminRender&&window.vocAdminRender()"
+          style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#06d6a0,#059d77);
+          color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+      </div>
+      <div style="display:flex;gap:6px;padding:14px 24px 0;flex-wrap:wrap;" id="voc-admin-tabs">
+        <button class="voc-atab" data-tab="pending"  onclick="window.vocAdminSetTab('pending')">⏳ Pending <span class="voc-atab-n" data-n="pending">0</span></button>
+        <button class="voc-atab" data-tab="approved" onclick="window.vocAdminSetTab('approved')">✅ Approved <span class="voc-atab-n" data-n="approved">0</span></button>
+        <button class="voc-atab" data-tab="blocked"  onclick="window.vocAdminSetTab('blocked')">🚫 Blocked <span class="voc-atab-n" data-n="blocked">0</span></button>
+      </div>
+      <div id="voc-admin-list" style="padding:18px 24px;">
+        <div style="color:#8b8aad;font-size:13px;">Loading…</div>
+      </div>
+    </div>
+    <style id="voc-admin-css">
+      .voc-atab { padding:8px 14px; border:1px solid #2e2c45; background:rgba(15,14,23,0.6); color:#8b8aad;
+        font-family:'Syne',sans-serif; font-size:12px; font-weight:700; border-radius:9px 9px 0 0; cursor:pointer; transition:all .15s; }
+      .voc-atab:hover { color:#e8e6ff; border-color:#06d6a0; }
+      .voc-atab.active { background:linear-gradient(135deg,#06d6a0,#059d77); color:#fff; border-color:transparent; }
+      .voc-atab-n { display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; font-family:'DM Mono',monospace;
+        font-size:11px; background:rgba(0,0,0,0.3); border-radius:9px; }
+      .voc-acard { background:rgba(15,14,23,0.6); border:1px solid #2e2c45; border-radius:12px; padding:16px; }
+      .voc-abtn { flex:1; padding:9px; border-radius:8px; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; cursor:pointer; border:1px solid #2e2c45; background:transparent; }
+    </style>
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div style="display:flex;flex-direction:column;gap:4px;">
@@ -15053,6 +15352,7 @@ var DSTPRO = (function() {
       renderAdminDash();
       if(window.dmsRenderRequests)window.dmsRenderRequests();
       if(window.dmsRenderCodes)window.dmsRenderCodes();
+      if(window.vocAdminRender)window.vocAdminRender();
       if(window.dmsRenderUsers)window.dmsRenderUsers();
       syncLogs();
     }
