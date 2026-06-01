@@ -714,16 +714,16 @@ tbody tr{transition:background 0.15s;}
     </div>
     <div id="sm-lb"><div class="empty">Loading…</div></div>
     <div class="score-rubric">
-      <div class="sr-head">🧮 Weighted Scorecard <span>— 5 KPIs award points (47.5 max). Ranking Score = points earned ÷ 47.5 × 100, shown as a <b>%</b>.</span></div>
+      <div class="sr-head">🧮 Weighted Scorecard <span>— 5 KPIs, <b>20 pts</b> each. Final Score = total points out of <b>100</b>.</span></div>
       <div class="sr-grid">
-        <div class="sr-item"><span class="sr-w" style="color:#eab308;">10</span><div class="sr-tx"><b>Late Slam v2</b><i>tgt ≤3% · &lt;0.5% →10 · 0.5–1.5% →5 · &gt;1.5% →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#0891b2;">7.5</span><div class="sr-tx"><b>IB TPH</b><i>tgt ≥140 · &gt;140 →7.5 · 126–140 →5 · &lt;126 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#f72585;">10</span><div class="sr-tx"><b>VOC / UTR</b><i>tgt ≤0.010% · ≤0.010 →10 · ≤0.020 →5 · &gt;0.020 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#f97316;">10</span><div class="sr-tx"><b>Skip</b><i>tgt 0 · 0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#ef4444;">10</span><div class="sr-tx"><b>Short</b><i>tgt 0 · 0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
-        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#7c3aed;font-size:12px;">÷47.5</span><div class="sr-tx"><b>Final %</b><i>earned ÷ 47.5 × 100</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#eab308;">20</span><div class="sr-tx"><b>Late Slam v2</b><i>&lt;0.5% →20 · ≤1.5% →10 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#0891b2;">20</span><div class="sr-tx"><b>IB TPH</b><i>&gt;140 →20 · ≥126 →10 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#f72585;">20</span><div class="sr-tx"><b>VOC / UTR</b><i>≤0.010% →20 · ≤0.020% →10 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#f97316;">20</span><div class="sr-tx"><b>Skip</b><i>0 →20 · 1–3 →10 · &gt;3 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#ef4444;">20</span><div class="sr-tx"><b>Short</b><i>0 →20 · 1–3 →10 · &gt;3 →0</i></div></div>
+        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#06d6a0;">/100</span><div class="sr-tx"><b>Final Score</b><i>sum of all 5 KPIs</i></div></div>
       </div>
-      <div class="sr-note"><b>Each KPI scores on a 3-tier scale</b> (full / partial / zero) against its target. <b>Final Score = (Late Slam v2 + IB TPH + VOC/UTR + Skip + Short) ÷ 47.5 × 100.</b> Stores with <b>no orders are not ranked</b>; stores under <b>100 orders</b> can't take a top spot. Hover any candle in the Market View chart for a store's full points breakdown.</div>
+      <div class="sr-note"><b>Final Score = sum of the 5 KPIs (max 100).</b> Stores with <b>no orders aren't ranked</b>; under <b>100 orders</b> can't take a top spot.</div>
     </div>
   </div>
 
@@ -732,6 +732,13 @@ tbody tr{transition:background 0.15s;}
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <span>🎯 UTR Target Analysis <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— ops-controllable mistakes vs 0.010% monthly target</span></span>
       <span id="utr-totals" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:800;letter-spacing:0.3px;color:var(--muted);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:7px;padding:4px 11px;white-space:normal;text-align:right;line-height:1.7;"></span>
+    </div>
+    <div id="utr-mom-wrap" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:0.4px;color:var(--text);">📈 UTR Rate — This Month vs Previous Month</span>
+        <span id="utr-mom-sub" style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:var(--muted);"></span>
+      </div>
+      <div style="position:relative;height:210px;"><canvas id="utr-mom-chart"></canvas></div>
     </div>
     <div id="utr-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;"><div class="empty">Fetch VOC to load UTR analysis…</div></div>
   </div>
@@ -932,7 +939,19 @@ function gDate(r){
 function gStore(r){ return String(r['STORE']||r['Store']||r['store']||''); }
 function gWeek(r){ return String(r['Week']||r['WEEK']||r['week']||r['AB']||''); }
 function gMonth(r){ return String(r['Month']||r['MONTH']||r['month']||r['W']||''); }
-function gNum(r,keys){ for(var i=0;i<keys.length;i++){var v=r[keys[i]];if(v!==undefined&&v!=='')return n(v);}return 0; }
+function gNum(r,keys){
+  // 1) exact header / column-letter match (fast path)
+  for(var i=0;i<keys.length;i++){var v=r[keys[i]];if(v!==undefined&&v!=='')return n(v);}
+  // 2) tolerant fallback — ignore case, spaces & punctuation so small header
+  //    drift (e.g. "EXP-DONATED" vs "EXP-DONATE", trailing spaces) still resolves.
+  var norm=function(s){return String(s).toUpperCase().replace(/[^A-Z0-9]/g,'');};
+  var want=keys.map(norm);
+  for(var k in r){ if(!Object.prototype.hasOwnProperty.call(r,k))continue;
+    var nk=norm(k);
+    for(var j=0;j<want.length;j++){ if(want[j]&&nk===want[j]){var vv=r[k];if(vv!==undefined&&vv!=='')return n(vv);} }
+  }
+  return 0;
+}
 
 // ═══════════════════════════════════════════════
 // FILTERS
@@ -1425,28 +1444,28 @@ function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return rc
 //
 // ════════ WEIGHTED SCORECARD ════════════════════════════════
 // Each KPI awards points on a 3-tier scale (full / partial / zero).
-// Ranking Score = points earned ÷ total possible × 100  (a clean 0–100%).
+// Final Score = sum of the 5 KPIs — a clean 0–100 (each KPI is worth 20).
 //
 //   KPI            Target     Pts    Tiers
-//   Late Slam v2   ≤ 3%       10     <0.5% →10 · 0.5–1.5% →5 · >1.5% →0
-//   IB TPH         ≥ 140      7.5    >140 →7.5 · 126–140 →5 · <126 →0
-//   VOC / UTR      ≤ 0.10%    10     ≤0.10% →10 · 0.10–0.20% →5 · >0.20% →0
-//   Skip           0          10     0 →10 · 1–3 →5 · >3 →0
-//   Short          0          10     0 →10 · 1–3 →5 · >3 →0
-var SCORE_MAX = 10 + 7.5 + 10 + 10 + 10; // 47.5 points possible
-function lsV2Points(pct){ if(pct<0.5) return 10; if(pct<=1.5) return 5; return 0; }
-function tphPoints(t){ if(t>140) return 7.5; if(t>=126) return 5; return 0; }
-function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 10; if(rate<=VOC_UTR_TARGET*2) return 5; return 0; }
-function skipPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
-function shortPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
+//   Late Slam v2   ≤ 3%       20     <0.5% →20 · 0.5–1.5% →10 · >1.5% →0
+//   IB TPH         ≥ 140      20     >140 →20 · 126–140 →10 · <126 →0
+//   VOC / UTR      ≤ 0.10%    20     ≤0.10% →20 · 0.10–0.20% →10 · >0.20% →0
+//   Skip           0          20     0 →20 · 1–3 →10 · >3 →0
+//   Short          0          20     0 →20 · 1–3 →10 · >3 →0
+var SCORE_MAX = 20 + 20 + 20 + 20 + 20; // 100 points possible — Final % = points earned
+function lsV2Points(pct){ if(pct<0.5) return 20; if(pct<=1.5) return 10; return 0; }
+function tphPoints(t){ if(t>140) return 20; if(t>=126) return 10; return 0; }
+function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 20; if(rate<=VOC_UTR_TARGET*2) return 10; return 0; }
+function skipPoints(n){ if(n<=0) return 20; if(n<=3) return 10; return 0; }
+function shortPoints(n){ if(n<=0) return 20; if(n<=3) return 10; return 0; }
 // Weighted point breakdown for a store data row
 function smScoreParts(d){
   return [
-    {k:'Late Slam v2', max:10,  pts:lsV2Points(d.lsV2Pct||0), detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
-    {k:'IB TPH',       max:7.5, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (tgt ≥140)'},
-    {k:'VOC / UTR',    max:10,  pts:vocPoints(d.utrRate||0),  detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
-    {k:'Skip',         max:10,  pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (tgt 0)'},
-    {k:'Short',        max:10,  pts:shortPoints(d.short||0),  detail:(d.short||0)+' (tgt 0)'}
+    {k:'Late Slam v2', max:20, pts:lsV2Points(d.lsV2Pct||0), detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
+    {k:'IB TPH',       max:20, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (tgt ≥140)'},
+    {k:'VOC / UTR',    max:20, pts:vocPoints(d.utrRate||0),  detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
+    {k:'Skip',         max:20, pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (tgt 0)'},
+    {k:'Short',        max:20, pts:shortPoints(d.short||0),  detail:(d.short||0)+' (tgt 0)'}
   ];
 }
 function smScore(d){
@@ -1860,9 +1879,116 @@ function smLeaderboard(rows){
 // ═══════════════════════════════════════════════
 // UTR TARGET ANALYSIS CARDS
 // ═══════════════════════════════════════════════
+// Per-store UTR rate for a given calendar month (YYYY-MM), computed from the
+// FULL dataset (independent of the active period filter) so we can compare
+// this month vs the previous month.
+function smMonthUtr(month){
+  var res={};
+  (smData||[]).forEach(function(r){
+    if(String(gDate(r)).substring(0,7)!==month) return;
+    var s=gStore(r); if(!s) return;
+    if(!res[s]) res[s]={orders:0,utr:0};
+    res[s].orders += gNum(r,['ORDERS','Orders','I']);
+  });
+  var seen={};
+  (smVocRaw||[]).forEach(function(v){
+    if(String(v.date||'').substring(0,7)!==month) return;
+    if(!rcaIn(v.cat, VOC_UTR)) return;
+    var s=v.store; if(!s) return;
+    var k=s+'|'+v.orderId+'|'+v.asin; if(seen[k]) return; seen[k]=true;
+    if(!res[s]) res[s]={orders:0,utr:0};
+    res[s].utr += 1;
+  });
+  Object.keys(res).forEach(function(s){ res[s].rate = res[s].orders>0 ? res[s].utr/res[s].orders*100 : 0; });
+  return res;
+}
+// Line chart: UTR rate per store, this month vs previous month, with target line.
+function smUtrMomChart(){
+  var wrap=document.getElementById('utr-mom-wrap');
+  var cv=document.getElementById('utr-mom-chart');
+  if(!wrap||!cv) return;
+  if(!smVocRaw||!smVocRaw.length){ wrap.style.display='none'; return; }
+  var months=[...new Set((smData||[]).map(function(r){return String(gDate(r)).substring(0,7);}).filter(Boolean))].sort();
+  if(months.length<2){ wrap.style.display='none'; return; }
+  var cur=months[months.length-1], prev=months[months.length-2];
+  var curD=smMonthUtr(cur), prevD=smMonthUtr(prev);
+  var stores=[...new Set(Object.keys(curD).concat(Object.keys(prevD)))].sort();
+  if(!stores.length){ wrap.style.display='none'; return; }
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  var grid=isLight?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.06)';
+  var tick=isLight?'#5b5980':'#9694b8';
+  var mname=function(m){ var p=m.split('-'); var nm=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return nm[(+p[1])-1]+' '+p[0].slice(2); };
+  var curVals=stores.map(function(s){ return curD[s]?+curD[s].rate.toFixed(3):0; });
+  var prevVals=stores.map(function(s){ return prevD[s]?+prevD[s].rate.toFixed(3):0; });
+  var subEl=document.getElementById('utr-mom-sub');
+  if(subEl) subEl.innerHTML='<span style="color:#8b8aad;">'+mname(prev)+'</span> → <span style="color:#f72585;">'+mname(cur)+'</span> · tgt 0.010%';
+  wrap.style.display='block';
+  if(smCh.utrMom&&smCh.utrMom.destroy){ try{smCh.utrMom.destroy();}catch(e){} }
+  smCh.utrMom=new Chart(cv.getContext('2d'),{
+    type:'line',
+    data:{ labels:stores, datasets:[
+      { label:mname(prev), data:prevVals, borderColor:'#8b8aad', backgroundColor:'#8b8aad', borderWidth:2, borderDash:[5,4], tension:0.3, pointRadius:3, pointHoverRadius:5 },
+      { label:mname(cur), data:curVals, borderColor:'#f72585', backgroundColor:'rgba(247,37,133,0.12)', borderWidth:2.5, tension:0.3, fill:true, pointRadius:3.5, pointHoverRadius:6 },
+      { label:'Target', data:stores.map(function(){return VOC_UTR_TARGET;}), borderColor:'#ef4444', borderWidth:1.5, borderDash:[3,3], pointRadius:0, tension:0 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{ labels:{ color:tick, font:{family:'DM Mono',size:11}, usePointStyle:true, boxWidth:8 } },
+        tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+(+c.parsed.y).toFixed(3)+'%'; } } } },
+      scales:{
+        x:{ grid:{color:grid}, ticks:{color:tick, font:{family:'DM Mono',size:11,weight:'700'}} },
+        y:{ grid:{color:grid}, ticks:{color:tick, font:{family:'DM Mono',size:10}, callback:function(v){return v+'%';} }, beginAtZero:true }
+      }
+    }
+  });
+}
+
+// Per-store UTR-rate time series (one point per order-date), for the mini
+// trend sparkline at the top of each card. Daily rate = UTR mistakes ÷ orders.
+function smStoreUtrSeries(s){
+  var ord={};
+  (smData||[]).forEach(function(r){
+    if(gStore(r)!==s) return;
+    var dt=gDate(r); if(!dt) return;
+    ord[dt]=(ord[dt]||0)+gNum(r,['ORDERS','Orders','I']);
+  });
+  var utr={}, seen={};
+  (smVocRaw||[]).forEach(function(v){
+    if(v.store!==s) return;
+    if(!rcaIn(v.cat, VOC_UTR)) return;
+    var dt=v.date||''; if(!dt) return;
+    var k=dt+'|'+v.orderId+'|'+v.asin; if(seen[k]) return; seen[k]=true;
+    utr[dt]=(utr[dt]||0)+1;
+  });
+  return Object.keys(ord).sort().map(function(dt){
+    var o=ord[dt]||0, u=utr[dt]||0;
+    return { date:dt, rate:o>0?u/o*100:0 };
+  });
+}
+// Tiny inline-SVG sparkline (full-width). Dashed line marks the target.
+function spark(series, color, target){
+  if(!series||series.length<2) return '<div style="height:26px;"></div>';
+  var w=260,h=26,pad=3;
+  var vals=series.map(function(p){return p.rate;});
+  var pool=vals.concat(target!=null?[target]:[]);
+  var min=Math.min.apply(null,pool), max=Math.max.apply(null,pool), range=(max-min)||1;
+  function X(i){return pad+i/(series.length-1)*(w-2*pad);}
+  function Y(v){return h-pad-((v-min)/range)*(h-2*pad);}
+  var line=vals.map(function(v,i){return (i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1);}).join(' ');
+  var area='M'+X(0).toFixed(1)+' '+(h-pad)+' '+vals.map(function(v,i){return 'L'+X(i).toFixed(1)+' '+Y(v).toFixed(1);}).join(' ')+' L'+X(series.length-1).toFixed(1)+' '+(h-pad)+' Z';
+  var lx=X(series.length-1).toFixed(1), ly=Y(vals[vals.length-1]).toFixed(1);
+  var gid='sg'+Math.random().toString(36).slice(2,7);
+  var tgt = target!=null ? '<line x1="'+pad+'" y1="'+Y(target).toFixed(1)+'" x2="'+(w-pad)+'" y2="'+Y(target).toFixed(1)+'" stroke="#ef4444" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5" vector-effect="non-scaling-stroke"/>' : '';
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="width:100%;height:26px;display:block;overflow:visible;">'+
+    '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity="0.30"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#'+gid+')"/>'+ tgt +
+    '<path d="'+line+'" fill="none" stroke="'+color+'" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
+    '<circle cx="'+lx+'" cy="'+ly+'" r="2.4" fill="'+color+'" vector-effect="non-scaling-stroke"/>'+
+  '</svg>';
+}
+
 function smRenderUTR(rows){
   var el=document.getElementById('utr-cards'); if(!el) return;
-  var totalsEl=document.getElementById('utr-totals');
   var isLight=document.documentElement.getAttribute('data-theme')==='light';
   var cardBg=isLight?'#ffffff':'#0e0d18';
   var txt=isLight?'#1a1830':'#e8e6ff';
@@ -1873,20 +1999,40 @@ function smRenderUTR(rows){
   if(!stores.length){ el.innerHTML='<div class="empty">No data</div>'; if(totalsEl) totalsEl.textContent=''; return; }
   var totVoc=0, totUtr=0, totLs=0, totSkip=0, totShort=0;
   function fld(l,v){ return '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:'+mut+';">'+l+'</span><span style="font-weight:800;color:'+txt+';">'+v+'</span></div>'; }
-  function stat(l,v,c){ return '<div style="background:'+barBg+';border-radius:8px;padding:6px 7px;text-align:center;"><div style="font-size:7.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:'+mut+';margin-bottom:3px;white-space:nowrap;">'+l+'</div><div style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:800;color:'+c+';line-height:1;">'+v+'</div></div>'; }
-  var html=stores.map(function(s){
+  var rowBd=isLight?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.06)';
+  var divC=isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.07)';
+  function statusWord(c, lower){
+    if(c==='#06d6a0') return 'On Target';
+    if(c==='#ffd60a') return 'Near Target';
+    return lower?'Above Target':'Below Target';
+  }
+  // A KPI meter: label + target + status pill on top, fill bar + achieved value below.
+  function meter(label,tgtStr,achHTML,fillPct,c,statusTxt,last){
+    fillPct=Math.max(3,Math.min(100,fillPct));
+    return '<div style="padding:8px 0;'+(last?'':'border-bottom:1px solid '+rowBd+';')+'">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">'+
+        '<span style="font-size:12px;font-weight:700;color:'+txt+';white-space:nowrap;">'+label+' <span style="font-family:\'DM Mono\',monospace;font-size:9.5px;font-weight:600;color:'+mut+';">tgt '+tgtStr+'</span></span>'+
+        '<span style="font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:2px 8px;border-radius:7px;background:'+c+'1f;color:'+c+';white-space:nowrap;">'+statusTxt+'</span>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="flex:1;height:7px;background:'+barBg+';border-radius:10px;overflow:hidden;"><div style="height:100%;width:'+fillPct+'%;background:linear-gradient(90deg,'+c+'88,'+c+');border-radius:10px;transition:width .6s;"></div></div>'+
+        '<span style="min-width:88px;text-align:right;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:800;color:'+c+';white-space:nowrap;">'+achHTML+'</span>'+
+      '</div>'+
+    '</div>';
+  }
+
+  // ── First pass: compute per-store data + weighted score (same 100-pt logic
+  //    as the leaderboard) so each card can show its rank. ──
+  var sdata=stores.map(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders=sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
     var voc=smVocCount(s), utr=smUtrCount(s);
     totVoc+=voc; totUtr+=utr;
-    totLs+=sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
-    totSkip+=sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
-    totShort+=sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
-    // Store-wise operational metrics for the mini stat-grid
-    var sLs    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var sLsV2  = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
     var sSkip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
     var sShort = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
+    totLs+=sLsV2; totSkip+=sSkip; totShort+=sShort;
+    var sLs    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var sIbTph = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
     var sObTph = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
     var sSla   = toP(avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);})));
@@ -1894,39 +2040,86 @@ function smRenderUTR(rows){
     var sLsPct   = orders>0?(sLs/orders*100):0;
     var sLsV2Pct = orders>0?(sLsV2/orders*100):0;
     var rate=hasOrders?(utr/orders*100):0;
+    var score=hasOrders?(lsV2Points(sLsV2Pct)+tphPoints(sIbTph)+vocPoints(rate)+skipPoints(sSkip)+shortPoints(sShort)):-1;
+    return {s:s,orders:orders,voc:voc,utr:utr,sLsV2:sLsV2,sSkip:sSkip,sShort:sShort,sLs:sLs,
+      sIbTph:sIbTph,sObTph:sObTph,sSla:sSla,hasOrders:hasOrders,sLsPct:sLsPct,sLsV2Pct:sLsV2Pct,
+      rate:rate,score:score};
+  });
+  // Rank stores that have orders — best score first, tiebreak on lower UTR rate.
+  var ranked=sdata.filter(function(d){return d.hasOrders;}).slice()
+    .sort(function(a,b){return (b.score-a.score)||(a.rate-b.rate);});
+  ranked.forEach(function(d,i){ d.rank=i+1; });
+  var totRanked=ranked.length;
+  // Display best→worst, no-order stores last.
+  sdata.sort(function(a,b){
+    if(a.hasOrders&&b.hasOrders) return a.rank-b.rank;
+    if(a.hasOrders) return -1; if(b.hasOrders) return 1;
+    return a.s.localeCompare(b.s);
+  });
+
+  var html=sdata.map(function(d){
+    var s=d.s, orders=d.orders, voc=d.voc, utr=d.utr, hasOrders=d.hasOrders, rate=d.rate;
+    var sLsV2=d.sLsV2, sSkip=d.sSkip, sShort=d.sShort, sIbTph=d.sIbTph, sSla=d.sSla, sLsV2Pct=d.sLsV2Pct;
     var rateStr=hasOrders?rate.toFixed(3)+'%':'— (no orders)';
     var ok=hasOrders?(rate<=VOC_UTR_TARGET):true;
     var barW=hasOrders?Math.min((rate/(VOC_UTR_TARGET||0.1))*100,100):0;
     var col=SC[s]||'#8b8aad';
     var accent=ok?'#06d6a0':'#ef4444';
-    // No order count → no status / no rank (neutral grey). Otherwise show the
-    // UTR rate itself as the badge, colour-coded — no "on/above target" wording.
     var statusBg, statusCol, borderC, badge;
     if(!hasVoc){ statusBg='rgba(139,138,173,0.15)'; statusCol=mut; borderC='rgba(139,138,173,0.25)'; badge='📥 Fetch VOC'; }
     else if(!hasOrders){ statusBg='rgba(139,138,173,0.12)'; statusCol=mut; borderC='rgba(139,138,173,0.22)'; badge='— No orders'; }
     else { statusBg=(ok?'rgba(6,214,160,0.14)':'rgba(239,68,68,0.14)'); statusCol=(ok?'#06d6a0':'#ef4444'); borderC=(ok?'rgba(6,214,160,0.4)':'rgba(239,68,68,0.4)'); badge=rate.toFixed(3)+'%'; }
-    // Colour-coded store-wise stat grid (Late Slam · LS v2 · SLA · Skip · Short · TPH)
-    var cLs  = sLsPct<3?'#06d6a0':sLsPct<5?'#ffd60a':'#ef4444';
+    // Per-KPI achievement colours (3-tier vs target)
     var cLv2 = sLsV2Pct<0.5?'#06d6a0':sLsV2Pct<=1.5?'#ffd60a':'#ef4444';
     var cSk  = sSkip<=0?'#06d6a0':sSkip<=3?'#ffd60a':'#ef4444';
     var cSh  = sShort<=0?'#06d6a0':sShort<=3?'#ffd60a':'#ef4444';
     var cTph = sIbTph>140?'#06d6a0':sIbTph>=126?'#ffd60a':'#ef4444';
     var cSla = sSla>=SLA_TARGET?'#06d6a0':sSla>=95?'#ffd60a':'#ef4444';
-    var statsGrid = !hasOrders ? '' :
-      '<div style="height:1px;background:'+(isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.07)')+';margin:13px 0 10px;"></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'+
-        stat('Late Slam', sLs+' · '+sLsPct.toFixed(2)+'%', cLs)+
-        stat('LS v2', sLsV2+' · '+sLsV2Pct.toFixed(2)+'%', cLv2)+
-        stat('SLA avg', sSla.toFixed(1)+'%', cSla)+
-        stat('Skip', String(sSkip), cSk)+
-        stat('Short', String(sShort), cSh)+
-        stat('TPH IB/OB', sIbTph.toFixed(0)+'/'+sObTph.toFixed(0), cTph)+
+    // Rank pill (medal for top 3)
+    var rankPill='';
+    if(hasOrders&&d.rank){
+      var medal=d.rank===1?'🥇':d.rank===2?'🥈':d.rank===3?'🥉':'';
+      var rc=d.rank===1?'#ffd60a':d.rank===2?'#c8c8da':d.rank===3?'#e0974a':'#8b8aad';
+      rankPill='<span title="Score '+d.score+'/100" style="font-size:11px;font-weight:900;font-family:\'Syne\',sans-serif;padding:4px 9px;border-radius:10px;background:'+rc+'1f;color:'+rc+';border:1px solid '+rc+'66;white-space:nowrap;">'+(medal?medal+' ':'')+'#'+d.rank+'<span style="opacity:.55;font-weight:700;">/'+totRanked+'</span></span>';
+    }
+    // Mini UTR-rate trend sparkline (top of card)
+    var series = hasVoc ? smStoreUtrSeries(s).slice(-14) : [];
+    var sparkBlock='';
+    if(hasVoc && series.length>=2){
+      var first=series[0].rate, last=series[series.length-1].rate, dlt=last-first;
+      var flat=Math.abs(dlt)<1e-9, dUp=dlt>0;
+      var dCol=flat?mut:(dUp?'#ef4444':'#06d6a0'); // UTR down = good
+      var dTxt=flat?'→ flat':((dUp?'▲ +':'▼ ')+Math.abs(dlt).toFixed(3)+'%');
+      sparkBlock='<div style="margin:2px 0 12px;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'+
+          '<span style="font-size:7.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:'+mut+';">UTR Trend · last '+series.length+'d</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:8.5px;font-weight:800;color:'+dCol+';">'+dTxt+'</span>'+
+        '</div>'+
+        spark(series, statusCol, VOC_UTR_TARGET)+
       '</div>';
+    }
+    var tvaBlock = !hasOrders ? '' :
+      '<div style="height:1px;background:'+divC+';margin:13px 0 9px;"></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+        '<span style="font-size:8px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+mut+';">🎯 Target vs Achievement</span>'+
+        '<span style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:800;color:'+(d.score>=80?'#06d6a0':d.score>=50?'#ffd60a':'#ef4444')+';">Score '+d.score+'/100</span>'+
+      '</div>'+
+      meter('UTR Rate','≤0.010%', rate.toFixed(3)+'%', rate/VOC_UTR_TARGET*100, statusCol, (rate<=VOC_UTR_TARGET?'On Target':'Above Target'))+
+      meter('Late Slam v2','≤3%',
+        '<span style="opacity:.5;font-weight:600;font-size:10px;">'+sLsV2+' · </span>'+sLsV2Pct.toFixed(2)+'%',
+        sLsV2Pct/3*100, cLv2, statusWord(cLv2,true))+
+      meter('SLA Avg','≥98%', sSla.toFixed(1)+'%', sSla/98*100, cSla, statusWord(cSla,false))+
+      meter('IB TPH','≥140', sIbTph.toFixed(0), sIbTph/140*100, cTph, statusWord(cTph,false))+
+      meter('Skip','0', String(sSkip), sSkip<=0?4:sSkip/3*100, cSk, statusWord(cSk,true))+
+      meter('Short','0', String(sShort), sShort<=0?4:sShort/3*100, cSh, statusWord(cSh,true), true);
     return '<div style="background:'+cardBg+';border:1.5px solid '+borderC+';border-radius:14px;padding:16px 18px;'+(!hasOrders?'opacity:.55;':'')+'">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">'+
         '<div style="font-size:16px;font-weight:900;font-family:\'Syne\',sans-serif;color:'+col+';letter-spacing:0.3px;">'+s+'</div>'+
-        '<span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:10px;background:'+statusBg+';color:'+statusCol+';white-space:nowrap;">'+badge+'</span>'+
+        '<div style="display:flex;align-items:center;gap:6px;">'+rankPill+
+          '<span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:10px;background:'+statusBg+';color:'+statusCol+';white-space:nowrap;">'+badge+'</span>'+
+        '</div>'+
       '</div>'+
+      sparkBlock+
       fld('VOC Count', String(voc))+
       fld('UTR Count', String(utr))+
       fld('UTR Rate', '<span style="color:'+(hasVoc&&hasOrders?statusCol:mut)+';">'+rateStr+'</span>')+
@@ -1935,7 +2128,7 @@ function smRenderUTR(rows){
         ? '<div style="height:6px;background:'+barBg+';border-radius:10px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:'+barW+'%;background:'+accent+';border-radius:10px;transition:width .5s;"></div></div>'+
           '<div style="font-size:10px;color:'+mut+';margin-top:6px;">'+utr+' UTR mistake'+(utr===1?'':'s')+' · '+orders.toLocaleString()+' orders</div>'
         : (hasVoc&&!hasOrders ? '<div style="font-size:10px;color:'+mut+';margin-top:6px;">No orders in this period — not scored / unranked</div>' : ''))+
-      statsGrid+
+      tvaBlock+
       '</div>';
   }).join('');
   el.innerHTML=html;
@@ -1945,6 +2138,7 @@ function smRenderUTR(rows){
       ? 'Total VOC: <b style="color:#f72585;">'+totVoc+'</b> &nbsp;·&nbsp; Total UTR: <b style="color:#ef4444;">'+totUtr+'</b> &nbsp;·&nbsp; '+_ls
       : _ls+' &nbsp;·&nbsp; <span style="opacity:.65;">Fetch VOC for VOC/UTR</span>';
   }
+  try{ smUtrMomChart(); }catch(e){ console.warn('UTR month-compare chart skipped:', e); }
 }
 
 // ═══════════════════════════════════════════════
@@ -2367,7 +2561,7 @@ function copySummary(){
     var obTph   = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
     var damaged = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
     var quality = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
-    var donate  = sum(sr.map(function(r){return gNum(r,['EXP-DONATE','Exp-Donate','H']);}));
+    var donate  = sum(sr.map(function(r){return gNum(r,['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H']);}));
     var slaTR   = avg(sr.map(function(r){return gNum(r,['IB SLA TRANS','IB SLA Trans','R']);}));
     var slaVR   = avg(sr.map(function(r){return gNum(r,['IB SLA VENDOR','IB SLA Vendor','Q']);}));
     var slaTpct = toP(slaTR).toFixed(1)+'%';
