@@ -404,7 +404,7 @@ tbody tr{transition:background 0.15s;}
 #delivery-scene.show{display:flex;}
 </style>
 </head>
-<body>
+<body style="background-color: rgb(0, 0, 0)">
 
 <!-- LOADER -->
 <div id="page-loader">
@@ -436,6 +436,11 @@ tbody tr{transition:background 0.15s;}
   </div>
   <div class="hdr-right">
     <button class="theme-btn" onclick="toggleTheme()" title="Toggle dark/light">🌓</button>
+    <select id="greet-sel" class="fsel" title="Greeting used in Copy Summary" style="padding:7px 10px;font-size:11px;">
+      <option value="morning">🌅 Good Morning</option>
+      <option value="afternoon">☀️ Good Afternoon</option>
+      <option value="evening">🌆 Good Evening</option>
+    </select>
     <button class="copy-btn" onclick="copySummary()">📋 Copy Summary</button>
     <button class="load-btn" id="sm-btn" onclick="smLoad()">⟳ Refresh</button>
   </div>
@@ -695,30 +700,40 @@ tbody tr{transition:background 0.15s;}
           <button class="pb" id="lb-lay-card" onclick="smSetLbLayout('card')" title="Card view — store on top">▦ Cards</button>
           <button class="pb" id="lb-lay-board" onclick="smSetLbLayout('board')" title="Board view — centered header + metric strip">▣ Board</button>
         </div>
-        <input type="date" id="voc-date-filter" class="fsel" style="font-size:11px;padding:5px 10px;" title="Filter VOC by specific date" onchange="if(window.smVocRaw&&smVocRaw.length){if(this.value){var p=document.getElementById('voc-period-sel');if(p&&p.value==='all')p.value='day';}smUpdateVocStatus();smLeaderboard(smFilter());}">
-        <select id="voc-period-sel" class="fsel" style="font-size:11px;padding:5px 10px;" onchange="if(window.smVocRaw&&smVocRaw.length){smUpdateVocStatus();smLeaderboard(smFilter());}">
+        <input type="date" id="voc-date-filter" class="fsel" style="display:none;" title="Filter VOC by specific date" onchange="if(window.smVocRaw&&smVocRaw.length){if(this.value){var p=document.getElementById('voc-period-sel');if(p&&p.value==='all')p.value='day';}smUpdateVocStatus();smLeaderboard(smFilter());}">
+        <select id="voc-period-sel" class="fsel" style="display:none;" onchange="if(window.smVocRaw&&smVocRaw.length){smUpdateVocStatus();smLeaderboard(smFilter());}">
           <option value="all">VOC — All Dates</option>
           <option value="day">VOC — Selected Date</option>
           <option value="week">VOC — This Week</option>
           <option value="month">VOC — This Month</option>
         </select>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;font-weight:700;color:var(--muted);white-space:nowrap;">VOC follows date filter ↑</span>
         <span id="voc-status" style="display:none;align-items:center;font-family:'DM Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.2px;white-space:nowrap;"></span>
         <button onclick="smFetchVOC()" id="voc-flt-btn" style="background:linear-gradient(135deg,#f72585,#7c3aed);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Syne',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(247,37,133,0.3);">🎙 Fetch VOC</button>
       </div>
     </div>
     <div id="sm-lb"><div class="empty">Loading…</div></div>
     <div class="score-rubric">
-      <div class="sr-head">🧮 Score Calculation <span>— 5 sections, each worth <b>100</b> full marks. Final score = average of all 5 sections, as a <b>%</b>.</span></div>
+      <div class="sr-head">🧮 Weighted Scorecard <span>— 5 KPIs award points (47.5 max). Ranking Score = points earned ÷ 47.5 × 100, shown as a <b>%</b>.</span></div>
       <div class="sr-grid">
-        <div class="sr-item"><span class="sr-w" style="color:#ef4444;">−15</span><div class="sr-tx"><b>Short</b><i>per short-pick</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#f97316;">−10</span><div class="sr-tx"><b>Skip</b><i>per skipped order</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#eab308;">−5</span><div class="sr-tx"><b>Late Slam</b><i>per late slam</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#06d6a0;font-size:12px;">5·10·15·20</span><div class="sr-tx"><b>SLA</b><i>98+ −5 · 94+ −10 · 90+ −15 · &lt;90 −20</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#0891b2;font-size:12px;">10·20·30</span><div class="sr-tx"><b>IB TPH</b><i>140+ ok · 130+ −10 · 100+ −20 · 70+ −30 · &lt;70 −40</i></div></div>
-        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#7c3aed;">÷5</span><div class="sr-tx"><b>Final %</b><i>average of sections</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#eab308;">10</span><div class="sr-tx"><b>Late Slam v2</b><i>tgt ≤3% · &lt;0.5% →10 · 0.5–1.5% →5 · &gt;1.5% →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#0891b2;">7.5</span><div class="sr-tx"><b>IB TPH</b><i>tgt ≥140 · &gt;140 →7.5 · 126–140 →5 · &lt;126 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#f72585;">10</span><div class="sr-tx"><b>VOC / UTR</b><i>tgt ≤0.010% · ≤0.010 →10 · ≤0.020 →5 · &gt;0.020 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#f97316;">10</span><div class="sr-tx"><b>Skip</b><i>tgt 0 · 0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#ef4444;">10</span><div class="sr-tx"><b>Short</b><i>tgt 0 · 0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
+        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#7c3aed;font-size:12px;">÷47.5</span><div class="sr-tx"><b>Final %</b><i>earned ÷ 47.5 × 100</i></div></div>
       </div>
-      <div class="sr-note"><b>Each section starts at 100.</b> Count mistakes lose marks per occurrence (Short −15, Skip −10, Late Slam −5). <b>SLA</b> &amp; <b>IB TPH</b> deduct by tier — the further below target, the bigger the cut. <b>Final = (Short + Skip + Late Slam + SLA + IB TPH) ÷ 5.</b> Hover any candle in the Market View chart for a store's full breakdown.</div>
+      <div class="sr-note"><b>Each KPI scores on a 3-tier scale</b> (full / partial / zero) against its target. <b>Final Score = (Late Slam v2 + IB TPH + VOC/UTR + Skip + Short) ÷ 47.5 × 100.</b> Stores with <b>no orders are not ranked</b>; stores under <b>100 orders</b> can't take a top spot. Hover any candle in the Market View chart for a store's full points breakdown.</div>
     </div>
+  </div>
+
+  <!-- UTR TARGET ANALYSIS -->
+  <div class="lb-wrap ani3" id="utr-wrap" style="margin-top:14px;">
+    <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span>🎯 UTR Target Analysis <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— ops-controllable mistakes vs 0.010% monthly target</span></span>
+      <span id="utr-totals" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:800;letter-spacing:0.3px;color:var(--muted);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:7px;padding:4px 11px;white-space:normal;text-align:right;line-height:1.7;"></span>
+    </div>
+    <div id="utr-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;"><div class="empty">Fetch VOC to load UTR analysis…</div></div>
   </div>
 
   <!-- RAW TABLE -->
@@ -814,6 +829,9 @@ function setProgress(pct){
 window.addEventListener('DOMContentLoaded', function(){
   setProgress(10);
   document.getElementById('loader-msg').textContent = 'Connecting to Google Sheet…';
+  // Default the Copy-Summary greeting to the current time of day.
+  var _gh=new Date().getHours(), _gs=document.getElementById('greet-sel');
+  if(_gs) _gs.value = _gh<12?'morning':(_gh<17?'afternoon':'evening');
   smLoad(true);
 });
 
@@ -1254,8 +1272,9 @@ function smFetchVOC(){
       var orderId = String(r.orderId||r.order_id||r.orderid||'').trim();
       var asin    = String(r.asin||r.ASIN||'').trim();
       var date    = String(r.date||r.Date||r.DATE||'').split('T')[0].split(' ')[0].trim();
+      var cat     = String(r.rcaCategory||r.RcaCategory||r.rca_category||'').trim().replace(/\s*[\u2013\u2014\-]+\s*/g,' - ');
       if(!store) return;
-      smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date});
+      smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date, cat:cat});
     });
 
     // Compute available VOC date range and surface it to the user.
@@ -1348,33 +1367,99 @@ function smSetLbLayout(m){
 // STORE PERFORMANCE RANKING — CANDLESTICK TERMINAL
 // ═══════════════════════════════════════════════
 var smRankRAF=null;
-// ── Tiered deductions ──────────────────────────────────────
-// IB TPH: ≥140 ok · 130–139 −10 · 100–129 −20 · 70–99 −30 · <70 −40
-function tphDeduct(t){
-  if(t<=0)    return 0;   // no data → no penalty
-  if(t>=140)  return 0;
-  if(t>=130)  return 10;
-  if(t>=100)  return 20;
-  if(t>=70)   return 30;
-  return 40;
-}
-// SLA: 100 ok · 98–99.99 −5 · 94–97.99 −10 · 90–93.99 −15 · <90 −20
-function slaDeduct(s){
-  if(s<=0)    return 0;   // no data → no penalty
-  if(s>=100)  return 0;
-  if(s>=98)   return 5;
-  if(s>=94)   return 10;
-  if(s>=90)   return 15;
+// ════════ VOC / UTR (Voice-of-Customer ops-controllable mistakes) ════
+// Mirrors the VOC Analysis page: a UTR mistake is an ops-controllable RCA
+// category. Target rate = 0.010% of orders (monthly target).
+var VOC_UTR_TARGET = 0.010; // 0.010% of orders — single source of truth
+var VOC_UTR_TARGET_STR = '0.010%';
+var LS_V2_TARGET  = 3;    // Late Slam v2 target ≤3%
+var IB_TPH_TARGET = 140;  // IB TPH target ≥140
+var SLA_TARGET    = 98;   // SLA target ≥98%
+var VOC_UTR = [
+  'Ops Controllable - QC Issue',
+  'Ops Controllable - Picker Mistake',
+  'Ops Controllable - Expiry Breach',
+  'Ops Controllable - Wrong Barcode Pasted',
+  'Ops Controllable - No Gelpacks added',
+  'Ops Controllable - No Bubble Bag used',
+  'Ops Controllable - Partly Open',
+  'Ops Controllable - Temp. Abuse'
+];
+function normRca(s){ if(!s) return ''; return String(s).trim().replace(/\s*[\u2013\u2014\-]+\s*/g,' - ').toLowerCase(); }
+function rcaIn(val, arr){ var n=normRca(val); return arr.some(function(t){return normRca(t)===n;}); }
+// UTR rate (% of orders) vs 0.10% target → score deduction
+//   ≤0.10% → 0 (on target) · ≤0.20% → −10 · ≤0.30% → −15 · >0.30% → −20
+function utrDeduct(rate){
+  if(rate<=0) return 0;
+  if(rate<=VOC_UTR_TARGET)   return 0;
+  if(rate<=VOC_UTR_TARGET*2) return 10;
+  if(rate<=VOC_UTR_TARGET*3) return 15;
   return 20;
 }
-// Shared advantages / disadvantages builder for a store data row
+// Deduped VOC rows for a store, filtered to the SAME period as the main
+// date filter (so UTR rate numerator and the order denominator always cover
+// the same window — required for the 0.10% target to be meaningful).
+function smVocFilteredRows(s){
+  if(!smVocRaw||!smVocRaw.length) return [];
+  var pv=(document.getElementById('sm-pval')||{}).value||'';
+  var seen={},out=[];
+  smVocRaw.forEach(function(v){
+    if(v.store!==s) return;
+    if(smPeriod==='day'   && (!pv || v.date!==pv)) return;
+    if(smPeriod==='month' && (!pv || (v.date||'').substring(0,7)!==String(pv).substring(0,7))) return;
+    if(smPeriod==='year'  && (!pv || (v.date||'').substring(0,4)!==String(pv).substring(0,4))) return;
+    // 'all'/'week' → no date narrowing (count everything for the store)
+    var k=v.orderId+'|'+v.asin;
+    if(!seen[k]){ seen[k]=true; out.push(v); }
+  });
+  return out;
+}
+function smVocCount(s){ return smVocFilteredRows(s).length; }
+function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return rcaIn(v.cat, VOC_UTR);}).length; }
+
+// ════════ SCORING & TARGET LOGIC ════════════════════════════
+// ON-TARGET thresholds (binary "healthy" markers):
+//   Late Slam : < 3% of orders        SLA : ≥ 99%
+//   IB TPH    : ≥ 140                  Skip / Short : 0
+//   VOC / UTR : 0 customer complaints
+//
+// ════════ WEIGHTED SCORECARD ════════════════════════════════
+// Each KPI awards points on a 3-tier scale (full / partial / zero).
+// Ranking Score = points earned ÷ total possible × 100  (a clean 0–100%).
+//
+//   KPI            Target     Pts    Tiers
+//   Late Slam v2   ≤ 3%       10     <0.5% →10 · 0.5–1.5% →5 · >1.5% →0
+//   IB TPH         ≥ 140      7.5    >140 →7.5 · 126–140 →5 · <126 →0
+//   VOC / UTR      ≤ 0.10%    10     ≤0.10% →10 · 0.10–0.20% →5 · >0.20% →0
+//   Skip           0          10     0 →10 · 1–3 →5 · >3 →0
+//   Short          0          10     0 →10 · 1–3 →5 · >3 →0
+var SCORE_MAX = 10 + 7.5 + 10 + 10 + 10; // 47.5 points possible
+function lsV2Points(pct){ if(pct<0.5) return 10; if(pct<=1.5) return 5; return 0; }
+function tphPoints(t){ if(t>140) return 7.5; if(t>=126) return 5; return 0; }
+function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 10; if(rate<=VOC_UTR_TARGET*2) return 5; return 0; }
+function skipPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
+function shortPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
+// Weighted point breakdown for a store data row
+function smScoreParts(d){
+  return [
+    {k:'Late Slam v2', max:10,  pts:lsV2Points(d.lsV2Pct||0), detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
+    {k:'IB TPH',       max:7.5, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (tgt ≥140)'},
+    {k:'VOC / UTR',    max:10,  pts:vocPoints(d.utrRate||0),  detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
+    {k:'Skip',         max:10,  pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (tgt 0)'},
+    {k:'Short',        max:10,  pts:shortPoints(d.short||0),  detail:(d.short||0)+' (tgt 0)'}
+  ];
+}
+function smScore(d){
+  return smScoreParts(d).reduce(function(a,x){return a+x.pts;},0)/SCORE_MAX*100;
+}
+// Advantages / disadvantages builder for tooltips (points view)
 function smStorePC(d){
   var pros=[], cons=[];
-  if(d.short>0) cons.push('Short '+d.short+' (-'+(d.short*15)+')'); else pros.push('No shorts');
-  if(d.skip>0)  cons.push('Skip '+d.skip+' (-'+(d.skip*10)+')');  else pros.push('No skips');
-  if(d.ls>0)    cons.push('Late Slam '+d.ls+' (-'+(d.ls*5)+')');  else pros.push('No late slams');
-  if(d.sla>0){ var sd=slaDeduct(d.sla); if(sd>0) cons.push('SLA '+d.sla.toFixed(1)+'% (-'+sd+')'); else pros.push('SLA '+d.sla.toFixed(1)+'%'); }
-  if(d.ibTph>0){ var td=tphDeduct(d.ibTph); if(td>0) cons.push('IB TPH '+d.ibTph.toFixed(0)+' (-'+td+')'); else pros.push('IB TPH '+d.ibTph.toFixed(0)); }
+  smScoreParts(d).forEach(function(p){
+    var label=p.k+' '+p.detail+'  ['+p.pts+'/'+p.max+' pts]';
+    if(p.pts>=p.max) pros.push(label);
+    else cons.push(label);
+  });
   return {pros:pros, cons:cons};
 }
 function smRankChart(){
@@ -1685,34 +1770,19 @@ function smLeaderboard(rows){
     var ls    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var sla   = toP(slaR);
     var pts   = toP(sr.length>0?ptsR/sr.length:0);
-    var voc   = storeVoc(s);
+    var voc   = smVocCount(s);
     var skip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
     var short = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
 
-    // ── Section-based Score — each section = 100 full marks ─────
-    // Mistake sections lose marks PER occurrence (heavier mistake = bigger weight):
-    //   Short     : −15 per short      (most critical)
-    //   Skip      : −10 per skip
-    //   Late Slam : −5  per late slam
-    // Performance sections are scored as the achievement % itself:
-    //   SLA    : = SLA% achieved              (cap 100)
-    //   IB TPH : = IB TPH / 140 target × 100  (cap 100)
-    // Final score = average of all 5 sections → a % (0–100).
-    var secShort = Math.max(0, 100 - short*15);
-    var secSkip  = Math.max(0, 100 - skip*10);
-    var secSlam  = Math.max(0, 100 - ls*5);
-    var secSla   = Math.max(0, 100 - slaDeduct(sla));   // tiered: see slaDeduct()
-    var secTph   = Math.max(0, 100 - tphDeduct(ibTph)); // tiered: see tphDeduct()
-    var sections = [
-      {k:'Short',     v:secShort, note:short+' short × −15'},
-      {k:'Skip',      v:secSkip,  note:skip+' skip × −10'},
-      {k:'Late Slam', v:secSlam,  note:ls+' late slam × −5'},
-      {k:'SLA',       v:secSla,   note:sla.toFixed(1)+'% (−'+slaDeduct(sla)+')'},
-      {k:'IB TPH',    v:secTph,   note:ibTph.toFixed(0)+' (−'+tphDeduct(ibTph)+')'}
-    ];
-    var score = sections.reduce(function(a,x){return a+x.v;},0)/sections.length;
+    // ── Weighted scorecard (see smScoreParts / SCORE_MAX) ──────
+    // Late Slam v2 count = column Z; rate = count ÷ orders.
+    var lsV2   = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
+    var lsV2Pct= orders>0?(lsV2/orders*100):0;
+    var utr    = smUtrCount(s);
+    var utrRate= orders>0?(utr/orders*100):0;
 
-    return{store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, score:score, sections:sections,
+    var d = {store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, utr:utr, utrRate:utrRate,
+      lsV2:lsV2, lsV2Pct:lsV2Pct,
       inbound:sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);})),
       transs: sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);})),
       vendor: sum(sr.map(function(r){return gNum(r,['VENDOR','Vendor','D']);})),
@@ -1724,10 +1794,19 @@ function smLeaderboard(rows){
       skip:   skip,
       short:  short
     };
+    d.parts = smScoreParts(d);
+    d.score = smScore(d);
+    return d;
   }).filter(function(d){
-    // Skip stores with no activity at all (no inbound, no outbound, no orders) — e.g. QDD3
-    return d.inbound>0 || d.obUnits>0 || d.orders>0;
-  }).sort(function(a,b){return b.score-a.score;});
+    // No orders → not ranked at all (the scorecard is order-based).
+    return d.orders>0;
+  }).sort(function(a,b){
+    // Low-volume stores (<100 orders) are never eligible for the top spots —
+    // they always sort below any store that meets the 100-order minimum.
+    var qa=a.orders>=100?1:0, qb=b.orders>=100?1:0;
+    if(qa!==qb) return qb-qa;
+    return b.score-a.score;
+  });
 
   var medals=['🥇','🥈','🥉'];
   smLbData=data;
@@ -1741,34 +1820,131 @@ function smLeaderboard(rows){
   document.getElementById('sm-lb').innerHTML=data.map(function(d,i){
     var col  = SC[d.store]||'#8b8aad';
     var slaC = d.sla>=99?'#06d6a0':d.sla>=95?'#ffd60a':'#ef4444';
-    var lsC  = d.ls===0?'#06d6a0':d.ls<=3?'#ffd60a':'#ef4444';
+    var lsPctV = d.orders>0?(d.ls/d.orders*100):0;
+    var lsC  = lsPctV<3?'#06d6a0':lsPctV<5?'#ffd60a':'#ef4444';
     var vocC = d.voc===0?'#06d6a0':d.voc<=3?'#ffd60a':'#f72585';
-    var ibC  = d.ibTph>=145?'#06d6a0':d.ibTph>=100?'#ffd60a':'#ef4444';
+    var ibC  = d.ibTph>=140?'#06d6a0':d.ibTph>=100?'#ffd60a':'#ef4444';
     // Score colour: green ≥90, yellow ≥70, red <70
     var scoreC = d.score>=90?'#06d6a0':d.score>=70?'#ffd60a':'#ef4444';
-    return '<div class="lb-row" style="--sc:'+col+';">'+
+    var utrC   = d.utrRate<=VOC_UTR_TARGET?'#06d6a0':d.utrRate<=VOC_UTR_TARGET*2?'#ffd60a':'#ef4444';
+    var lowVol = d.orders<100;
+    var medal  = lowVol ? '<span style="font-size:13px;opacity:.6;">▫︎</span>' : (medals[i]||'#'+(i+1));
+    return '<div class="lb-row" style="--sc:'+col+';'+(lowVol?'opacity:.92;':'')+'">'+
       '<div class="lb-head">'+
-        '<div class="lb-medal">'+(medals[i]||'#'+(i+1))+'</div>'+
-        '<div class="lb-store" style="color:'+col+';">'+d.store+'</div>'+
+        '<div class="lb-medal">'+medal+'</div>'+
+        '<div class="lb-store" style="color:'+col+';">'+d.store+(lowVol?' <span title="Under 100 orders — excluded from top ranking" style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:800;letter-spacing:.3px;color:#ff6b35;background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.35);border-radius:6px;padding:2px 6px;margin-left:7px;vertical-align:middle;white-space:nowrap;">⚠ &lt;100 ORDERS</span>':'')+'</div>'+
       '</div>'+
       '<div class="lb-chips">'+
         ch('SLA',d.sla.toFixed(2)+'%',slaC)+
         ch('Inbound',fmt(d.inbound),'#06d6a0')+
         ch('Transs',fmt(d.transs),'#a855f7')+
         ch('Vendor',fmt(d.vendor),'#0891b2')+
-        ch('Orders',fmt(d.orders),'#4361ee')+
+        ch('Orders',fmt(d.orders),lowVol?'#ff6b35':'#4361ee')+
         ch('Units',fmt(d.obUnits),'#ffd60a')+
         ch('UPO',d.upo.toFixed(2),'#7c3aed')+
         ch('IB TPH',d.ibTph.toFixed(0),ibC)+
         ch('OB TPH',d.obTph.toFixed(0),'#ff6b35')+
         ch('LS',d.ls+' ('+(d.orders>0?(d.ls/d.orders*100).toFixed(1):'0')+'%)',lsC)+
+        ch('LS v2',d.lsV2+' ('+d.lsV2Pct.toFixed(2)+'%)',d.lsV2Pct<0.5?'#06d6a0':d.lsV2Pct<=1.5?'#ffd60a':'#ef4444','Late Slam v2 — full points under 0.5% · target ≤3%')+
         ch('Skip',d.skip,d.skip>0?'#ef4444':'#06d6a0')+
         ch('Short',d.short,d.short>0?'#ef4444':'#06d6a0')+
         ch('VOC',d.voc,vocC)+
+        ch('UTR',d.utr+' ('+d.utrRate.toFixed(3)+'%)',utrC,'UTR ops-controllable mistakes · target 0.010%')+
         ch('Sh.Pts',d.pts>0?d.pts.toFixed(1)+'%':'0%','#a855f7')+
         ch('Score',d.score.toFixed(1)+'%',scoreC)+
       '</div></div>';
   }).join('');
+  try{ smRenderUTR(rows); }catch(e){ console.warn('UTR render skipped:', e); }
+}
+
+// ═══════════════════════════════════════════════
+// UTR TARGET ANALYSIS CARDS
+// ═══════════════════════════════════════════════
+function smRenderUTR(rows){
+  var el=document.getElementById('utr-cards'); if(!el) return;
+  var totalsEl=document.getElementById('utr-totals');
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  var cardBg=isLight?'#ffffff':'#0e0d18';
+  var txt=isLight?'#1a1830':'#e8e6ff';
+  var mut=isLight?'#7b78a8':'#8b8aad';
+  var barBg=isLight?'#f0effe':'#232138';
+  var hasVoc=!!(smVocRaw&&smVocRaw.length);
+  var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
+  if(!stores.length){ el.innerHTML='<div class="empty">No data</div>'; if(totalsEl) totalsEl.textContent=''; return; }
+  var totVoc=0, totUtr=0, totLs=0, totSkip=0, totShort=0;
+  function fld(l,v){ return '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:'+mut+';">'+l+'</span><span style="font-weight:800;color:'+txt+';">'+v+'</span></div>'; }
+  function stat(l,v,c){ return '<div style="background:'+barBg+';border-radius:8px;padding:6px 7px;text-align:center;"><div style="font-size:7.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:'+mut+';margin-bottom:3px;white-space:nowrap;">'+l+'</div><div style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:800;color:'+c+';line-height:1;">'+v+'</div></div>'; }
+  var html=stores.map(function(s){
+    var sr=rows.filter(function(r){return gStore(r)===s;});
+    var orders=sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
+    var voc=smVocCount(s), utr=smUtrCount(s);
+    totVoc+=voc; totUtr+=utr;
+    totLs+=sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
+    totSkip+=sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
+    totShort+=sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
+    // Store-wise operational metrics for the mini stat-grid
+    var sLs    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
+    var sLsV2  = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
+    var sSkip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
+    var sShort = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
+    var sIbTph = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
+    var sObTph = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
+    var sSla   = toP(avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);})));
+    var hasOrders=orders>0;
+    var sLsPct   = orders>0?(sLs/orders*100):0;
+    var sLsV2Pct = orders>0?(sLsV2/orders*100):0;
+    var rate=hasOrders?(utr/orders*100):0;
+    var rateStr=hasOrders?rate.toFixed(3)+'%':'— (no orders)';
+    var ok=hasOrders?(rate<=VOC_UTR_TARGET):true;
+    var barW=hasOrders?Math.min((rate/(VOC_UTR_TARGET||0.1))*100,100):0;
+    var col=SC[s]||'#8b8aad';
+    var accent=ok?'#06d6a0':'#ef4444';
+    // No order count → no status / no rank (neutral grey). Otherwise show the
+    // UTR rate itself as the badge, colour-coded — no "on/above target" wording.
+    var statusBg, statusCol, borderC, badge;
+    if(!hasVoc){ statusBg='rgba(139,138,173,0.15)'; statusCol=mut; borderC='rgba(139,138,173,0.25)'; badge='📥 Fetch VOC'; }
+    else if(!hasOrders){ statusBg='rgba(139,138,173,0.12)'; statusCol=mut; borderC='rgba(139,138,173,0.22)'; badge='— No orders'; }
+    else { statusBg=(ok?'rgba(6,214,160,0.14)':'rgba(239,68,68,0.14)'); statusCol=(ok?'#06d6a0':'#ef4444'); borderC=(ok?'rgba(6,214,160,0.4)':'rgba(239,68,68,0.4)'); badge=rate.toFixed(3)+'%'; }
+    // Colour-coded store-wise stat grid (Late Slam · LS v2 · SLA · Skip · Short · TPH)
+    var cLs  = sLsPct<3?'#06d6a0':sLsPct<5?'#ffd60a':'#ef4444';
+    var cLv2 = sLsV2Pct<0.5?'#06d6a0':sLsV2Pct<=1.5?'#ffd60a':'#ef4444';
+    var cSk  = sSkip<=0?'#06d6a0':sSkip<=3?'#ffd60a':'#ef4444';
+    var cSh  = sShort<=0?'#06d6a0':sShort<=3?'#ffd60a':'#ef4444';
+    var cTph = sIbTph>140?'#06d6a0':sIbTph>=126?'#ffd60a':'#ef4444';
+    var cSla = sSla>=SLA_TARGET?'#06d6a0':sSla>=95?'#ffd60a':'#ef4444';
+    var statsGrid = !hasOrders ? '' :
+      '<div style="height:1px;background:'+(isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.07)')+';margin:13px 0 10px;"></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'+
+        stat('Late Slam', sLs+' · '+sLsPct.toFixed(2)+'%', cLs)+
+        stat('LS v2', sLsV2+' · '+sLsV2Pct.toFixed(2)+'%', cLv2)+
+        stat('SLA avg', sSla.toFixed(1)+'%', cSla)+
+        stat('Skip', String(sSkip), cSk)+
+        stat('Short', String(sShort), cSh)+
+        stat('TPH IB/OB', sIbTph.toFixed(0)+'/'+sObTph.toFixed(0), cTph)+
+      '</div>';
+    return '<div style="background:'+cardBg+';border:1.5px solid '+borderC+';border-radius:14px;padding:16px 18px;'+(!hasOrders?'opacity:.55;':'')+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">'+
+        '<div style="font-size:16px;font-weight:900;font-family:\'Syne\',sans-serif;color:'+col+';letter-spacing:0.3px;">'+s+'</div>'+
+        '<span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:10px;background:'+statusBg+';color:'+statusCol+';white-space:nowrap;">'+badge+'</span>'+
+      '</div>'+
+      fld('VOC Count', String(voc))+
+      fld('UTR Count', String(utr))+
+      fld('UTR Rate', '<span style="color:'+(hasVoc&&hasOrders?statusCol:mut)+';">'+rateStr+'</span>')+
+      fld('Monthly Target', VOC_UTR_TARGET_STR)+
+      (hasVoc&&hasOrders
+        ? '<div style="height:6px;background:'+barBg+';border-radius:10px;overflow:hidden;margin-top:2px;"><div style="height:100%;width:'+barW+'%;background:'+accent+';border-radius:10px;transition:width .5s;"></div></div>'+
+          '<div style="font-size:10px;color:'+mut+';margin-top:6px;">'+utr+' UTR mistake'+(utr===1?'':'s')+' · '+orders.toLocaleString()+' orders</div>'
+        : (hasVoc&&!hasOrders ? '<div style="font-size:10px;color:'+mut+';margin-top:6px;">No orders in this period — not scored / unranked</div>' : ''))+
+      statsGrid+
+      '</div>';
+  }).join('');
+  el.innerHTML=html;
+  if(totalsEl){
+    var _ls='Total LS v2: <b style="color:#ffd60a;">'+totLs+'</b> &nbsp;·&nbsp; Total Skip: <b style="color:#ff6b35;">'+totSkip+'</b> &nbsp;·&nbsp; Total Short: <b style="color:#ef4444;">'+totShort+'</b>';
+    totalsEl.innerHTML = hasVoc
+      ? 'Total VOC: <b style="color:#f72585;">'+totVoc+'</b> &nbsp;·&nbsp; Total UTR: <b style="color:#ef4444;">'+totUtr+'</b> &nbsp;·&nbsp; '+_ls
+      : _ls+' &nbsp;·&nbsp; <span style="opacity:.65;">Fetch VOC for VOC/UTR</span>';
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -2137,29 +2313,51 @@ function copySummary(){
   var lines=[];
 
   // Header — only once
-  lines.push('Hello Team, Good Morning! 🌅');
+  var greetSel=(document.getElementById('greet-sel')||{}).value||'morning';
+  var greetMap={morning:'Good Morning! 🌅', afternoon:'Good Afternoon! ☀️', evening:'Good Evening! 🌆'};
+  lines.push('Hello Team, '+(greetMap[greetSel]||greetMap.morning));
   lines.push('');
   lines.push('Here are the numbers for '+dateLabel+':');
   lines.push('');
 
+  // VOC count per store, filtered to the SAME period as the main metrics
+  // selection (so "This Month" gives this month's VOC, etc.). Dedupes on
+  // order+ASIN, exactly like the leaderboard.
+  function copyVoc(s){
+    if(!smVocRaw||!smVocRaw.length) return null; // VOC not fetched yet
+    var seen={}, cnt=0, pv=period;
+    smVocRaw.forEach(function(v){
+      if(v.store!==s) return;
+      if(smPeriod==='day'   && (!pv || v.date!==pv)) return;
+      if(smPeriod==='month' && (!pv || (v.date||'').substring(0,7)!==String(pv).substring(0,7))) return;
+      if(smPeriod==='year'  && (!pv || (v.date||'').substring(0,4)!==String(pv).substring(0,4))) return;
+      // 'all'/'week' → count everything for the store
+      var k=v.orderId+'|'+v.asin;
+      if(!seen[k]){ seen[k]=true; cnt++; }
+    });
+    return cnt;
+  }
+
+  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0};
   stores.forEach(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders  = sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
     var obUnits = sum(sr.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}));
+    var inbound = sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);}));
 
     // OLD-logic Late Slam: current day's selection.
     var ls       = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var lsPct    = orders>0?(ls/orders*100).toFixed(2)+'%':'0%';
     var lsLine   = ls>0 || orders>0 ? ls+' ('+lsPct+')' : 'Not Updated';
 
-    // NEW-logic LS v2: combine count + % on one line.
-    var lsV2R   = avg(sr.map(function(r){return gNum(r,['LATE SLAM V.2%','Late Slam V.2%','Z']);}));
-    var lsV2cnt = sum(sr.map(function(r){return gNum(r,['LATESLA M%','LateSlam%','AA']);}));
+    // NEW-logic LS v2: count from LATE SLAM V.2 column, % = count ÷ orders.
+    var lsV2cnt = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
+    var lsV2Pct = orders>0 ? (lsV2cnt/orders*100) : 0;
     var lsV2Line;
-    if(lsV2cnt>0 && lsV2R>0){
-      lsV2Line = lsV2cnt+' ('+toP(lsV2R).toFixed(2)+'%)';
-    } else if(lsV2cnt>0){
-      lsV2Line = String(lsV2cnt);
+    if(lsV2cnt>0){
+      lsV2Line = lsV2cnt+' ('+lsV2Pct.toFixed(2)+'%)';
+    } else if(orders>0){
+      lsV2Line = '0 (0.00%)';
     } else {
       lsV2Line = 'Not Updated';
     }
@@ -2174,23 +2372,41 @@ function copySummary(){
     var slaVR   = avg(sr.map(function(r){return gNum(r,['IB SLA VENDOR','IB SLA Vendor','Q']);}));
     var slaTpct = toP(slaTR).toFixed(1)+'%';
     var slaVpct = toP(slaVR).toFixed(1)+'%';
+    var vocCnt  = copyVoc(s);
+    var vocLine = vocCnt===null ? 'Fetch VOC' : String(vocCnt);
 
     lines.push('🏪 '+s);
+    lines.push('📥 Inbound: '+fmt(inbound));
     lines.push('📦 Orders: '+fmt(orders));
     lines.push('📤 Units: '+fmt(obUnits));
     lines.push('🚨 Late Slams: '+lsLine);
-    lines.push('📊 LS v2 logic ('+dateLabel+'): '+lsV2Line);
+    lines.push('📊 LS v2 logic ('+dateLabel+'): '+lsV2Line+'  · tgt ≤'+LS_V2_TARGET+'%');
     lines.push('⏭️ Skips/Shorts: '+skip+'/'+short);
-    lines.push('⚡ TPH IB/OB: '+ibTph.toFixed(0)+'/'+obTph.toFixed(0));
+    lines.push('⚡ TPH IB/OB: '+ibTph.toFixed(0)+'/'+obTph.toFixed(0)+'  · IB tgt ≥'+IB_TPH_TARGET);
     lines.push('🔴 Removals under Damage: '+damaged);
     lines.push('🔵 Removals under Quality: '+quality);
     lines.push('🤝 Expiry Awareness Donation: '+donate);
-    lines.push('✅ SLA Trans/Vend: '+slaTpct+'/'+slaVpct);
+    lines.push('✅ SLA Trans/Vend: '+slaTpct+'/'+slaVpct+'  · tgt ≥'+SLA_TARGET+'%');
+    lines.push('🎙️ VOC ('+dateLabel+'): '+vocLine);
     lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     lines.push('');
+    T.inbound+=inbound; T.orders+=orders; T.units+=obUnits;
+    T.ls+=ls; T.lsv2+=lsV2cnt; T.skip+=skip; T.short+=short;
+    if(vocCnt!==null) T.voc+=vocCnt;
+    try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s):0); }catch(e){}
   });
 
   lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('📊 TOTALS — ALL STORES');
+  lines.push('📥 Total Inbound: '+fmt(T.inbound));
+  lines.push('📦 Total Orders: '+fmt(T.orders));
+  lines.push('📤 Total Units: '+fmt(T.units));
+  lines.push('🚨 Total Late Slams: '+fmt(T.ls));
+  lines.push('📊 Total LS v2: '+fmt(T.lsv2));
+  lines.push('⏭️ Total Skips/Shorts: '+T.skip+'/'+T.short);
+  lines.push('🎙️ Total VOC: '+(smVocRaw&&smVocRaw.length?fmt(T.voc):'Fetch VOC'));
+  lines.push('🎯 Total UTR: '+(smVocRaw&&smVocRaw.length?fmt(T.utr):'Fetch VOC'));
+  lines.push('');
   lines.push('Generated by Dark Store Management System (DMS PRO)');
 
   navigator.clipboard.writeText(lines.join('\n')).then(function(){
