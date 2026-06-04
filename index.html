@@ -915,6 +915,118 @@ to{width:65%;} }
   #page-gatepass .gp-doc { border:none; padding:0; }
 }
 
+/* ── REVERSE TRANSSHIPMENT DELIVERY NOTE (barcode) ── */
+@keyframes iconBarScan {
+  0%,100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 #0e7490); }
+  50%     { transform: translateY(-3px) scale(1.06); filter: drop-shadow(0 3px 6px rgba(14,116,144,0.4)); }
+}
+#page-deliverynote { background:#f4f4fa; min-height:100vh; }
+#page-deliverynote .task-page {
+  --bg:#f4f4fa; --surface:#ffffff; --surface2:#eef0f9;
+  --border:#d4d6e6; --text:#0f1736; --text2:#3a4373;
+  max-width:980px;
+}
+#page-deliverynote .back-btn { background:#fff; border-color:#d4d6e6; color:#3a4373; }
+#page-deliverynote .back-btn:hover { background:#0e7490; color:#fff; border-color:#0e7490; }
+#page-deliverynote .task-header { border-bottom-color:#d4d6e6 !important; }
+#page-deliverynote .task-header h2 {
+  background:linear-gradient(135deg,#0f1736,#0e7490);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+#page-deliverynote .dn-shell {
+  background:#fff; border:1px solid #d4d6e6; border-radius:18px;
+  box-shadow:0 4px 24px rgba(15,23,54,0.06); overflow:hidden;
+}
+#page-deliverynote .dn-shell-head {
+  background:linear-gradient(135deg,#0e7490,#0891b2);
+  color:#fff; padding:22px 28px; display:flex; align-items:center;
+  justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+#page-deliverynote .dn-shell-head h3 { font-size:18px; font-weight:800; letter-spacing:0.5px; margin:0; }
+#page-deliverynote .dn-shell-head .dn-shell-sub {
+  font-family:'DM Mono',monospace; font-size:11px; opacity:0.9; letter-spacing:2px; text-transform:uppercase;
+}
+#page-deliverynote .dn-shell-body { padding:28px; }
+#page-deliverynote .dn-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:640px) { #page-deliverynote .dn-grid { grid-template-columns:1fr; } }
+#page-deliverynote .dn-field { display:flex; flex-direction:column; gap:6px; }
+#page-deliverynote .dn-field.dn-span2 { grid-column:1 / -1; }
+#page-deliverynote .dn-field label {
+  font-size:11px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#3a4373;
+}
+#page-deliverynote .dn-field label .req { color:#e11d48; margin-left:4px; }
+#page-deliverynote .dn-field input {
+  width:100%; background:#fafbff; border:1px solid #d4d6e6; border-radius:10px;
+  padding:12px 14px; font-family:'Syne',sans-serif; font-size:14px; color:#0f1736;
+  outline:none; transition:border-color 0.15s, box-shadow 0.15s;
+}
+#page-deliverynote .dn-field input:focus {
+  border-color:#0e7490; box-shadow:0 0 0 3px rgba(14,116,144,0.12); background:#fff;
+}
+#page-deliverynote .dn-field input::placeholder { color:#a4abce; }
+
+/* Live barcode strip in the form */
+#page-deliverynote .dn-live-barcode {
+  grid-column:1 / -1; margin-top:4px;
+  background:linear-gradient(135deg,#f8fafc,#eef6f9);
+  border:1px dashed #9cc7d4; border-radius:14px;
+  padding:20px; display:flex; flex-direction:column; align-items:center; gap:10px;
+  min-height:140px; justify-content:center;
+}
+#page-deliverynote .dn-live-barcode .dn-bc-hint {
+  font-family:'DM Mono',monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:#6b7196;
+}
+#page-deliverynote .dn-live-barcode svg { max-width:100%; height:auto; }
+#page-deliverynote .dn-live-barcode .dn-bc-tid {
+  font-family:'DM Mono',monospace; font-size:15px; font-weight:600; letter-spacing:2px; color:#0e7490;
+}
+
+#page-deliverynote .dn-actions {
+  margin-top:24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;
+}
+#page-deliverynote .dn-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:13px 24px;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:1px;
+  border:none; border-radius:10px; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;
+}
+#page-deliverynote .dn-btn-primary {
+  background:linear-gradient(135deg,#0e7490,#0891b2); color:#fff;
+  box-shadow:0 4px 16px rgba(14,116,144,0.3);
+}
+#page-deliverynote .dn-btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(14,116,144,0.4); }
+#page-deliverynote .dn-btn-ghost { background:#fff; color:#3a4373; border:1px solid #d4d6e6; }
+#page-deliverynote .dn-btn-ghost:hover { background:#eef0f9; border-color:#0e7490; color:#0e7490; }
+
+/* Document preview */
+#page-deliverynote .dn-preview {
+  margin-top:32px; background:#fff; border:1px solid #d4d6e6; border-radius:14px; padding:24px;
+}
+#page-deliverynote .dn-preview-title {
+  font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#6b7196; margin-bottom:14px;
+}
+#page-deliverynote .dn-doc {
+  background:#fff; color:#000; font-family:Calibri,Arial,sans-serif;
+  border:1px solid #c2c5d6; padding:48px 56px; max-width:680px; margin:0 auto;
+}
+#page-deliverynote .dn-doc-header {
+  text-align:center; font-family:'Calibri',Arial,sans-serif; font-size:24px; font-weight:400;
+  letter-spacing:1px; color:#000; padding-bottom:16px; margin-bottom:20px;
+  border-bottom:1px dashed #9a9a9a;
+}
+#page-deliverynote .dn-doc-barcode { text-align:center; min-height:80px; margin:10px 0 6px; }#page-deliverynote .dn-doc-barcode svg { max-width:100%; height:auto; }
+#page-deliverynote .dn-doc-barcode .dn-doc-bc-placeholder {
+  display:inline-block; padding:24px 40px; border:1px dashed #b0b0b0; color:#777; font-size:18px;
+}
+#page-deliverynote .dn-doc-tsid { text-align:center; font-size:18px; margin:6px 0 28px; }
+#page-deliverynote .dn-doc-line { font-size:18px; line-height:2.2; }
+#page-deliverynote .dn-doc-line b { font-weight:700; }
+
+@media print {
+  #page-deliverynote .dn-shell, #page-deliverynote .back-btn, #page-deliverynote .task-header,
+  #page-deliverynote .dn-preview-title { display:none !important; }
+  #page-deliverynote .dn-doc { border:none; padding:0; }
+}
+
 /* ── Label print sheet ── */
 .locid-sheet {
   background: #fff;
@@ -1200,7 +1312,7 @@ to{width:65%;} }
 .login-msg.success { background:rgba(6,214,160,0.10);  border:1px solid rgba(6,214,160,0.3);  color:#06d6a0; }
 .login-footer-text { font-size:12px; color:#3d3a6b; text-align:center; margin-top:16px; }
 .login-session-badge {
-  position:fixed; top:8px; right:10px; z-index:10000;
+  position:fixed; top:8px; right:60px; z-index:10000;
   background:rgba(10,9,20,0.95); border:1px solid rgba(46,44,69,0.8);
   border-radius:40px; padding:8px 16px 8px 12px;
   display:flex; align-items:center; gap:8px;
@@ -1740,6 +1852,10 @@ to{width:65%;} }
     </div>
   </div>
 
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle light / dark theme" aria-label="Toggle theme">
+    <span class="tt-ico">☀️</span>
+  </button>
+
 </header>
 
 <!-- DASHBOARD -->
@@ -2091,6 +2207,13 @@ to{width:65%;} }
       <span class="card-icon" style="display:inline-block;animation:iconTruckRoll 2.2s ease-in-out infinite;">🚚</span>
       <h3>Reverse Transshipment Gate Pass</h3>
       <p>Fill the form &amp; export a print-ready Word file for the gate.</p>
+      <span class="card-arrow">→</span>
+    </div>
+    <div class="task-card" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
+      
+      <span class="card-icon" style="display:inline-block;animation:iconBarScan 2.4s ease-in-out infinite;">🏷️</span>
+      <h3>Reverse Transshipment Delivery Note</h3>
+      <p>Type the TS ID to auto-generate a barcode &amp; export the delivery note to Word.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
@@ -2644,6 +2767,465 @@ to{width:65%;} }
     </div>
   </div>
   <div class="contact-note">💡 <strong>For task support or urgent issues</strong> — email directly with your <strong>Warehouse ID</strong> and <strong>task type</strong>. Response within 1 working day.</div>
+
+  <!-- ════════════════ TOOLS HELP & USER GUIDE ════════════════ -->
+  <style>
+  .guide-wrap { margin-top:34px; }
+  .guide-title-row { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+  .guide-title-row h2 {
+    font-family:'Syne',sans-serif; font-size:24px; font-weight:800; letter-spacing:-0.3px; margin:0;
+    background:linear-gradient(135deg,#ff6b35,#4361ee,#06d6a0);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  .guide-title-row .guide-badge {
+    font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+    color:#06d6a0; border:1px solid rgba(6,214,160,0.35); background:rgba(6,214,160,0.1);
+    padding:4px 10px; border-radius:20px;
+  }
+  .guide-intro { color:#b8b6d9; font-size:13.5px; line-height:1.7; margin:0 0 22px; max-width:760px; }
+  .guide-intro b { color:#e8e6ff; }
+
+  /* Performance / limits callout */
+  .guide-limits {
+    background:linear-gradient(135deg,rgba(255,107,53,0.10),rgba(67,97,238,0.08));
+    border:1px solid rgba(255,107,53,0.30); border-radius:16px; padding:22px 24px; margin-bottom:28px;
+  }
+  .guide-limits-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .guide-limits-head .gl-ico { font-size:22px; }
+  .guide-limits-head h3 {
+    font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:#fff; margin:0; letter-spacing:0.2px;
+  }
+  .guide-limits-head .gl-sub { font-family:'DM Mono',monospace; font-size:11px; color:#ffb38a; letter-spacing:1px; }
+  .guide-ladder { display:flex; flex-direction:column; gap:8px; }
+  .guide-rung {
+    display:grid; grid-template-columns:124px 1fr; gap:14px; align-items:center;
+    background:rgba(10,9,20,0.45); border:1px solid #2e2c45; border-radius:11px; padding:11px 16px;
+  }
+  .guide-rung .gr-count {
+    font-family:'DM Mono',monospace; font-weight:700; font-size:13px; color:#fff; text-align:center;
+    padding:5px 8px; border-radius:8px;
+  }
+  .guide-rung .gr-text { font-size:12.5px; color:#cfcdec; line-height:1.5; }
+  .guide-rung .gr-text b { color:#fff; }
+  .gr-green  { background:rgba(6,214,160,0.18); border:1px solid rgba(6,214,160,0.4); }
+  .gr-blue   { background:rgba(76,201,240,0.16); border:1px solid rgba(76,201,240,0.4); }
+  .gr-gold   { background:rgba(255,214,10,0.16); border:1px solid rgba(255,214,10,0.4); }
+  .gr-red    { background:rgba(247,37,133,0.16); border:1px solid rgba(247,37,133,0.42); }
+  .guide-best {
+    margin-top:14px; font-size:12.5px; color:#ffe7d6; line-height:1.6;
+    border-left:3px solid #ff6b35; padding-left:14px;
+  }
+  .guide-best b { color:#fff; }
+
+  /* Accordion */
+  .guide-cat-head {
+    font-family:'DM Mono',monospace; font-size:11px; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; color:#8b8aad; margin:24px 0 10px; display:flex; align-items:center; gap:12px;
+  }
+  .guide-cat-head::after { content:''; flex:1; height:1px; background:#2e2c45; }
+  .guide-item {
+    background:#13121f; border:1px solid #2a2840; border-radius:13px; margin-bottom:10px; overflow:hidden;
+    transition:border-color 0.2s;
+  }
+  .guide-item.open { border-color:#4361ee; }
+  .guide-head {
+    width:100%; box-sizing:border-box; display:flex; align-items:center; gap:14px; cursor:pointer;
+    background:none; border:none; color:inherit; text-align:left; padding:15px 18px; font-family:inherit;
+  }
+  .guide-head:hover { background:rgba(67,97,238,0.06); }
+  .guide-ico {
+    width:42px; height:42px; flex-shrink:0; border-radius:11px; display:flex; align-items:center;
+    justify-content:center; font-size:20px; background:#1f1d33; border:1px solid #2e2c45;
+  }
+  .guide-htxt { flex:1; display:flex; flex-direction:column; gap:3px; }
+  .guide-name { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; color:#fff; letter-spacing:-0.2px; }
+  .guide-cat { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#8b8aad; }
+  .guide-num {
+    font-family:'DM Mono',monospace; font-size:11px; color:#6b6a8f; border:1px solid #2e2c45;
+    border-radius:7px; padding:3px 9px; flex-shrink:0;
+  }
+  .guide-chev { font-size:13px; color:#8b8aad; transition:transform 0.25s; flex-shrink:0; margin-left:4px; }
+  .guide-item.open .guide-chev { transform:rotate(180deg); color:#4cc9f0; }
+  .guide-body { max-height:0; overflow:hidden; transition:max-height 0.32s ease; }
+  .guide-item.open .guide-body { max-height:680px; }
+  .guide-body-inner { padding:4px 20px 20px 74px; }
+  .guide-what { font-size:13px; color:#cfcdec; line-height:1.65; margin:0 0 14px; }
+  .guide-what b { color:#fff; }
+  .guide-steps { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .guide-step { display:flex; align-items:flex-start; gap:11px; font-size:12.5px; color:#cfcdec; line-height:1.55; }
+  .guide-step .gs-n {
+    flex-shrink:0; width:21px; height:21px; border-radius:50%; background:linear-gradient(135deg,#4361ee,#7209b7);
+    color:#fff; font-family:'DM Mono',monospace; font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .guide-step b { color:#fff; }
+  .guide-tip {
+    font-size:12.5px; color:#bfe9da; background:rgba(6,214,160,0.08); border:1px solid rgba(6,214,160,0.22);
+    border-radius:9px; padding:10px 14px; line-height:1.6; margin:0 0 14px;
+  }
+  .guide-tip b { color:#fff; }
+  .guide-open {
+    display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:9px; border:none;
+    cursor:pointer; font-family:'Syne',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.5px;
+    background:linear-gradient(135deg,#ff6b35,#f72585); color:#fff; transition:transform 0.15s, box-shadow 0.15s;
+  }
+  .guide-open:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(247,37,133,0.35); }
+  @media(max-width:600px){
+    .guide-body-inner { padding-left:20px; }
+    .guide-rung { grid-template-columns:1fr; gap:7px; }
+    .guide-num { display:none; }
+  }
+  </style>
+
+  <div class="guide-wrap">
+    <div class="guide-title-row">
+      <h2>Tools Help &amp; User Guide</h2>
+      <span class="guide-badge">16 Tools</span>
+    </div>
+    <p class="guide-intro">Every DMS PRO tool, explained step by step. Tap any tool to expand its guide, then hit <b>Open tool →</b> to jump straight in. Most tools follow the same rhythm — <b>upload a file → generate → print or export</b>.</p>
+
+    <!-- Performance & limits -->
+    <div class="guide-limits">
+      <div class="guide-limits-head">
+        <span class="gl-ico">⚡</span>
+        <div>
+          <h3>How many can I generate at once?</h3>
+          <div class="gl-sub">LOCATION ID MAKER · YSM · AUDIT LABELS · 24 LABELS = 1 A4 SHEET</div>
+        </div>
+      </div>
+      <div class="guide-ladder">
+        <div class="guide-rung"><span class="gr-count gr-green">≤ 120</span><span class="gr-text"><b>Instant.</b> Up to ~5 A4 pages — generates and exports with no wait.</span></div>
+        <div class="guide-rung"><span class="gr-count gr-blue">120 – 250</span><span class="gr-text"><b>Smooth — recommended batch.</b> ~10 pages. Best balance of volume and speed.</span></div>
+        <div class="guide-rung"><span class="gr-count gr-gold">250 – 500</span><span class="gr-text"><b>Works, but slower.</b> Generate &amp; PDF export take ~10–30s. Keep the browser tab in focus while it builds.</span></div>
+        <div class="guide-rung"><span class="gr-count gr-red">500 +</span><span class="gr-text"><b>Heavy — split it up.</b> Rendering hundreds of QR codes &amp; a large PDF can lag or strain memory. Do it in batches.</span></div>
+      </div>
+      <div class="guide-best">✅ <b>Best practice:</b> generate in batches of <b>100–200</b> labels, print or export each batch, then clear the queue and continue. This keeps every run fast and error-free — even for a full warehouse.</div>
+    </div>
+
+    <!-- STOCK MOVEMENT -->
+    <div class="guide-cat-head">Stock Movement</div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🔀</span>
+        <span class="guide-htxt"><span class="guide-name">Consolidation</span><span class="guide-cat">Stock Movement</span></span>
+        <span class="guide-num">01</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Finds ASINs scattered across multiple bin locations and builds a consolidation task list so the team can merge them into fewer bins.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool and set the <b>Location Count</b> threshold (minimum number of bins an ASIN must span).</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload your inventory file — <b>.xlsx, .xls or .csv</b> with ASIN &amp; Location columns.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Review the generated consolidation list grouped by ASIN.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print or export the task sheet for the floor team.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> A higher threshold surfaces fewer, higher-priority consolidations first.</p>
+        <button class="guide-open" onclick="openTask('consolidation')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🐢</span>
+        <span class="guide-htxt"><span class="guide-name">Slow Moving Items</span><span class="guide-cat">Stock Movement</span></span>
+        <span class="guide-num">02</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Flags inventory aged over <b>90 days</b> that needs relocation, markdown or clearance.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload an inventory file containing an <b>Age Days / AgeInDays</b> column.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>The tool lists every item over 90 days with its age &amp; location.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Export or print the action list.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Make sure the age column is a number of days — not a date.</p>
+        <button class="guide-open" onclick="openTask('slow-moving')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <!-- AUDITS & COUNTS -->
+    <div class="guide-cat-head">Audits &amp; Counts</div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">📍</span>
+        <span class="guide-htxt"><span class="guide-name">Audit by Location</span><span class="guide-cat">Audits &amp; Counts</span></span>
+        <span class="guide-num">03</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Generates <b>90 random locations</b> across Frozen, Chiller, Hazmat, Ambient, HRV &amp; Mixed zones for a cycle count.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span><b>Optional:</b> upload inventory to draw from your real bins — or just click <b>Generate</b> to use sample locations.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Get the 90-location count sheet with remark boxes.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print for the floor team.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Uploading real data makes the audit match your actual warehouse bins.</p>
+        <button class="guide-open" onclick="openTask('audit-loc')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🔎</span>
+        <span class="guide-htxt"><span class="guide-name">Audit by ASIN</span><span class="guide-cat">Audits &amp; Counts</span></span>
+        <span class="guide-num">04</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Picks <b>60 random ASINs</b> from your inventory for a physical stock-count verification.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload your inventory file (.xlsx / .xls / .csv).</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Review the 60 random ASIN label sheet.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print and hand it to the counter.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Re-run any time for a fresh random sample.</p>
+        <button class="guide-open" onclick="openTask('audit-asin')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">📊</span>
+        <span class="guide-htxt"><span class="guide-name">Inventory Report</span><span class="guide-cat">Audits &amp; Counts</span></span>
+        <span class="guide-num">05</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Builds a professional inventory audit report with <b>Excel and PDF</b> output for management &amp; handover.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload your inventory file.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Generate the report.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Download as <b>Excel</b> or <b>PDF</b>.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Great for shift handover and audit documentation.</p>
+        <button class="guide-open" onclick="openTask('report')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <!-- LABELS & BARCODES -->
+    <div class="guide-cat-head">Labels &amp; Barcodes</div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🏷️</span>
+        <span class="guide-htxt"><span class="guide-name">YSM Barcode Task</span><span class="guide-cat">Labels &amp; Barcodes</span></span>
+        <span class="guide-num">06</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Creates one scannable barcode label <b>per unit</b> — ideal for YSM relabelling.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload a file with <b>ASIN</b> and <b>Quantity</b> columns.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>The tool prints one label per unit (quantity-aware).</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print on label stock.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Check quantities first — big quantities mean a lot of labels. See the batch guidance above.</p>
+        <button class="guide-open" onclick="openTask('ysm')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">📋</span>
+        <span class="guide-htxt"><span class="guide-name">Catalog Issue Items</span><span class="guide-cat">Labels &amp; Barcodes</span></span>
+        <span class="guide-num">07</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Pulls catalog-issue ASINs from the linked Google Sheet and matches them to your live inventory so you can move them to the <b>Special Bin</b> fast — avoiding VOC &amp; Late Slam.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload your real-time inventory file.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Fetch &amp; Match</b> to load catalog-issue ASINs.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Review matched locations and move that stock to the Special Bin.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Needs an internet connection to reach the Google Sheet.</p>
+        <button class="guide-open" onclick="openTask('catalog-issue')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🔬</span>
+        <span class="guide-htxt"><span class="guide-name">Scanning Issue Items</span><span class="guide-cat">Labels &amp; Barcodes</span></span>
+        <span class="guide-num">08</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Identifies scanning-problem ASINs from the Google Sheet and generates barcode labels to re-tag them.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload your real-time inventory file.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Fetch &amp; Match</b>.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print the generated barcode labels.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Same Google-Sheet source as Catalog Issue — keep both current.</p>
+        <button class="guide-open" onclick="openTask('scanning-issue')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🏷️</span>
+        <span class="guide-htxt"><span class="guide-name">Location ID Maker</span><span class="guide-cat">Labels &amp; Barcodes</span></span>
+        <span class="guide-num">09</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Produces professional, colour-coded warehouse location labels with <b>QR codes</b>, print-ready on A4 (<b>24 labels per sheet</b>).</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload a location list — <b>Col A</b> = Full Location ID (e.g. P-1-A116F182), <b>Col B</b> = Direction arrow, <b>Col C</b> = Colour (optional) — or add labels to the queue manually.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Generate</b> to build the A4 sheets.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Print or <b>Export PDF</b>.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> For best speed, follow the batch-size guidance at the top of this guide (100–200 at a time).</p>
+        <button class="guide-open" onclick="openTask('locid')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <!-- PERFORMANCE & ANALYTICS -->
+    <div class="guide-cat-head">Performance &amp; Analytics</div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">⏱️</span>
+        <span class="guide-htxt"><span class="guide-name">Late Slam Calculator</span><span class="guide-cat">Performance &amp; Analytics</span></span>
+        <span class="guide-num">10</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Compares pick performance to the forecast in <b>30-minute slots</b> and flags late slams per store.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool and pick the <b>report date</b> &amp; store filter.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Click <b>Fetch Forecast</b> (loads from Google Sheet).</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Upload your orders file and <b>map the columns</b> (slot time, actual secs, SLA secs, units, store).</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Generate the report; export <b>PDF</b> or <b>Excel</b>.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Late slam = <b>pl_create_to_stage &gt; promise_utr</b> (seconds comparison).</p>
+        <button class="guide-open" onclick="openTask('lateslam')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🔬</span>
+        <span class="guide-htxt"><span class="guide-name">Late Slam Deep Dive</span><span class="guide-cat">Performance &amp; Analytics</span></span>
+        <span class="guide-num">11</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> A deeper, two-file late-slam analysis with store-wise breakdowns, summary cards and Excel export — for root-cause detail.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open it from inside the Late Slam Calculator (or below).</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload the required files and <b>Fetch Forecast</b>.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Analyse</b> to review summary cards &amp; per-store tables.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span>Export to Excel.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Use this after the standard calculator when you need to find <b>why</b> slams happened.</p>
+        <button class="guide-open" onclick="openTask('ls-deepdive')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">📈</span>
+        <span class="guide-htxt"><span class="guide-name">VOC Analysis</span><span class="guide-cat">Performance &amp; Analytics</span></span>
+        <span class="guide-num">12</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Voice-of-Customer analysis — surfaces customer complaint &amp; feedback trends so you can act before they escalate.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Load or refresh the VOC data.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Review the metrics &amp; trends and prioritise fixes.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Check it regularly to catch emerging issues early.</p>
+        <button class="guide-open" onclick="openTask('voc')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🏪</span>
+        <span class="guide-htxt"><span class="guide-name">Store Metrics</span><span class="guide-cat">Performance &amp; Analytics</span></span>
+        <span class="guide-num">13</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Live store-wise KPIs — orders, inbound, OB/IB TPH, SLA, UPO, removals &amp; performance trends. Opens in a new tab.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Click the tool — it opens the Store Metrics dashboard in a new tab.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Select a store.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Review live KPIs and trend charts.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Keep the tab open on a screen as a live wall dashboard.</p>
+        <button class="guide-open" onclick="window.open('store-metrics.html','_blank')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <!-- OPS & SUPPORT -->
+    <div class="guide-cat-head">Ops &amp; Support</div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🚚</span>
+        <span class="guide-htxt"><span class="guide-name">Reverse Transshipment Gate Pass</span><span class="guide-cat">Ops &amp; Support</span></span>
+        <span class="guide-num">14</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Fills a gate-pass form and exports a print-ready <b>Word (.docx)</b> for the security gate.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Fill date, time, from/to, TS ID, totes, units, vehicle &amp; driver.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Preview</b> to check the document.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span><b>Export Word (.docx)</b> or Print.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> All required fields (marked *) must be filled before export.</p>
+        <button class="guide-open" onclick="openTask('gatepass')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">🏷️</span>
+        <span class="guide-htxt"><span class="guide-name">Reverse Transshipment Delivery Note</span><span class="guide-cat">Ops &amp; Support</span></span>
+        <span class="guide-num">15</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Type the <b>Transshipment ID</b> to auto-generate a scannable barcode, then export a delivery note to Word — headed <b>“AMAZON NOW REVERSALS DELIVERY NOTE”</b>.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Type the <b>TS ID</b> — the barcode appears instantly below it.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Fill Source Store ID, Destination FC, date, time, units &amp; totes.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span><b>Preview</b>, then <b>Export Word (.docx)</b> — the barcode is embedded in the file.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> The first barcode needs internet (to load the barcode library), then it's cached for the session.</p>
+        <button class="guide-open" onclick="openTask('deliverynote')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">💬</span>
+        <span class="guide-htxt"><span class="guide-name">Report &amp; Suggest</span><span class="guide-cat">Ops &amp; Support</span></span>
+        <span class="guide-num">16</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Sends feedback, flags issues, or suggests improvements straight to the system administrator.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Write your message.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Submit — it reaches the admin directly.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Include your <b>Warehouse ID</b> and <b>task type</b> for a faster response.</p>
+        <button class="guide-open" onclick="openTask('feedback')">Open tool →</button>
+      </div></div>
+    </div>
+
+  </div>
+
+  <script>
+  function guideToggle(btn){
+    var item = btn.closest('.guide-item');
+    if(item) item.classList.toggle('open');
+  }
+  </script>
 </div>
 </div>
 
@@ -3429,6 +4011,99 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
         </tr>
       </table>
       <div class="gp-doc-footer">Operations • Retain copy at Dark Store; original travels with the shipment.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TASK 12: REVERSE TRANSSHIPMENT DELIVERY NOTE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-deliverynote">
+<div class="task-page">
+  <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🏷️</span>
+    <div>
+      <h2>Reverse Transshipment Delivery Note</h2>
+      <p>Type the Transshipment ID to auto-generate a scannable barcode, preview the note, and export a print-ready Word (.docx).</p>
+    </div>
+  </div>
+
+  <div class="dn-shell">
+    <div class="dn-shell-head">
+      <div>
+        <h3>REVERSE TRANSSHIPMENT DELIVERY NOTE</h3>
+        <div class="dn-shell-sub">TS ID → Barcode → Word</div>
+      </div>
+      <div class="dn-shell-sub" style="text-align:right;">Type → Scan → Export</div>
+    </div>
+    <div class="dn-shell-body">
+      <div class="dn-grid">
+        <div class="dn-field dn-span2">
+          <label>Transshipment ID (TS ID)<span class="req">*</span></label>
+          <input type="text" id="dn-tid" placeholder="e.g. TS-2026-00891"
+            style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+
+        <div class="dn-live-barcode" id="dn-live-barcode">
+          <div class="dn-bc-hint" id="dn-bc-hint">Barcode preview — start typing the TS ID above</div>
+          <svg id="dn-barcode-svg"></svg>
+          <div class="dn-bc-tid" id="dn-bc-tid"></div>
+        </div>
+
+        <div class="dn-field">
+          <label>Source Store ID<span class="req">*</span></label>
+          <input type="text" id="dn-source" placeholder="e.g. QAA7"
+            style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="dn-field">
+          <label>Destination FC<span class="req">*</span></label>
+          <input type="text" id="dn-dest" placeholder="e.g. DXB5"
+            style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="dn-field">
+          <label>Date<span class="req">*</span></label>
+          <input type="date" id="dn-date">
+        </div>
+        <div class="dn-field">
+          <label>Time<span class="req">*</span></label>
+          <input type="time" id="dn-time">
+        </div>
+        <div class="dn-field">
+          <label>Number of Units<span class="req">*</span></label>
+          <input type="number" id="dn-units" min="0" placeholder="e.g. 318">
+        </div>
+        <div class="dn-field">
+          <label>Number of Totes<span class="req">*</span></label>
+          <input type="number" id="dn-totes" min="0" placeholder="e.g. 42">
+        </div>
+      </div>
+
+      <div class="dn-actions">
+        <button class="dn-btn dn-btn-ghost" onclick="dnClearForm()">↻ Reset</button>
+        <button class="dn-btn dn-btn-ghost" onclick="dnUpdatePreview(true)">👁 Preview</button>
+        <button class="dn-btn dn-btn-ghost" onclick="window.print()">🖨 Print</button>
+        <button class="dn-btn dn-btn-primary" onclick="dnExportWord()">⬇ Export Word (.docx)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dn-preview" id="dn-preview" style="display:none;">
+    <div class="dn-preview-title">— Document Preview —</div>
+    <div class="dn-doc" id="dn-doc">
+      <div class="dn-doc-header">AMAZON NOW REVERSALS DELIVERY NOTE</div>
+      <div class="dn-doc-barcode" id="dn-pv-barcode"></div>
+      <div class="dn-doc-tsid" id="dn-pv-tsid"></div>
+      <div class="dn-doc-line"><b>Source Store ID:</b> <span id="dn-pv-source"></span></div>
+      <div class="dn-doc-line"><b>Destination FC:</b> <span id="dn-pv-dest"></span></div>
+      <div class="dn-doc-line"><b>Date:</b> <span id="dn-pv-date"></span></div>
+      <div class="dn-doc-line"><b>Time:</b> <span id="dn-pv-time"></span></div>
+      <div class="dn-doc-line"><b>Number of Units:</b> <span id="dn-pv-units"></span></div>
+      <div class="dn-doc-line"><b>Number of Totes:</b> <span id="dn-pv-totes"></span></div>
     </div>
   </div>
 </div>
@@ -14181,7 +14856,7 @@ document.addEventListener('click', function(e) {
     'Connect on LinkedIn</a></footer>';
   var ids=['page-consolidation','page-audit-loc','page-audit-asin','page-slow-moving','page-ysm',
            'page-report','page-feedback','page-contact','page-lateslam','page-catalog-issue',
-           'page-scanning-issue','page-locid','page-gatepass','page-store-metrics','page-ls-deepdive'];
+           'page-scanning-issue','page-locid','page-gatepass','page-store-metrics','page-ls-deepdive','page-deliverynote'];
   function inject(){
     ids.forEach(function(id){
       var pg=document.getElementById(id);
@@ -16538,6 +17213,406 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
   else setDefaultsOnce();
 
 })();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TASK 12 — REVERSE TRANSSHIPMENT DELIVERY NOTE  (barcode + Word export)
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function val(id){ var el=$(id); return el && el.value ? el.value.trim() : ''; }
+  function xmlEsc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+  function fmtDate(iso){
+    if(!iso) return '';
+    var p = iso.split('-'); if(p.length!==3) return iso;
+    var d = new Date(+p[0], +p[1]-1, +p[2]); if(isNaN(d)) return iso;
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return ('0'+d.getDate()).slice(-2)+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function fmtTime(t){
+    if(!t) return '';
+    var p = t.split(':'); if(p.length<2) return t;
+    var h=+p[0], m=p[1], ap=h>=12?'PM':'AM', hh=h%12; if(hh===0) hh=12;
+    return hh+':'+m+' '+ap;
+  }
+  function setText(id,v){ var el=$(id); if(el) el.textContent=v||''; }
+
+  // ── Lazy-load JsBarcode ──────────────────────────────────────
+  var _barcodeLoading = null;
+  function ensureBarcode(){
+    if(window.JsBarcode) return Promise.resolve();
+    if(_barcodeLoading) return _barcodeLoading;
+    _barcodeLoading = new Promise(function(res,rej){
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';
+      s.onload=res; s.onerror=rej; document.head.appendChild(s);
+    });
+    return _barcodeLoading;
+  }
+
+  // Render Code128 into an <svg> element.
+  function renderBarcodeSvg(svgEl, value, opts){
+    if(!window.JsBarcode || !svgEl) return false;
+    try {
+      window.JsBarcode(svgEl, value, Object.assign({
+        format:'CODE128', width:2.2, height:80, displayValue:false,
+        margin:10, background:'#ffffff', lineColor:'#000000'
+      }, opts||{}));
+      return true;
+    } catch(e){ return false; }
+  }
+
+  function gather(){
+    return {
+      tid    : val('dn-tid'),
+      source : val('dn-source'),
+      dest   : val('dn-dest'),
+      date   : fmtDate(val('dn-date')),
+      time   : fmtTime(val('dn-time')),
+      units  : val('dn-units'),
+      totes  : val('dn-totes')
+    };
+  }
+
+  // ── Live barcode in the form ─────────────────────────────────
+  window.dnRenderLive = function(){
+    var tid = val('dn-tid');
+    var svg = $('dn-barcode-svg'), hint = $('dn-bc-hint'), tidEl = $('dn-bc-tid');
+    if(!tid){
+      if(svg){ svg.innerHTML=''; svg.style.display='none'; }
+      if(tidEl) tidEl.textContent='';
+      if(hint){ hint.style.display='block'; hint.textContent='Barcode preview — start typing the TS ID above'; }
+      return;
+    }
+    ensureBarcode().then(function(){
+      if(svg){ svg.style.display='block'; renderBarcodeSvg(svg, tid); }
+      if(tidEl) tidEl.textContent = tid;
+      if(hint) hint.style.display='none';
+    }).catch(function(){
+      if(hint){ hint.style.display='block'; hint.textContent='⚠ Could not load barcode library (offline?)'; }
+    });
+  };
+
+  // ── Document preview ─────────────────────────────────────────
+  window.dnUpdatePreview = function(scrollTo){
+    var d = gather();
+    setText('dn-pv-source', d.source);
+    setText('dn-pv-dest', d.dest);
+    setText('dn-pv-date', d.date);
+    setText('dn-pv-time', d.time);
+    setText('dn-pv-units', d.units);
+    setText('dn-pv-totes', d.totes);
+    setText('dn-pv-tsid', d.tid);
+
+    var bcWrap = $('dn-pv-barcode');
+    if(bcWrap){
+      if(d.tid){
+        ensureBarcode().then(function(){
+          bcWrap.innerHTML='<svg id="dn-pv-barcode-svg"></svg>';
+          renderBarcodeSvg($('dn-pv-barcode-svg'), d.tid, {height:90, width:2.4});
+        }).catch(function(){
+          bcWrap.innerHTML='<span class="dn-doc-bc-placeholder">[TS ID Barcode]</span>';
+        });
+      } else {
+        bcWrap.innerHTML='<span class="dn-doc-bc-placeholder">[TS ID Barcode]</span>';
+      }
+    }
+    var pv=$('dn-preview');
+    if(pv) pv.style.display='block';
+    if(scrollTo && pv) pv.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  window.dnClearForm = function(){
+    ['dn-tid','dn-source','dn-dest','dn-date','dn-time','dn-units','dn-totes'].forEach(function(id){
+      var el=$(id); if(el) el.value='';
+    });
+    dnRenderLive();
+    var pv=$('dn-preview'); if(pv) pv.style.display='none';
+    if(typeof showToast==='function') showToast('Form cleared');
+  };
+
+  // Live updates as the user types
+  document.addEventListener('input', function(e){
+    if(!e.target || !e.target.id || e.target.id.indexOf('dn-')!==0) return;
+    if(e.target.id==='dn-tid') dnRenderLive();
+    if($('dn-preview') && $('dn-preview').style.display==='block') dnUpdatePreview(false);
+  });
+
+  // ── Barcode → PNG (for embedding in Word) ────────────────────
+  function makeBarcodePng(value){
+    // Returns { base64, w, h } using a canvas render.
+    var canvas = document.createElement('canvas');
+    window.JsBarcode(canvas, value, {
+      format:'CODE128', width:3, height:110, displayValue:false,
+      margin:12, background:'#ffffff', lineColor:'#000000'
+    });
+    var dataUrl = canvas.toDataURL('image/png');
+    return { base64: dataUrl.split(',')[1], w: canvas.width, h: canvas.height };
+  }
+
+  // ── Build document.xml ───────────────────────────────────────
+  function para(text, opts){
+    opts = opts || {};
+    var jc = opts.center ? '<w:jc w:val="center"/>' : '';
+    var sz = opts.sz || 36;
+    var spacing = opts.spacing!=null ? '<w:spacing w:after="'+opts.spacing+'"/>' : '';
+    var runs = '';
+    if(opts.label){
+      runs += '<w:r><w:rPr><w:b/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr>' +
+              '<w:t xml:space="preserve">'+xmlEsc(opts.label)+' </w:t></w:r>';
+    }
+    runs += '<w:r><w:rPr><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr>' +
+            '<w:t xml:space="preserve">'+xmlEsc(text||'')+'</w:t></w:r>';
+    return '<w:p><w:pPr>'+jc+spacing+'<w:rPr><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr></w:pPr>'+runs+'</w:p>';
+  }
+  function emptyPara(){ return '<w:p><w:pPr><w:rPr><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr></w:pPr></w:p>'; }
+
+  function barcodeDrawingPara(img){
+    // Scale to a max display width of ~5.0in (4572000 EMU) preserving ratio.
+    var maxW = 4572000;
+    var cx = Math.round(img.w * 9525);
+    var cy = Math.round(img.h * 9525);
+    if(cx > maxW){ var r = maxW/cx; cx = maxW; cy = Math.round(cy*r); }
+    return '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+      '<w:r><w:drawing>' +
+        '<wp:inline distT="0" distB="0" distL="0" distR="0">' +
+          '<wp:extent cx="'+cx+'" cy="'+cy+'"/>' +
+          '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+          '<wp:docPr id="1" name="TS ID Barcode"/>' +
+          '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+          '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+            '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+              '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+                '<pic:nvPicPr><pic:cNvPr id="1" name="barcode.png"/><pic:cNvPicPr/></pic:nvPicPr>' +
+                '<pic:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+                '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm>' +
+                  '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+              '</pic:pic>' +
+            '</a:graphicData>' +
+          '</a:graphic>' +
+        '</wp:inline>' +
+      '</w:drawing></w:r></w:p>';
+  }
+
+  function buildDocXml(d, img){
+    var headerTitle =
+      '<w:p><w:pPr><w:jc w:val="center"/>' +
+        '<w:pBdr><w:bottom w:val="dashed" w:sz="6" w:space="6" w:color="999999"/></w:pBdr>' +
+        '<w:spacing w:after="240"/>' +
+        '<w:rPr><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr></w:pPr>' +
+        '<w:r><w:rPr><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr>' +
+          '<w:t>AMAZON NOW REVERSALS DELIVERY NOTE</w:t></w:r></w:p>';
+    var body =
+      headerTitle +
+      emptyPara() +
+      (img ? barcodeDrawingPara(img)
+           : para('[TS ID Barcode]', {center:true})) +
+      emptyPara() +
+      para(d.tid, {center:true}) +
+      emptyPara() + emptyPara() +
+      para(d.source, {label:'Source Store ID:'}) +
+      emptyPara() +
+      para(d.dest, {label:'Destination FC:'}) +
+      emptyPara() +
+      para(d.date, {label:'Date:'}) +
+      emptyPara() +
+      para(d.time, {label:'Time:'}) +
+      emptyPara() +
+      para(d.units, {label:'Number of Units:'}) +
+      emptyPara() +
+      para(d.totes, {label:'Number of Totes:'}) +
+      '<w:sectPr>' +
+        '<w:pgSz w:w="12240" w:h="15840"/>' +
+        '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>' +
+      '</w:sectPr>';
+
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document ' +
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+        'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+        'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+        'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+        '<w:body>' + body + '</w:body>' +
+      '</w:document>';
+  }
+
+  // ── Export to .docx ──────────────────────────────────────────
+  window.dnExportWord = async function(){
+    var d = gather();
+    var required = [
+      ['dn-tid',    d.tid,    'Transshipment ID'],
+      ['dn-source', d.source, 'Source Store ID'],
+      ['dn-dest',   d.dest,   'Destination FC'],
+      ['dn-date',   d.date,   'Date'],
+      ['dn-time',   d.time,   'Time'],
+      ['dn-units',  d.units,  'Number of Units'],
+      ['dn-totes',  d.totes,  'Number of Totes']
+    ];
+    var missing = required.filter(function(r){ return !r[1]; });
+    if(missing.length){
+      var firstEl=$(missing[0][0]);
+      if(firstEl){ firstEl.focus(); firstEl.style.borderColor='#e11d48'; firstEl.style.boxShadow='0 0 0 3px rgba(225,29,72,0.18)'; }
+      if(typeof showToast==='function') showToast('⚠ Please fill: '+missing.map(function(m){return m[2];}).join(', '));
+      return;
+    }
+
+    if(typeof showToast==='function') showToast('⏳ Generating Word file…');
+
+    try {
+      await ensureBarcode();
+      if(!window.JSZip){
+        await new Promise(function(res,rej){
+          var s=document.createElement('script');
+          s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.onload=res; s.onerror=rej; document.head.appendChild(s);
+        });
+      }
+
+      var img = null;
+      try { img = makeBarcodePng(d.tid); } catch(e){ img = null; }
+
+      var zip = new JSZip();
+
+      zip.file('[Content_Types].xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Default Extension="png" ContentType="image/png"/>' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+        '</Types>');
+
+      zip.file('_rels/.rels',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        '</Relationships>');
+
+      var docRels =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          (img ? '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>' : '') +
+        '</Relationships>';
+      zip.file('word/_rels/document.xml.rels', docRels);
+
+      if(img){ zip.file('word/media/image1.png', img.base64, {base64:true}); }
+
+      zip.file('word/document.xml', buildDocXml(d, img));
+
+      var blob = await zip.generateAsync({
+        type:'blob',
+        mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      var safe = (d.tid || 'DeliveryNote').replace(/[^A-Z0-9\-_]/gi,'_');
+      a.href = url;
+      a.download = 'Reverse_Transshipment_Delivery_Note_' + safe + '.docx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      if(typeof showToast==='function') showToast('✅ Word (.docx) ready!');
+      dnUpdatePreview(false);
+    } catch(err){
+      console.error(err);
+      if(typeof showToast==='function') showToast('❌ Error: '+err.message);
+    }
+  };
+
+  // ── Defaults: today's date pre-filled ────────────────────────
+  function dnSetDefaultsOnce(){
+    var de=$('dn-date');
+    if(de && !de.value){
+      var n=new Date();
+      de.value=n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', dnSetDefaultsOnce);
+  else dnSetDefaultsOnce();
+
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HOME-PAGE LIGHT / DARK THEME
+═══════════════════════════════════════════════════════════════ -->
+<style id="dmspro-theme-light">
+  /* Toggle button (visible in both themes) — fixed top-right, left of the user pill */
+  .theme-toggle {
+    position:fixed; top:9px; right:12px; z-index:10001;
+    width:38px; height:38px; border-radius:11px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1;
+    background:rgba(10,9,20,0.95); border:1px solid rgba(46,44,69,0.8); color:#e8e6ff;
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+    transition:transform .15s, background .2s, border-color .2s;
+  }
+  .theme-toggle:hover { transform:translateY(-1px); border-color:var(--accent,#ff6b35); }
+  .theme-toggle:active { transform:translateY(0); }
+
+  /* ── LIGHT THEME (applies to the home page + shared header) ── */
+  html[data-theme="light"] {
+    --bg:#f3f4fb; --bg2:#e9ebf6; --surface:#ffffff; --surface2:#f1f2fa; --surface3:#e7e9f4;
+    --dark:#ffffff; --border:#e0e2ee; --muted:#5b5f82; --text:#16182c; --text2:#3b3f5e;
+  }
+  html[data-theme="light"] body { background:var(--bg); color:var(--text); }
+  html[data-theme="light"] body::before {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(67,97,238,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(114,9,183,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 60% 10%, rgba(255,107,53,0.05) 0%, transparent 50%);
+  }
+  html[data-theme="light"] .header { background:rgba(255,255,255,0.9); border-bottom-color:var(--border); }
+  html[data-theme="light"] .header-logo { color:#16182c; }
+  html[data-theme="light"] .theme-toggle { background:#ffffff; border-color:#e0e2ee; color:#16182c; }
+  html[data-theme="light"] .theme-toggle:hover { border-color:var(--accent,#ff6b35); }
+
+  html[data-theme="light"] .dash-hero h1 {
+    background:linear-gradient(135deg,#16182c 0%,#4361ee 55%,var(--accent) 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+
+  html[data-theme="light"] .task-card {
+    background:#ffffff; border-color:#e3e5f1;
+    box-shadow:0 1px 2px rgba(20,22,50,0.05), 0 6px 18px rgba(20,22,50,0.05);
+  }
+  html[data-theme="light"] .task-card h3 { color:#16182c; }
+  html[data-theme="light"] .task-card:hover { box-shadow:0 18px 46px rgba(40,50,100,0.16); }
+
+  html[data-theme="light"] #page-dashboard > footer {
+    background:#ffffff; border-top-color:#e0e2ee; color:#5b5f82;
+  }
+
+  /* The clock / safety-tips panel stays a dark "feature" card so its
+     white text remains readable on the light page. */
+  html[data-theme="light"] #live-clock > div {
+    background:#13121f !important; border-color:#2a2840 !important;
+  }
+</style>
+
+<script>
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    var ico = document.querySelector('#theme-toggle .tt-ico');
+    if(ico) ico.textContent = (t === 'light') ? '🌙' : '☀️';
+    var btn = document.getElementById('theme-toggle');
+    if(btn) btn.title = (t === 'light') ? 'Switch to dark theme' : 'Switch to light theme';
+    try { localStorage.setItem('dmspro-theme', t); } catch(e){}
+  }
+  function toggleTheme(){
+    var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    applyTheme(cur === 'light' ? 'dark' : 'light');
+  }
+  (function(){
+    var t = 'dark';
+    try { if(localStorage.getItem('dmspro-theme') === 'light') t = 'light'; } catch(e){}
+    applyTheme(t);
+  })();
 </script>
 
 <!-- Visual-only polish (no logic) -->
