@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
-    --ink:#11161c; --muted:#5d6b7a; --line:#d7dee6; --bg:#f4f3fb; --panel:#fff;
+    --ink:#11161c; --muted:#5d6b7a; --line:#d7dee6; --bg:#e7ebf1; --panel:#fff;
     --purple:#7c3aed; --blue:#4361ee;
     --raw-h:#1f3a5f; --raw-t:#e9eff6;
     --cls-h:#8a1c1c; --cls-t:#fbe7e7;
@@ -23,6 +23,11 @@
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
     padding:30px 28px 90px;}
   .wrap{max-width:1520px;margin:0 auto;}
+
+  .backbtn{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    color:var(--muted);font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;cursor:pointer;
+    text-decoration:none;margin-bottom:18px;transition:background .15s,color .15s,border-color .15s;}
+  .backbtn:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
 
   .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
     border-bottom:2px solid var(--ink);padding-bottom:16px;}
@@ -121,6 +126,7 @@
 </head>
 <body>
 <div class="wrap">
+  <a href="index.html" class="backbtn">← Back to Dashboard</a>
   <div class="masthead">
     <div>
       <p class="eyebrow">Lateslam Deep Dive · Root Cause Analysis</p>
