@@ -2782,13 +2782,13 @@ to{width:65%;} }
     color:#06d6a0; border:1px solid rgba(6,214,160,0.35); background:rgba(6,214,160,0.1);
     padding:4px 10px; border-radius:20px;
   }
-  .guide-intro { color:#b8b6d9; font-size:13.5px; line-height:1.7; margin:0 0 22px; max-width:760px; }
-  .guide-intro b { color:#e8e6ff; }
+  .guide-intro { color:#4a4870; font-size:13.5px; line-height:1.7; margin:0 0 22px; max-width:760px; }
+  .guide-intro b { color:#7c3aed; }
 
   /* Performance / limits callout */
   .guide-limits {
-    background:linear-gradient(135deg,rgba(255,107,53,0.10),rgba(67,97,238,0.08));
-    border:1px solid rgba(255,107,53,0.30); border-radius:16px; padding:22px 24px; margin-bottom:28px;
+    background:linear-gradient(135deg,rgba(255,107,53,0.16),rgba(67,97,238,0.12)),#141322;
+    border:1px solid rgba(255,107,53,0.45); border-radius:16px; padding:22px 24px; margin-bottom:28px;
   }
   .guide-limits-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .guide-limits-head .gl-ico { font-size:22px; }
@@ -2799,18 +2799,18 @@ to{width:65%;} }
   .guide-ladder { display:flex; flex-direction:column; gap:8px; }
   .guide-rung {
     display:grid; grid-template-columns:124px 1fr; gap:14px; align-items:center;
-    background:rgba(10,9,20,0.45); border:1px solid #2e2c45; border-radius:11px; padding:11px 16px;
+    background:#1f1d33; border:1px solid #322f4d; border-radius:11px; padding:11px 16px;
   }
   .guide-rung .gr-count {
     font-family:'DM Mono',monospace; font-weight:700; font-size:13px; color:#fff; text-align:center;
     padding:5px 8px; border-radius:8px;
   }
-  .guide-rung .gr-text { font-size:12.5px; color:#cfcdec; line-height:1.5; }
+  .guide-rung .gr-text { font-size:12.5px; color:#e3e1f5; line-height:1.5; }
   .guide-rung .gr-text b { color:#fff; }
-  .gr-green  { background:rgba(6,214,160,0.18); border:1px solid rgba(6,214,160,0.4); }
-  .gr-blue   { background:rgba(76,201,240,0.16); border:1px solid rgba(76,201,240,0.4); }
-  .gr-gold   { background:rgba(255,214,10,0.16); border:1px solid rgba(255,214,10,0.4); }
-  .gr-red    { background:rgba(247,37,133,0.16); border:1px solid rgba(247,37,133,0.42); }
+  .gr-green  { background:rgba(6,214,160,0.30); border:1px solid rgba(6,214,160,0.6); }
+  .gr-blue   { background:rgba(76,201,240,0.28); border:1px solid rgba(76,201,240,0.6); }
+  .gr-gold   { background:rgba(255,214,10,0.26); border:1px solid rgba(255,214,10,0.6); color:#fff; }
+  .gr-red    { background:rgba(247,37,133,0.30); border:1px solid rgba(247,37,133,0.62); }
   .guide-best {
     margin-top:14px; font-size:12.5px; color:#ffe7d6; line-height:1.6;
     border-left:3px solid #ff6b35; padding-left:14px;
@@ -2880,7 +2880,7 @@ to{width:65%;} }
   <div class="guide-wrap">
     <div class="guide-title-row">
       <h2>Tools Help &amp; User Guide</h2>
-      <span class="guide-badge">16 Tools</span>
+      <span class="guide-badge">17 Tools</span>
     </div>
     <p class="guide-intro">Every DMS PRO tool, explained step by step. Tap any tool to expand its guide, then hit <b>Open tool →</b> to jump straight in. Most tools follow the same rhythm — <b>upload a file → generate → print or export</b>.</p>
 
@@ -3125,9 +3125,28 @@ to{width:65%;} }
 
     <div class="guide-item">
       <button class="guide-head" onclick="guideToggle(this)">
+        <span class="guide-ico">📤</span>
+        <span class="guide-htxt"><span class="guide-name">Lateslam RCA Builder</span><span class="guide-cat">Performance &amp; Analytics</span></span>
+        <span class="guide-num">12</span><span class="guide-chev">▾</span>
+      </button>
+      <div class="guide-body"><div class="guide-body-inner">
+        <p class="guide-what"><b>What it does:</b> Combines your <b>Late Slam</b> file with the <b>Outbound Pick</b> file to build a colour-coded <b>root-cause (RCA)</b> export — forecast vs actual for both <b>orders &amp; units</b> — ready to paste straight into Google Sheets. Opens in a new tab.</p>
+        <div class="guide-steps">
+          <div class="guide-step"><span class="gs-n">1</span><span>Open the tool — it launches the RCA Builder in a new tab.</span></div>
+          <div class="guide-step"><span class="gs-n">2</span><span>Upload the <b>Late Slam</b> file and the <b>Outbound Pick</b> file.</span></div>
+          <div class="guide-step"><span class="gs-n">3</span><span>Click <b>Fetch Forecast</b>, then build the RCA to compare forecast vs actual.</span></div>
+          <div class="guide-step"><span class="gs-n">4</span><span><b>Copy</b> the colour-coded table into Google Sheets — or export it.</span></div>
+        </div>
+        <p class="guide-tip">💡 <b>Tip:</b> Use this when you need a share-ready, colour-coded RCA — it pastes cleanly into a Sheet for the daily review.</p>
+        <button class="guide-open" onclick="window.open('Lateslam RCA Builder.html','_blank')">Open tool →</button>
+      </div></div>
+    </div>
+
+    <div class="guide-item">
+      <button class="guide-head" onclick="guideToggle(this)">
         <span class="guide-ico">📈</span>
         <span class="guide-htxt"><span class="guide-name">VOC Analysis</span><span class="guide-cat">Performance &amp; Analytics</span></span>
-        <span class="guide-num">12</span><span class="guide-chev">▾</span>
+        <span class="guide-num">13</span><span class="guide-chev">▾</span>
       </button>
       <div class="guide-body"><div class="guide-body-inner">
         <p class="guide-what"><b>What it does:</b> Voice-of-Customer analysis — surfaces customer complaint &amp; feedback trends so you can act before they escalate.</p>
@@ -3145,7 +3164,7 @@ to{width:65%;} }
       <button class="guide-head" onclick="guideToggle(this)">
         <span class="guide-ico">🏪</span>
         <span class="guide-htxt"><span class="guide-name">Store Metrics</span><span class="guide-cat">Performance &amp; Analytics</span></span>
-        <span class="guide-num">13</span><span class="guide-chev">▾</span>
+        <span class="guide-num">14</span><span class="guide-chev">▾</span>
       </button>
       <div class="guide-body"><div class="guide-body-inner">
         <p class="guide-what"><b>What it does:</b> Live store-wise KPIs — orders, inbound, OB/IB TPH, SLA, UPO, removals &amp; performance trends. Opens in a new tab.</p>
@@ -3166,7 +3185,7 @@ to{width:65%;} }
       <button class="guide-head" onclick="guideToggle(this)">
         <span class="guide-ico">🚚</span>
         <span class="guide-htxt"><span class="guide-name">Reverse Transshipment Gate Pass</span><span class="guide-cat">Ops &amp; Support</span></span>
-        <span class="guide-num">14</span><span class="guide-chev">▾</span>
+        <span class="guide-num">15</span><span class="guide-chev">▾</span>
       </button>
       <div class="guide-body"><div class="guide-body-inner">
         <p class="guide-what"><b>What it does:</b> Fills a gate-pass form and exports a print-ready <b>Word (.docx)</b> for the security gate.</p>
@@ -3185,7 +3204,7 @@ to{width:65%;} }
       <button class="guide-head" onclick="guideToggle(this)">
         <span class="guide-ico">🏷️</span>
         <span class="guide-htxt"><span class="guide-name">Reverse Transshipment Delivery Note</span><span class="guide-cat">Ops &amp; Support</span></span>
-        <span class="guide-num">15</span><span class="guide-chev">▾</span>
+        <span class="guide-num">16</span><span class="guide-chev">▾</span>
       </button>
       <div class="guide-body"><div class="guide-body-inner">
         <p class="guide-what"><b>What it does:</b> Type the <b>Transshipment ID</b> to auto-generate a scannable barcode, then export a delivery note to Word — headed <b>“AMAZON NOW REVERSALS DELIVERY NOTE”</b>.</p>
@@ -3204,7 +3223,7 @@ to{width:65%;} }
       <button class="guide-head" onclick="guideToggle(this)">
         <span class="guide-ico">💬</span>
         <span class="guide-htxt"><span class="guide-name">Report &amp; Suggest</span><span class="guide-cat">Ops &amp; Support</span></span>
-        <span class="guide-num">16</span><span class="guide-chev">▾</span>
+        <span class="guide-num">17</span><span class="guide-chev">▾</span>
       </button>
       <div class="guide-body"><div class="guide-body-inner">
         <p class="guide-what"><b>What it does:</b> Sends feedback, flags issues, or suggests improvements straight to the system administrator.</p>
@@ -17628,6 +17647,18 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     .task-card { animation: none !important; }
     .task-card:hover { transform: none !important; }
     * { scroll-behavior: auto !important; }
+  }
+</style>
+
+<!-- ── Global font normalize: plain professional Arial everywhere (headings, body, inputs, examples & data) ── -->
+<style id="font-arial-normalize">
+  :root { --ui: Arial, Helvetica, sans-serif; --display: Arial, Helvetica, sans-serif; }
+  body, body *,
+  h1, h2, h3, h4, h5, h6, p, span, div, a, li, td, th, label,
+  input, select, textarea, button,
+  .guide-name, .guide-cat, .guide-cat-head, .guide-num, .gl-sub, .gr-count,
+  .login-title, .task-card h3, .contact-hero-name {
+    font-family: Arial, Helvetica, sans-serif !important;
   }
 </style>
 
