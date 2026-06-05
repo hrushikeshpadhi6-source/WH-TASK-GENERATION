@@ -174,6 +174,14 @@
       <button class="btn" id="buildBtn" disabled>⚡ Build RCA</button>
     </div>
     <div class="ctrl" style="margin-left:auto;">
+      <label>Headers in export</label>
+      <select id="headerMode">
+        <option value="both">Both header rows</option>
+        <option value="cols">Column names only</option>
+        <option value="none">No headers</option>
+      </select>
+    </div>
+    <div class="ctrl">
       <label>&nbsp;</label>
       <div style="display:flex;gap:10px;">
         <button class="btn ghost" id="copyBtn" disabled><span class="dot"></span>Copy for Google Sheets</button>
@@ -202,7 +210,7 @@
   </div>
 
   <div class="foot">
-    <span class="pill" id="colcount">23 columns</span>
+    <span class="pill" id="colcount">22 columns</span>
     <span class="pill" id="rowcount">—</span>
     <span class="empty-hint" id="footHint">Tip: click <b>Copy for Google Sheets</b> → open your sheet → <b>Ctrl/Cmd&nbsp;+&nbsp;V</b>. Colours &amp; headers paste in automatically.</span>
   </div>
@@ -221,9 +229,8 @@ const GROUPS = {
 };
 // key: raw column name OR derived id ; src: how value is produced
 const COLS = [
-  {g:"raw",name:"picklist_created_date",         key:"picklist_created_date",         src:"raw"},
+  {g:"raw",name:"picklist_created_date",         key:"picklist_created_date",         src:"raw", dateOnly:true},
   {g:"raw",name:"week_name",                     key:"week_name",                     src:"raw"},
-  {g:"raw",name:"snapshot_date",                 key:"snapshot_date",                 src:"raw"},
   {g:"raw",name:"order_id",                      key:"order_id",                      src:"raw"},
   {g:"raw",name:"picklist_created_time",         key:"picklist_created_time",         src:"raw"},
   {g:"raw",name:"delivery_station_code",         key:"delivery_station_code",         src:"raw"},
@@ -267,6 +274,9 @@ function fmtDur(sec){ if(sec==null||isNaN(sec)) return ""; sec=Math.max(0,Math.r
   return h>0 ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`; }
 function hourSlot(d){ if(!d) return ""; const h=d.getHours(); const p=n=>String(n).padStart(2,"0");
   return `${p(h)}:00 - ${p(h)}:59`; }
+// strip a trailing midnight time (" 0:00:00", "T00:00:00", etc.) from a date-only value
+function stripMidnight(v){ if(v==null) return ""; const s=String(v).trim();
+  const m=s.match(/^(.*?)[ T]0{1,2}:0{2}(?::0{2})?(?:\.0+)?Z?$/); return m?m[1].trim():s; }
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2300); }
 
 /* contiguous group spans for band row */
@@ -283,7 +293,7 @@ function readFile(file,cb){
     const fr=new FileReader();
     fr.onload=e=>{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      cb(XLSX.utils.sheet_to_json(ws,{defval:""})); };
+      cb(XLSX.utils.sheet_to_json(ws,{defval:"",raw:false})); };
     fr.readAsArrayBuffer(file);
   } else {
     Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>cb(r.data)});
@@ -449,7 +459,7 @@ function rebuildExportRows(){
   exportRows=records.map(rec=>{
     const h=rec.hour, slot=hourly[h]||{};
     return COLS.map(c=>{
-      if(c.src==="raw")    return rec.raw[c.key]!=null?String(rec.raw[c.key]):"";
+      if(c.src==="raw")    return c.dateOnly?stripMidnight(rec.raw[c.key]):(rec.raw[c.key]!=null?String(rec.raw[c.key]):"");
       if(c.src==="derive") return rec[c.key]!=null?String(rec[c.key]):"";
       // slot-level
       if(c.key==="actual")        return slot.actual!=null?String(slot.actual):"";
@@ -552,14 +562,20 @@ function renderGrid(){
 /* ===================== copy for sheets ===================== */
 function buildCopyHTML(){
   const bd="1px solid #b9c4d0";
+  const mode=$("headerMode").value;
   let t=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;">`;
-  t+="<tr>";
-  bands.forEach(s=>{const g=GROUPS[s.g];
-    t+=`<td colspan="${s.end-s.start+1}" style="background:${g.h};color:#fff;font-weight:bold;text-align:center;border:${bd};padding:5px;letter-spacing:1px;">${g.label.toUpperCase()}</td>`;});
-  t+="</tr><tr>";
-  COLS.forEach(c=>{const g=GROUPS[c.g];
-    t+=`<td style="background:${g.t};color:#11161c;font-weight:bold;border:${bd};padding:5px;">${c.name}</td>`;});
-  t+="</tr>";
+  if(mode==="both"){
+    t+="<tr>";
+    bands.forEach(s=>{const g=GROUPS[s.g];
+      t+=`<td colspan="${s.end-s.start+1}" style="background:${g.h};color:#fff;font-weight:bold;text-align:center;border:${bd};padding:5px;letter-spacing:1px;">${g.label.toUpperCase()}</td>`;});
+    t+="</tr>";
+  }
+  if(mode==="both"||mode==="cols"){
+    t+="<tr>";
+    COLS.forEach(c=>{const g=GROUPS[c.g];
+      t+=`<td style="background:${g.t};color:#11161c;font-weight:bold;border:${bd};padding:5px;">${c.name}</td>`;});
+    t+="</tr>";
+  }
   const rows = built?exportRows:emptyExport();
   rows.forEach(row=>{ t+="<tr>";
     row.forEach((val,ci)=>{const g=GROUPS[COLS[ci].g];
@@ -567,9 +583,10 @@ function buildCopyHTML(){
   t+="</table>"; return t;
 }
 function buildCopyTSV(){
+  const mode=$("headerMode").value;
   const out=[];
-  out.push(bands.flatMap(s=>{const lab=GROUPS[s.g].label.toUpperCase();return [lab,...Array(s.end-s.start).fill("")];}).join("\t"));
-  out.push(COLS.map(c=>c.name).join("\t"));
+  if(mode==="both") out.push(bands.flatMap(s=>{const lab=GROUPS[s.g].label.toUpperCase();return [lab,...Array(s.end-s.start).fill("")];}).join("\t"));
+  if(mode==="both"||mode==="cols") out.push(COLS.map(c=>c.name).join("\t"));
   (built?exportRows:emptyExport()).forEach(r=>out.push(r.join("\t")));
   return out.join("\n");
 }
@@ -627,22 +644,30 @@ async function makeXlsx(dataRows){
     :`<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
   // spans
   const sp=[];let cur=null;COLS.forEach((c,i)=>{if(cur&&cur.g===c.g)cur.end=i;else{cur={g:c.g,start:i,end:i};sp.push(cur);}});
-  let body="";
-  let r1=`<row r="1" ht="20" customHeight="1">`;
-  COLS.forEach((c,i)=>{const s=sp.find(x=>i>=x.start&&i<=x.end);r1+=cell(colL(i)+"1",bandIdx[c.g],i===s.start?GROUPS[c.g].label.toUpperCase():undefined);});
-  r1+="</row>";
-  let r2=`<row r="2" ht="28" customHeight="1">`;COLS.forEach((c,i)=>{r2+=cell(colL(i)+"2",hdrIdx[c.g],c.name);});r2+="</row>";
-  body+=r1+r2;
-  dataRows.forEach((row,ri)=>{ const rr=3+ri; let x=`<row r="${rr}">`;
+  const mode=$("headerMode").value;
+  const headerRows = mode==="both"?2 : mode==="cols"?1 : 0;
+  let body="", rownum=0;
+  if(mode==="both"){
+    rownum++; let r1=`<row r="${rownum}" ht="20" customHeight="1">`;
+    COLS.forEach((c,i)=>{const s=sp.find(x=>i>=x.start&&i<=x.end);r1+=cell(colL(i)+rownum,bandIdx[c.g],i===s.start?GROUPS[c.g].label.toUpperCase():undefined);});
+    r1+="</row>"; body+=r1;
+  }
+  if(mode==="both"||mode==="cols"){
+    rownum++; let r2=`<row r="${rownum}" ht="28" customHeight="1">`;
+    COLS.forEach((c,i)=>{r2+=cell(colL(i)+rownum,hdrIdx[c.g],c.name);}); r2+="</row>"; body+=r2;
+  }
+  dataRows.forEach((row,ri)=>{ const rr=headerRows+1+ri; let x=`<row r="${rr}">`;
     COLS.forEach((c,ci)=>{x+=cell(colL(ci)+rr,dataIdx[c.g],row[ci]);}); x+="</row>"; body+=x; });
-  const merges=sp.filter(s=>s.end>s.start).map(s=>`<mergeCell ref="${colL(s.start)}1:${colL(s.end)}1"/>`);
+  const merges = mode==="both" ? sp.filter(s=>s.end>s.start).map(s=>`<mergeCell ref="${colL(s.start)}1:${colL(s.end)}1"/>`) : [];
   let colsXml='<cols>';COLS.forEach((c,i)=>{colsXml+=`<col min="${i+1}" max="${i+1}" width="${c.g==='raw'?20:17}" customWidth="1"/>`;});colsXml+='</cols>';
+  const paneXml = headerRows>0 ? `<pane ySplit="${headerRows}" topLeftCell="A${headerRows+1}" activePane="bottomLeft" state="frozen"/>` : "";
+  const mergeXml = merges.length ? `<mergeCells count="${merges.length}">${merges.join('')}</mergeCells>` : "";
   const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<sheetViews><sheetView tabSelected="1" workbookViewId="0">${paneXml}</sheetView></sheetViews>
 <sheetFormatPr defaultRowHeight="15"/>${colsXml}
 <sheetData>${body}</sheetData>
-<mergeCells count="${merges.length}">${merges.join('')}</mergeCells>
+${mergeXml}
 <pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.3" footer="0.3"/></worksheet>`;
   const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
