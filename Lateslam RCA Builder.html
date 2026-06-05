@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lateslam Deep Dive — RCA Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --ink:#11161c; --muted:#5d6b7a; --line:#d7dee6; --bg:#f4f3fb; --panel:#fff;
+    --purple:#7c3aed; --blue:#4361ee;
+    --raw-h:#1f3a5f; --raw-t:#e9eff6;
+    --cls-h:#8a1c1c; --cls-t:#fbe7e7;
+    --der-h:#8a5a00; --der-t:#fcf1dd;
+    --fva-h:#0f5e57; --fva-t:#e1f1ee;
+    --man-h:#5b2a86; --man-t:#f1e8f8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg);color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+    padding:30px 28px 90px;}
+  .wrap{max-width:1520px;margin:0 auto;}
+
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:16px;}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 6px;}
+  h1{font-size:26px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.01em;}
+  .sub{font-size:13px;color:var(--muted);margin:7px 0 0;max-width:620px;line-height:1.5;}
+
+  /* upload cards */
+  .uploads{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0 8px;}
+  .ucard{background:#fff;border:2px dashed var(--line);border-radius:14px;padding:20px 22px;
+    cursor:pointer;transition:border-color .18s, background .18s;text-align:center;position:relative;}
+  .ucard:hover{background:#fbfaff;}
+  .ucard.f1{--accent:var(--purple);}
+  .ucard.f2{--accent:var(--blue);}
+  .ucard.loaded{border-style:solid;border-color:var(--accent);background:#fff;}
+  .ucard .ico{font-size:30px;line-height:1;}
+  .ucard h3{font-size:15px;font-weight:800;margin:8px 0 4px;}
+  .ucard .cols{font-size:11.5px;color:var(--muted);line-height:1.4;font-family:"SF Mono",Menlo,Consolas,monospace;}
+  .ucard .status{margin-top:10px;font-size:12px;font-weight:800;color:var(--accent);min-height:16px;}
+  .ucard .num{position:absolute;top:12px;left:14px;font-size:11px;font-weight:800;color:var(--accent);
+    background:color-mix(in srgb,var(--accent) 12%,#fff);border:1px solid color-mix(in srgb,var(--accent) 30%,#fff);
+    padding:2px 9px;border-radius:20px;letter-spacing:.08em;}
+
+  /* controls bar */
+  .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 4px;}
+  .ctrl{display:flex;flex-direction:column;gap:4px;}
+  .ctrl label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  select,.btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:9px;}
+  select,.datefield{padding:8px 12px;border:1px solid var(--line);background:#fff;color:var(--ink);min-width:160px;font-family:inherit;font-size:13px;font-weight:700;border-radius:9px;}
+  .datefield{min-width:150px;}
+  #fcStatus{font-size:12px;font-weight:700;color:var(--muted);align-self:center;}
+  .btn{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:10px 16px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;transition:transform .08s, background .15s;}
+  .btn:active{transform:translateY(1px);} .btn:hover{background:#22303f;}
+  .btn.ghost{background:#fff;color:var(--ink);} .btn.ghost:hover{background:#f1f3f7;}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;}
+  .btn .dot{width:7px;height:7px;border-radius:50%;background:#37d07a;}
+
+  /* kpi strip */
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 4px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:120px;}
+  .kpi .v{font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .kpi .l{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .kpi.alert .v{color:#c0392b;} .kpi.warn .v{color:#b8730a;}
+
+  /* hourly forecast strip */
+  .fc-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:18px 0 6px;}
+  .fc-panel h4{margin:0 0 4px;font-size:13px;font-weight:800;}
+  .fc-panel .hint{font-size:11.5px;color:var(--muted);margin:0 0 12px;}
+  .fc-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .fc-table th{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    text-align:center;padding:6px 8px;border-bottom:1px solid var(--line);}
+  .fc-table th:first-child{text-align:left;}
+  .fc-table td{padding:5px 8px;text-align:center;border-bottom:1px solid #eef1f5;font-variant-numeric:tabular-nums;}
+  .fc-table td:first-child{text-align:left;font-weight:700;}
+  .fc-table input{width:74px;padding:5px 7px;border:1px solid var(--line);border-radius:7px;text-align:center;
+    font-family:inherit;font-size:12px;font-weight:700;background:var(--man-t);}
+  .fc-table input:focus{outline:2px solid var(--man-h);background:#fff;}
+  .fc-table .gap{font-weight:800;}
+  .gap-pos{color:#0f8a4f;} .gap-neg{color:#c0392b;}
+
+  .legend{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 14px;}
+  .lg{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:7px 12px 7px 9px;}
+  .sw{width:15px;height:15px;border-radius:4px;flex:none;}
+  .lg b{font-size:12px;font-weight:800;} .lg span{font-size:11px;color:var(--muted);}
+
+  .scroller{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;
+    box-shadow:0 18px 40px -28px rgba(16,22,28,.35);}
+  table.grid{border-collapse:collapse;width:100%;font-size:12px;}
+  table.grid th,table.grid td{border:1px solid #cfd8e2;padding:6px 9px;text-align:left;white-space:nowrap;vertical-align:top;}
+  tr.band th{color:#fff;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    text-align:center;padding:8px 6px;border-color:rgba(255,255,255,.25);}
+  tr.cols th{font-size:11.5px;font-weight:800;color:var(--ink);position:sticky;top:0;}
+  tr.cols th .code{display:block;font-weight:600;color:var(--muted);font-size:9.5px;margin-top:2px;
+    font-family:"SF Mono",Menlo,Consolas,monospace;}
+  tr.notes td{font-size:10.5px;font-style:italic;color:#46525f;background:#f7f9fb;white-space:normal;min-width:120px;line-height:1.35;}
+  tr.notes td.auto{color:#9aa6b2;}
+  tbody td{height:28px;color:#1b2530;font-variant-numeric:tabular-nums;}
+  td.rownum{background:#f2f5f8;color:#8b97a4;text-align:center;font-weight:700;font-size:11px;
+    position:sticky;left:0;z-index:1;}
+  th.rownum{background:#e9edf2;color:#5d6b7a;text-align:center;position:sticky;left:0;z-index:3;}
+  .more-note{font-size:12px;color:var(--muted);padding:10px 14px;text-align:center;}
+
+  .foot{margin-top:16px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+  .foot .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;color:var(--ink);}
+  .empty-hint{font-size:12px;color:var(--muted);}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:50;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,.5);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .hide{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div>
+      <p class="eyebrow">Lateslam Deep Dive · Root Cause Analysis</p>
+      <h1>Lateslam RCA Builder</h1>
+      <p class="sub">Upload your two raw exports. The tool flags late slams (<b>pl_create_to_stage&nbsp;&gt;&nbsp;promise_utr</b>), joins picker names by order ID, and builds the colour-coded hour-wise RCA — ready to copy into Google Sheets or download as Excel.</p>
+    </div>
+  </div>
+
+  <!-- uploads -->
+  <div class="uploads">
+    <label class="ucard f1" id="z1">
+      <span class="num">FILE 1</span>
+      <div class="ico">📋</div>
+      <h3>Late Slam Data</h3>
+      <div class="cols">picklist_created_time · pick_assignment_time · staging_time · pl_create_to_stage · promise_utr</div>
+      <div class="status" id="s1">click or drop CSV / XLSX</div>
+      <input type="file" id="f1" accept=".csv,.xls,.xlsx" class="hide" />
+    </label>
+    <label class="ucard f2" id="z2">
+      <span class="num">FILE 2</span>
+      <div class="ico">🚀</div>
+      <h3>Outbound Pick Data</h3>
+      <div class="cols">Timestamp · LocationId · ASIN · User (picker) · ReferenceIdValue (order_id)</div>
+      <div class="status" id="s2">click or drop CSV / XLSX</div>
+      <input type="file" id="f2" accept=".csv,.xls,.xlsx" class="hide" />
+    </label>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Store filter</label>
+      <select id="storeFilter"><option value="all">All stores</option></select>
+    </div>
+    <div class="ctrl">
+      <label>Rows to include</label>
+      <select id="scope">
+        <option value="ls">Late slams only</option>
+        <option value="all">All orders</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Forecast date</label>
+      <input type="date" id="fcDate" class="datefield" />
+    </div>
+    <div class="ctrl">
+      <label>&nbsp;</label>
+      <button class="btn ghost" id="fetchBtn">☁️ Fetch Forecast</button>
+    </div>
+    <div class="ctrl">
+      <label>&nbsp;</label>
+      <button class="btn" id="buildBtn" disabled>⚡ Build RCA</button>
+    </div>
+    <div class="ctrl" style="margin-left:auto;">
+      <label>&nbsp;</label>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" id="copyBtn" disabled><span class="dot"></span>Copy for Google Sheets</button>
+        <button class="btn ghost" id="xlsxBtn" disabled>⤓ Download Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fcStatus" style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 2px 0;"></div>
+
+  <div class="kpis hide" id="kpis"></div>
+
+  <div class="fc-panel hide" id="fcPanel">
+    <h4>Hourly Forecast &amp; Manpower</h4>
+    <p class="hint">Actual orders are filled automatically. Type the <b>forecast</b> (from your Google Sheet) and <b>Active MP</b> per hour — Gap % and the export columns update live.</p>
+    <div style="overflow-x:auto;">
+      <table class="fc-table" id="fcTable"></table>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="scroller">
+    <table class="grid" id="grid"></table>
+    <div class="more-note hide" id="moreNote"></div>
+  </div>
+
+  <div class="foot">
+    <span class="pill" id="colcount">23 columns</span>
+    <span class="pill" id="rowcount">—</span>
+    <span class="empty-hint" id="footHint">Tip: click <b>Copy for Google Sheets</b> → open your sheet → <b>Ctrl/Cmd&nbsp;+&nbsp;V</b>. Colours &amp; headers paste in automatically.</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== model ===================== */
+const GROUPS = {
+  raw:{label:"Raw Data — Outbound Pick Export", h:"#1f3a5f", t:"#e9eff6", leg:"Auto-filled from raw export"},
+  cls:{label:"Classification",                   h:"#8a1c1c", t:"#fbe7e7", leg:"Late-slam flag"},
+  der:{label:"Derived Metrics",                  h:"#8a5a00", t:"#fcf1dd", leg:"Calculated from timestamps"},
+  fva:{label:"Forecast vs Actual",               h:"#0f5e57", t:"#e1f1ee", leg:"Forecast sheet + system"},
+  man:{label:"Manual Entry",                     h:"#5b2a86", t:"#f1e8f8", leg:"You fill in"},
+};
+// key: raw column name OR derived id ; src: how value is produced
+const COLS = [
+  {g:"raw",name:"picklist_created_date",         key:"picklist_created_date",         src:"raw"},
+  {g:"raw",name:"week_name",                     key:"week_name",                     src:"raw"},
+  {g:"raw",name:"snapshot_date",                 key:"snapshot_date",                 src:"raw"},
+  {g:"raw",name:"order_id",                      key:"order_id",                      src:"raw"},
+  {g:"raw",name:"picklist_created_time",         key:"picklist_created_time",         src:"raw"},
+  {g:"raw",name:"delivery_station_code",         key:"delivery_station_code",         src:"raw"},
+  {g:"raw",name:"country_code",                  key:"country_code",                  src:"raw"},
+  {g:"raw",name:"pick_assignment_time",          key:"pick_assignment_time",          src:"raw"},
+  {g:"raw",name:"staging_time",                  key:"staging_time",                  src:"raw"},
+  {g:"raw",name:"assignment_to_stage_time_secs", key:"assignment_to_stage_time_secs", src:"raw"},
+  {g:"raw",name:"pl_create_to_stage",            key:"pl_create_to_stage",            src:"raw"},
+  {g:"raw",name:"promise_utr",                   key:"promise_utr",                   src:"raw"},
+  {g:"raw",name:"units_picked",                  key:"units_picked",                  src:"raw"},
+  {g:"cls",name:"Lateslam Only",      key:"lateslam",      src:"derive", note:"Filter to Lateslam orders only"},
+  {g:"der",name:"Lateslam Time slot", key:"slot",          src:"derive", note:"Hour bucket of pick-list created time"},
+  {g:"der",name:"Accepting Time",     key:"accept",        src:"derive", note:"Pick-list created time → pick assignment time"},
+  {g:"fva",name:"Gap %",              key:"gap",           src:"slot",   note:"Forecast vs actual orders gap"},
+  {g:"fva",name:"Forecasting Orders", key:"forecast",      src:"slot",   note:"From Google Sheet — hour-wise forecast orders"},
+  {g:"fva",name:"Actual Orders",      key:"actual",        src:"slot",   note:"Actual orders received in that hour"},
+  {g:"fva",name:"Forecast Units",     key:"forecastUnits", src:"slot",   note:"From Google Sheet — hour-wise forecast units"},
+  {g:"fva",name:"Actual Units",       key:"actualUnits",   src:"slot",   note:"Sum of units_picked in that hour"},
+  {g:"man",name:"Active MP",          key:"mp",            src:"slot",   note:"To be filled manually"},
+  {g:"man",name:"Picker Name",        key:"picker",        src:"derive", note:"From outbound-pick raw data"},
+];
+const EMPTY_ROWS = 25;
+
+/* ===================== state ===================== */
+let F1=null, F2=null;          // arrays of row objects
+let records=[];                // processed order records (after Build)
+let hourly={};                 // hour -> {actual, actualUnits, forecast, forecastUnits, mp}
+let exportRows=[];             // current 23-col string rows for export/display
+let built=false;
+let fcData={orders:{},units:{}}; // raw forecast maps from Google Sheet (store -> slot -> val)
+let fcLoaded=false;
+
+/* ===================== helpers ===================== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function parseDT(s){ if(!s) return null; let d=new Date(s); if(!isNaN(d)) return d;
+  d=new Date(String(s).replace(" ","T")); return isNaN(d)?null:d; }
+function fmtDur(sec){ if(sec==null||isNaN(sec)) return ""; sec=Math.max(0,Math.round(sec));
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  const p=n=>String(n).padStart(2,"0");
+  return h>0 ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`; }
+function hourSlot(d){ if(!d) return ""; const h=d.getHours(); const p=n=>String(n).padStart(2,"0");
+  return `${p(h)}:00 - ${p(h)}:59`; }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2300); }
+
+/* contiguous group spans for band row */
+const bands=(()=>{const out=[];let cur=null;COLS.forEach((c,i)=>{if(cur&&cur.g===c.g){cur.end=i;}else{cur={g:c.g,start:i,end:i};out.push(cur);}});return out;})();
+
+/* ===================== legend ===================== */
+$("legend").innerHTML = Object.values(GROUPS).map(g=>
+  `<div class="lg"><span class="sw" style="background:${g.h}"></span><div><b>${g.label.replace(/ —.*/,'')}</b> <span>· ${g.leg}</span></div></div>`).join("");
+
+/* ===================== file loading ===================== */
+function readFile(file,cb){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(ext==='xlsx'||ext==='xls'){
+    const fr=new FileReader();
+    fr.onload=e=>{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      cb(XLSX.utils.sheet_to_json(ws,{defval:""})); };
+    fr.readAsArrayBuffer(file);
+  } else {
+    Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>cb(r.data)});
+  }
+}
+function hookUpload(inputId,zoneId,statusId,which){
+  const input=$(inputId), zone=$(zoneId);
+  input.addEventListener("change",()=>{ if(input.files[0]) loadInto(input.files[0],zoneId,statusId,which); });
+  // drag & drop
+  ["dragover","dragenter"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.style.background="#f3f0ff";}));
+  ["dragleave","drop"].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.style.background="";}));
+  zone.addEventListener("drop",e=>{const f=e.dataTransfer.files[0]; if(f) loadInto(f,zoneId,statusId,which);});
+}
+function loadInto(file,zoneId,statusId,which){
+  $(statusId).textContent="parsing…";
+  readFile(file,rows=>{
+    rows=rows.filter(r=>Object.values(r).some(v=>String(v).trim()!==""));
+    if(which===1){F1=rows; populateStores(); autoFillDate();} else {F2=rows;}
+    $(zoneId).classList.add("loaded");
+    $(statusId).textContent="✅ "+file.name+" · "+rows.length.toLocaleString()+" rows";
+    $("buildBtn").disabled=!(F1&&F2);
+    if(F1&&F2) toast("Both files loaded — click ⚡ Build RCA");
+  });
+}
+function populateStores(){
+  const sel=$("storeFilter");
+  const stores=[...new Set(F1.map(r=>r.delivery_station_code).filter(Boolean))].sort();
+  sel.innerHTML='<option value="all">All stores</option>'+stores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+}
+function autoFillDate(){
+  if(!F1||!F1.length) return;
+  const t=F1[0].picklist_created_time||F1[0].picklist_created_date||"";
+  const m=String(t).match(/\d{4}-\d{2}-\d{2}/);
+  if(m && !$("fcDate").value) $("fcDate").value=m[0];
+}
+
+/* ===================== forecast fetch (Google Sheet via Apps Script JSONP) ===================== */
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+function appsScriptJSONP(params, onSuccess, onError){
+  const cbName='asJSONP_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+  const qs=Object.keys(params).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
+  const url=APPS_SCRIPT_URL+'?'+qs+'&callback='+cbName;
+  const timer=setTimeout(()=>{cleanup();onError(new Error('Timeout — check connection'));},25000);
+  function cleanup(){ delete window[cbName]; const s=document.getElementById('jsonp-'+cbName); if(s)s.remove(); clearTimeout(timer); }
+  window[cbName]=data=>{ cleanup(); (data&&data.status==='error')?onError(new Error(data.message||'API error')):onSuccess(data); };
+  const sc=document.createElement('script'); sc.id='jsonp-'+cbName; sc.src=url;
+  sc.onerror=()=>{cleanup();onError(new Error('Script load error — check Apps Script deployment / internet'));};
+  document.head.appendChild(sc);
+}
+// sum 30-min slots ("HH:MM") into hour buckets, matched to the store filter
+function fcToHour(rawMap, store, storesInData){
+  const out={}; if(!rawMap) return out;
+  const add=storeObj=>Object.keys(storeObj||{}).forEach(slot=>{
+    const hh=parseInt(String(slot).split(':')[0]); if(!isNaN(hh)) out[hh]=(out[hh]||0)+Math.round(storeObj[slot]||0); });
+  const keys=Object.keys(rawMap);
+  if(store==='all'){
+    keys.forEach(sk=>{ if(storesInData.some(as=>sk===as||sk.indexOf(as)>=0||as.indexOf(sk)>=0)) add(rawMap[sk]); });
+  } else {
+    let key=null; keys.forEach(sk=>{ if(sk===store||sk.indexOf(store)>=0||store.indexOf(sk)>=0) key=sk; });
+    if(key) add(rawMap[key]);
+  }
+  return out;
+}
+function fetchForecast(){
+  const date=$("fcDate").value;
+  if(!date){ toast("Pick a forecast date first"); $("fcDate").focus(); return; }
+  const btn=$("fetchBtn"); const orig=btn.textContent; btn.textContent="⏳ Fetching…"; btn.disabled=true;
+  appsScriptJSONP({action:'forecast', date},
+    data=>{
+      btn.textContent=orig; btn.disabled=false;
+      fcData.orders=data.orders||{}; fcData.units=data.units||{};
+      fcLoaded=true;
+      const stores=Object.keys(fcData.orders).length;
+      let tot=0; Object.values(fcData.orders).forEach(o=>Object.values(o).forEach(v=>tot+=Math.round(v||0)));
+      $("fcStatus").textContent=`✅ Forecast loaded — ${stores} store(s), ${tot} FC orders for ${date}`;
+      $("fcStatus").style.color="#0f8a4f";
+      if(built) build(); else toast("Forecast ready — now click ⚡ Build RCA");
+    },
+    err=>{ btn.textContent=orig; btn.disabled=false;
+      $("fcStatus").textContent="❌ "+err.message; $("fcStatus").style.color="#c0392b";
+      toast("Forecast fetch failed"); }
+  );
+}
+$("fetchBtn").addEventListener("click",fetchForecast);
+hookUpload("f1","z1","s1",1);
+hookUpload("f2","z2","s2",2);
+
+/* ===================== build ===================== */
+$("buildBtn").addEventListener("click",build);
+function build(){
+  if(!F1||!F2){toast("Upload both files first");return;}
+  const store=$("storeFilter").value;
+  const scope=$("scope").value;
+
+  // picker map: order_id -> first User by Timestamp
+  const picks={};
+  F2.forEach(r=>{ const oid=String(r.ReferenceIdValue||r.referenceidvalue||"").trim(); if(!oid) return;
+    (picks[oid]=picks[oid]||[]).push(r); });
+  Object.keys(picks).forEach(o=>picks[o].sort((a,b)=>(parseDT(a.Timestamp)||0)-(parseDT(b.Timestamp)||0)));
+
+  let rows = store==="all" ? F1 : F1.filter(r=>r.delivery_station_code===store);
+
+  // actual orders + units per hour (all orders in scope, before LS filter)
+  const actualByHour={}, actualUnitsByHour={};
+  rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(!d) return;
+    const h=d.getHours(); actualByHour[h]=(actualByHour[h]||0)+1;
+    actualUnitsByHour[h]=(actualUnitsByHour[h]||0)+(parseInt(r.units_picked)||0); });
+
+  // forecast (orders + units) per hour from fetched sheet, matched to store filter
+  const storesInData=[...new Set(rows.map(r=>r.delivery_station_code).filter(Boolean))];
+  const fcOrdersByHour = fcLoaded ? fcToHour(fcData.orders, store, storesInData) : {};
+  const fcUnitsByHour  = fcLoaded ? fcToHour(fcData.units,  store, storesInData) : {};
+
+  // process
+  records=[];
+  rows.forEach(r=>{
+    const plc=parseDT(r.picklist_created_time);
+    const asg=parseDT(r.pick_assignment_time);
+    const hasPromise=r.promise_utr!=null&&String(r.promise_utr).trim()!=="";
+    const isLS = hasPromise && (parseInt(r.pl_create_to_stage)||0) > (parseInt(r.promise_utr)||0);
+    if(scope==="ls" && !isLS) return;
+    const oid=String(r.order_id||"").trim();
+    const pk=picks[oid];
+    records.push({
+      raw:r,
+      hour: plc?plc.getHours():null,
+      lateslam: isLS?"Lateslam":"On time",
+      slot: plc?hourSlot(plc):"",
+      accept: (plc&&asg)?fmtDur((asg-plc)/1000):"",
+      picker: pk&&pk.length?(pk[0].User||pk[0].user||""):"—",
+      isLS
+    });
+  });
+
+  // hourly model (fetched forecast wins; otherwise preserve any typed values)
+  const prev=hourly;
+  hourly={};
+  const hoursPresent=[...new Set(records.map(r=>r.hour).filter(h=>h!=null))].sort((a,b)=>a-b);
+  hoursPresent.forEach(h=>{
+    hourly[h]={
+      actual: actualByHour[h]||0,
+      actualUnits: actualUnitsByHour[h]||0,
+      forecast:      fcLoaded ? (fcOrdersByHour[h]!=null?String(fcOrdersByHour[h]):"") : (prev[h]?prev[h].forecast:""),
+      forecastUnits: fcLoaded ? (fcUnitsByHour[h]!=null?String(fcUnitsByHour[h]):"")  : (prev[h]?prev[h].forecastUnits:""),
+      mp: prev[h]?prev[h].mp:""
+    };
+  });
+
+  built=true;
+  renderKpis();
+  renderFcPanel(hoursPresent);
+  rebuildExportRows();
+  renderGrid();
+  $("copyBtn").disabled=false; $("xlsxBtn").disabled=false;
+  $("kpis").classList.remove("hide"); $("fcPanel").classList.remove("hide");
+  toast(records.length.toLocaleString()+" rows built");
+}
+
+function gapPct(h){ const o=hourly[h]; if(!o) return ""; const f=parseFloat(o.forecast);
+  if(!f||isNaN(f)) return ""; return (((o.actual-f)/f)*100).toFixed(1)+"%"; }
+
+function rebuildExportRows(){
+  exportRows=records.map(rec=>{
+    const h=rec.hour, slot=hourly[h]||{};
+    return COLS.map(c=>{
+      if(c.src==="raw")    return rec.raw[c.key]!=null?String(rec.raw[c.key]):"";
+      if(c.src==="derive") return rec[c.key]!=null?String(rec[c.key]):"";
+      // slot-level
+      if(c.key==="actual")        return slot.actual!=null?String(slot.actual):"";
+      if(c.key==="forecast")      return slot.forecast!=null?String(slot.forecast):"";
+      if(c.key==="forecastUnits") return slot.forecastUnits!=null?String(slot.forecastUnits):"";
+      if(c.key==="actualUnits")   return slot.actualUnits!=null?String(slot.actualUnits):"";
+      if(c.key==="mp")            return slot.mp!=null?String(slot.mp):"";
+      if(c.key==="gap")           return h!=null?gapPct(h):"";
+      return "";
+    });
+  });
+}
+
+/* ===================== KPIs ===================== */
+function renderKpis(){
+  const ls=records.filter(r=>r.isLS).length;
+  const total=$("scope").value==="all"?records.length:records.length;
+  const pickers=[...new Set(records.map(r=>r.picker))].filter(p=>p&&p!=="—").length;
+  const slots=[...new Set(records.map(r=>r.hour).filter(h=>h!=null))].length;
+  const scopeLbl=$("scope").value==="ls"?"Late Slams":"Orders";
+  const k=[
+    {l:scopeLbl+" in view", v:records.length.toLocaleString()},
+    {l:"Late Slams", v:ls.toLocaleString(), cls:"alert"},
+    {l:"Pickers involved", v:pickers},
+    {l:"Hour slots", v:slots},
+  ];
+  $("kpis").innerHTML=k.map(x=>`<div class="kpi ${x.cls||''}"><div class="v">${x.v}</div><div class="l">${x.l}</div></div>`).join("");
+}
+
+/* ===================== hourly FC panel ===================== */
+function renderFcPanel(hours){
+  let h='<thead><tr><th>Hour slot</th><th>Actual Ord</th><th>FC Orders</th><th>Actual Units</th><th>FC Units</th><th>Active MP</th><th>Gap %</th></tr></thead><tbody>';
+  hours.forEach(hr=>{
+    const o=hourly[hr]; const p=n=>String(n).padStart(2,"0");
+    h+=`<tr>
+      <td>${p(hr)}:00 - ${p(hr)}:59</td>
+      <td>${o.actual}</td>
+      <td><input data-h="${hr}" data-k="forecast" value="${o.forecast}" placeholder="—" inputmode="numeric"></td>
+      <td>${o.actualUnits}</td>
+      <td><input data-h="${hr}" data-k="forecastUnits" value="${o.forecastUnits}" placeholder="—" inputmode="numeric"></td>
+      <td><input data-h="${hr}" data-k="mp" value="${o.mp}" placeholder="—" inputmode="numeric"></td>
+      <td class="gap" id="gapcell-${hr}">${fmtGap(hr)}</td>
+    </tr>`;
+  });
+  h+='</tbody>';
+  $("fcTable").innerHTML=h;
+  $("fcTable").querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("input",()=>{
+      const hr=inp.dataset.h, k=inp.dataset.k;
+      hourly[hr][k]=inp.value.trim();
+      $("gapcell-"+hr).innerHTML=fmtGap(hr);
+      rebuildExportRows(); renderGrid();
+    });
+  });
+}
+function fmtGap(hr){ const g=gapPct(hr); if(!g) return '<span style="color:#9aa6b2">—</span>';
+  const neg=parseFloat(g)<0; return `<span class="${neg?'gap-neg':'gap-pos'}">${g}</span>`; }
+
+/* ===================== grid render ===================== */
+function renderGrid(){
+  const grid=$("grid"); let html="";
+  // band
+  html+='<tr class="band"><th class="rownum" style="background:#33414f"></th>';
+  bands.forEach(s=>{const g=GROUPS[s.g];html+=`<th colspan="${s.end-s.start+1}" style="background:${g.h}">${g.label}</th>`;});
+  html+="</tr>";
+  // headers
+  html+='<tr class="cols"><th class="rownum">#</th>';
+  COLS.forEach((c,i)=>{const g=GROUPS[c.g];html+=`<th style="background:${g.t}">${c.name}<span class="code">col ${colL(i)}</span></th>`;});
+  html+="</tr>";
+
+  if(!built){
+    // notes row + empty template
+    html+='<tr class="notes"><td class="rownum" style="font-style:normal">i</td>';
+    COLS.forEach(c=>{ html+= c.src==="raw" ? '<td class="auto">auto-populated</td>' : `<td>${c.note||""}</td>`; });
+    html+="</tr><tbody>";
+    for(let r=1;r<=EMPTY_ROWS;r++){ html+=`<tr><td class="rownum">${r}</td>`;
+      COLS.forEach(c=>{html+=`<td style="background:${GROUPS[c.g].t}"></td>`;}); html+="</tr>"; }
+    html+="</tbody>";
+    grid.innerHTML=html;
+    $("rowcount").textContent="template · "+EMPTY_ROWS+" blank rows";
+    $("moreNote").classList.add("hide");
+    return;
+  }
+
+  // populated
+  const CAP=200; const show=Math.min(exportRows.length,CAP);
+  html+="<tbody>";
+  for(let r=0;r<show;r++){ html+=`<tr><td class="rownum">${r+1}</td>`;
+    exportRows[r].forEach((val,ci)=>{ const g=GROUPS[COLS[ci].g];
+      html+=`<td style="background:${g.t}">${esc(val)}</td>`; });
+    html+="</tr>"; }
+  html+="</tbody>";
+  grid.innerHTML=html;
+  if(exportRows.length>CAP){ $("moreNote").classList.remove("hide");
+    $("moreNote").textContent=`Showing first ${CAP} of ${exportRows.length.toLocaleString()} rows — Copy / Download include all rows.`; }
+  else $("moreNote").classList.add("hide");
+  $("rowcount").textContent=exportRows.length.toLocaleString()+" data rows";
+}
+
+/* ===================== copy for sheets ===================== */
+function buildCopyHTML(){
+  const bd="1px solid #b9c4d0";
+  let t=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;">`;
+  t+="<tr>";
+  bands.forEach(s=>{const g=GROUPS[s.g];
+    t+=`<td colspan="${s.end-s.start+1}" style="background:${g.h};color:#fff;font-weight:bold;text-align:center;border:${bd};padding:5px;letter-spacing:1px;">${g.label.toUpperCase()}</td>`;});
+  t+="</tr><tr>";
+  COLS.forEach(c=>{const g=GROUPS[c.g];
+    t+=`<td style="background:${g.t};color:#11161c;font-weight:bold;border:${bd};padding:5px;">${c.name}</td>`;});
+  t+="</tr>";
+  const rows = built?exportRows:emptyExport();
+  rows.forEach(row=>{ t+="<tr>";
+    row.forEach((val,ci)=>{const g=GROUPS[COLS[ci].g];
+      t+=`<td style="background:${g.t};border:${bd};padding:4px 6px;">${esc(val)}</td>`;}); t+="</tr>"; });
+  t+="</table>"; return t;
+}
+function buildCopyTSV(){
+  const out=[];
+  out.push(bands.flatMap(s=>{const lab=GROUPS[s.g].label.toUpperCase();return [lab,...Array(s.end-s.start).fill("")];}).join("\t"));
+  out.push(COLS.map(c=>c.name).join("\t"));
+  (built?exportRows:emptyExport()).forEach(r=>out.push(r.join("\t")));
+  return out.join("\n");
+}
+function emptyExport(){ const a=[]; for(let i=0;i<EMPTY_ROWS;i++) a.push(COLS.map(c=>c.src==="raw"?"":(c.note||""))); 
+  // for empty template put notes only on first row
+  return [COLS.map(c=>c.src==="raw"?"auto-populated":(c.note||"")), ...Array.from({length:EMPTY_ROWS},()=>COLS.map(()=>""))]; }
+
+$("copyBtn").addEventListener("click",async()=>{
+  const html=buildCopyHTML(), tsv=buildCopyTSV();
+  try{
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/html":new Blob([html],{type:"text/html"}),
+      "text/plain":new Blob([tsv],{type:"text/plain"})})]);
+    toast("Copied — paste into Google Sheets (Ctrl/Cmd + V)");
+  }catch(e){
+    const tmp=document.createElement("div");tmp.innerHTML=html;tmp.style.position="fixed";tmp.style.left="-9999px";
+    document.body.appendChild(tmp);const rg=document.createRange();rg.selectNode(tmp);
+    const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);
+    try{document.execCommand("copy");toast("Copied — paste into Google Sheets");}catch(_){toast("Press Ctrl/Cmd + C");}
+    sel.removeAllRanges();document.body.removeChild(tmp);
+  }
+});
+
+/* ===================== xlsx export ===================== */
+$("xlsxBtn").addEventListener("click",async()=>{
+  const blob=await makeXlsx(built?exportRows:Array.from({length:EMPTY_ROWS},()=>COLS.map(()=>"")));
+  const url=URL.createObjectURL(blob); const a=document.createElement("a");
+  a.href=url; a.download="Lateslam RCA Export.xlsx"; a.click(); URL.revokeObjectURL(url);
+  toast("Excel downloaded");
+});
+const colL=n=>{let s='';n++;while(n>0){let m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26;}return s;};
+async function makeXlsx(dataRows){
+  const order=["raw","cls","der","fva","man"];
+  const fills=[`<fill><patternFill patternType="none"/></fill>`,`<fill><patternFill patternType="gray125"/></fill>`];
+  order.forEach(k=>fills.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${GROUPS[k].h.slice(1)}"/></patternFill></fill>`));
+  order.forEach(k=>fills.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${GROUPS[k].t.slice(1)}"/></patternFill></fill>`));
+  const fonts=[`<font><sz val="11"/><name val="Calibri"/></font>`,
+    `<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>`,
+    `<font><b/><sz val="11"/><color rgb="FF11161C"/><name val="Calibri"/></font>`];
+  const borders=[`<border><left/><right/><top/><bottom/><diagonal/></border>`,
+    `<border><left style="thin"><color rgb="FFB9C4D0"/></left><right style="thin"><color rgb="FFB9C4D0"/></right><top style="thin"><color rgb="FFB9C4D0"/></top><bottom style="thin"><color rgb="FFB9C4D0"/></bottom></border>`];
+  const xfs=[`<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`];
+  order.forEach((k,i)=>xfs.push(`<xf fontId="1" fillId="${2+i}" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>`)); //1-5 band
+  order.forEach((k,i)=>xfs.push(`<xf fontId="2" fillId="${7+i}" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>`)); //6-10 hdr
+  order.forEach((k,i)=>xfs.push(`<xf fontId="0" fillId="${7+i}" borderId="1" applyFill="1" applyBorder="1"/>`)); //11-15 data
+  const bandIdx={raw:1,cls:2,der:3,fva:4,man:5}, hdrIdx={raw:6,cls:7,der:8,fva:9,man:10}, dataIdx={raw:11,cls:12,der:13,fva:14,man:15};
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>
+<borders count="${borders.length}">${borders.join('')}</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs></styleSheet>`;
+
+  const cell=(ref,s,text)=> (text===undefined||text==="")?`<c r="${ref}" s="${s}"/>`
+    :`<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
+  // spans
+  const sp=[];let cur=null;COLS.forEach((c,i)=>{if(cur&&cur.g===c.g)cur.end=i;else{cur={g:c.g,start:i,end:i};sp.push(cur);}});
+  let body="";
+  let r1=`<row r="1" ht="20" customHeight="1">`;
+  COLS.forEach((c,i)=>{const s=sp.find(x=>i>=x.start&&i<=x.end);r1+=cell(colL(i)+"1",bandIdx[c.g],i===s.start?GROUPS[c.g].label.toUpperCase():undefined);});
+  r1+="</row>";
+  let r2=`<row r="2" ht="28" customHeight="1">`;COLS.forEach((c,i)=>{r2+=cell(colL(i)+"2",hdrIdx[c.g],c.name);});r2+="</row>";
+  body+=r1+r2;
+  dataRows.forEach((row,ri)=>{ const rr=3+ri; let x=`<row r="${rr}">`;
+    COLS.forEach((c,ci)=>{x+=cell(colL(ci)+rr,dataIdx[c.g],row[ci]);}); x+="</row>"; body+=x; });
+  const merges=sp.filter(s=>s.end>s.start).map(s=>`<mergeCell ref="${colL(s.start)}1:${colL(s.end)}1"/>`);
+  let colsXml='<cols>';COLS.forEach((c,i)=>{colsXml+=`<col min="${i+1}" max="${i+1}" width="${c.g==='raw'?20:17}" customWidth="1"/>`;});colsXml+='</cols>';
+  const sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>${colsXml}
+<sheetData>${body}</sheetData>
+<mergeCells count="${merges.length}">${merges.join('')}</mergeCells>
+<pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.3" footer="0.3"/></worksheet>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="Lateslam RCA" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  const wbr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const zip=new JSZip();
+  zip.file("[Content_Types].xml",ct);zip.file("_rels/.rels",rels);
+  zip.file("xl/workbook.xml",wb);zip.file("xl/_rels/workbook.xml.rels",wbr);
+  zip.file("xl/styles.xml",styles);zip.file("xl/worksheets/sheet1.xml",sheet);
+  return zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+
+/* rebuild kpis/grid when scope or store changes after a build */
+["scope","storeFilter"].forEach(id=>$(id).addEventListener("change",()=>{ if(built) build(); }));
+
+/* initial empty template */
+renderGrid();
+</script>
+</body>
+</html>
