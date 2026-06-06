@@ -10086,6 +10086,7 @@ if (document.readyState === 'loading') {
           <button id="ord-tab-week"  onclick="vocOrdersSetMode('week')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;transition:all 0.15s;">Week</button>
           <button id="ord-tab-month" onclick="vocOrdersSetMode('month')" style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Month</button>
           <button id="ord-tab-year"  onclick="vocOrdersSetMode('year')"  style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Year</button>
+          <button id="ord-tab-range" onclick="vocOrdersSetMode('range')" style="padding:4px 12px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:var(--voc-muted,#7b78a8);transition:all 0.15s;">Range</button>
         </div>
 
         <!-- Day filter (hidden by default) -->
@@ -10105,6 +10106,14 @@ if (document.readyState === 'loading') {
         <select id="voc-year-filter" style="display:none;background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:130px;">
           <option value="">— Select Year —</option>
         </select>
+
+        <!-- Range filter (hidden by default) -->
+        <span id="voc-range-wrap" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);">From</span>
+          <input type="date" id="voc-range-from" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:140px;">
+          <span style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);">To</span>
+          <input type="date" id="voc-range-to" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:7px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:var(--voc-text,#1a1830);outline:none;min-width:140px;">
+        </span>
 
         <button onclick="vocFetchOrders()" style="padding:8px 18px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#4361ee,#2f4bd4);color:#fff;box-shadow:0 3px 12px rgba(67,97,238,0.35);white-space:nowrap;">📥 Fetch Orders</button>
         <div id="voc-orders-status" style="display:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;"></div>
@@ -10139,6 +10148,12 @@ if (document.readyState === 'loading') {
         <option value="">— Month —</option>
       </select>
       <button class="voc-tab" onclick="vocSetPeriod('yearly',this)" id="voc-tab-yearly">This Year</button>
+      <div style="width:1px;height:20px;background:var(--voc-border,#d5d2f0);margin:0 4px;"></div>
+      <!-- Custom range analysis -->
+      <span style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--voc-muted,#7b78a8);">Range</span>
+      <input type="date" id="voc-range-from-an" onchange="vocSetRange()" title="Range start" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;">
+      <span style="font-size:11px;color:var(--voc-muted,#7b78a8);">→</span>
+      <input type="date" id="voc-range-to-an" onchange="vocSetRange()" title="Range end" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:20px;padding:5px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:var(--voc-text,#1a1830);outline:none;cursor:pointer;">
       <div style="width:1px;height:20px;background:var(--voc-border,#d5d2f0);margin:0 4px;"></div>
       <select id="voc-store-filter" onchange="vocRender()" style="background:var(--voc-input-bg,#f8f7ff);border:1px solid var(--voc-border,#d5d2f0);border-radius:8px;padding:6px 12px;font-family:'Syne',sans-serif;font-size:12px;color:var(--voc-text,#1a1830);outline:none;">
         <option value="all">All Stores</option>
@@ -10954,12 +10969,22 @@ function vocOrdersSetMode(mode) {
   var wf = document.getElementById('voc-week-filter');
   var mf = document.getElementById('voc-month-filter');
   var yf = document.getElementById('voc-year-filter');
+  var rw = document.getElementById('voc-range-wrap');
   if (df) df.style.display = mode === 'day'   ? '' : 'none';
   if (wf) wf.style.display = mode === 'week'  ? '' : 'none';
   if (mf) mf.style.display = mode === 'month' ? '' : 'none';
   if (yf) yf.style.display = mode === 'year'  ? '' : 'none';
+  if (rw) rw.style.display = mode === 'range' ? 'inline-flex' : 'none';
+  // Pre-fill range inputs with last 7 days if empty
+  if (mode === 'range') {
+    var rfEl = document.getElementById('voc-range-from');
+    var rtEl = document.getElementById('voc-range-to');
+    function isoD(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+    if (rtEl && !rtEl.value) rtEl.value = isoD(new Date());
+    if (rfEl && !rfEl.value) { var ago = new Date(); ago.setDate(ago.getDate() - 6); rfEl.value = isoD(ago); }
+  }
   // Style active tab
-  ['day','week','month','year'].forEach(function(m) {
+  ['day','week','month','year','range'].forEach(function(m) {
     var btn = document.getElementById('ord-tab-' + m);
     if (!btn) return;
     if (m === mode) {
@@ -10989,6 +11014,88 @@ function vocFetchOrders() {
   var MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var params = { action: 'orders' };
   var displayLabel = '';
+
+  // ── RANGE MODE — aggregate accurate per-day totals across [from..to] ──
+  if (_vocOrdersMode === 'range') {
+    var rFrom = (document.getElementById('voc-range-from') || {}).value || '';
+    var rTo   = (document.getElementById('voc-range-to')   || {}).value || '';
+    if (!rFrom || !rTo) { setOS('⚠️ Pick both a From and To date.', 'err'); return; }
+    if (rFrom > rTo) { var _t = rFrom; rFrom = rTo; rTo = _t; }
+
+    // Build the list of days in the range (inclusive)
+    var days = [];
+    var dCur = new Date(rFrom + 'T00:00:00');
+    var dEnd = new Date(rTo   + 'T00:00:00');
+    while (dCur <= dEnd) {
+      var y = dCur.getFullYear(), mo = String(dCur.getMonth()+1).padStart(2,'0'), dd = String(dCur.getDate()).padStart(2,'0');
+      days.push(y + '-' + mo + '-' + dd);
+      dCur.setDate(dCur.getDate() + 1);
+    }
+    if (days.length > 120) { setOS('⚠️ Range too large (' + days.length + ' days). Pick a span of 120 days or fewer.', 'err'); return; }
+
+    var rangeLabel = rFrom + ' → ' + rTo;
+    setOS('⏳ Fetching orders for <strong>' + rangeLabel + '</strong> · 0/' + days.length + ' days…', 'info');
+    startTopLoader();
+
+    var totalOrders = 0, totalUnits = 0, completed = 0, failed = 0;
+
+    function fetchOneDay(dayStr) {
+      return new Promise(function(resolve) {
+        var dObj = new Date(dayStr + 'T00:00:00');
+        var isoWk = (typeof vocISOWeekStr === 'function') ? vocISOWeekStr(dObj) : '';
+        var isoWkM = isoWk.match(/^(\d{4})-W(\d{1,2})$/);
+        var weekNumD = isoWkM ? parseInt(isoWkM[2],10).toString() : '';
+        appsScriptJSONP(
+          { action:'orders', day:dayStr, date:dayStr, isoDate:dayStr, week:weekNumD, isoWeek:isoWk },
+          function(data) {
+            if (data && data.status !== 'error') {
+              totalOrders += (data.totalOrders   || 0);
+              totalUnits  += (data.outboundUnits || 0);
+            } else { failed++; }
+            completed++;
+            setOS('⏳ Fetching orders for <strong>' + rangeLabel + '</strong> · ' + completed + '/' + days.length + ' days…', 'info');
+            resolve();
+          },
+          function() { failed++; completed++; resolve(); }
+        );
+      });
+    }
+
+    // Limited-concurrency runner (5 at a time) to keep it fast but polite
+    var idx = 0, CONC = 5;
+    function runNext() {
+      if (idx >= days.length) return Promise.resolve();
+      var batch = [];
+      for (var c = 0; c < CONC && idx < days.length; c++) { batch.push(fetchOneDay(days[idx++])); }
+      return Promise.all(batch).then(runNext);
+    }
+
+    runNext().then(function() {
+      finishTopLoader();
+      vocMatrixOrders = { totalOrders: totalOrders, outboundUnits: totalUnits, rangeFrom: rFrom, rangeTo: rTo, label: rangeLabel };
+
+      var banner = document.getElementById('voc-orders-banner-row');
+      var co = document.getElementById('voc-chip-orders');
+      var cu = document.getElementById('voc-chip-units');
+      var cd = document.getElementById('voc-chip-date');
+      if (banner) banner.style.display = 'flex';
+      if (co) co.innerHTML = '📦 ' + totalOrders.toLocaleString() + ' Orders';
+      if (cu) cu.innerHTML = '📤 ' + totalUnits.toLocaleString() + ' OB Units';
+      if (cd) cd.innerHTML = '📅 ' + rangeLabel;
+
+      var warn = failed ? ' · ⚠️ ' + failed + ' day(s) failed' : '';
+      setOS('✅ <strong>' + totalOrders.toLocaleString() + ' orders</strong> · <strong>' + totalUnits.toLocaleString() + ' OB units</strong> · ' + rangeLabel + warn, failed ? 'info' : 'ok');
+      showToast('📦 Orders loaded: ' + totalOrders.toLocaleString() + ' · ' + rangeLabel);
+
+      // Sync VOC analysis to the same range so metrics match the orders
+      var anFrom = document.getElementById('voc-range-from-an');
+      var anTo   = document.getElementById('voc-range-to-an');
+      if (anFrom) anFrom.value = rFrom;
+      if (anTo)   anTo.value   = rTo;
+      vocSetRange();
+    });
+    return;
+  }
 
   if (_vocOrdersMode === 'day') {
     var dayVal = (document.getElementById('voc-day-filter') || {}).value || '';
@@ -11122,6 +11229,8 @@ var vocSelectedWeek  = null;   // "2026-W15"
 var vocSelectedMonth = null;   // "2026-04"  (YYYY-MM, month 0-indexed stored separately)
 var vocSelectedYear  = null;
 var vocSelectedDay   = null;   // "YYYY-MM-DD" e.g. "2026-04-23"
+var vocRangeFrom     = null;   // "YYYY-MM-DD" — custom range start
+var vocRangeTo       = null;   // "YYYY-MM-DD" — custom range end
 
 // ISO week number helper — returns {week, year}
 function vocISOWeek(d) {
@@ -11158,6 +11267,16 @@ function vocWeekBounds(str) {
 // Core filter — matches VOC rows to selected period using ISO week or calendar month
 function vocFilterByPeriod(rows) {
   if (!rows || !rows.length) return rows;
+
+  if (vocPeriod === 'range' && vocRangeFrom && vocRangeTo) {
+    var rf = new Date(vocRangeFrom + 'T00:00:00');
+    var rt = new Date(vocRangeTo   + 'T23:59:59');
+    return rows.filter(function(r) {
+      var d = r.date instanceof Date ? r.date : new Date(r.date);
+      if (isNaN(d.getTime())) return false;
+      return d >= rf && d <= rt;
+    });
+  }
 
   if (vocPeriod === 'day' && vocSelectedDay) {
     // vocSelectedDay = "YYYY-MM-DD"
@@ -11316,7 +11435,10 @@ function vocSetDay(val) {
   vocSelectedDay = val || null;
   vocSelectedWeek = null;
   vocSelectedMonth = null;
+  vocRangeFrom = null; vocRangeTo = null;
   vocPeriod = val ? 'day' : 'yearly';
+  var anFd = document.getElementById('voc-range-from-an'); if (anFd) anFd.value = '';
+  var anTd = document.getElementById('voc-range-to-an');   if (anTd) anTd.value = '';
   var wSel = document.getElementById('voc-week-select');
   if (wSel) wSel.value = '';
   var mSel = document.getElementById('voc-month-select');
@@ -11332,11 +11454,50 @@ function vocSetDay(val) {
   vocRender();
 }
 
+// ── CUSTOM RANGE (analysis filter) — reads the two date inputs ──────
+function vocSetRange() {
+  var fromEl = document.getElementById('voc-range-from-an');
+  var toEl   = document.getElementById('voc-range-to-an');
+  var f = fromEl ? fromEl.value : '';
+  var t = toEl   ? toEl.value   : '';
+  if (!f || !t) {
+    // Wait until both are picked
+    return;
+  }
+  if (f > t) { var tmp = f; f = t; t = tmp; if (fromEl) fromEl.value = f; if (toEl) toEl.value = t; }
+
+  vocRangeFrom = f;
+  vocRangeTo   = t;
+  vocSelectedDay = null;
+  vocSelectedWeek = null;
+  vocSelectedMonth = null;
+  vocPeriod = 'range';
+
+  // Clear other period controls so it's clear range is active
+  var dSel = document.getElementById('voc-day-select');   if (dSel) dSel.value = '';
+  var wSel = document.getElementById('voc-week-select');   if (wSel) wSel.value = '';
+  var mSel = document.getElementById('voc-month-select');  if (mSel) mSel.value = '';
+
+  // Period label
+  function fmt(s) {
+    var d = new Date(s + 'T00:00:00');
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return isNaN(d.getTime()) ? s : (String(d.getDate()).padStart(2,'0') + ' ' + months[d.getMonth()] + ' ' + d.getFullYear());
+  }
+  var pl = document.getElementById('voc-period-label');
+  if (pl) pl.textContent = fmt(f) + ' → ' + fmt(t);
+
+  vocRender();
+}
+
 function vocSetWeek(val) {
   vocSelectedWeek  = val || null;
   vocSelectedMonth = null;
   vocSelectedDay = null;
+  vocRangeFrom = null; vocRangeTo = null;
   vocPeriod = val ? 'week' : 'yearly';
+  var anFw = document.getElementById('voc-range-from-an'); if (anFw) anFw.value = '';
+  var anTw = document.getElementById('voc-range-to-an');   if (anTw) anTw.value = '';
   var mSel = document.getElementById('voc-month-select');
   if (mSel) mSel.value = '';
   var dSel = document.getElementById('voc-day-select');
@@ -11356,7 +11517,10 @@ function vocSetMonth(val) {
   vocSelectedMonth = val || null;
   vocSelectedWeek  = null;
   vocSelectedDay = null;
+  vocRangeFrom = null; vocRangeTo = null;
   vocPeriod = val ? 'monthly' : 'yearly';
+  var anFm = document.getElementById('voc-range-from-an'); if (anFm) anFm.value = '';
+  var anTm = document.getElementById('voc-range-to-an');   if (anTm) anTm.value = '';
   var wSel = document.getElementById('voc-week-select');
   if (wSel) wSel.value = '';
   var dSel = document.getElementById('voc-day-select');
@@ -11375,6 +11539,9 @@ function vocSetPeriod(p, btn) {
   vocSelectedWeek  = null;
   vocSelectedMonth = null;
   vocSelectedDay   = null;
+  vocRangeFrom = null; vocRangeTo = null;
+  var anF = document.getElementById('voc-range-from-an'); if (anF) anF.value = '';
+  var anT = document.getElementById('voc-range-to-an');   if (anT) anT.value = '';
   var wSel = document.getElementById('voc-week-select');
   var mSel = document.getElementById('voc-month-select');
   var dSel = document.getElementById('voc-day-select');
@@ -11389,6 +11556,18 @@ function vocSetPeriod(p, btn) {
 // Legacy - kept for compatibility
 function vocGetPeriodBounds(offset) {
   var now = new Date();
+  if (vocPeriod === 'range' && vocRangeFrom && vocRangeTo) {
+    var rf0 = new Date(vocRangeFrom + 'T00:00:00');
+    var rt0 = new Date(vocRangeTo   + 'T23:59:59');
+    if (offset) {
+      // Shift back by one full range length for the "previous" comparison
+      var spanMs = rt0.getTime() - rf0.getTime();
+      var shift = (spanMs + 86400000) * offset; // +1 day so windows don't overlap
+      rf0 = new Date(rf0.getTime() - shift);
+      rt0 = new Date(rt0.getTime() - shift);
+    }
+    return { from: rf0, to: rt0 };
+  }
   if (vocPeriod === 'day' && vocSelectedDay) {
     var dp = vocSelectedDay.split('-');
     var dy = parseInt(dp[0],10), dmo = parseInt(dp[1],10)-1, ddt = parseInt(dp[2],10);
@@ -11449,7 +11628,7 @@ function vocRender() {
   var sf = document.getElementById('voc-store-filter').value;
 
   // ── Period filter: always apply. Default = this month if nothing selected ──
-  if (!vocSelectedWeek && !vocSelectedMonth && !vocSelectedDay && vocPeriod !== 'yearly' && vocPeriod !== 'day') {
+  if (!vocSelectedWeek && !vocSelectedMonth && !vocSelectedDay && vocPeriod !== 'yearly' && vocPeriod !== 'day' && vocPeriod !== 'range') {
     // Auto-select current month on first render
     var now = new Date();
     vocSelectedMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
