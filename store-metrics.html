@@ -634,8 +634,15 @@ tbody tr{transition:background 0.15s;}
       <button class="pb" onclick="smSetPeriod('week',this)">Week</button>
       <button class="pb" onclick="smSetPeriod('month',this)">Month</button>
       <button class="pb" onclick="smSetPeriod('year',this)">Year</button>
+      <button class="pb" onclick="smSetPeriod('range',this)">Range</button>
     </div>
     <select id="sm-pval" class="fsel" onchange="smRender()"><option value="all">— All —</option></select>
+    <span id="sm-range-wrap" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">From</span>
+      <input type="date" id="sm-range-from" onchange="smRender()" style="background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 9px;font-size:11px;font-family:'DM Mono',monospace;outline:none;">
+      <span style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">To</span>
+      <input type="date" id="sm-range-to" onchange="smRender()" style="background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 9px;font-size:11px;font-family:'DM Mono',monospace;outline:none;">
+    </span>
     <span class="f-label">Store</span>
     <select id="sm-store" class="fsel" onchange="smRender()"><option value="all">All Stores</option></select>
     <div class="f-status" id="sm-status">Loading…</div>
@@ -992,15 +999,36 @@ function smSetPeriod(p,btn){
   smPeriod=p;
   document.querySelectorAll('.pb').forEach(function(b){b.classList.remove('on');});
   btn.classList.add('on');
+  var rw=document.getElementById('sm-range-wrap');
+  var pv=document.getElementById('sm-pval');
+  if(p==='range'){
+    if(rw) rw.style.display='inline-flex';
+    if(pv) pv.style.display='none';
+    var rf=document.getElementById('sm-range-from'), rt=document.getElementById('sm-range-to');
+    function isoD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+    if(rt&&!rt.value) rt.value=isoD(new Date());
+    if(rf&&!rf.value){var a=new Date();a.setDate(a.getDate()-6);rf.value=isoD(a);}
+  }else{
+    if(rw) rw.style.display='none';
+    if(pv) pv.style.display='';
+  }
   smBuildPeriodDrop(); smRender();
 }
 function smFilter(){
   var sf=document.getElementById('sm-store').value;
   var pv=document.getElementById('sm-pval').value;
+  var rFrom='', rTo='';
+  if(smPeriod==='range'){
+    var rf=document.getElementById('sm-range-from'), rt=document.getElementById('sm-range-to');
+    rFrom=rf?rf.value:''; rTo=rt?rt.value:'';
+    if(rFrom&&rTo&&rFrom>rTo){var tmp=rFrom;rFrom=rTo;rTo=tmp;}
+  }
   return smData.filter(function(r){
     var sok=sf==='all'||gStore(r)===sf;
     var pok=true;
-    if(pv!=='all'){
+    if(smPeriod==='range'){
+      if(rFrom&&rTo){var d=gDate(r);pok=d>=rFrom&&d<=rTo;}
+    }else if(pv!=='all'){
       if(smPeriod==='day')   pok=gDate(r)===pv;
       if(smPeriod==='week')  pok=gWeek(r)===pv;
       if(smPeriod==='month') pok=gMonth(r)===pv;
