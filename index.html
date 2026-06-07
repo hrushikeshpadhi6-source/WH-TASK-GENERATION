@@ -11743,7 +11743,7 @@ function rcaIn(val, arr) {
 function vocRcaMismatch(comment, rcaReply, rcaCategory, issue) {
   var out = {
     unsatisfied:false, severity:'none', commentTags:[], replyTags:[],
-    reason:'', notFilled:false, score:0
+    reason:'', notFilled:false, score:0, needsRefill:false, cctvPending:false
   };
   var c = String(comment||'').toLowerCase().trim();
   var rRaw = String(rcaReply||'').trim();
@@ -11755,6 +11755,33 @@ function vocRcaMismatch(comment, rcaReply, rcaCategory, issue) {
   if (!rRaw || rRaw.length < 2 || r === '-' || r === 'na' || r === 'n/a' || r === 'nil' || r === 'none') {
     out.notFilled = true;
     return out; // unsatisfied stays false
+  }
+
+  // ── 0.5) CCTV deferral = RCA incomplete → "Need to fill again"
+  // Any RCA that still relies on CCTV (need to check / verify / footage pending)
+  // is NOT a finished RCA — flag it so it gets reviewed & filled again.
+  // A *completed* CCTV review ("verified with cctv", "cctv checked") is exempt.
+  // We judge by the words immediately AROUND the cctv mention so that
+  // "to be verified through cctv" (pending) is not mistaken for "verified … cctv" (done).
+  var _cctvIdx = r.indexOf('cctv');
+  if (_cctvIdx < 0) _cctvIdx = r.indexOf('cc tv');
+  if (_cctvIdx < 0) { var _cf = r.indexOf('camera footage'); if (_cf >= 0) _cctvIdx = _cf; }
+  if (_cctvIdx >= 0) {
+    var _pre  = r.slice(Math.max(0, _cctvIdx - 30), _cctvIdx);   // text just before "cctv"
+    var _post = r.slice(_cctvIdx, _cctvIdx + 30);                // text from "cctv" onward
+    var _pendCtx = /(need|needs|will|would|to be|yet to|not yet|pending|requir|to check|to verify|to see|to review|to watch|have to|has to|chahiye|dekhna|dekhni|karna|karni|check kar|verify kar)/.test(_pre)
+                || /(pending|to be checked|needs to|required|require|not checked|nahi)/.test(_post);
+    var _doneCtx = /(verified|checked|reviewed|seen|saw|found|confirmed|as per|watched|dekha|dekhi|kiya|done)/.test(_pre)
+                || /(checked|verified|reviewed|confirmed|dekha)/.test(_post);
+    // Pending wins over done; a bare "cctv" mention with no completion context is treated as pending.
+    if (_pendCtx || !_doneCtx) {
+      out.unsatisfied  = true;
+      out.needsRefill  = true;   // ← "need to fill again"
+      out.cctvPending  = true;
+      out.severity     = (out.severity && out.severity !== 'none') ? out.severity : 'med';
+      out.reason       = 'RCA relies on CCTV verification — still pending, needs to be checked & filled again';
+      return out;
+    }
   }
 
   // ── 1) Customer-complaint severity scoring
@@ -12512,10 +12539,13 @@ function vocDDRenderUnsat(rows, t) {
     var sevPill = m.severity === 'high'
       ? '<span style="background:rgba(192,57,43,0.2);color:#ff8a80;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:0.3px;">🔴 HIGH</span>'
       : '<span style="background:rgba(217,119,6,0.2);color:#ffb74d;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:0.3px;">🟡 MED</span>';
+    var refillPill = m.cctvPending
+      ? '<span style="background:rgba(124,58,237,0.22);color:#c4b5fd;font-size:10px;padding:2px 8px;border-radius:6px;font-weight:800;letter-spacing:0.3px;">📹 CCTV · NEED TO FILL AGAIN</span>'
+      : '';
 
     html += '<div onclick="vocDDOpenUnsatDetail('+i+')" style="background:'+t.surf+';border:1px solid '+t.brd+';border-left:3px solid #c0392b;border-radius:12px;padding:13px 16px;cursor:pointer;transition:transform 0.12s,border-color 0.12s,box-shadow 0.12s;" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.borderColor=\'#ff8a80\';this.style.boxShadow=\'0 6px 18px rgba(192,57,43,0.2)\'" onmouseout="this.style.transform=\'\';this.style.borderColor=\''+t.brd+'\';this.style.borderLeftColor=\'#c0392b\';this.style.boxShadow=\'\'">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:7px;">';
-    html += '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'+sevPill+'<span style="font-size:13px;font-weight:800;color:'+t.txt+';">#'+(i+1)+' · '+(r.product||'(no product)')+'</span></div>';
+    html += '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">'+sevPill+refillPill+'<span style="font-size:13px;font-weight:800;color:'+t.txt+';">#'+(i+1)+' · '+(r.product||'(no product)')+'</span></div>';
     html += '<div style="font-size:11.5px;color:'+t.mut+';">'+r.orderId+' · '+r.store+' · '+(r.picker||'no picker')+' · '+dateStr+'</div></div>';
     html += '<div style="font-size:11px;color:#ff8a80;font-weight:700;text-align:right;background:rgba(192,57,43,0.1);padding:4px 10px;border-radius:6px;max-width:340px;">'+m.reason+'</div>';
     html += '</div>';
@@ -13553,6 +13583,7 @@ function vocRenderRCA() {
   // ── Period summary banner ──
   var pPend = periodData.filter(function(r){ return !r.rca || r.rca.trim() === ''; }).length;
   var pDone = periodData.length - pPend;
+  var pCctv = periodData.filter(function(r){ return vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue).cctvPending; }).length;
   var summaryHtml = '';
   if (periodData.length > 0) {
     summaryHtml = '<div style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:' +
@@ -13561,6 +13592,7 @@ function vocRenderRCA() {
       '<span style="font-size:13px;font-weight:700;color:' + txtMain + ';">📅 ' + periodLabel + '</span>' +
       '<span style="padding:4px 12px;border-radius:20px;background:rgba(67,97,238,0.15);color:#4361ee;font-size:12px;font-weight:700;">📋 ' + periodData.length + ' VOC</span>' +
       '<span style="padding:4px 12px;border-radius:20px;background:' + (pPend>0?'rgba(192,57,43,0.15)':'rgba(26,122,74,0.15)') + ';color:' + (pPend>0?'#c0392b':'#1a7a4a') + ';font-size:12px;font-weight:700;">⏳ ' + pPend + ' RCA Pending</span>' +
+      (pCctv>0 ? '<span style="padding:4px 12px;border-radius:20px;background:rgba(124,58,237,0.15);color:#7c3aed;font-size:12px;font-weight:700;">📹 ' + pCctv + ' CCTV Pending</span>' : '') +
       '<span style="padding:4px 12px;border-radius:20px;background:rgba(6,214,160,0.12);color:#06d6a0;font-size:12px;font-weight:700;">✅ ' + pDone + ' Done</span>' +
       '</div>';
   }
@@ -13635,6 +13667,54 @@ function vocRenderRCA() {
         '</div>';
     }
 
+    // ── CCTV-pending (unsatisfied) rows for this store, this period ──
+    var sCctvRows = sPeriod.filter(function(r){
+      return vocRcaMismatch(r.comment, r.rca, r.rcaCategory, r.issue).cctvPending;
+    }).sort(function(a,b){
+      var da = a.date instanceof Date ? a.date : new Date(a.date);
+      var db = b.date instanceof Date ? b.date : new Date(b.date);
+      return db - da;
+    });
+    var sCctv  = sCctvRows.length;
+    var cttId  = 'rca-cctv-tt-' + si;
+    var cctvTt = '';
+    if (sCctv > 0) {
+      var cttRows = '';
+      sCctvRows.slice(0, 20).forEach(function(r, ri) {
+        var dateStr = r.date instanceof Date
+          ? r.date.toLocaleDateString('en-GB', {day:'2-digit', month:'short'})
+          : String(r.date || '—');
+        var orderId = r.orderId || '—';
+        var voc     = (r.comment || '').toString().trim() || '(no customer comment)';
+        var rcaRep  = (r.rca || '').toString().trim() || '(no RCA)';
+        var rBg     = ri % 2 === 0 ? (isDark ? '#1e1d30' : '#f3f0fc') : (isDark ? '#1a1928' : '#faf8ff');
+        cttRows +=
+          '<div style="padding:8px 10px;background:' + rBg + ';border-radius:7px;margin-bottom:5px;border-left:3px solid #7c3aed;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:3px;">' +
+              '<div style="font-size:11px;font-weight:800;color:' + txtMain + ';font-family:\'Courier New\',monospace;letter-spacing:0.3px;">' + (ri+1) + '. ' + orderId + '</div>' +
+              '<div style="font-size:9px;color:' + txtMut + ';">' + dateStr + '</div>' +
+            '</div>' +
+            '<div style="font-size:10px;color:' + (isDark?'#a5b4fc':'#4361ee') + ';margin-bottom:2px;"><b>VOC:</b> <span style="color:' + txtMut + ';">' + _vocEsc(voc).slice(0,140) + '</span></div>' +
+            '<div style="font-size:10px;color:#9d6bff;"><b>RCA:</b> <span style="color:' + txtMut + ';">' + _vocEsc(rcaRep).slice(0,140) + '</span></div>' +
+          '</div>';
+      });
+      if (sCctv > 20) {
+        cttRows += '<div style="font-size:10px;color:' + txtMut + ';text-align:center;padding:6px;">+ ' + (sCctv - 20) + ' more…</div>';
+      }
+      cctvTt =
+        '<div id="' + cttId + '" style="display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:9999;' +
+        'min-width:340px;max-width:420px;max-height:340px;overflow-y:auto;' +
+        'background:' + (isDark?'#13121f':'#ffffff') + ';border:1px solid ' + (isDark?'#3a2e5c':'#c9bdf0') + ';' +
+        'border-radius:14px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.25);"' +
+        ' onmouseenter="this.style.display=\'block\';" onmouseleave="this.style.display=\'none\';">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#7c3aed;">📹 ' + s + ' — CCTV Pending (need to fill again)</div>' +
+          '<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(124,58,237,0.12);color:#7c3aed;">' + sCctv + ' orders</div>' +
+        '</div>' +
+        cttRows +
+        '</div>';
+    }
+
     // Build pending rows drawer HTML (click to expand — all time)
     var drawerHtml = '';
     if (pend > 0) {
@@ -13695,6 +13775,12 @@ function vocRenderRCA() {
                 '</span>' +
                 ttHtml +
               '</span>' +
+              (sCctv>0 ? ' &nbsp;|&nbsp; <span style="position:relative;display:inline-block;">' +
+                '<span style="color:#7c3aed;font-weight:800;cursor:pointer;text-decoration:underline dotted;"' +
+                ' onmouseenter="document.getElementById(\'' + cttId + '\').style.display=\'block\';" onmouseleave="setTimeout(function(){var t=document.getElementById(\'' + cttId + '\');if(t&&!t.matches(\':hover\'))t.style.display=\'none\';},120);">' +
+                '📹 ' + sCctv + ' CCTV pending 👁</span>' +
+                cctvTt +
+              '</span>' : '') +
             '</div>' +
           '</div>' +
           '<div style="text-align:right;">' +
