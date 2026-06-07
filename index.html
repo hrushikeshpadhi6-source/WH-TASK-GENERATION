@@ -16442,7 +16442,7 @@ var DSTPRO = (function() {
 
   function _fastBuildBinChips() {
     var wrap = document.getElementById('dstpro-fast-bins');
-    if (!wrap || wrap.childNodes.length) return; // build once
+    if (!wrap || wrap.querySelector('button')) return; // build once
     var letters = ['A','B','C','D','E','F','G','H','I'];
     letters.forEach(function(L) {
       var on = (L === 'H' || L === 'I');
