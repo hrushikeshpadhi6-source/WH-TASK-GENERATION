@@ -15880,12 +15880,18 @@ function handleScanningASIN(e) {
         </div>
       </div>
     </div>
+    <!-- Optional bin-letter filter -->
+    <div style="margin-bottom:14px;padding:12px 14px;background:rgba(232,80,10,0.05);border:1px solid rgba(232,80,10,0.18);border-radius:10px;">
+      <div style="font-size:11px;font-weight:700;color:#e8500a;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">🗂️ Bins to Include <span style="font-weight:600;color:#9a97b8;text-transform:none;letter-spacing:0;">(optional — defaults to H &amp; I)</span></div>
+      <div id="dstpro-fast-bins" style="display:flex;flex-wrap:wrap;gap:6px;">
+      </div>
+    </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-primary" onclick="dstproFastGenerate()">⚡ Analyse Fast Movers</button>
       <button class="btn btn-outline" onclick="dstproFastReset()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">✕ Reset</button>
     </div>
     <div style="margin-top:12px;padding:10px 14px;background:rgba(67,97,238,0.06);border:1px solid rgba(67,97,238,0.2);border-radius:8px;font-size:12px;color:#3d3a6b;">
-      ℹ️ Only <strong>P-1-A</strong> and <strong>HAZ</strong> locations with <strong>H</strong> or <strong>I</strong> bins are included (e.g. P-1-A110I123, HAZ-A100H555).
+      ℹ️ Only <strong>P-1-A</strong> and <strong>HAZ</strong> locations whose bin matches your selection above are included (default <strong>H</strong> &amp; <strong>I</strong> — e.g. P-1-A110I123, HAZ-A100H555).
     </div>
   </div>
 
@@ -16434,9 +16440,40 @@ var DSTPRO = (function() {
     });
   }
 
+  function _fastBuildBinChips() {
+    var wrap = document.getElementById('dstpro-fast-bins');
+    if (!wrap || wrap.childNodes.length) return; // build once
+    var letters = ['A','B','C','D','E','F','G','H','I'];
+    letters.forEach(function(L) {
+      var on = (L === 'H' || L === 'I');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('data-bin', L);
+      b.setAttribute('data-on', on ? '1' : '0');
+      b.textContent = L;
+      b.style.cssText = 'cursor:pointer;min-width:34px;height:34px;border-radius:8px;font-weight:800;font-size:13px;font-family:inherit;transition:all .12s;' +
+        (on ? 'background:#e8500a;color:#fff;border:1.5px solid #e8500a;' : 'background:#fff;color:#7b78a8;border:1.5px solid #d5d2f0;');
+      b.onclick = function() {
+        var nowOn = b.getAttribute('data-on') !== '1';
+        b.setAttribute('data-on', nowOn ? '1' : '0');
+        b.style.cssText = 'cursor:pointer;min-width:34px;height:34px;border-radius:8px;font-weight:800;font-size:13px;font-family:inherit;transition:all .12s;' +
+          (nowOn ? 'background:#e8500a;color:#fff;border:1.5px solid #e8500a;' : 'background:#fff;color:#7b78a8;border:1.5px solid #d5d2f0;');
+      };
+      wrap.appendChild(b);
+    });
+  }
+  function _fastSelectedBins() {
+    var wrap = document.getElementById('dstpro-fast-bins');
+    var sel = [];
+    if (wrap) wrap.querySelectorAll('button[data-on="1"]').forEach(function(b){ sel.push(b.getAttribute('data-bin')); });
+    if (!sel.length) sel = ['H','I']; // fallback to default if none selected
+    return sel;
+  }
+
   function _fastShowMapperIfReady() {
     if (_fastData.length && _fastInvData.length) {
       document.getElementById('dstpro-fast-mapper').style.display = 'block';
+      _fastBuildBinChips();
     }
   }
 
@@ -16463,10 +16500,12 @@ var DSTPRO = (function() {
       function _cleanLoc(loc) {
         return String(loc).trim().replace(/^bin\s*:\s*/i, '');
       }
+      var _selBins = _fastSelectedBins();                 // e.g. ['H','I'] or ['A','C','F']
+      var _binRe   = new RegExp('\\d[' + _selBins.join('') + ']\\d{3}(?!\\d)');
       function _isFastMovingLoc(loc) {
         var l = _cleanLoc(loc).toUpperCase();
         if (!l.startsWith('P-1-A') && !l.startsWith('HAZ')) return false;
-        return /[HI]\d{3}(?!\d)/.test(l);
+        return _binRe.test(l);
       }
 
       // ── STEP 2: Build inventory map ASIN → Set of clean H/I locations ─
@@ -16569,7 +16608,7 @@ var DSTPRO = (function() {
         '<div style="margin-top:28px;border-top:1px solid #d5d2f0;padding-top:20px;">' +
         '<div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:14px;display:flex;align-items:center;gap:8px;">' +
         '<span style="display:inline-block;width:3px;height:16px;background:linear-gradient(180deg,#e8500a,#ff6b35);border-radius:2px;"></span>' +
-        'Scannable QR Codes — ASIN + Location</div>' +
+        'Scannable QR Codes — ASIN</div>' +
         '<div class="label-grid" id="dstpro-fast-qr-grid" style="grid-template-columns:repeat(8,1fr);gap:8px;"></div>' +
         '</div>' +
         '</div></div>';
@@ -16596,8 +16635,8 @@ var DSTPRO = (function() {
             '</div>'
           : '';
 
-        // QR content = ASIN + full location
-        var qrContent = r.asin + (firstLoc ? ' ' + firstLoc : '');
+        // QR content = ASIN only
+        var qrContent = r.asin;
 
         card.innerHTML =
           topBadge +
