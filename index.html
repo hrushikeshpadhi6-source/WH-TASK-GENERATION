@@ -1841,6 +1841,40 @@ to{width:65%;} }
     onmouseout="this.style.background='transparent'">🚪 Sign Out</button>
 </div>
 
+<!-- ── PRIME DAY ANNOUNCEMENT POPUP ─────────────────────────────── -->
+<div id="primeday-overlay" style="display:none;position:fixed;inset:0;z-index:10050;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.78);backdrop-filter:blur(6px);">
+  <div id="primeday-card" style="position:relative;width:100%;max-width:440px;background:rgba(22,21,34,0.98);border:1px solid rgba(255,107,53,0.35);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,0.7);overflow:hidden;font-family:'Syne',sans-serif;animation:pdPop 0.45s cubic-bezier(0.22,1,0.36,1);">
+    <!-- banner / pic -->
+    <div style="position:relative;height:172px;background:linear-gradient(135deg,#ff6b35 0%,#c43d04 55%,#7c2d00 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,0.18),transparent 40%),radial-gradient(circle at 85% 75%,rgba(67,97,238,0.35),transparent 45%);"></div>
+      <div style="position:relative;text-align:center;line-height:1;">
+        <div style="font-size:62px;letter-spacing:6px;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.35));">🚀📦</div>
+        <div style="margin-top:10px;font-size:13px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.92);">Prime Day</div>
+      </div>
+    </div>
+    <!-- body -->
+    <div style="padding:26px 30px 30px;text-align:center;">
+      <div style="font-size:23px;font-weight:800;letter-spacing:-0.3px;color:#fff;margin-bottom:14px;">🚀 Prime Day is Coming!</div>
+      <p style="font-size:14.5px;line-height:1.65;color:#c9c7e8;margin:0 0 16px;">Get ready for higher order volumes. Stay focused on <strong style="color:#fff;">quality</strong>, <strong style="color:#fff;">productivity</strong>, and <strong style="color:#fff;">customer satisfaction</strong>.</p>
+      <p style="font-size:15px;font-weight:700;color:#ff8a5c;margin:0 0 24px;">Let's make this Prime Day a success! 💪📦</p>
+      <button onclick="dismissPrimeDay()" style="width:100%;padding:14px;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:14.5px;font-weight:800;letter-spacing:0.5px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#ff6b35,#c43d04);box-shadow:0 6px 22px rgba(255,107,53,0.4);transition:transform 0.18s,box-shadow 0.18s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 30px rgba(255,107,53,0.55)';" onmouseout="this.style.transform='none';this.style.boxShadow='0 6px 22px rgba(255,107,53,0.4)';">Okay 👍</button>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes pdPop { from { opacity:0; transform:translateY(26px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+</style>
+<script>
+function showPrimeDayPopup() {
+  var ov = document.getElementById('primeday-overlay');
+  if (ov) ov.style.display = 'flex';
+}
+function dismissPrimeDay() {
+  var ov = document.getElementById('primeday-overlay');
+  if (ov) ov.style.display = 'none';
+}
+</script>
+
 <div id="app-shell" style="display:none;">
 
 <header class="header">
@@ -10047,6 +10081,15 @@ if (document.readyState === 'loading') {
   <!-- VOC DASHBOARD -->
   <div id="voc-dashboard" style="display:none;">
 
+    <!-- PRIME DAY RUNNING BANNER -->
+    <div class="voc-primeday-marquee" aria-label="Prime Day announcement">
+      <div class="voc-primeday-track">
+        <span class="voc-primeday-item">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+        <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+        <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+      </div>
+    </div>
+
     <!-- HEADER ROW -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
       <div>
@@ -10347,6 +10390,45 @@ if (document.readyState === 'loading') {
 /* Apply theme to the page */
 #page-voc { background: var(--voc-bg) !important; color: var(--voc-text); transition: background 0.3s, color 0.3s; }
 
+/* ── PRIME DAY RUNNING MARQUEE ─────────────────────────────────── */
+.voc-primeday-marquee {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  padding: 12px 0;
+  background: linear-gradient(135deg,#ff6b35 0%,#c43d04 60%,#7c2d00 100%);
+  box-shadow: 0 6px 22px rgba(255,107,53,0.32);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.voc-primeday-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+  animation: vocPrimeMarquee 28s linear infinite;
+}
+.voc-primeday-marquee:hover .voc-primeday-track { animation-play-state: paused; }
+.voc-primeday-item {
+  display: inline-block;
+  padding: 0 38px;
+  font-family: Georgia,'Times New Roman',serif !important;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.22);
+}
+.voc-primeday-item b { color: #fff3e6 !important; font-weight: 800; }
+@keyframes vocPrimeMarquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voc-primeday-track { animation: none; transform: translateX(0); }
+}
+
 /* Dark theme: gate box */
 #page-voc[data-theme="dark"] #voc-gate > div { background:#13121f !important; border-color:#2e2c45 !important; }
 #page-voc[data-theme="dark"] #voc-gate .voc-gate-title { color:#e8e6ff !important; }
@@ -10608,6 +10690,8 @@ async function vocCheckAccess() {
   document.getElementById('voc-user-label').textContent=uname.toUpperCase();
   _vocStartStatusWatch(uname);
   vocFetchData();
+  // Prime Day announcement — also greet users when they enter the VOC dashboard.
+  try { showPrimeDayPopup(); } catch(e) {}
 }
 
 // ── REAL-TIME ACCESS WATCH ───────────────────────────────────────
@@ -14337,6 +14421,8 @@ function authShowApp(displayName) {
     var nm = document.querySelector('#session-badge .sb-name');
     if (nm) nm.textContent = displayName;
   }
+  // Prime Day announcement — shows on every login & on refresh while signed in.
+  try { showPrimeDayPopup(); } catch (e) {}
 }
 function authShowLogin() {
   document.getElementById('login-overlay').style.display = 'flex';
