@@ -11757,29 +11757,44 @@ function vocRcaMismatch(comment, rcaReply, rcaCategory, issue) {
     return out; // unsatisfied stays false
   }
 
-  // ── 0.5) CCTV deferral = RCA incomplete → "Need to fill again"
-  // Any RCA that still relies on CCTV (need to check / verify / footage pending)
-  // is NOT a finished RCA — flag it so it gets reviewed & filled again.
-  // A *completed* CCTV review ("verified with cctv", "cctv checked") is exempt.
-  // We judge by the words immediately AROUND the cctv mention so that
-  // "to be verified through cctv" (pending) is not mistaken for "verified … cctv" (done).
+  // ── 0.5) CCTV STILL PENDING = RCA incomplete → "Need to fill again"
+  // IMPORTANT: an RCA that says the CCTV was REVIEWED / checked / verified is
+  // COMPLETED — it must NOT be flagged. We only highlight an RCA when it is
+  // explicitly still WAITING on the CCTV: "need to check cctv", "cctv to be
+  // checked", "not yet checked", "footage pending", "dekhna hai", etc.
+  // A bare CCTV mention, or "reviewed the cctv", is treated as DONE (not flagged).
   var _cctvIdx = r.indexOf('cctv');
   if (_cctvIdx < 0) _cctvIdx = r.indexOf('cc tv');
   if (_cctvIdx < 0) { var _cf = r.indexOf('camera footage'); if (_cf >= 0) _cctvIdx = _cf; }
+  if (_cctvIdx < 0) { var _cam = r.indexOf('camera'); if (_cam >= 0) _cctvIdx = _cam; }
   if (_cctvIdx >= 0) {
-    var _pre  = r.slice(Math.max(0, _cctvIdx - 30), _cctvIdx);   // text just before "cctv"
-    var _post = r.slice(_cctvIdx, _cctvIdx + 30);                // text from "cctv" onward
-    var _pendCtx = /(need|needs|will|would|to be|yet to|not yet|pending|requir|to check|to verify|to see|to review|to watch|have to|has to|chahiye|dekhna|dekhni|karna|karni|check kar|verify kar)/.test(_pre)
-                || /(pending|to be checked|needs to|required|require|not checked|nahi)/.test(_post);
-    var _doneCtx = /(verified|checked|reviewed|seen|saw|found|confirmed|as per|watched|dekha|dekhi|kiya|done)/.test(_pre)
-                || /(checked|verified|reviewed|confirmed|dekha)/.test(_post);
-    // Pending wins over done; a bare "cctv" mention with no completion context is treated as pending.
-    if (_pendCtx || !_doneCtx) {
+    // Look both sides of the CCTV mention so word order doesn't matter.
+    var _ctx = r.slice(Math.max(0, _cctvIdx - 45), _cctvIdx + 55);
+
+    // Explicit "CCTV is STILL TO BE DONE / not yet checked / waiting" signals.
+    var _pendPat = new RegExp([
+      'to be (checked|verified|reviewed|seen|confirmed|done)',
+      'yet to (check|verify|review|see|be|recheck)',
+      'not yet (checked|verified|reviewed|seen|done)',
+      'not (checked|verified|reviewed|seen)( yet)?',
+      '(need|needs|have|has|will|would|going|trying|want|wants)[a-z ]{0,14}(to )?(check|verify|review|see|watch|recheck|re-check)',
+      '(check|verify|review|recheck|watch)[a-z ]{0,8}(later|tomorrow|soon|again)',
+      '(check|footage|cctv|review|camera|verif[a-z]*)[a-z ]{0,6}pending',
+      'pending[a-z ]{0,6}(check|review|cctv|footage|verif|camera)',
+      'awaited|awaiting|waiting (for|on)',
+      'dekhna|dekhni|dekhenge|dekhna baki|dekhna padega',
+      '(check|verify|recheck)[a-z ]{0,4}(karna|karenge|karna baki|karna padega)',
+      'nahi dekha|abhi tak nahi|baki hai|chahiye'
+    ].join('|'));
+
+    // Flag ONLY when the CCTV is genuinely still pending / not checked.
+    // (If the RCA already reviewed it, none of the above match → not flagged.)
+    if (_pendPat.test(_ctx)) {
       out.unsatisfied  = true;
       out.needsRefill  = true;   // ← "need to fill again"
       out.cctvPending  = true;
       out.severity     = (out.severity && out.severity !== 'none') ? out.severity : 'med';
-      out.reason       = 'RCA relies on CCTV verification — still pending, needs to be checked & filled again';
+      out.reason       = 'RCA still waiting on CCTV — not yet checked, needs to be reviewed & filled again';
       return out;
     }
   }
