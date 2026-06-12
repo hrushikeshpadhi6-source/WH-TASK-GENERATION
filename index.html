@@ -1873,6 +1873,19 @@ function dismissPrimeDay() {
   var ov = document.getElementById('primeday-overlay');
   if (ov) ov.style.display = 'none';
 }
+// Full-width Prime Day running bar — shown only on the VOC dashboard.
+function showVocPrimeBar() {
+  var bar = document.getElementById('voc-primeday-bar');
+  if (bar) bar.style.display = 'block';
+  var inner = document.getElementById('voc-page-inner');
+  if (inner) inner.style.paddingTop = '78px';
+}
+function hideVocPrimeBar() {
+  var bar = document.getElementById('voc-primeday-bar');
+  if (bar) bar.style.display = 'none';
+  var inner = document.getElementById('voc-page-inner');
+  if (inner) inner.style.paddingTop = '32px';
+}
 </script>
 
 <div id="app-shell" style="display:none;">
@@ -1891,6 +1904,16 @@ function dismissPrimeDay() {
   </button>
 
 </header>
+
+<!-- PRIME DAY RUNNING BAR — full width, pinned directly under the header (VOC only) -->
+<div id="voc-primeday-bar" class="voc-primeday-marquee" aria-label="Prime Day announcement" style="display:none;">
+  <div class="voc-primeday-track">
+    <span class="voc-primeday-item">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+    <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+    <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
+  </div>
+</div>
+
 
 <!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
@@ -4077,6 +4100,37 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
 <!-- ════════════════════════════════════════════════
      TASK 12: REVERSE TRANSSHIPMENT DELIVERY NOTE
 ════════════════════════════════════════════════ -->
+<style id="dn-manifest-styles">
+#page-deliverynote .dn-attach{ margin-top:26px; padding-top:24px; border-top:1px dashed #d8dbeb; }
+#page-deliverynote .dn-attach-title{ font-size:14px; font-weight:800; color:#0f1736; letter-spacing:0.2px; display:flex; align-items:center; gap:10px; }
+#page-deliverynote .dn-opt{ font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:#0e7490; background:rgba(14,116,144,0.1); border:1px solid rgba(14,116,144,0.28); border-radius:20px; padding:3px 9px; font-weight:700; }
+#page-deliverynote .dn-attach-desc{ font-size:12.5px; color:#5b6080; line-height:1.7; margin-top:7px; max-width:660px; }
+#page-deliverynote .dn-attach-desc b{ color:#1a2244; }
+#page-deliverynote .dn-attach-desc .dn-col{ color:#0e7490; font-family:'DM Mono',monospace; font-size:11px; }
+#page-deliverynote .dn-drop{ margin-top:16px; border:2px dashed #c5cadf; border-radius:14px; background:linear-gradient(135deg,#fafbff,#f1f6f8); padding:28px 24px; text-align:center; cursor:pointer; transition:border-color .2s, background .2s, transform .15s; }
+#page-deliverynote .dn-drop:hover, #page-deliverynote .dn-drop.drag{ border-color:#0e7490; background:rgba(14,116,144,0.05); transform:translateY(-1px); }
+#page-deliverynote .dn-drop input{ display:none; }
+#page-deliverynote .dn-drop-icon{ font-size:30px; line-height:1; }
+#page-deliverynote .dn-drop-main{ font-size:14px; font-weight:700; color:#1a2244; margin-top:8px; }
+#page-deliverynote .dn-drop-fmts{ display:flex; gap:8px; justify-content:center; margin-top:13px; }
+#page-deliverynote .dn-drop-fmts span{ font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1px; color:#0e7490; background:rgba(14,116,144,0.08); border:1px solid rgba(14,116,144,0.22); border-radius:6px; padding:4px 9px; }
+#page-deliverynote .dn-file-ok{ display:none; margin-top:16px; background:rgba(6,160,120,0.07); border:1px solid rgba(6,160,120,0.32); border-radius:12px; padding:14px 16px; align-items:center; gap:14px; }
+#page-deliverynote .dn-file-ok.show{ display:flex; }
+#page-deliverynote .dn-fok-icon{ width:34px; height:34px; flex:none; border-radius:9px; background:#0a9b6e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; }
+#page-deliverynote .dn-fok-info{ flex:1; min-width:0; }
+#page-deliverynote .dn-fok-info b{ display:block; font-size:13px; color:#0f1736; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#page-deliverynote .dn-fok-info span{ display:block; font-size:11.5px; color:#5b6080; font-family:'DM Mono',monospace; margin-top:4px; letter-spacing:0.2px; }
+#page-deliverynote .dn-fok-remove{ flex:none; background:#fff; border:1px solid #d4d6e6; border-radius:8px; padding:8px 15px; font-size:11px; font-weight:700; color:#b42318; cursor:pointer; letter-spacing:0.5px; }
+#page-deliverynote .dn-fok-remove:hover{ background:#fff1f0; border-color:#f0a8a0; }
+#page-deliverynote .dn-doc-items-title{ margin-top:32px; font-weight:700; font-size:18px; color:#0e7490; border-bottom:1px solid #0e7490; padding-bottom:5px; }
+#page-deliverynote .dn-doc-items-sub{ font-size:13px; color:#555; margin:9px 0 12px; }
+#page-deliverynote table.dn-doc-items{ width:100%; border-collapse:collapse; font-size:13px; font-family:Calibri,Arial,sans-serif; }
+#page-deliverynote table.dn-doc-items th{ background:#0e7490; color:#fff; text-align:left; padding:7px 9px; font-weight:700; border:1px solid #0b6178; }
+#page-deliverynote table.dn-doc-items td{ padding:6px 9px; border:1px solid #cdd3e0; color:#111; vertical-align:top; }
+#page-deliverynote table.dn-doc-items tbody tr:nth-child(even){ background:#eef5f7; }
+#page-deliverynote table.dn-doc-items th:last-child, #page-deliverynote table.dn-doc-items td:last-child{ text-align:center; width:48px; }
+</style>
+
 <div class="page" id="page-deliverynote">
 <div class="task-page">
   <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
@@ -4141,6 +4195,19 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
         </div>
       </div>
 
+      <!-- OPTIONAL: attach a tote-contents manifest (CSV / Excel) -->
+      <div class="dn-attach">
+        <div class="dn-attach-title">📋 Items Manifest <span class="dn-opt">Optional</span></div>
+        <div class="dn-attach-desc">Attach the tote-contents file and it will be embedded as a clean table inside the exported Word note. Expected columns: <span class="dn-col">TOTE_ID</span>, <span class="dn-col">ASIN</span>, <span class="dn-col">TITLE</span>, <span class="dn-col">QUANTITY</span>. A tote ID that repeats across rows counts as <b>one tote</b> &mdash; Units and Totes auto-fill from the file.</div>
+        <div class="dn-drop" id="dn-drop" onclick="document.getElementById('dn-file').click()">
+          <input type="file" id="dn-file" accept=".csv,.xlsx,.xls" onchange="dnFileChosen(this)">
+          <div class="dn-drop-icon">📎</div>
+          <div class="dn-drop-main">Click or drag &amp; drop your manifest file</div>
+          <div class="dn-drop-fmts"><span>.CSV</span><span>.XLSX</span><span>.XLS</span></div>
+        </div>
+        <div class="dn-file-ok" id="dn-file-ok"></div>
+      </div>
+
       <div class="dn-actions">
         <button class="dn-btn dn-btn-ghost" onclick="dnClearForm()">↻ Reset</button>
         <button class="dn-btn dn-btn-ghost" onclick="dnUpdatePreview(true)">👁 Preview</button>
@@ -4162,6 +4229,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
       <div class="dn-doc-line"><b>Time:</b> <span id="dn-pv-time"></span></div>
       <div class="dn-doc-line"><b>Number of Units:</b> <span id="dn-pv-units"></span></div>
       <div class="dn-doc-line"><b>Number of Totes:</b> <span id="dn-pv-totes"></span></div>
+      <div id="dn-pv-items"></div>
     </div>
   </div>
 </div>
@@ -4475,6 +4543,7 @@ function goHome() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-dashboard').classList.add('active');
   window.scrollTo(0, 0);
+  try { hideVocPrimeBar(); } catch(e) {}
 }
 
 // FILE UPLOAD
@@ -10024,7 +10093,7 @@ if (document.readyState === 'loading') {
 </div>
 
 <div class="page" id="page-voc" style="background:#0a0914;min-height:100vh;" data-theme="dark">
-<div style="max-width:1200px;margin:0 auto;padding:32px 24px 80px;position:relative;z-index:1;">
+<div id="voc-page-inner" style="max-width:1200px;margin:0 auto;padding:32px 24px 80px;position:relative;z-index:1;">
 
   <!-- BACK BUTTON — TOP FIXED -->
   <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;margin-bottom:28px;">← Back</button>
@@ -10080,15 +10149,6 @@ if (document.readyState === 'loading') {
 
   <!-- VOC DASHBOARD -->
   <div id="voc-dashboard" style="display:none;">
-
-    <!-- PRIME DAY RUNNING BANNER -->
-    <div class="voc-primeday-marquee" aria-label="Prime Day announcement">
-      <div class="voc-primeday-track">
-        <span class="voc-primeday-item">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
-        <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
-        <span class="voc-primeday-item" aria-hidden="true">🚀 <b>Prime Day is Coming!</b> &nbsp;Get ready for higher order volumes. Stay focused on <b>quality</b>, <b>productivity</b> &amp; <b>customer satisfaction</b>. &nbsp;Let's make this Prime Day a success! 💪📦</span>
-      </div>
-    </div>
 
     <!-- HEADER ROW -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
@@ -10390,17 +10450,20 @@ if (document.readyState === 'loading') {
 /* Apply theme to the page */
 #page-voc { background: var(--voc-bg) !important; color: var(--voc-text); transition: background 0.3s, color 0.3s; }
 
-/* ── PRIME DAY RUNNING MARQUEE ─────────────────────────────────── */
+/* ── PRIME DAY RUNNING MARQUEE (full-width bar under header) ────── */
 .voc-primeday-marquee {
-  position: relative;
+  position: fixed;
+  top: 68px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 150;
   overflow: hidden;
-  border-radius: 14px;
-  margin-bottom: 24px;
-  padding: 12px 0;
+  padding: 11px 0;
   background: linear-gradient(135deg,#ff6b35 0%,#c43d04 60%,#7c2d00 100%);
-  box-shadow: 0 6px 22px rgba(255,107,53,0.32);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
 }
 .voc-primeday-track {
   display: inline-flex;
@@ -10692,6 +10755,7 @@ async function vocCheckAccess() {
   vocFetchData();
   // Prime Day announcement — also greet users when they enter the VOC dashboard.
   try { showPrimeDayPopup(); } catch(e) {}
+  try { showVocPrimeBar(); } catch(e) {}
 }
 
 // ── REAL-TIME ACCESS WATCH ───────────────────────────────────────
@@ -10729,6 +10793,7 @@ function _vocLockOut(reason){
   var su   = document.getElementById('voc-signup-card'); if (su) su.style.display='none';
   var gate = document.getElementById('voc-gate');
   if (gate) { gate.style.display='block'; var card=gate.querySelector('div'); if(card) card.style.display='block'; }
+  try { hideVocPrimeBar(); } catch(e){}
   vocCurrentUser = '';
   var inp = document.getElementById('voc-username-input'); if (inp) inp.value='';
   try { window.scrollTo(0,0); } catch(e){}
@@ -17709,6 +17774,9 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
   }
 
   // ── Live barcode in the form ─────────────────────────────────
+  // Parsed manifest state (optional CSV/Excel attachment)
+  var dnItems = null, dnFileName = '';
+
   window.dnRenderLive = function(){
     var tid = val('dn-tid');
     var svg = $('dn-barcode-svg'), hint = $('dn-bc-hint'), tidEl = $('dn-bc-tid');
@@ -17751,16 +17819,244 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
         bcWrap.innerHTML='<span class="dn-doc-bc-placeholder">[TS ID Barcode]</span>';
       }
     }
+    dnRenderPreviewItems();
     var pv=$('dn-preview');
     if(pv) pv.style.display='block';
     if(scrollTo && pv) pv.scrollIntoView({behavior:'smooth', block:'start'});
   };
+
+  // ═══ OPTIONAL: Items manifest (CSV / Excel attachment) ═══════════
+  function dnEsc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function dnNorm(s){ return String(s==null?'':s).trim(); }
+  function dnFindCol(headers, names){
+    var norm = headers.map(function(h){ return String(h==null?'':h).toLowerCase().replace(/[^a-z0-9]/g,''); });
+    for(var j=0;j<names.length;j++){ for(var i=0;i<norm.length;i++){ if(norm[i]===names[j]) return i; } }
+    for(var j=0;j<names.length;j++){ for(var i=0;i<norm.length;i++){ if(norm[i] && norm[i].indexOf(names[j])>=0) return i; } }
+    return -1;
+  }
+  function dnComputeSummary(items){
+    items = items || dnItems || [];
+    var toteSet={}, units=0;
+    items.forEach(function(it){
+      if(it.tote) toteSet[it.tote.toUpperCase()] = true;   // repeated tote IDs count once
+      units += (Number(it.qty)||0);
+    });
+    return { uniqueTotes:Object.keys(toteSet).length, totalUnits:units, lines:items.length };
+  }
+
+  window.dnFileChosen = function(input){
+    var file = input && input.files && input.files[0];
+    if(!file) return;
+    dnReadFile(file);
+    input.value=''; // allow re-selecting the same file
+  };
+
+  // ═══ Auto-fetch TS ID, Source & Destination from the uploaded file name ═══
+  // Filename pattern:  QAA7-DXB5-1780509981-1178165874.csv
+  //   → full Transshipment ID = QAA7-DXB5-1780509981-1178165874  (drives the barcode)
+  //   → Source Store ID       = QAA7  (first segment / store code)
+  //   → Destination FC        = DXB5  (second segment)
+  function dnFillFromFilename(rawName){
+    if(!rawName) return;
+    // strip directory + extension
+    var base = String(rawName).replace(/^.*[\\\/]/, '').replace(/\.[^.]+$/, '').trim();
+    if(!base) return;
+    var parts = base.split('-').map(function(p){ return p.trim(); }).filter(Boolean);
+    // need at least source + destination segments
+    if(parts.length < 2) return;
+    if(!/^[A-Za-z0-9]{2,6}$/.test(parts[0]) || !/^[A-Za-z0-9]{2,6}$/.test(parts[1])) return;
+
+    var fullTid = base.toUpperCase();           // whole filename = full TS ID
+    var source  = parts[0].toUpperCase();        // store code comes first → source
+    var dest    = parts[1].toUpperCase();        // next segment → destination FC
+
+    var tidEl = $('dn-tid'), srcEl = $('dn-source'), dstEl = $('dn-dest');
+    if(tidEl){ tidEl.value = fullTid; }
+    if(srcEl){ srcEl.value = source; }
+    if(dstEl){ dstEl.value = dest; }
+
+    // Regenerate the live barcode for the full transshipment ID
+    if(typeof dnRenderLive === 'function') dnRenderLive();
+    if($('dn-preview') && $('dn-preview').style.display==='block') dnUpdatePreview(false);
+  }
+
+  function dnReadFile(file){
+    if(typeof XLSX==='undefined'){
+      if(typeof showToast==='function') showToast('\u26a0 Spreadsheet engine still loading \u2014 try again in a moment');
+      return;
+    }
+    dnFileName = file.name;
+    dnFillFromFilename(file.name);
+    if(typeof showToast==='function') showToast('\u23f3 Reading '+file.name+' \u2026');
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try {
+        var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        var sheetName = wb.SheetNames[0];
+        var ws = wb.Sheets[sheetName];
+        var rows = XLSX.utils.sheet_to_json(ws, {header:1, blankrows:false, defval:''});
+        dnParseRows(rows, sheetName);
+      } catch(err){
+        console.error(err);
+        if(typeof showToast==='function') showToast('\u274c Could not read file: '+err.message);
+      }
+    };
+    reader.onerror = function(){ if(typeof showToast==='function') showToast('\u274c Failed to read file'); };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function dnParseRows(rows, sheetName){
+    if(!rows || !rows.length){ if(typeof showToast==='function') showToast('\u26a0 The file looks empty'); return; }
+    var headerIdx=0;
+    for(var r=0;r<Math.min(rows.length,8);r++){
+      var joined=(rows[r]||[]).map(function(c){return String(c).toLowerCase();}).join('|');
+      if(joined.indexOf('tote')>=0 || joined.indexOf('asin')>=0){ headerIdx=r; break; }
+    }
+    var headers = rows[headerIdx] || [];
+    var ci = {
+      tote: dnFindCol(headers, ['toteid','tote']),
+      asin: dnFindCol(headers, ['asin','fnsku','sku']),
+      title:dnFindCol(headers, ['title','productname','itemname','description','name','product']),
+      qty:  dnFindCol(headers, ['quantity','qty','units','count','eaches'])
+    };
+    if(ci.tote<0 && ci.asin<0){
+      if(typeof showToast==='function') showToast('\u26a0 Couldn\u2019t find TOTE_ID / ASIN columns \u2014 check the header row');
+      return;
+    }
+    var items=[];
+    for(var r2=headerIdx+1;r2<rows.length;r2++){
+      var row=rows[r2]; if(!row) continue;
+      var tote = ci.tote>=0 ? dnNorm(row[ci.tote]) : '';
+      var asin = ci.asin>=0 ? dnNorm(row[ci.asin]) : '';
+      var title= ci.title>=0 ? dnNorm(row[ci.title]) : '';
+      var qtyR = ci.qty>=0 ? dnNorm(row[ci.qty]) : '';
+      if(!tote && !asin && !title && !qtyR) continue;
+      var qty = parseInt(qtyR,10);
+      if(isNaN(qty)) qty = (asin||title)?1:0;
+      items.push({tote:tote, asin:asin, title:title, qty:qty});
+    }
+    if(!items.length){ if(typeof showToast==='function') showToast('\u26a0 No item rows found in the file'); return; }
+    dnItems = items;
+    var s = dnComputeSummary(items);
+
+    // Auto-fill Totes (unique IDs) & Units (sum of qty)
+    var totesEl=$('dn-totes'), unitsEl=$('dn-units');
+    if(totesEl) totesEl.value = s.uniqueTotes;
+    if(unitsEl) unitsEl.value = s.totalUnits;
+
+    // Smart-fill Source / Destination from a "QAA7-DXB5-\u2026" style sheet/tab name (only if empty)
+    var m = String(sheetName||'').match(/^\s*([A-Za-z0-9]{3,5})[-_ ]([A-Za-z0-9]{3,5})/);
+    if(m){
+      var srcEl=$('dn-source'), dstEl=$('dn-dest');
+      if(srcEl && !srcEl.value) srcEl.value = m[1].toUpperCase();
+      if(dstEl && !dstEl.value) dstEl.value = m[2].toUpperCase();
+    }
+
+    dnShowFileOk(s);
+    if($('dn-preview') && $('dn-preview').style.display==='block') dnUpdatePreview(false);
+    if(typeof showToast==='function') showToast('\u2705 Manifest attached \u2014 '+s.lines+' items \u00b7 '+s.uniqueTotes+' totes \u00b7 '+s.totalUnits+' units');
+  }
+
+  function dnShowFileOk(s){
+    var ok=$('dn-file-ok'); if(!ok) return;
+    ok.classList.add('show');
+    ok.innerHTML =
+      '<div class="dn-fok-icon">\u2713</div>' +
+      '<div class="dn-fok-info"><b>'+dnEsc(dnFileName)+'</b>' +
+        '<span>'+s.lines+' line items&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.uniqueTotes+' unique tote'+(s.uniqueTotes===1?'':'s')+'&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.totalUnits+' units &nbsp;\u2192 embedded in the Word note</span></div>' +
+      '<button class="dn-fok-remove" onclick="dnRemoveFile()">Remove</button>';
+  }
+
+  window.dnRemoveFile = function(){
+    dnClearManifest();
+    if(typeof showToast==='function') showToast('Manifest removed');
+  };
+  function dnClearManifest(){
+    dnItems=null; dnFileName='';
+    var ok=$('dn-file-ok'); if(ok){ ok.classList.remove('show'); ok.innerHTML=''; }
+    var inp=$('dn-file'); if(inp) inp.value='';
+    var pv=$('dn-pv-items'); if(pv) pv.innerHTML='';
+  }
+
+  function dnRenderPreviewItems(){
+    var wrap=$('dn-pv-items'); if(!wrap) return;
+    if(!dnItems || !dnItems.length){ wrap.innerHTML=''; return; }
+    var s=dnComputeSummary(dnItems);
+    var h='<div class="dn-doc-items-title">ITEMS MANIFEST</div>' +
+      '<div class="dn-doc-items-sub">'+s.lines+' line items &nbsp;\u00b7&nbsp; '+s.uniqueTotes+' tote'+(s.uniqueTotes===1?'':'s')+' &nbsp;\u00b7&nbsp; '+s.totalUnits+' units</div>' +
+      '<table class="dn-doc-items"><thead><tr><th>Tote ID</th><th>ASIN</th><th>Title</th><th>Qty</th></tr></thead><tbody>';
+    dnItems.forEach(function(it){
+      h+='<tr><td>'+dnEsc(it.tote)+'</td><td>'+dnEsc(it.asin)+'</td><td>'+dnEsc(it.title)+'</td><td>'+dnEsc(it.qty)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    wrap.innerHTML=h;
+  }
+
+  // Drag & drop onto the attach zone
+  (function(){
+    function init(){
+      var dz=$('dn-drop'); if(!dz) return;
+      ['dragenter','dragover'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); e.stopPropagation(); dz.classList.add('drag'); }); });
+      ['dragleave','drop'].forEach(function(ev){ dz.addEventListener(ev,function(e){ e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag'); }); });
+      dz.addEventListener('drop',function(e){
+        var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if(f) dnReadFile(f);
+      });
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  })();
+
+  // Word table builders for the manifest
+  function dnTcell(text, o){
+    o=o||{};
+    var shd=o.shade?'<w:shd w:val="clear" w:color="auto" w:fill="'+o.shade+'"/>':'';
+    var b=o.bold?'<w:b/>':'';
+    var col=o.color?'<w:color w:val="'+o.color+'"/>':'';
+    var sz=o.sz||18;
+    var jc=o.center?'<w:jc w:val="center"/>':'';
+    return '<w:tc><w:tcPr><w:tcW w:w="'+(o.w||2000)+'" w:type="dxa"/>'+shd+
+      '<w:tcMar><w:top w:w="40" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:left w:w="90" w:type="dxa"/><w:right w:w="90" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr>' +
+      '<w:p><w:pPr>'+jc+'<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:rPr>'+b+col+'<w:sz w:val="'+sz+'"/></w:rPr></w:pPr>' +
+      '<w:r><w:rPr>'+b+col+'<w:sz w:val="'+sz+'"/></w:rPr><w:t xml:space="preserve">'+xmlEsc(text||'')+'</w:t></w:r></w:p></w:tc>';
+  }
+  function dnItemsTableXml(items){
+    var cols=[2100,1900,4000,1360];
+    var grid='<w:tblGrid>'+cols.map(function(w){return '<w:gridCol w:w="'+w+'"/>';}).join('')+'</w:tblGrid>';
+    var bd='<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(function(p){return '<w:'+p+' w:val="single" w:sz="4" w:space="0" w:color="BBBBBB"/>';}).join('')+'</w:tblBorders>';
+    var tblPr='<w:tblPr><w:tblW w:w="9360" w:type="dxa"/>'+bd+'<w:tblLook w:val="04A0"/></w:tblPr>';
+    var hdr='<w:tr><w:trPr><w:tblHeader/></w:trPr>' +
+      dnTcell('TOTE ID',{w:cols[0],bold:true,color:'FFFFFF',shade:'0E7490'}) +
+      dnTcell('ASIN',{w:cols[1],bold:true,color:'FFFFFF',shade:'0E7490'}) +
+      dnTcell('TITLE',{w:cols[2],bold:true,color:'FFFFFF',shade:'0E7490'}) +
+      dnTcell('QTY',{w:cols[3],bold:true,color:'FFFFFF',shade:'0E7490',center:true}) + '</w:tr>';
+    var rowsXml='';
+    items.forEach(function(it,i){
+      var sh=(i%2===1)?'EEF5F7':null;
+      rowsXml+='<w:tr>' +
+        dnTcell(it.tote,{w:cols[0],shade:sh}) +
+        dnTcell(it.asin,{w:cols[1],shade:sh}) +
+        dnTcell(it.title,{w:cols[2],shade:sh}) +
+        dnTcell(String(it.qty),{w:cols[3],center:true,shade:sh}) + '</w:tr>';
+    });
+    return '<w:tbl>'+tblPr+grid+hdr+rowsXml+'</w:tbl>';
+  }
+  function dnManifestXml(items){
+    if(!items || !items.length) return '';
+    var s=dnComputeSummary(items);
+    var heading='<w:p><w:pPr><w:spacing w:before="200" w:after="60"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="0E7490"/></w:pBdr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:pPr>' +
+      '<w:r><w:rPr><w:b/><w:color w:val="0E7490"/><w:sz w:val="26"/></w:rPr><w:t>ITEMS MANIFEST</w:t></w:r></w:p>';
+    var sub=para(s.lines+' line items     \u00b7     '+s.uniqueTotes+' tote'+(s.uniqueTotes===1?'':'s')+'     \u00b7     '+s.totalUnits+' units', {sz:20, spacing:120});
+    return emptyPara()+heading+sub+dnItemsTableXml(items)+emptyPara();
+  }
 
   window.dnClearForm = function(){
     ['dn-tid','dn-source','dn-dest','dn-date','dn-time','dn-units','dn-totes'].forEach(function(id){
       var el=$(id); if(el) el.value='';
     });
     dnRenderLive();
+    dnClearManifest();
     var pv=$('dn-preview'); if(pv) pv.style.display='none';
     if(typeof showToast==='function') showToast('Form cleared');
   };
@@ -17828,7 +18124,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       '</w:drawing></w:r></w:p>';
   }
 
-  function buildDocXml(d, img){
+  function buildDocXml(d, img, items){
     var headerTitle =
       '<w:p><w:pPr><w:jc w:val="center"/>' +
         '<w:pBdr><w:bottom w:val="dashed" w:sz="6" w:space="6" w:color="999999"/></w:pBdr>' +
@@ -17855,6 +18151,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       para(d.units, {label:'Number of Units:'}) +
       emptyPara() +
       para(d.totes, {label:'Number of Totes:'}) +
+      dnManifestXml(items) +
       '<w:sectPr>' +
         '<w:pgSz w:w="12240" w:h="15840"/>' +
         '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>' +
@@ -17932,7 +18229,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
 
       if(img){ zip.file('word/media/image1.png', img.base64, {base64:true}); }
 
-      zip.file('word/document.xml', buildDocXml(d, img));
+      zip.file('word/document.xml', buildDocXml(d, img, dnItems));
 
       var blob = await zip.generateAsync({
         type:'blob',
