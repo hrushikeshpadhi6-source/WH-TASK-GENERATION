@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VOC V2 — Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/voc-theme.css" />
+<link rel="stylesheet" href="assets/voc-components.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ════════════════ VERSION SELECTION ════════════════ -->
+<section id="versionScreen" class="vselect">
+  <div class="vtop">
+    <span class="logo-mark" style="width:28px;height:28px;font-size:14px">V</span>
+    <span>VOC Operations Hub<small style="display:block;font-size:10px;color:#9FB2C4;font-weight:500;margin-top:-2px">Dark Store Quality &amp; Voice of Customer</small></span>
+  </div>
+  <div class="vbody">
+    <div class="vinner">
+      <div class="vhead">
+        <div class="eyebrow">Select Workspace</div>
+        <h1>Choose your VOC analysis version</h1>
+        <p>Both versions are live. VOC Analysis remains fully operational; VOC&nbsp;V2 adds week-level analytics, RCA&nbsp;&amp;&nbsp;CAP tracking and executive reporting.</p>
+      </div>
+      <div class="vcards">
+
+        <article class="vcard v1">
+          <div class="accent"></div>
+          <div class="vicon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+          </div>
+          <span class="tag">Existing · Live</span>
+          <h3>VOC Analysis</h3>
+          <p class="desc">Your current production dashboard, sheets and Apps Script logic — unchanged.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Existing reports &amp; workflows</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Current sheet &amp; logic intact</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Backward compatible</li>
+          </ul>
+          <button id="openV1" class="btn open">Open VOC Analysis</button>
+        </article>
+
+        <article class="vcard v2">
+          <div class="accent"></div>
+          <div class="vicon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
+          </div>
+          <span class="tag">New Module</span>
+          <h3>VOC V2</h3>
+          <p class="desc">Reads the <b>VOC&nbsp;V2</b> sheet. Week-number analytics, dependent issue mapping, RCA&nbsp;&amp;&nbsp;CAP and exports.</p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Week-on-week KPIs &amp; trends</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Category → Description mapping</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Executive charts &amp; CSV/Excel export</li>
+          </ul>
+          <button id="openV2" class="btn primary open">Open VOC V2 &nbsp;→</button>
+        </article>
+
+      </div>
+    </div>
+  </div>
+  <div class="vfoot">Internal Operations Tool · For Site Leads, Area &amp; Operations Managers</div>
+</section>
+
+<!-- ════════════════ DASHBOARD ════════════════ -->
+<section id="dashboard" class="hidden">
+  <header class="appbar">
+    <div class="brand" id="brandHome" style="cursor:pointer">
+      <span class="logo-mark">V</span>
+      <span>VOC&nbsp;V2<small>Operations Dashboard</small></span>
+    </div>
+    <div class="seg">
+      <button onclick="document.getElementById('brandHome').click()">VOC Analysis</button>
+      <button class="on">VOC V2</button>
+    </div>
+    <div class="spacer"></div>
+    <span id="livePill" class="pill-live demo"><i></i> Loading…</span>
+    <button id="refreshData" class="btn sm ghost" style="color:#C7D2DD" title="Reload from sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>
+    </button>
+    <div class="who"><span class="avatar">OM</span><span>Ops Manager</span></div>
+  </header>
+  <div id="loaderBar" class="loader-bar hidden"></div>
+
+  <div class="wrap">
+    <!-- KPIs -->
+    <div id="kpiGrid" class="kpi-grid"></div>
+
+    <!-- Tabs -->
+    <div id="tabs" class="tabs">
+      <button class="on" data-tab="records">Records <span class="count" id="recCount">0</span></button>
+      <button data-tab="operations">Operations</button>
+      <button data-tab="top15">Top 15 Products</button>
+      <button data-tab="compare">Compare</button>
+      <button data-tab="analytics">Analytics</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters card">
+      <div class="frow">
+        <div class="field"><label>Date from</label><input type="date" id="fDateFrom" /></div>
+        <div class="field"><label>Date to</label><input type="date" id="fDateTo" /></div>
+        <div class="field"><label>Week number</label><select id="fWeek"></select></div>
+        <div class="field"><label>Station</label><select id="fStore"></select></div>
+      </div>
+      <div class="frow r2">
+        <div class="field"><label>Issue Category</label><select id="fCategory"></select></div>
+        <div class="field"><label>Issue Description</label><select id="fDescription"></select></div>
+        <div class="field"><label>Status</label><select id="fStatus"></select></div>
+        <div class="field"><label>Concession Group</label><select id="fConcession"></select></div>
+      </div>
+      <div class="frow r2" style="grid-template-columns:1fr">
+        <div class="field"><label>Search Customer Comment / Order / ASIN</label><input type="text" id="fSearch" placeholder="Search customer comments, order IDs, ASIN, picker, RCA…" /></div>
+      </div>
+      <div class="factions">
+        <div id="chips" class="chips"></div>
+        <button id="clearFilters" class="btn sm">Clear all filters</button>
+      </div>
+    </div>
+
+    <!-- Records panel -->
+    <div id="panelRecords">
+      <div class="card table-card">
+        <div class="table-tools">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="tSearch" class="field-inline" placeholder="Quick search in table…" style="border:1px solid var(--border);border-radius:6px;padding:8px 10px 8px 32px;width:100%" />
+          </div>
+          <div class="grow"></div>
+          <button id="exportCsv" class="btn sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> CSV</button>
+          <button id="exportXls" class="btn sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Excel</button>
+        </div>
+        <div class="table-scroll">
+          <table class="voc" id="vocTable"></table>
+        </div>
+        <div class="table-foot">
+          <div class="meta" id="tblMeta"></div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <label style="font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:7px">Rows
+              <select id="pageSize" style="border:1px solid var(--border);border-radius:6px;padding:5px 8px">
+                <option>10</option><option selected>25</option><option>50</option><option>100</option>
+              </select>
+            </label>
+            <div class="pager" id="pager"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operations panel (ported VOC Analysis tracking logic) -->
+    <div id="panelOps" class="hidden">
+      <div id="opsBreakdown"></div>
+      <div id="opsStores"></div>
+      <div id="opsRca"></div>
+      <div id="opsPicker"></div>
+    </div>
+
+    <!-- Top 15 products panel -->
+    <div id="panelTop15" class="hidden"></div>
+
+    <!-- Compare panel -->
+    <div id="panelCompare" class="hidden"></div>
+
+    <!-- Analytics panel -->
+    <div id="panelAnalytics" class="hidden">
+      <div class="chart-grid">
+        <div class="chart-card wide">
+          <div class="ch-head"><h3>VOC Trend by Day</h3><span class="ch-sub">Daily volume across selected range</span></div>
+          <div class="chart-wrap"><canvas id="chDay"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>VOC Trend by Week</h3><span class="ch-sub">Volume per week number</span></div>
+          <div class="chart-wrap"><canvas id="chWeek"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>Open vs Closed</h3><span class="ch-sub">Status mix (derived)</span></div>
+          <div class="chart-wrap"><canvas id="chStatus"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>VOC by Issue Category</h3><span class="ch-sub">Ops vs Non-Ops controllable</span></div>
+          <div class="chart-wrap"><canvas id="chCat"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>VOC by Issue Description</h3><span class="ch-sub">Top reasons</span></div>
+          <div class="chart-wrap tall"><canvas id="chDesc"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>VOC by Station</h3><span class="ch-sub">Volume per store code</span></div>
+          <div class="chart-wrap"><canvas id="chStation"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="ch-head"><h3>Top Recurring Issues</h3><span class="ch-sub">Description × concession group</span></div>
+          <div class="chart-wrap tall"><canvas id="chRecur"></canvas></div>
+        </div>
+        <div class="chart-card wide">
+          <div class="ch-head"><h3>Weekly Performance Trend</h3><span class="ch-sub">Closed vs open volume with close-rate %</span></div>
+          <div class="chart-wrap tall"><canvas id="chPerf"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Detail side panel -->
+<div id="scrim" class="scrim"></div>
+<aside id="detailPanel" class="panel">
+  <div class="p-head">
+    <div>
+      <div class="p-id" id="panelId">—</div>
+      <h3 id="panelTitle">VOC Record</h3>
+    </div>
+    <button class="x" id="closePanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="p-body" id="panelBody"></div>
+</aside>
+
+<div id="toast" class="toast"></div>
+
+<script src="assets/voc-icons.js"></script>
+<script src="assets/voc-data.js"></script>
+<script src="assets/voc-app.js"></script>
+<script src="assets/voc-table.js"></script>
+<script src="assets/voc-ops.js"></script>
+<script src="assets/voc-charts.js"></script>
+<script src="assets/voc-insights.js"></script>
+</body>
+</html>
