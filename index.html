@@ -2281,18 +2281,11 @@ function hideVocPrimeBar() {
     </div>
 
     <div class="task-section-head" id="sec-ops"><span class="tsh-label">Ops &amp; Support</span><span class="tsh-line"></span></div>
-    <div class="task-card" style="--card-color:#1F3864" onclick="openTask('gatepass')">
-      
-      <span class="card-icon" style="display:inline-block;animation:iconTruckRoll 2.2s ease-in-out infinite;">🚚</span>
-      <h3>Reverse Transshipment Gate Pass</h3>
-      <p>Fill the form &amp; export a print-ready Word file for the gate.</p>
-      <span class="card-arrow">→</span>
-    </div>
     <div class="task-card" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
       
-      <span class="card-icon" style="display:inline-block;animation:iconBarScan 2.4s ease-in-out infinite;">🏷️</span>
-      <h3>Reverse Transshipment Delivery Note</h3>
-      <p>Type the TS ID to auto-generate a barcode &amp; export the delivery note to Word.</p>
+      <span class="card-icon" style="display:inline-block;animation:iconBarScan 2.4s ease-in-out infinite;">🚚</span>
+      <h3>Reverse Transshipment</h3>
+      <p>Upload the tote file → auto-fill everything → export the Delivery Note &amp; Gate Pass together.</p>
       <span class="card-arrow">→</span>
     </div>
     <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
@@ -3275,7 +3268,7 @@ function hideVocPrimeBar() {
           <div class="guide-step"><span class="gs-n">4</span><span><b>Export Word (.docx)</b> or Print.</span></div>
         </div>
         <p class="guide-tip">💡 <b>Tip:</b> All required fields (marked *) must be filled before export.</p>
-        <button class="guide-open" onclick="openTask('gatepass')">Open tool →</button>
+        <button class="guide-open" onclick="openTask('deliverynote')">Open tool →</button>
       </div></div>
     </div>
 
@@ -4151,90 +4144,143 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
 #page-deliverynote table.dn-doc-items td{ padding:6px 9px; border:1px solid #cdd3e0; color:#111; vertical-align:top; }
 #page-deliverynote table.dn-doc-items tbody tr:nth-child(even){ background:#eef5f7; }
 #page-deliverynote table.dn-doc-items th:last-child, #page-deliverynote table.dn-doc-items td:last-child{ text-align:center; width:48px; }
+
+/* ── Merged tool: step badges, auto / optional pills ── */
+#page-deliverynote .rt-step{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#0e7490; color:#fff; font-size:11px; font-weight:800; font-family:'DM Mono',monospace; margin-right:8px; line-height:1; }
+#page-deliverynote .rt-auto{ margin-left:8px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#0a9b6e; background:rgba(10,155,110,0.1); border:1px solid rgba(10,155,110,0.30); border-radius:20px; padding:2px 8px; font-weight:700; vertical-align:middle; }
+#page-deliverynote .rt-optional{ margin-left:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:#94a3b8; background:#f1f2fa; border:1px solid #e0e2ee; border-radius:20px; padding:2px 8px; font-weight:700; }
+
+/* ── Gate Pass toggle card ── */
+#page-deliverynote .rt-gate{ margin-top:26px; border-top:1px dashed #d8dbeb; padding-top:24px; }
+#page-deliverynote .rt-gate-toggle{ display:flex; align-items:flex-start; gap:14px; cursor:pointer; background:linear-gradient(135deg,#fafbff,#f1f6f8); border:1px solid #e0e2ee; border-radius:14px; padding:16px 18px; transition:border-color .2s, background .2s, box-shadow .2s; }
+#page-deliverynote .rt-gate-toggle:hover{ border-color:#0e7490; }
+#page-deliverynote .rt-gate-toggle input{ position:absolute; opacity:0; width:0; height:0; }
+#page-deliverynote .rt-gate-box{ flex:none; width:26px; height:26px; border-radius:8px; border:2px solid #c5cadf; background:#fff; display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; font-weight:900; line-height:1; transition:background .15s, border-color .15s, transform .1s; margin-top:1px; }
+#page-deliverynote .rt-gate-toggle input:checked ~ .rt-gate-box{ background:#0e7490; border-color:#0e7490; }
+#page-deliverynote .rt-gate-toggle input:not(:checked) ~ .rt-gate-box{ color:transparent; }
+#page-deliverynote .rt-gate-toggle input:focus-visible ~ .rt-gate-box{ box-shadow:0 0 0 3px rgba(14,116,144,0.25); }
+#page-deliverynote .rt-gate-txt{ display:flex; flex-direction:column; gap:5px; }
+#page-deliverynote .rt-gate-txt b{ font-size:15px; color:#0f1736; display:flex; align-items:center; }
+#page-deliverynote .rt-gate-txt small{ font-size:12.5px; color:#5b6080; line-height:1.65; max-width:680px; }
+#page-deliverynote .rt-gate-fields{ margin-top:16px; }
+#page-deliverynote .rt-gate-fields[hidden]{ display:none; }
 </style>
 
 <div class="page" id="page-deliverynote">
 <div class="task-page">
   <button class="back-btn" onclick="goHome()">← Back to Dashboard</button>
   <div class="task-header">
-    <span class="task-header-icon">🏷️</span>
+    <span class="task-header-icon">🚚</span>
     <div>
-      <h2>Reverse Transshipment Delivery Note</h2>
-      <p>Type the Transshipment ID to auto-generate a scannable barcode, preview the note, and export a print-ready Word (.docx).</p>
+      <h2>Reverse Transshipment</h2>
+      <p>Upload the tote-contents file once — the TS&nbsp;ID, barcode, store codes, units and totes fill themselves. Tick <b>Gate Pass</b> and export both the Delivery Note and the Gate Pass in a single click.</p>
     </div>
   </div>
 
   <div class="dn-shell">
     <div class="dn-shell-head">
       <div>
-        <h3>REVERSE TRANSSHIPMENT DELIVERY NOTE</h3>
-        <div class="dn-shell-sub">TS ID → Barcode → Word</div>
+        <h3>REVERSE TRANSSHIPMENT</h3>
+        <div class="dn-shell-sub">Delivery Note + Gate Pass — one tool</div>
       </div>
-      <div class="dn-shell-sub" style="text-align:right;">Type → Scan → Export</div>
+      <div class="dn-shell-sub" style="text-align:right;">Upload → Auto-fill → Export</div>
     </div>
     <div class="dn-shell-body">
-      <div class="dn-grid">
+
+      <!-- STEP 1 — Upload the tote file (drives everything) -->
+      <div class="dn-attach" style="margin-top:0;padding-top:0;border-top:none;">
+        <div class="dn-attach-title"><span class="rt-step">1</span> Upload tote-contents file <span class="dn-opt">CSV / Excel · auto-fills the form</span></div>
+        <div class="dn-attach-desc">Drop a file named like <span class="dn-col">QAA7-DXB5-1780509981-1178165874.csv</span> — we read the name for the <b>full TS&nbsp;ID</b> (barcode), <b>Source</b> &amp; <b>Destination</b>, and read the rows for <b>Units</b> &amp; <b>Totes</b>. Columns: <span class="dn-col">TOTE_ID</span>, <span class="dn-col">ASIN</span>, <span class="dn-col">TITLE</span>, <span class="dn-col">QUANTITY</span>. A tote ID repeating across rows counts as <b>one tote</b>.</div>
+        <div class="dn-drop" id="dn-drop" onclick="document.getElementById('dn-file').click()">
+          <input type="file" id="dn-file" accept=".csv,.xlsx,.xls" onchange="dnFileChosen(this)">
+          <div class="dn-drop-icon">📂</div>
+          <div class="dn-drop-main">Click or drag &amp; drop your tote file</div>
+          <div class="dn-drop-fmts"><span>.CSV</span><span>.XLSX</span><span>.XLS</span></div>
+        </div>
+        <div class="dn-file-ok" id="dn-file-ok"></div>
+      </div>
+
+      <!-- STEP 2 — Auto-filled details (edit only if needed) -->
+      <div class="dn-attach-title" style="margin-top:26px;"><span class="rt-step">2</span> Shipment details <span class="dn-opt">auto-filled — edit only if needed</span></div>
+      <div class="dn-grid" style="margin-top:14px;">
         <div class="dn-field dn-span2">
           <label>Transshipment ID (TS ID)<span class="req">*</span></label>
-          <input type="text" id="dn-tid" placeholder="e.g. TS-2026-00891"
+          <input type="text" id="dn-tid" placeholder="auto-fills from the file name"
             style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()">
         </div>
 
         <div class="dn-live-barcode" id="dn-live-barcode">
-          <div class="dn-bc-hint" id="dn-bc-hint">Barcode preview — start typing the TS ID above</div>
+          <div class="dn-bc-hint" id="dn-bc-hint">Barcode preview — upload a file or type the TS ID above</div>
           <svg id="dn-barcode-svg"></svg>
           <div class="dn-bc-tid" id="dn-bc-tid"></div>
         </div>
 
         <div class="dn-field">
           <label>Source Store ID<span class="req">*</span></label>
-          <input type="text" id="dn-source" placeholder="e.g. QAA7"
+          <input type="text" id="dn-source" placeholder="auto · e.g. QAA7"
             style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()">
         </div>
         <div class="dn-field">
           <label>Destination FC<span class="req">*</span></label>
-          <input type="text" id="dn-dest" placeholder="e.g. DXB5"
+          <input type="text" id="dn-dest" placeholder="auto · e.g. DXB5"
             style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()">
         </div>
         <div class="dn-field">
-          <label>Date<span class="req">*</span></label>
+          <label>Date<span class="rt-auto">auto · today</span></label>
           <input type="date" id="dn-date">
         </div>
         <div class="dn-field">
-          <label>Time<span class="req">*</span></label>
+          <label>Time<span class="rt-auto">auto · now</span></label>
           <input type="time" id="dn-time">
         </div>
         <div class="dn-field">
           <label>Number of Units<span class="req">*</span></label>
-          <input type="number" id="dn-units" min="0" placeholder="e.g. 318">
+          <input type="number" id="dn-units" min="0" placeholder="auto from file">
         </div>
         <div class="dn-field">
           <label>Number of Totes<span class="req">*</span></label>
-          <input type="number" id="dn-totes" min="0" placeholder="e.g. 42">
+          <input type="number" id="dn-totes" min="0" placeholder="auto from file">
         </div>
       </div>
 
-      <!-- OPTIONAL: attach a tote-contents manifest (CSV / Excel) -->
-      <div class="dn-attach">
-        <div class="dn-attach-title">📋 Items Manifest <span class="dn-opt">Optional</span></div>
-        <div class="dn-attach-desc">Attach the tote-contents file and it will be embedded as a clean table inside the exported Word note. Expected columns: <span class="dn-col">TOTE_ID</span>, <span class="dn-col">ASIN</span>, <span class="dn-col">TITLE</span>, <span class="dn-col">QUANTITY</span>. A tote ID that repeats across rows counts as <b>one tote</b> &mdash; Units and Totes auto-fill from the file.</div>
-        <div class="dn-drop" id="dn-drop" onclick="document.getElementById('dn-file').click()">
-          <input type="file" id="dn-file" accept=".csv,.xlsx,.xls" onchange="dnFileChosen(this)">
-          <div class="dn-drop-icon">📎</div>
-          <div class="dn-drop-main">Click or drag &amp; drop your manifest file</div>
-          <div class="dn-drop-fmts"><span>.CSV</span><span>.XLSX</span><span>.XLS</span></div>
+      <!-- STEP 3 — Gate Pass toggle (optional, reveals optional fields) -->
+      <div class="rt-gate">
+        <label class="rt-gate-toggle">
+          <input type="checkbox" id="rt-gp-on" onchange="rtToggleGate()">
+          <span class="rt-gate-box" aria-hidden="true">✓</span>
+          <span class="rt-gate-txt">
+            <b><span class="rt-step">3</span> Also generate the Gate Pass</b>
+            <small>Tick this and one export gives you <b>both</b> the Delivery Note and a print-ready Gate Pass. The fields below are optional — leave them blank if you don't have them yet.</small>
+          </span>
+        </label>
+        <div class="rt-gate-fields" id="rt-gp-fields" hidden>
+          <div class="dn-grid">
+            <div class="dn-field">
+              <label>Vehicle No. <span class="rt-optional">optional</span></label>
+              <input type="text" id="rt-vehicle" placeholder="e.g. TS09 AB 1234"
+                style="font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div class="dn-field">
+              <label>Driver Name &amp; Contact <span class="rt-optional">optional</span></label>
+              <input type="text" id="rt-driver" placeholder="e.g. Hrushikesh Padhi / +971 558896493">
+            </div>
+            <div class="dn-field">
+              <label>Time of Departure <span class="rt-optional">optional</span></label>
+              <input type="time" id="rt-depart">
+            </div>
+          </div>
         </div>
-        <div class="dn-file-ok" id="dn-file-ok"></div>
       </div>
 
       <div class="dn-actions">
         <button class="dn-btn dn-btn-ghost" onclick="dnClearForm()">↻ Reset</button>
         <button class="dn-btn dn-btn-ghost" onclick="dnUpdatePreview(true)">👁 Preview</button>
         <button class="dn-btn dn-btn-ghost" onclick="window.print()">🖨 Print</button>
-        <button class="dn-btn dn-btn-primary" onclick="dnExportWord()">⬇ Export Word (.docx)</button>
+        <button class="dn-btn dn-btn-primary" onclick="rtExport()" id="rt-export-btn">⬇ Export Word (.docx)</button>
       </div>
     </div>
   </div>
@@ -17642,6 +17688,54 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       '</w:document>';
   }
 
+  // ── Shared: build the gate-pass .docx as a Blob (no download) ─
+  function gpEnsureJSZip(){
+    if(window.JSZip) return Promise.resolve();
+    return new Promise(function(res, rej){
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload=res; s.onerror=rej; document.head.appendChild(s);
+    });
+  }
+  async function gpBuildDocxBlob(d){
+    await gpEnsureJSZip();
+    var zip = new JSZip();
+    zip.file('[Content_Types].xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>');
+    zip.file('_rels/.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>');
+    zip.file('word/_rels/document.xml.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>');
+    zip.file('word/document.xml', buildDocXml(d));
+    return zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+  }
+
+  // Called by the merged Reverse Transshipment tool. `d` is already formatted
+  // (date/time strings). Builds + downloads the Gate Pass .docx.
+  window.gpExportFromData = async function(d){
+    var blob = await gpBuildDocxBlob(d);
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var safe = (d.tid || 'GatePass').replace(/[^A-Z0-9\-_]/gi,'_');
+    a.href = url;
+    a.download = 'Reverse_Transshipment_Gate_Pass_' + safe + '.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    return true;
+  };
+
   // ── Export to .docx ──────────────────────────────────────────
   window.gpExportWord = async function(){
     var d = gather();
@@ -18074,11 +18168,18 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
   }
 
   window.dnClearForm = function(){
-    ['dn-tid','dn-source','dn-dest','dn-date','dn-time','dn-units','dn-totes'].forEach(function(id){
+    ['dn-tid','dn-source','dn-dest','dn-date','dn-time','dn-units','dn-totes',
+     'rt-vehicle','rt-driver','rt-depart'].forEach(function(id){
       var el=$(id); if(el) el.value='';
     });
+    var gp=$('rt-gp-on'); if(gp){ gp.checked=false; }
+    if(typeof window.rtToggleGate==='function') window.rtToggleGate();
     dnRenderLive();
     dnClearManifest();
+    // restore the auto defaults (today + now)
+    var de=$('dn-date');
+    if(de){ var n=new Date(); de.value=n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2); }
+    if(typeof window.rtEnsureTime==='function') window.rtEnsureTime();
     var pv=$('dn-preview'); if(pv) pv.style.display='none';
     if(typeof showToast==='function') showToast('Form cleared');
   };
@@ -18190,9 +18291,88 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       '</w:document>';
   }
 
-  // ── Export to .docx ──────────────────────────────────────────
-  window.dnExportWord = async function(){
+  // ── Build the delivery-note .docx as a Blob (no download) ────
+  function dnLoadJSZip(){
+    if(window.JSZip) return Promise.resolve();
+    return new Promise(function(res,rej){
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload=res; s.onerror=rej; document.head.appendChild(s);
+    });
+  }
+  async function dnBuildDocxBlob(d, items){
+    await ensureBarcode();
+    await dnLoadJSZip();
+
+    var img = null;
+    try { img = makeBarcodePng(d.tid); } catch(e){ img = null; }
+
+    var zip = new JSZip();
+
+    zip.file('[Content_Types].xml',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Default Extension="png" ContentType="image/png"/>' +
+        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>');
+
+    zip.file('_rels/.rels',
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>');
+
+    var docRels =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        (img ? '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>' : '') +
+      '</Relationships>';
+    zip.file('word/_rels/document.xml.rels', docRels);
+
+    if(img){ zip.file('word/media/image1.png', img.base64, {base64:true}); }
+
+    zip.file('word/document.xml', buildDocXml(d, img, items));
+
+    return zip.generateAsync({
+      type:'blob',
+      mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+  }
+
+  function dnDownloadBlob(blob, filename){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Defer revoke — revoking immediately cancels the download when a second
+    // download (the Gate Pass) follows right behind it.
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  }
+
+  // ── TIME auto-fill: stamp the current time whenever it's empty ─
+  window.rtEnsureTime = function(){
+    var te = $('dn-time');
+    if(te && !te.value){
+      var n = new Date();
+      te.value = ('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2);
+    }
+  };
+
+  // ── Gate Pass toggle: reveal / hide the optional fields ──────
+  window.rtToggleGate = function(){
+    var on = $('rt-gp-on') && $('rt-gp-on').checked;
+    var f = $('rt-gp-fields'); if(f){ f.hidden = !on; }
+    var btn = $('rt-export-btn');
+    if(btn) btn.innerHTML = on ? '⬇ Export both (.docx)' : '⬇ Export Word (.docx)';
+  };
+
+  // ── Combined export: Delivery Note (always) + Gate Pass (if ticked) ─
+  window.rtExport = async function(){
+    rtEnsureTime();
     var d = gather();
+
     var required = [
       ['dn-tid',    d.tid,    'Transshipment ID'],
       ['dn-source', d.source, 'Source Store ID'],
@@ -18210,62 +18390,35 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       return;
     }
 
-    if(typeof showToast==='function') showToast('⏳ Generating Word file…');
+    var gpOn = $('rt-gp-on') && $('rt-gp-on').checked;
+
+    if(typeof showToast==='function') showToast(gpOn ? '⏳ Generating both Word files…' : '⏳ Generating Word file…');
 
     try {
-      await ensureBarcode();
-      if(!window.JSZip){
-        await new Promise(function(res,rej){
-          var s=document.createElement('script');
-          s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-          s.onload=res; s.onerror=rej; document.head.appendChild(s);
-        });
+      // 1) Delivery Note
+      var dnBlob = await dnBuildDocxBlob(d, dnItems);
+      var safe = (d.tid || 'DeliveryNote').replace(/[^A-Z0-9\-_]/gi,'_');
+      dnDownloadBlob(dnBlob, 'Reverse_Transshipment_Delivery_Note_' + safe + '.docx');
+
+      // 2) Gate Pass (optional) — small gap so the 2nd download isn't blocked
+      if(gpOn && typeof window.gpExportFromData==='function'){
+        var gpData = {
+          date    : d.date,
+          time    : d.time,
+          from    : d.source,
+          to      : d.dest,
+          tid     : d.tid,
+          depart  : fmtTime(val('rt-depart')),
+          totes   : d.totes,
+          units   : d.units,
+          vehicle : val('rt-vehicle'),
+          driver  : val('rt-driver')
+        };
+        await new Promise(function(r){ setTimeout(r, 800); });
+        await window.gpExportFromData(gpData);
       }
 
-      var img = null;
-      try { img = makeBarcodePng(d.tid); } catch(e){ img = null; }
-
-      var zip = new JSZip();
-
-      zip.file('[Content_Types].xml',
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-          '<Default Extension="xml" ContentType="application/xml"/>' +
-          '<Default Extension="png" ContentType="image/png"/>' +
-          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
-        '</Types>');
-
-      zip.file('_rels/.rels',
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
-        '</Relationships>');
-
-      var docRels =
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-          (img ? '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>' : '') +
-        '</Relationships>';
-      zip.file('word/_rels/document.xml.rels', docRels);
-
-      if(img){ zip.file('word/media/image1.png', img.base64, {base64:true}); }
-
-      zip.file('word/document.xml', buildDocXml(d, img, dnItems));
-
-      var blob = await zip.generateAsync({
-        type:'blob',
-        mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      var safe = (d.tid || 'DeliveryNote').replace(/[^A-Z0-9\-_]/gi,'_');
-      a.href = url;
-      a.download = 'Reverse_Transshipment_Delivery_Note_' + safe + '.docx';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      if(typeof showToast==='function') showToast('✅ Word (.docx) ready!');
+      if(typeof showToast==='function') showToast(gpOn ? '✅ Delivery Note + Gate Pass ready!' : '✅ Word (.docx) ready!');
       dnUpdatePreview(false);
     } catch(err){
       console.error(err);
@@ -18273,13 +18426,17 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     }
   };
 
-  // ── Defaults: today's date pre-filled ────────────────────────
+  // Kept for backwards compatibility / the Preview button flow.
+  window.dnExportWord = function(){ return window.rtExport(); };
+
+  // ── Defaults: today's date + current time pre-filled ─────────
   function dnSetDefaultsOnce(){
     var de=$('dn-date');
     if(de && !de.value){
       var n=new Date();
       de.value=n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);
     }
+    if(typeof window.rtEnsureTime==='function') window.rtEnsureTime();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', dnSetDefaultsOnce);
   else dnSetDefaultsOnce();
