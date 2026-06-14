@@ -1136,7 +1136,15 @@ function smBuildPeriodDrop(){
   var pv=document.getElementById('sm-pval');
   var opts=['<option value="all">— All —</option>'];
   if(smPeriod==='day'){ [...new Set(smData.map(gDate).filter(Boolean))].sort().reverse().forEach(function(d){opts.push('<option value="'+d+'">'+d+'</option>');});}
-  else if(smPeriod==='week'){ [...new Set(smData.map(gWeek).filter(Boolean))].sort().reverse().forEach(function(w){opts.push('<option value="'+w+'">'+w+'</option>');});}
+  else if(smPeriod==='week'){
+    // De-dupe by week NUMBER so "24" and "Week 24" collapse into one option.
+    var seenW={};
+    [...new Set(smData.map(gWeek).filter(Boolean))].sort().reverse().forEach(function(w){
+      var key=String(w).replace(/\D/g,'')||String(w);
+      if(seenW[key]) return; seenW[key]=true;
+      opts.push('<option value="'+w+'">'+w+'</option>');
+    });
+  }
   else if(smPeriod==='month'){
     var mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
     var fmtMonth=function(m){
@@ -1192,7 +1200,7 @@ function smFilter(){
       if(rFrom&&rTo){var d=gDate(r);pok=d>=rFrom&&d<=rTo;}
     }else if(pv!=='all'){
       if(smPeriod==='day')   pok=gDate(r)===pv;
-      if(smPeriod==='week')  pok=gWeek(r)===pv;
+      if(smPeriod==='week'){ var rw=String(gWeek(r)).replace(/\D/g,''), fw=String(pv).replace(/\D/g,''); pok=!!rw&&!!fw&&rw===fw; }
       if(smPeriod==='month') pok=gMonth(r)===pv;
       if(smPeriod==='year')  pok=gDate(r).startsWith(pv);
     }
@@ -2808,17 +2816,9 @@ function copySummary(){
   // order+ASIN, exactly like the leaderboard.
   function copyVoc(s){
     if(!smVocRaw||!smVocRaw.length) return null; // VOC not fetched yet
-    var seen={}, cnt=0, pv=period;
-    smVocRaw.forEach(function(v){
-      if(v.store!==s) return;
-      if(smPeriod==='day'   && (!pv || v.date!==pv)) return;
-      if(smPeriod==='month' && (!pv || (v.date||'').substring(0,7)!==String(pv).substring(0,7))) return;
-      if(smPeriod==='year'  && (!pv || (v.date||'').substring(0,4)!==String(pv).substring(0,4))) return;
-      // 'all'/'week' → count everything for the store
-      var k=v.orderId+'|'+v.asin;
-      if(!seen[k]){ seen[k]=true; cnt++; }
-    });
-    return cnt;
+    // Use the same period-aware, V2-aware filter the leaderboard uses so the
+    // VOC count always matches the active day/week/month/year/range selection.
+    return smVocFilteredRows(s).length;
   }
 
   var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0};
