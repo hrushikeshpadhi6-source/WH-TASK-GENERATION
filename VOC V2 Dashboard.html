@@ -435,6 +435,25 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .osc-line { display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 0; color: var(--ink-2); gap: 10px; }
 .osc-line span:first-child { white-space: nowrap; }
 .osc-line .strong { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.osc-v { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.osc-delta { font-family: var(--mono); font-size: 10.5px; font-weight: 700; }
+.osc-delta.good { color: var(--success); }
+.osc-delta.bad  { color: var(--danger); }
+.osc-delta.flat { color: var(--ink-faint); }
+.ops-scorecard.has-pnf { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning) inset; background: #FFFCF6; }
+.osc-pnf { position: relative; cursor: help; margin-top: 2px; padding-top: 7px; border-top: 1px dashed var(--border); }
+.osc-pnf > span:first-child { color: var(--warning); font-weight: 600; }
+.osc-pnf-pop { position: absolute; bottom: calc(100% + 8px); right: 0; width: 280px; max-height: 240px; overflow: auto;
+  background: #14181F; border: 1px solid #2A323D; border-radius: 10px; padding: 10px 11px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4); opacity: 0; pointer-events: none; transform: translateY(6px);
+  transition: opacity .15s ease, transform .15s ease; z-index: 70; }
+.osc-pnf:hover .osc-pnf-pop { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.osc-pnf-pop .opp-h { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #F2B255; margin-bottom: 8px; font-weight: 700; }
+.osc-pnf-pop .opp-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: 1px solid #232A33; }
+.osc-pnf-pop .opp-row .mono { color: #fff; font-size: 11px; }
+.osc-pnf-pop .opp-dim { color: #8A96A3; font-size: 10.5px; text-align: right; }
+.osc-pnf-pop .opp-more { color: #7E8B98; font-size: 10.5px; padding-top: 6px; }
+.ops-pnf-flag { color: var(--warning); font-weight: 600; }
 
 /* breakdown columns */
 .ops-break-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
@@ -552,10 +571,15 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .ins-pill b { font-family: var(--mono); color: var(--ink); }
 
 .t15-list { padding: 6px 18px 16px; display: flex; flex-direction: column; }
-.t15-row { display: grid; grid-template-columns: 34px 1fr 96px; align-items: center; gap: 14px; padding: 11px 4px; border-bottom: 1px solid var(--border-soft); }
+.t15-item { border-bottom: 1px solid var(--border-soft); }
+.t15-item:last-child { border-bottom: 0; }
+.t15-row { display: grid; grid-template-columns: 34px 1fr 96px 22px; align-items: center; gap: 14px; padding: 11px 4px; cursor: pointer; border-radius: 8px; transition: background .12s ease; }
+.t15-row:hover { background: var(--primary-50); }
 .t15-row:last-child { border-bottom: 0; }
+.t15-exp { font-size: 11px; color: var(--ink-faint); text-align: center; transition: transform .2s ease; }
+.t15-item.open .t15-exp { transform: rotate(180deg); color: var(--primary); }
 .t15-rank { font-family: var(--mono); font-weight: 700; font-size: 14px; color: var(--ink-faint); text-align: center; }
-.t15-row:nth-child(-n+3) .t15-rank { color: var(--primary); }
+.t15-item:nth-child(-n+3) .t15-rank { color: var(--primary); }
 .t15-main { min-width: 0; }
 .t15-title { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .t15-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin: 2px 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -565,6 +589,39 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .t15-num { text-align: right; }
 .t15-num b { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--ink); display: block; line-height: 1.1; }
 .t15-num span { font-size: 11px; color: var(--ink-3); }
+
+/* Top 15 — click-to-expand detail drawer */
+.t15-drawer { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+.t15-drawer.open { max-height: 1400px; overflow: auto; }
+.t15-d-inner { padding: 4px 6px 18px; }
+.t15-d-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.t15-d-chip { font-size: 11.5px; color: var(--ink-2); background: #F1F4F7; border-radius: 8px; padding: 6px 11px; }
+.t15-d-chip b { font-family: var(--mono); color: var(--ink); font-weight: 700; margin-left: 3px; }
+.t15-d-chip.warn { background: var(--warning-bg); color: var(--warning); }
+.t15-d-chip.warn b { color: var(--warning); }
+.t15-cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 880px) { .t15-cols { grid-template-columns: 1fr; } }
+.t15-d-h { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-3); margin: 0 0 9px; }
+.t15-voc-list { display: flex; flex-direction: column; gap: 9px; max-height: 360px; overflow: auto; padding-right: 4px; }
+.t15-voc { border: 1px solid var(--border-soft); border-left: 3px solid var(--primary); border-radius: 8px; padding: 9px 11px; background: #fff; }
+.t15-voc.pending { border-left-color: var(--warning); }
+.t15-voc-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 5px; }
+.t15-voc-st { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--primary-700); }
+.t15-voc-meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+.t15-voc-q { font-size: 12px; color: var(--ink-2); font-style: italic; background: var(--primary-50); border-radius: 6px; padding: 6px 9px; margin: 4px 0; }
+.t15-voc-rca { font-size: 12px; color: var(--ink); }
+.t15-voc-rca b { font-weight: 600; }
+.t15-voc-rca .pend { color: var(--warning); font-weight: 600; }
+.t15-voc-pnf { font-size: 11px; color: var(--warning); font-weight: 600; margin-top: 4px; }
+/* SOP guidance block */
+.t15-sop { border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; background: #FAFBFC; }
+.t15-sop-bucket { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--primary-700);
+  background: var(--primary-50); border-radius: 999px; padding: 4px 11px; margin-bottom: 10px; }
+.t15-sop ol { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 7px; }
+.t15-sop li { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+.t15-sop-cap { font-size: 11.5px; color: var(--ink-3); margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+.t15-sop-cap b { color: var(--ink); font-weight: 600; }
+.t15-sop-foot { font-size: 10.5px; color: var(--ink-faint); margin-top: 8px; }
 
 /* ───────────── Compare ───────────── */
 .cmp-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
@@ -1075,55 +1132,26 @@ function classify(r) {
   };
 }
 
-/* ── RCA-QUALITY MISMATCH CLASSIFIER (ported verbatim from VOC Analysis) ──
-   Detects when a severe customer complaint is met with a generic / deflecting
-   / vendor-blaming RCA, OR when the RCA is still waiting on CCTV.
-   Returns { unsatisfied, severity, notFilled, needsRefill, cctvPending, reason }.
+/* ── RCA STATUS HELPER ──
+   Lightweight, objective RCA inspector. Reports only factual states:
+     • notFilled   — the RCA & CAP field is blank / placeholder (pending)
+     • cctvPending — the RCA text says CCTV is still to be reviewed
+   The old subjective "unsatisfied RCA" classifier has been removed.
    Called as rcaMismatch(comment, rcaCap, issueCategory, issueDesc).            */
 function rcaMismatch(comment, rcaReply, rcaCategory, issue) {
-  var out = { unsatisfied:false, severity:'none', commentTags:[], replyTags:[],
-              reason:'', notFilled:false, needsRefill:false, cctvPending:false };
-  var c = String(comment||'').toLowerCase().trim();
+  var out = { notFilled:false, cctvPending:false, needsRefill:false };
   var rRaw = String(rcaReply||'').trim();
   var r = rRaw.toLowerCase();
 
-  // 0) Empty RCA = "Not Filled" — pending, not "bad"
+  // Empty RCA = "Not Filled" — pending
   if (!rRaw || rRaw.length < 2 || ['-','na','n/a','nil','none'].indexOf(r) !== -1) { out.notFilled = true; return out; }
 
-  // 0.5) CCTV still pending → RCA incomplete, needs to be filled again
+  // CCTV still pending → RCA incomplete, needs to be filled again
   var ci = r.indexOf('cctv'); if (ci < 0) ci = r.indexOf('camera'); if (ci < 0) ci = r.indexOf('footage');
   if (ci >= 0) {
     var ctx = r.slice(Math.max(0, ci - 45), ci + 55);
     var pend = /(to be (checked|verified|reviewed|seen|done))|(yet to (check|verify|review|see))|(not yet (checked|verified|reviewed|seen|done))|(not (checked|verified|reviewed|seen)( yet)?)|((need|needs|have|has|will|going|want)[a-z ]{0,14}(to )?(check|verify|review|watch|recheck))|((check|footage|cctv|review|camera|verif[a-z]*)[a-z ]{0,6}pending)|(pending[a-z ]{0,6}(check|review|cctv|footage|camera))|awaited|awaiting|waiting (for|on)|dekhna|dekhni|baki hai/;
-    if (pend.test(ctx)) {
-      out.unsatisfied = true; out.needsRefill = true; out.cctvPending = true; out.severity = 'med';
-      out.reason = 'RCA still waiting on CCTV — not yet checked, needs to be reviewed & filled again';
-      return out;
-    }
-  }
-
-  // 1) Complaint severity
-  var severe = ['mold','mould','fungus','rotten','spoil','spoiled','expired','expiry','stale','smell','foul','gone bad','dirty','insect','worm','fly','larva','cockroach','hair','contamin','damaged','broken','crushed','leaking','torn','seal broken','tampered','wrong item','wrong product','missing','not delivered','short delivery','less quantity','duplicate','double charged','open pack','seal open'];
-  var med = ['not fresh','bad quality','poor quality','low quality','very bad','old stock','near expiry','unripe','overripe','soft','small size','undersized','discolor','wet','soggy','melted','warm','cold','wrong price','overcharged'];
-  severe.forEach(function(w){ if (c.indexOf(w) !== -1) out.commentTags.push(w); });
-  med.forEach(function(w){ if (c.indexOf(w) !== -1) out.commentTags.push(w); });
-  if (out.commentTags.length) out.severity = out.commentTags.some(function(w){ return severe.indexOf(w) !== -1; }) ? 'high' : 'med';
-
-  // 2) Reply quality
-  var deflect = ['vendor to check','vendor check','asked vendor','vendor side','vendor will','will check','will look','will see','will verify','will confirm','will revert','feedback shared','feedback given','shared with','forwarded only','escalated only','pending','under review','to be checked','need to check','yet to check','no action','not applicable','qc to check','will train'];
-  var strong = ['replaced','refund','compensation','credit issued','reshipped','reverse pick','blocked','removed from inventory','isolated','quarantined','disposed','destroyed','rejected','re-trained','rca closed','resolved','corrective action','capa','vendor debit','vendor return','batch isolated','stock pulled','verified with','confirmed with','cctv','stock removed','training given','counselling done','counseled','warning given','penalty'];
-  var explain = ['while stowing','while picking','while packing','while qc','during picking','during packing','wrong expiry','wrong barcode','wrong asin','wrong location','wrong slot','wrong scan','wrong pick','mistake by','error by','negligence','did not check','did not verify','missed','skipped','overlooked','not scanned','not verified','because','due to','root cause','rca:','picker mistake','stowed wrong','picked wrong','packed wrong','expired stock','near expiry','damaged in','spillage','leaked from'];
-  deflect.forEach(function(w){ if (r.indexOf(w) !== -1) out.replyTags.push(w); });
-  var strongHit = strong.some(function(w){ return r.indexOf(w) !== -1; });
-  var explainHit = explain.some(function(w){ return r.indexOf(w) !== -1; });
-  var validRca = strongHit || explainHit, deflects = out.replyTags.length > 0;
-
-  if (out.severity === 'none') return out;
-  if (out.severity === 'high') {
-    if (deflects && !validRca) { out.unsatisfied = true; out.reason = 'Severe complaint ("' + out.commentTags.slice(0,2).join(', ') + '") → RCA deflects without action ("' + out.replyTags[0] + '")'; }
-    else if (!validRca && r.length < 15) { out.unsatisfied = true; out.reason = 'Severe complaint but RCA is too short / generic'; }
-  } else if (out.severity === 'med' && deflects && !validRca) {
-    out.unsatisfied = true; out.reason = 'Quality complaint with weak RCA ("' + out.replyTags[0] + '")';
+    if (pend.test(ctx)) { out.cctvPending = true; out.needsRefill = true; }
   }
   return out;
 }
@@ -1973,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pPend = period.filter(D.rcaPending).length;
     const pDone = period.length - pPend;
     const pCctv = period.filter(r => D.rcaMismatch(r.comment, r.rcaCap, r.issueCategory, r.issueDesc).cctvPending).length;
-    const pUnsat = period.filter(r => D.rcaMismatch(r.comment, r.rcaCap, r.issueCategory, r.issueDesc).unsatisfied).length;
+    const pPnf  = period.filter(r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim())).length;
 
     const banner = `
       <div class="ops-banner">
@@ -1981,7 +2009,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="ob-chip ${pPend ? 'danger' : 'success'}"><b>${num(pPend)}</b> RCA &amp; CAP Pending</span>
         <span class="ob-chip success"><b>${num(pDone)}</b> RCA &amp; CAP Done</span>
         ${pCctv ? `<span class="ob-chip purple"><b>${num(pCctv)}</b> CCTV Pending</span>` : ''}
-        ${pUnsat ? `<span class="ob-chip warn"><b>${num(pUnsat)}</b> Unsatisfied RCA</span>` : ''}
+        ${pPnf ? `<span class="ob-chip warn"><b>${num(pPnf)}</b> RCA done · Picker ID missing</span>` : ''}
       </div>`;
 
     const rows = stores(all).map((s, si) => {
@@ -2029,14 +2057,12 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ───────── 2 · PICKER MISTAKE CONTRIBUTION ───────── */
   function renderPicker() {
     const pickerRows = S.view.filter(r => cls(r).isPicker);
-    const map = {}, smap = {}, det = {}, unsat = {};
+    const map = {}, smap = {}, det = {};
     pickerRows.forEach(r => {
       const pid = r.pickerId && r.pickerId.trim() ? r.pickerId.trim() : '(Picker Not Filled)';
       map[pid] = (map[pid] || 0) + 1;
-      smap[pid] = r.storeCode;
+      (smap[pid] = smap[pid] || new Set()).add(r.storeCode);
       (det[pid] = det[pid] || []).push(r);
-      const mm = D.rcaMismatch(r.comment, r.rcaCap, r.issueCategory, r.issueDesc);
-      if (mm.unsatisfied) unsat[pid] = (unsat[pid] || 0) + 1;
     });
     const totalMist = pickerRows.length || 1;
     const sorted = Object.keys(map).sort((a, b) => map[b] - map[a]).slice(0, 15);
@@ -2044,24 +2070,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = sorted.length ? sorted.map((p, i) => {
       const m = map[p], share = (m / totalMist * 100).toFixed(1);
       const notFilled = p === '(Picker Not Filled)';
+      const stationSet = [...(smap[p] || [])].filter(Boolean);
+      const stationTxt = notFilled ? (stationSet.length + ' station' + (stationSet.length === 1 ? '' : 's')) : (stationSet[0] || '—');
       const risk = m >= 8 ? ['danger', 'High'] : m >= 4 ? ['warn', 'Medium'] : ['success', 'Low'];
       const drawer = `
         <tr class="ops-pk-drawer hidden" data-pkdrawer="pk-${i}"><td colspan="6"><div class="ops-pk-details">
           ${det[p].sort((a, b) => new Date(b.date1) - new Date(a.date1)).map((d, di) => {
-            const mm = D.rcaMismatch(d.comment, d.rcaCap, d.issueCategory, d.issueDesc);
-            return `<div class="ops-pk-item ${mm.unsatisfied ? 'flagged' : ''}">
-              <div class="opi-head"><span class="strong">${di + 1}. ${esc(d.productTitle || '—')}</span><span class="ops-dim mono">${esc(d.orderId)} · ${fmtDate(d.date1)}</span></div>
+            const flag = notFilled && !D.rcaPending(d);   // RCA filled but Picker ID blank
+            return `<div class="ops-pk-item ${flag ? 'flagged' : ''}">
+              <div class="opi-head"><span class="strong">${di + 1}. ${esc(d.productTitle || '—')}</span><span class="ops-dim mono">${esc(d.storeCode || '—')} · ${esc(d.orderId)} · ${fmtDate(d.date1)}</span></div>
               ${d.comment ? `<div class="opi-quote">💬 "${esc(d.comment)}"</div>` : ''}
-              <div class="opi-rca ${mm.unsatisfied ? 'bad' : 'good'}"><b>RCA &amp; CAP${mm.unsatisfied ? ' · FLAGGED' : ''}:</b> ${esc(d.rcaCap || '(empty — pending)')}</div>
-              ${mm.unsatisfied ? `<div class="opi-flag">⚠ Unsatisfied RCA — ${esc(mm.reason)}</div>` : ''}
+              <div class="opi-rca good"><b>RCA &amp; CAP:</b> ${esc(d.rcaCap || '(empty — pending)')}</div>
+              ${flag ? `<div class="opi-flag">⚠ RCA filled but Picker ID missing at ${esc(d.storeCode || 'this station')} — back-fill the picker</div>` : ''}
             </div>`;
           }).join('')}
         </div></td></tr>`;
       return `
         <tr class="ops-pk-row ${notFilled ? 'notfilled' : ''}" data-pktoggle="pk-${i}">
           <td class="ops-rank">#${i + 1}</td>
-          <td class="strong">${esc(p)} ${unsat[p] ? `<span class="badge escal" style="font-size:10px"><i></i>${unsat[p]} unsat</span>` : ''} <span class="ops-caret">▾</span></td>
-          <td class="mono">${esc(smap[p] || '—')}</td>
+          <td class="strong">${esc(p)} ${notFilled ? `<span class="badge pending" style="font-size:10px"><i></i>back-fill</span>` : ''} <span class="ops-caret">▾</span></td>
+          <td class="mono">${esc(stationTxt)}</td>
           <td class="ops-num danger">${m}</td>
           <td class="mono">${share}%</td>
           <td><span class="badge ${risk[0] === 'warn' ? 'pending' : risk[0] === 'danger' ? 'escal' : 'closed'}"><i></i>${risk[1]}</span></td>
@@ -2085,30 +2113,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ───────── 3 · STORE-WISE SCORECARD ───────── */
   function renderStores() {
-    const period = S.view;
+    const period = activeView();
+
+    // Previous comparable period = a same-length date window immediately before the current one.
+    const DAY = 86400000;
+    const times = period.map(r => +new Date(r.date1)).filter(t => !isNaN(t));
+    let prevRows = null, prevLabel = '';
+    if (times.length) {
+      const minT = Math.min(...times), maxT = Math.max(...times);
+      const span = Math.max(maxT - minT, DAY);
+      const prevEnd = minT - DAY, prevStart = prevEnd - span;
+      const pr = S.all.filter(r => { if (r._dup) return false; const t = +new Date(r.date1); return !isNaN(t) && t >= prevStart && t <= prevEnd; });
+      if (pr.length) { prevRows = pr; prevLabel = fmtDate(new Date(prevStart)) + ' – ' + fmtDate(new Date(prevEnd)); }
+    }
+
+    const pnfOf = r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim());
+    const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : (s || '—'); };
+    const delta = (cur, prev, goodUp) => {
+      if (prevRows == null) return '';
+      const diff = cur - prev;
+      if (diff === 0) return `<span class="osc-delta flat">–</span>`;
+      const up = diff > 0, good = (up === !!goodUp);
+      return `<span class="osc-delta ${good ? 'good' : 'bad'}">${up ? '▲' : '▼'}${Math.abs(diff)}</span>`;
+    };
+
+    let totalPnf = 0;
     const cards = stores(period).map(s => {
       const sr = period.filter(r => r.storeCode === s);
-      const utr = sr.filter(r => cls(r).isUTR).length;
-      const otr = sr.filter(r => cls(r).isOTR).length;
-      const pm = sr.filter(r => cls(r).isPicker).length;
-      const qc = sr.filter(r => cls(r).isQC).length;
-      const pend = sr.filter(D.rcaPending).length;
-      const nonops = sr.filter(r => cls(r).isNonOps).length;
-      const line = (k, v, danger) => `<div class="osc-line"><span>${k}</span><span class="${danger ? 'danger' : ''} strong">${v}</span></div>`;
+      const pr = prevRows ? prevRows.filter(r => r.storeCode === s) : [];
+      const cnt = (rows, fn) => rows.filter(fn).length;
+      const utr = cnt(sr, r => cls(r).isUTR),    putr = cnt(pr, r => cls(r).isUTR);
+      const otr = cnt(sr, r => cls(r).isOTR),    potr = cnt(pr, r => cls(r).isOTR);
+      const pm  = cnt(sr, r => cls(r).isPicker), ppm  = cnt(pr, r => cls(r).isPicker);
+      const qc  = cnt(sr, r => cls(r).isQC),     pqc  = cnt(pr, r => cls(r).isQC);
+      const nonops = cnt(sr, r => cls(r).isNonOps), pnon = cnt(pr, r => cls(r).isNonOps);
+      const pend = cnt(sr, D.rcaPending);
+      const pnfRows = sr.filter(pnfOf);
+      const pnf = pnfRows.length;
+      totalPnf += pnf;
+
+      const line = (k, v, danger, d) => `<div class="osc-line"><span>${k}</span><span class="osc-v"><span class="${danger ? 'danger' : ''} strong">${v}</span>${d || ''}</span></div>`;
+
+      const pnfPop = pnf ? `<div class="osc-pnf-pop">
+          <div class="opp-h">RCA filled · Picker ID missing — back-fill needed</div>
+          ${pnfRows.sort((a, b) => new Date(b.date1) - new Date(a.date1)).slice(0, 12).map(r =>
+            `<div class="opp-row"><span class="mono">${esc(r.orderId || '—')}</span><span class="opp-dim">${esc(clip(r.productTitle, 22))} · ${fmtDate(r.date1)}</span></div>`).join('')}
+          ${pnf > 12 ? `<div class="opp-more">+${pnf - 12} more…</div>` : ''}
+        </div>` : '';
+
       return `
-        <div class="ops-scorecard">
-          <div class="osc-top"><div class="osc-name">${esc(s)}</div><div class="osc-total mono">${sr.length}<span>VOC</span></div></div>
-          ${line('UTR (Ops)', utr)}
-          ${line('OTR (Ops)', otr)}
-          ${line('Picker Err', pm + (pm > 5 ? ' ⚠' : ''), pm > 5)}
-          ${line('QC Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3)}
-          ${line('Non-Ops', nonops)}
+        <div class="ops-scorecard ${pnf ? 'has-pnf' : ''}">
+          <div class="osc-top">
+            <div class="osc-name">${esc(s)}</div>
+            <div class="osc-total mono">${sr.length}<span>VOC${prevRows ? ` · prev ${pr.length}` : ''}</span></div>
+          </div>
+          ${line('UTR (Ops)', utr, false, delta(utr, putr))}
+          ${line('OTR (Ops)', otr, false, delta(otr, potr))}
+          ${line('Picker Err', pm + (pm > 5 ? ' ⚠' : ''), pm > 5, delta(pm, ppm))}
+          ${line('QC Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3, delta(qc, pqc))}
+          ${line('Non-Ops', nonops, false, delta(nonops, pnon))}
           ${line('RCA Pending', pend + (pend > 0 ? ' ⏳' : ''), pend > 0)}
+          ${pnf ? `<div class="osc-line osc-pnf"><span>Picker Not Filled</span><span class="osc-v"><span class="warn strong">${pnf} ⚠</span></span>${pnfPop}</div>` : ''}
         </div>`;
     }).join('');
+
+    const sub = (prevRows
+        ? `Current vs previous period (${esc(prevLabel)}) — Δ shown per metric`
+        : 'Per-station breakdown for the current filter')
+      + (totalPnf ? ` · <span class="ops-pnf-flag">⚠ ${totalPnf} record${totalPnf === 1 ? '' : 's'} have an RCA but no Picker ID — hover a flagged card</span>` : '');
+
     document.getElementById('opsStores').innerHTML = `
       <div class="card ops-card">
-        <div class="ops-head"><h3>Store-wise Scorecard</h3><span class="ops-sub">Per-station breakdown for the current filter</span></div>
+        <div class="ops-head"><h3>Store-wise Scorecard</h3><span class="ops-sub">${sub}</span></div>
         <div class="ops-score-grid">${cards || emptyState('No stations in view')}</div>
       </div>`;
   }
@@ -2372,9 +2448,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!asin && !title) return;
       const key = asin + '||' + title;
       if (!map[key]) map[key] = { asin, title, count: 0, stores: {}, issues: {},
-                                  cats: {}, rcaPending: 0, sample: '', concession: {} };
+                                  cats: {}, rcaPending: 0, sample: '', concession: {}, records: [] };
       const o = map[key];
       o.count++;
+      o.records.push(r);
       const st = String(r.storeCode || '').trim();
       if (st) o.stores[st] = (o.stores[st] || 0) + 1;
       const iss = String(r.issueDesc || r.issueCategory || '').trim();
@@ -2398,33 +2475,111 @@ document.addEventListener('DOMContentLoaded', () => {
         type: productType(topOf(o.cats)),
         category: topOf(o.cats) || '',
         rcaPending: o.rcaPending,
-        sample: o.sample || ''
+        sample: o.sample || '',
+        records: o.records
       };
     }).sort((a, b) => b.count - a.count).slice(0, limit);
     items.forEach((it, i) => it.rank = i + 1);
     return { items, total, distinct: Object.keys(map).length };
   }
 
-  // Hover/focus popover with full product details.
-  function buildPop(it) {
+  /* ── RCA SOP guidance (from the ops SOP sheet) ──
+     Maps a complaint to the right investigation playbook + closing bucket. */
+  const SOP_GUIDE = [
+    { key: 'Near-Expiry / Expired',
+      rx: /expir|near.?expiry|expired|shelf.?life|best.?before|shrink|stale|use by/,
+      steps: [
+        'Verify the existing stock. If any near-expiry / expired ASIN is observed, remove the ASIN and highlight it in a common group for all other stores.',
+        'Verify the expiry dump data (from the Expiration Dashboard) and check the expiry date of the exact complaint-ASIN against the Bin ID.',
+        'Verify all associates are entering the correct expiry date in the correct format (MM-DD-YYYY) during stow. If not, coach the associate and note the gap + corrective action in the RCA.',
+        'Verify Expiry Awareness Tasks are being performed on time.',
+        'Verify the team performed the AD HOC task for the complaint ASIN (Adhoc items can fail to appear in the expiry awareness task).',
+        'If the ASIN was delivered within shrink date as per SOP, conclude via "Non Ops Controllable – Delivered within PAD Time".',
+        'Conclude the RCA by outlining the investigation details and corrective action taken.'
+      ],
+      close: 'Ops Controllable – UTR Expiry Miss · or Non Ops Controllable – Delivered within PAD Time' },
+    { key: 'Missing Item / Switcheroo / DNR',
+      rx: /miss|not delivered|short delivery|switch|\bdnr\b|did not receive|not received|wrong item|wrong product|less quantity|empty/,
+      steps: [
+        'Check the raw picking data (location, picker, time) from Storm / inventory audit dashboard and verify the correct ASIN was picked from the location.',
+        'Verify the physical stock at the picking location for any extra unit availability.',
+        'Verify CCTV to confirm the correct item was physically picked & packed (not left in the picking trolley, on the packing table, or staged without scanning the SPOO label).',
+        'Verify the catalogue details (image, description, size) match the actual physical product. If not, add it to the quip for catalogue defects.',
+        'If no gap is noticed, briefly describe the UTR investigation and select the "OTR to check" bucket.'
+      ],
+      close: 'Ops Controllable – Picker Mistake · or Non Ops Controllable – Verified Catalogue Defect · or Verified OTR Issue' },
+    { key: 'Damaged / Thawed / Defrosted',
+      rx: /damag|broke|crush|leak|thaw|defrost|melt|spill|torn|dent|smash|warm|soggy/,
+      steps: [
+        'Check the raw picking data (location, picker, time) from Storm / inventory audit dashboard.',
+        'Verify CCTV: was the ASIN in good condition during picking and handled with care during packing & staging? (Eggs & bread mainly.)',
+        'Verify CCTV: was the correct packaging used during packing (bubble wrap, insulated pouch, frozen gel-pads etc.)?',
+        'If everything checks out, briefly describe the UTR investigation and select the "OTR to check" bucket.'
+      ],
+      close: 'Ops Controllable – Picker Mistake · or Verified OTR Issue' },
+    { key: 'Quality Issue',
+      rx: /rotten|mold|mould|fungus|stale|smell|foul|quality|spoil|not fresh|\bbad\b|dirty|insect|worm|hair|contamin|cheap|defect|low quality|poor/,
+      steps: [
+        'Verify the existing stock. If an issue is observed, remove the ASIN and highlight it in a common group for all other stores.',
+        'Verify if 4 QC sessions were performed as per SOP (check the QC checklist or CCTV if required).',
+        'Check if the QC staff is trained on quality checks. If not, arrange training immediately.',
+        'Check the product status with QC staff / ICQA removals / inbound rejections / produce-audit non-compliances etc.',
+        'Conclude the RCA by identifying the gap and implementing corrective actions accordingly.'
+      ],
+      close: 'Ops Controllable – UTR QC Miss · or Non Ops Controllable – Internal Deviation (Vendor Issue)' }
+  ];
+
+  function sopForRecords(records) {
+    const score = {};
+    SOP_GUIDE.forEach(g => score[g.key] = 0);
+    records.forEach(r => {
+      const t = ((r.comment || '') + ' ' + (r.issueDesc || '') + ' ' + (r._concLabel || r.concession || '')).toLowerCase();
+      for (const g of SOP_GUIDE) { if (g.rx.test(t)) { score[g.key]++; break; } }
+    });
+    let best = 'Quality Issue', n = 0;
+    Object.keys(score).forEach(k => { if (score[k] > n) { n = score[k]; best = k; } });
+    return SOP_GUIDE.find(g => g.key === best);
+  }
+
+  // Click-to-expand detail drawer: summary + RCA SOP + every customer comment & RCA.
+  function buildDrawer(it) {
     const typeCls = it.type === 'Fresh' ? 'fresh' : 'packaged';
-    const storeChips = it.stores.slice(0, 6).map(s =>
-      '<span class="t15-pop-chip">' + esc(s.code) + ' <b>' + s.n + '</b></span>').join('');
-    return '<div class="t15-pop">' +
-      '<div class="t15-pop-title">' + esc(it.title) + '</div>' +
-      '<div class="t15-pop-asin">' + (it.asin ? esc(it.asin) : 'No ASIN') +
-        ' \u00b7 <span class="t15-type ' + typeCls + '">' + it.type + '</span></div>' +
-      '<div class="t15-pop-grid">' +
-        '<div><span>Total VOC</span><b>' + num(it.count) + '</b></div>' +
-        '<div><span>Contribution</span><b>' + it.pct + '%</b></div>' +
-        '<div><span>Stations hit</span><b>' + it.storeCount + '</b></div>' +
-        '<div><span>RCA pending</span><b class="' + (it.rcaPending ? 'warn' : '') + '">' + it.rcaPending + '</b></div>' +
-      '</div>' +
-      '<div class="t15-pop-row"><span>Primary issue</span><div>' + esc(it.primaryIssue) + '</div></div>' +
-      '<div class="t15-pop-row"><span>Top concession</span><div>' + esc(it.primaryConcession) + '</div></div>' +
-      (it.category ? '<div class="t15-pop-row"><span>Category</span><div>' + esc(it.category) + '</div></div>' : '') +
-      '<div class="t15-pop-row"><span>Stations</span><div class="t15-pop-chips">' + (storeChips || '\u2014') + '</div></div>' +
-      (it.sample ? '<div class="t15-pop-quote">\u201c' + esc(it.sample.slice(0, 150)) + (it.sample.length > 150 ? '\u2026' : '') + '\u201d</div>' : '') +
+    const chips =
+      '<span class="t15-d-chip">Total VOC<b>' + num(it.count) + '</b></span>' +
+      '<span class="t15-d-chip">Contribution<b>' + it.pct + '%</b></span>' +
+      '<span class="t15-d-chip">Stations hit<b>' + it.storeCount + '</b></span>' +
+      '<span class="t15-d-chip ' + (it.rcaPending ? 'warn' : '') + '">RCA pending<b>' + it.rcaPending + '</b></span>' +
+      '<span class="t15-d-chip">Primary issue&nbsp;<b style="font-family:var(--font)">' + esc(it.primaryIssue) + '</b></span>' +
+      (it.category ? '<span class="t15-d-chip">Category&nbsp;<b style="font-family:var(--font)">' + esc(it.category) + '</b></span>' : '');
+
+    const sop = sopForRecords(it.records || []);
+    const sopHtml =
+      '<div class="t15-sop">' +
+        '<div class="t15-sop-bucket">📋 RCA SOP · ' + esc(sop.key) + '</div>' +
+        '<ol>' + sop.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' +
+        '<div class="t15-sop-cap"><b>Suggested closing bucket:</b> ' + esc(sop.close) + '</div>' +
+        '<div class="t15-sop-foot">Auto-matched from the complaint text — confirm against the actual investigation before closing.</div>' +
+      '</div>';
+
+    const recs = (it.records || []).slice().sort((a, b) => new Date(b.date1) - new Date(a.date1));
+    const vocHtml = recs.map(r => {
+      const pending = D.rcaPending(r);
+      const pnf = !pending && !(r.pickerId && r.pickerId.trim());
+      return '<div class="t15-voc' + (pending ? ' pending' : '') + '">' +
+        '<div class="t15-voc-top"><span class="t15-voc-st">' + esc(r.storeCode || '—') + '</span>' +
+          '<span class="t15-voc-meta">' + esc(r.orderId || '—') + ' · ' + fmtDate(r.date1) + (r.pickerId ? ' · picker ' + esc(r.pickerId) : '') + '</span></div>' +
+        (r.comment ? '<div class="t15-voc-q">💬 "' + esc(r.comment) + '"</div>' : '') +
+        '<div class="t15-voc-rca"><b>RCA &amp; CAP:</b> ' + (pending ? '<span class="pend">Not yet recorded — pending</span>' : esc(r.rcaCap)) + '</div>' +
+        (pnf ? '<div class="t15-voc-pnf">⚠ RCA filled but Picker ID missing at ' + esc(r.storeCode || 'this station') + '</div>' : '') +
+        '</div>';
+    }).join('') || '<div class="ins-sub" style="padding:8px 0">No records.</div>';
+
+    return '<div class="t15-d-inner">' +
+        '<div class="t15-d-summary">' + chips + '</div>' +
+        '<div class="t15-cols">' +
+          '<div><div class="t15-d-h">Customer comments &amp; RCA · ' + recs.length + '</div><div class="t15-voc-list">' + vocHtml + '</div></div>' +
+          '<div>' + sopHtml + '</div>' +
+        '</div>' +
       '</div>';
   }
 
@@ -2453,27 +2608,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     html += '<div class="t15-list">';
-    items.forEach(it => {
+    items.forEach((it, idx) => {
       const w = Math.max(3, Math.round(it.count / max * 100));
       const rank = (it.rank < 10 ? '0' : '') + it.rank;
       const store = it.topStore
         ? '<span class="st">' + esc(it.topStore) + '</span>' + (it.storeCount > 1 ? ' +' + (it.storeCount - 1) + ' more' : '')
         : '\u2014';
       html +=
-        '<div class="t15-row" tabindex="0">' +
-          '<span class="t15-rank">' + rank + '</span>' +
-          '<div class="t15-main">' +
-            '<div class="t15-title" title="' + esc(it.title) + '">' + esc(it.title) +
-              ' <span class="t15-type ' + (it.type === 'Fresh' ? 'fresh' : 'packaged') + '">' + it.type + '</span></div>' +
-            '<div class="t15-meta">' + (it.asin ? esc(it.asin) + ' \u00b7 ' : '') + esc(it.primaryIssue) + ' \u00b7 top: ' + store + '</div>' +
-            '<div class="t15-bar"><div style="width:' + w + '%"></div></div>' +
+        '<div class="t15-item" data-t15="' + idx + '">' +
+          '<div class="t15-row" tabindex="0" role="button" aria-expanded="false">' +
+            '<span class="t15-rank">' + rank + '</span>' +
+            '<div class="t15-main">' +
+              '<div class="t15-title" title="' + esc(it.title) + '">' + esc(it.title) +
+                ' <span class="t15-type ' + (it.type === 'Fresh' ? 'fresh' : 'packaged') + '">' + it.type + '</span></div>' +
+              '<div class="t15-meta">' + (it.asin ? esc(it.asin) + ' \u00b7 ' : '') + esc(it.primaryIssue) + ' \u00b7 top: ' + store + '</div>' +
+              '<div class="t15-bar"><div style="width:' + w + '%"></div></div>' +
+            '</div>' +
+            '<div class="t15-num"><b>' + num(it.count) + '</b><span>' + it.pct + '%</span></div>' +
+            '<span class="t15-exp">\u25be</span>' +
           '</div>' +
-          '<div class="t15-num"><b>' + num(it.count) + '</b><span>' + it.pct + '%</span></div>' +
-          buildPop(it) +
+          '<div class="t15-drawer">' + buildDrawer(it) + '</div>' +
         '</div>';
     });
     html += '</div></div>';
     panel.innerHTML = html;
+
+    panel.querySelectorAll('.t15-item').forEach(item => {
+      const row = item.querySelector('.t15-row');
+      const drawer = item.querySelector('.t15-drawer');
+      const toggle = () => {
+        const open = item.classList.toggle('open');
+        drawer.classList.toggle('open', open);
+        row.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      row.addEventListener('click', toggle);
+      row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
 
     const csv = $('#t15Csv');
     if (csv) csv.onclick = () => exportTopCsv(items);
