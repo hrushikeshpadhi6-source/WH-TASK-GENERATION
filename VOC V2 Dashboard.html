@@ -441,17 +441,27 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .osc-delta.bad  { color: var(--danger); }
 .osc-delta.flat { color: var(--ink-faint); }
 .ops-scorecard.has-pnf { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning) inset; background: #FFFCF6; }
-.osc-pnf { position: relative; cursor: help; margin-top: 2px; padding-top: 7px; border-top: 1px dashed var(--border); }
+.osc-pnf { position: relative; cursor: pointer; margin-top: 2px; padding-top: 7px; border-top: 1px dashed var(--border); }
 .osc-pnf > span:first-child { color: var(--warning); font-weight: 600; }
-.osc-pnf-pop { position: absolute; bottom: calc(100% + 8px); right: 0; width: 280px; max-height: 240px; overflow: auto;
+.osc-pnf::after { content: '▸'; position: absolute; right: 0; top: 7px; font-size: 9px; color: var(--warning); transition: transform .15s ease; opacity: .7; }
+.osc-pnf.open::after { transform: rotate(90deg); }
+.osc-pnf-pop { position: absolute; bottom: calc(100% + 8px); right: 0; width: 340px; max-height: 320px; overflow: auto;
   background: #14181F; border: 1px solid #2A323D; border-radius: 10px; padding: 10px 11px;
   box-shadow: 0 20px 50px rgba(0,0,0,.4); opacity: 0; pointer-events: none; transform: translateY(6px);
-  transition: opacity .15s ease, transform .15s ease; z-index: 70; }
-.osc-pnf:hover .osc-pnf-pop { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  transition: opacity .15s ease, transform .15s ease; z-index: 70; cursor: default; }
+.osc-pnf.open .osc-pnf-pop { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .osc-pnf-pop .opp-h { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #F2B255; margin-bottom: 8px; font-weight: 700; }
-.osc-pnf-pop .opp-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-top: 1px solid #232A33; }
-.osc-pnf-pop .opp-row .mono { color: #fff; font-size: 11px; }
-.osc-pnf-pop .opp-dim { color: #8A96A3; font-size: 10.5px; text-align: right; }
+.osc-pnf-pop .opp-row { display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-top: 1px solid #232A33; }
+.osc-pnf-pop .opp-rtop { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.opp-oid { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-feature-settings: "tnum" 1; font-size: 11px; color: #fff; background: #20272F; border: 1px solid #2E3742; border-radius: 6px; padding: 3px 8px; cursor: copy; transition: background .12s, border-color .12s, color .12s; white-space: nowrap; }
+.opp-oid::after { content: '\29C9'; font-size: 11px; color: #6F7D8A; }
+.opp-oid:hover { background: rgba(42,111,219,.18); border-color: #3B7FE0; }
+.opp-oid:hover::after { color: #8FB6F0; }
+.opp-oid.copied { background: #155734; border-color: #1F8A5B; color: #D6F5E4; }
+.opp-oid.copied::after { content: '\2713'; color: #7BE0A8; }
+.osc-pnf-pop .opp-dim { color: #8A96A3; font-size: 10.5px; text-align: right; flex: 1; min-width: 0; }
+.osc-pnf-pop .opp-cmt { color: #C6D0DA; font-size: 11px; line-height: 1.45; font-style: italic; }
+.osc-pnf-pop .opp-nocmt { color: #5C6772; font-style: normal; }
 .osc-pnf-pop .opp-more { color: #7E8B98; font-size: 10.5px; padding-top: 6px; }
 .ops-pnf-flag { color: var(--warning); font-weight: 600; }
 
@@ -519,23 +529,30 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .dup-left { display: flex; flex-direction: column; }
 .dup-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .dup-pairs { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px;
-  color: #C42B6E; background: #FBE0EC; border: 1px solid #F2C2D8; border-radius: 999px; padding: 5px 12px; }
+  color: #C42B6E; background: #FBE0EC; border: 1px solid #F2C2D8; border-radius: 999px; padding: 5px 12px;
+  cursor: pointer; transition: background .12s, border-color .12s; }
+.dup-card:hover .dup-pairs, .dup-card.open .dup-pairs { background: #F8CEDF; border-color: #E79CBC; }
 .dup-pairs svg { width: 14px; height: 14px; }
-.dup-hint { font-size: 11.5px; color: #A36B85; }
+.dup-hint { font-size: 11.5px; color: #A36B85; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.dup-hint::after { content: '\25B8'; font-size: 9px; transition: transform .15s ease; }
+.dup-card.open .dup-hint::after { transform: rotate(90deg); }
 .dup-pop {
   position: absolute; top: calc(100% + 8px); right: 14px; width: 380px; max-height: 360px; overflow: auto;
   background: #14181F; border: 1px solid #2A323D; border-radius: 12px; padding: 12px;
   box-shadow: 0 24px 60px rgba(0,0,0,.45); opacity: 0; pointer-events: none; transform: translateY(-6px);
   transition: opacity .15s ease, transform .15s ease; z-index: 70;
 }
-.dup-card:hover .dup-pop { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.dup-card.open .dup-pop { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .dup-pop-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: #8A96A3; margin-bottom: 8px; }
-.dup-drow { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-top: 1px solid #232A33; }
+.dup-drow { display: flex; flex-direction: column; gap: 5px; padding: 9px 6px; border-top: 1px solid #232A33; }
+.dup-drow-top { display: flex; align-items: center; gap: 8px; }
 .dup-dmain { min-width: 0; flex: 1; }
 .dup-dim { color: #7E8B98; font-size: 11px; }
-.dup-dtitle { font-size: 11.5px; color: #C9D2DB; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.dup-dcount { text-align: right; flex-shrink: 0; }
-.dup-dcount b { font-family: var(--mono); color: #F08AB4; font-size: 14px; display: block; }
+.dup-dtitle { font-size: 11.5px; color: #C9D2DB; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dup-cmt { color: #C6D0DA; font-size: 11px; line-height: 1.45; font-style: italic; }
+.dup-cmt.dup-nocmt { color: #5C6772; font-style: normal; }
+.dup-dcount { text-align: right; flex-shrink: 0; margin-left: auto; }
+.dup-dcount b { font-family: var(--mono); color: #F08AB4; font-size: 14px; display: block; line-height: 1.1; }
 .dup-dcount span { font-size: 10px; color: #7E8B98; }
 .dup-pop-more { text-align: center; font-size: 11px; color: #8A96A3; padding: 8px 0 2px; }
 .dup-card .strong { color: #fff; }
@@ -1267,6 +1284,7 @@ function markDuplicates(rows) {
     detail.push({
       orderId: first.orderId, asin: first.asin,
       title: first.productTitle || '', store: first.storeCode || '',
+      comment: first.comment || '',
       count: g.length, extra: g.length - 1
     });
   });
@@ -1567,12 +1585,13 @@ function renderDuplicateCard() {
   const detail = S.dupStats.detail.filter(d => keys[d.orderId + '|' + d.asin]);
   const rowsHtml = detail.slice(0, 40).map(d => `
     <div class="dup-drow">
-      <div class="dup-dmain">
-        <span class="mono strong">${esc(d.orderId)}</span>
+      <div class="dup-drow-top">
+        <button type="button" class="opp-oid" data-copy="${esc(d.orderId || '')}" title="Click to copy Order ID">${esc(d.orderId)}</button>
         <span class="dup-dim">· ASIN ${esc(d.asin)}</span>
-        <div class="dup-dtitle">${esc(d.title || '—')}</div>
+        <div class="dup-dcount"><b>${d.count}×</b><span>${d.extra} excluded</span></div>
       </div>
-      <div class="dup-dcount"><b>${d.count}×</b><span>${d.extra} excluded</span></div>
+      <div class="dup-dtitle">${esc(d.title || '—')}</div>
+      <div class="dup-cmt${d.comment ? '' : ' dup-nocmt'}">${d.comment ? '“' + esc(d.comment) + '”' : 'No customer comment'}</div>
     </div>`).join('');
   box.innerHTML = `
     <div class="dup-inner">
@@ -1582,7 +1601,7 @@ function renderDuplicateCard() {
       </div>
       <div class="dup-right">
         <span class="dup-pairs">${ICON.copy || ''}${num(pairs)} pair${pairs === 1 ? '' : 's'}</span>
-        <span class="dup-hint">hover to see details</span>
+        <span class="dup-hint">click to see details</span>
       </div>
       <div class="dup-pop">
         <div class="dup-pop-head">Same Order ID + ASIN — later copies removed from counts</div>
@@ -1590,6 +1609,18 @@ function renderDuplicateCard() {
         ${detail.length > 40 ? `<div class="dup-pop-more">+ ${detail.length - 40} more groups…</div>` : ''}
       </div>
     </div>`;
+}
+
+/* Click-to-open for the Duplicate VOC details popover (+ close on outside click).
+   The Order-ID copy buttons reuse the .opp-oid handler, so they work here too. */
+if (!window._dupPopWired) {
+  window._dupPopWired = true;
+  document.addEventListener('click', e => {
+    const card = e.target.closest('.dup-card');
+    const insidePop = e.target.closest('.dup-pop');
+    if (card && !insidePop) { card.classList.toggle('open'); return; }
+    if (!insidePop) document.querySelectorAll('.dup-card.open').forEach(el => el.classList.remove('open'));
+  });
 }
 
 /* ═══════════ VERSION SELECT + INIT ═══════════ */
@@ -1878,6 +1909,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const S = window.VOC.S, esc = window.VOC.esc, fmtDate = window.VOC.fmtDate, num = window.VOC.num;
   const D = window.VOCData;
 
+  /* Click-to-copy for Order IDs inside the "Picker Not Filled" popover
+     (and any future [data-copy] element). Delegated so it survives re-renders. */
+  document.addEventListener('click', e => {
+    // 1 · Toggle the Picker-Not-Filled popover open/closed on click.
+    const pnfLine = e.target.closest('.osc-pnf');
+    const insidePop = e.target.closest('.osc-pnf-pop');
+    if (pnfLine && !insidePop) {
+      const wasOpen = pnfLine.classList.contains('open');
+      document.querySelectorAll('.osc-pnf.open').forEach(el => el.classList.remove('open'));
+      if (!wasOpen) pnfLine.classList.add('open');
+      return;
+    }
+    // 2 · Close any open popover when clicking elsewhere (outside both line & popover).
+    if (!insidePop) {
+      document.querySelectorAll('.osc-pnf.open').forEach(el => el.classList.remove('open'));
+    }
+    // 3 · Copy Order ID to clipboard.
+    const btn = e.target.closest('.opp-oid[data-copy]');
+    if (!btn) return;
+    const text = btn.getAttribute('data-copy') || '';
+    if (!text) return;
+    // Show feedback immediately — don't gate UI on the (possibly slow/blocked) clipboard promise.
+    btn.classList.add('copied');
+    if (!btn._cpOrig) btn._cpOrig = btn.textContent;
+    btn.textContent = 'Copied';
+    clearTimeout(btn._cpT);
+    btn._cpT = setTimeout(() => { btn.classList.remove('copied'); btn.textContent = btn._cpOrig; }, 1100);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else { fallbackCopy(text); }
+  });
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+
   const cls = r => D.classify(r);
   function stores(rows) { return [...new Set(rows.map(r => r.storeCode).filter(Boolean))].sort(); }
   function activeView() { return (window.VOC.activeView ? window.VOC.activeView() : S.view); }
@@ -2157,7 +2227,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const pnfPop = pnf ? `<div class="osc-pnf-pop">
           <div class="opp-h">RCA filled · Picker ID missing — back-fill needed</div>
           ${pnfRows.sort((a, b) => new Date(b.date1) - new Date(a.date1)).slice(0, 12).map(r =>
-            `<div class="opp-row"><span class="mono">${esc(r.orderId || '—')}</span><span class="opp-dim">${esc(clip(r.productTitle, 22))} · ${fmtDate(r.date1)}</span></div>`).join('')}
+            `<div class="opp-row">
+               <div class="opp-rtop">
+                 <button type="button" class="opp-oid" data-copy="${esc(r.orderId || '')}" title="Click to copy Order ID">${esc(r.orderId || '—')}</button>
+                 <span class="opp-dim">${esc(clip(r.productTitle, 22))} · ${fmtDate(r.date1)}</span>
+               </div>
+               <div class="opp-cmt${r.comment ? '' : ' opp-nocmt'}">${r.comment ? '“' + esc(r.comment) + '”' : 'No customer comment'}</div>
+             </div>`).join('')}
           ${pnf > 12 ? `<div class="opp-more">+${pnf - 12} more…</div>` : ''}
         </div>` : '';
 
@@ -2180,7 +2256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sub = (prevRows
         ? `Current vs previous period (${esc(prevLabel)}) — Δ shown per metric`
         : 'Per-station breakdown for the current filter')
-      + (totalPnf ? ` · <span class="ops-pnf-flag">⚠ ${totalPnf} record${totalPnf === 1 ? '' : 's'} have an RCA but no Picker ID — hover a flagged card</span>` : '');
+      + (totalPnf ? ` · <span class="ops-pnf-flag">⚠ ${totalPnf} record${totalPnf === 1 ? '' : 's'} have an RCA but no Picker ID — click "Picker Not Filled" to view & copy Order IDs</span>` : '');
 
     document.getElementById('opsStores').innerHTML = `
       <div class="card ops-card">
