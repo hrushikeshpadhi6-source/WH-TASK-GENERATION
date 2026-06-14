@@ -1535,15 +1535,26 @@ function smFetchVOC(){
 
     smVocData={};
     smVocRaw=[];
-    // Store raw VOC rows so the leaderboard can re-filter by the active main date
+    // Store raw VOC V2 rows so the leaderboard can re-filter by the active main date.
+    // SOURCE = VOC V2 sheet (action=vocv2). The old "voc analysis" sheet is retired.
+    // UTR is classified the V2 way: an Ops issue whose Issue Description is one of
+    // the under-the-roof mistakes (mirrors the Apps Script classifyRaw()).
     data.rows.forEach(function(r){
-      var store   = String(r.store||r.Store||'').trim();
+      var store   = String(r.storeCode||r.store||r.Store||'').trim();
       var orderId = String(r.orderId||r.order_id||r.orderid||'').trim();
       var asin    = String(r.asin||r.ASIN||'').trim();
-      var date    = String(r.date||r.Date||r.DATE||'').split('T')[0].split(' ')[0].trim();
-      var cat     = String(r.rcaCategory||r.RcaCategory||r.rca_category||'').trim().replace(/\s*[\u2013\u2014\-]+\s*/g,' - ');
+      // V2 date: prefer Date_1, fall back to Date of Issued / Order Timestamp.
+      var rawDate = String(r.date1||r.dateIssued||r.orderTimestamp||r.date||'').trim();
+      var date    = rawDate.split('T')[0].split(' ')[0].trim();
+      // V2 classification
+      var issueCat= String(r.issueCategory||'').trim().toLowerCase();
+      var desc    = String(r.issueDesc||'').trim();
+      var isOps   = !!issueCat && issueCat.indexOf('non')===-1;
+      var isUtr   = isOps && (desc==='UTR QC Miss' || desc==='Picker Mistake' || desc==='UTR Expiry Miss');
+      // Week number (digits only) so a "Week 24" main filter can match exactly.
+      var week    = String(r.week||'').replace(/\D/g,'');
       if(!store) return;
-      smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date, cat:cat});
+      smVocRaw.push({store:store, orderId:orderId, asin:asin, date:date, cat:desc, isUtr:isUtr, week:week});
     });
 
     // Compute available VOC date range and surface it to the user.
@@ -1564,7 +1575,7 @@ function smFetchVOC(){
     var rows=smFilter(); smLeaderboard(rows);
   };
   var s=document.createElement('script');s.id='j-'+cb;
-  s.src=APPS_URL+'?action=voc&callback='+cb;
+  s.src=APPS_URL+'?action=vocv2&callback='+cb;
   document.head.appendChild(s);
 }
 
@@ -1668,23 +1679,51 @@ function utrDeduct(rate){
 // Deduped VOC rows for a store, filtered to the SAME period as the main
 // date filter (so UTR rate numerator and the order denominator always cover
 // the same window — required for the 0.10% target to be meaningful).
+// Normalise any month-ish value (YYYY-MM, MM/YYYY, "June 2026", "June - 2026",
+// a parseable date) to a canonical "YYYY-MM" so VOC rows match the picked month.
+function vocMonthKey(s){
+  s=String(s||'').trim(); if(!s) return '';
+  var mNames=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  var m=s.match(/^(\d{4})-(\d{1,2})/);            if(m) return m[1]+'-'+String(m[2]).padStart(2,'0');
+  m=s.match(/^(\d{1,2})[\/\-](\d{4})$/);          if(m) return m[2]+'-'+String(m[1]).padStart(2,'0');
+  m=s.match(/^([A-Za-z]+)\s*[-\u2013\u2014\s]\s*(\d{4})$/);
+  if(m){ var mi=mNames.indexOf(m[1].toLowerCase()); if(mi>=0) return m[2]+'-'+String(mi+1).padStart(2,'0'); }
+  var d=new Date(s); if(!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  return '';
+}
+// Deduped VOC V2 rows for a store, narrowed to the SAME window as the main period
+// filter so the data always matches what the user picked (day / week / month /
+// year / custom range). "— All —" within any period = no date narrowing.
 function smVocFilteredRows(s){
   if(!smVocRaw||!smVocRaw.length) return [];
   var pv=(document.getElementById('sm-pval')||{}).value||'';
+  var noVal=(!pv || pv==='all');
+  var mKey=(smPeriod==='month' && !noVal) ? vocMonthKey(pv) : '';
+  var wKey=(smPeriod==='week'  && !noVal) ? String(pv).replace(/\D/g,'') : '';
+  var rFrom='', rTo='';
+  if(smPeriod==='range'){
+    var rf=document.getElementById('sm-range-from'), rt=document.getElementById('sm-range-to');
+    rFrom=rf?rf.value:''; rTo=rt?rt.value:'';
+    if(rFrom&&rTo&&rFrom>rTo){ var t=rFrom; rFrom=rTo; rTo=t; }
+  }
   var seen={},out=[];
   smVocRaw.forEach(function(v){
     if(v.store!==s) return;
-    if(smPeriod==='day'   && (!pv || v.date!==pv)) return;
-    if(smPeriod==='month' && (!pv || (v.date||'').substring(0,7)!==String(pv).substring(0,7))) return;
-    if(smPeriod==='year'  && (!pv || (v.date||'').substring(0,4)!==String(pv).substring(0,4))) return;
-    // 'all'/'week' → no date narrowing (count everything for the store)
+    if(smPeriod==='day'   && !noVal && v.date!==pv) return;
+    if(smPeriod==='month' && !noVal && (!mKey || (v.date||'').substring(0,7)!==mKey)) return;
+    if(smPeriod==='year'  && !noVal && (v.date||'').substring(0,4)!==String(pv)) return;
+    if(smPeriod==='week'  && !noVal && (!wKey || v.week!==wKey)) return;
+    if(smPeriod==='range'){
+      if(rFrom && (!v.date || v.date<rFrom)) return;
+      if(rTo   && (!v.date || v.date>rTo))   return;
+    }
     var k=v.orderId+'|'+v.asin;
     if(!seen[k]){ seen[k]=true; out.push(v); }
   });
   return out;
 }
 function smVocCount(s){ return smVocFilteredRows(s).length; }
-function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return rcaIn(v.cat, VOC_UTR);}).length; }
+function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return v.isUtr;}).length; }
 
 // ════════ SCORING & TARGET LOGIC ════════════════════════════
 // ON-TARGET thresholds (binary "healthy" markers):
@@ -2143,7 +2182,7 @@ function smMonthUtr(month){
   var seen={};
   (smVocRaw||[]).forEach(function(v){
     if(String(v.date||'').substring(0,7)!==month) return;
-    if(!rcaIn(v.cat, VOC_UTR)) return;
+    if(!v.isUtr) return;
     var s=v.store; if(!s) return;
     var k=s+'|'+v.orderId+'|'+v.asin; if(seen[k]) return; seen[k]=true;
     if(!res[s]) res[s]={orders:0,utr:0};
@@ -2205,7 +2244,7 @@ function smStoreUtrSeries(s){
   var utr={}, seen={};
   (smVocRaw||[]).forEach(function(v){
     if(v.store!==s) return;
-    if(!rcaIn(v.cat, VOC_UTR)) return;
+    if(!v.isUtr) return;
     var dt=v.date||''; if(!dt) return;
     var k=dt+'|'+v.orderId+'|'+v.asin; if(seen[k]) return; seen[k]=true;
     utr[dt]=(utr[dt]||0)+1;
