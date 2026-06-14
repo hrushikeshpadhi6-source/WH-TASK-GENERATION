@@ -10063,7 +10063,7 @@ if (document.readyState === 'loading') {
       var accent = s.valueColor || '#3B82F6';
       var dots = document.getElementById('li-dots');
       dots.innerHTML = liSlides.map(function(_, i){
-        return '<span style="width:'+(i===liIdx%liSlides.length?'18px':'5px')+';height:5px;border-radius:3px;background:'+(i===liIdx%liSlides.length?accent:'rgba(255,255,255,0.18)')+';transition:all 0.3s;"></span>';
+        return '<span style="width:'+(i===liIdx%liSlides.length?'18px':'5px')+';height:5px;border-radius:3px;background:'+(i===liIdx%liSlides.length?accent:'rgba(130,140,170,0.4)')+';transition:all 0.3s;"></span>';
       }).join('');
       stage.style.opacity = '1';
     }, 200);
@@ -14624,6 +14624,8 @@ function authShowApp(displayName) {
   if (displayName) {
     var nm = document.querySelector('#session-badge .sb-name');
     if (nm) nm.textContent = displayName;
+    // Persist for the VOC V2 Dashboard (separate page) to show in its Ops Manager slot.
+    try { localStorage.setItem('voc_session_user', displayName); } catch (e) {}
   }
   // Prime Day announcement — shows on every login & on refresh while signed in.
   try { showPrimeDayPopup(); } catch (e) {}
@@ -18564,11 +18566,49 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     background:#ffffff; border-top-color:#e0e2ee; color:#5b5f82;
   }
 
-  /* The clock / safety-tips panel stays a dark "feature" card so its
-     white text remains readable on the light page. */
+  /* ── Hero clock / tips / live-insights panel — LIGHT MODE ──
+     Adapts the feature panel to the enterprise light theme instead of
+     floating a dark card on a light page. The analog dial stays dark as
+     a deliberate instrument accent. */
   html[data-theme="light"] #live-clock > div {
-    background:#13121f !important; border-color:#2a2840 !important;
+    background:#ffffff !important; border-color:#e3e5f1 !important;
+    box-shadow:0 1px 2px rgba(20,22,50,0.05), 0 12px 34px rgba(20,22,50,0.07) !important;
   }
+  /* vertical dividers around the clock */
+  html[data-theme="light"] #live-clock > div > div:nth-child(2){
+    border-left-color:#eceef6 !important; border-right-color:#eceef6 !important;
+    background:linear-gradient(180deg,#fbfcff,#f6f8fd) !important;
+  }
+  /* Safety + Quality tip cards */
+  html[data-theme="light"] #live-clock > div > div:first-child > div:first-child{
+    background:rgba(37,99,235,0.06) !important; border-color:rgba(37,99,235,0.18) !important;
+  }
+  html[data-theme="light"] #live-clock > div > div:first-child > div:last-child{
+    background:rgba(16,185,129,0.06) !important; border-color:rgba(16,185,129,0.2) !important;
+  }
+  html[data-theme="light"] #daily-safety,
+  html[data-theme="light"] #daily-quality { color:#3a3f5c !important; }
+  /* Clock digital readout — white-on-dark glow would vanish on white */
+  html[data-theme="light"] #digital-time {
+    color:#16213a !important;
+    text-shadow:0 1px 0 rgba(255,255,255,0.6) !important;
+  }
+  html[data-theme="light"] #digital-date { color:#2563EB !important; }
+  /* Temperature pill */
+  html[data-theme="light"] #clk-temp-wrap{
+    background:linear-gradient(135deg,rgba(37,99,235,0.07),rgba(247,37,133,0.05)) !important;
+    border-color:rgba(37,99,235,0.22) !important; box-shadow:none !important;
+  }
+  html[data-theme="light"] #clk-temp-loc{ color:#5b6079 !important; }
+  /* Live month-to-date insights */
+  html[data-theme="light"] #live-insights-box{
+    background:rgba(37,99,235,0.045) !important; border-color:rgba(37,99,235,0.18) !important;
+  }
+  html[data-theme="light"] #li-title{ color:#16182c !important; }
+  html[data-theme="light"] #li-msg{ color:#5b6079 !important; }
+  html[data-theme="light"] #li-month-label{ color:#5b6079 !important; }
+  html[data-theme="light"] #li-pause,
+  html[data-theme="light"] #li-refresh{ color:#9095b0 !important; }
 </style>
 
 <script>
@@ -18669,8 +18709,8 @@ html[data-theme="light"] .task-card h3{ color:#1F2937 !important; }
 .login-title{ background:none !important; -webkit-text-fill-color:#ffffff !important; color:#ffffff !important; }
 .login-btn-primary{ box-shadow:none !important; }
 
-/* tips / clock dark feature panel: slate, no neon */
-html[data-theme="light"] #live-clock > div{ background:#0F172A !important; border-color:#1E293B !important; }
+/* tips / clock feature panel — light theme treatment lives in the
+   hero-panel block above (white card, dark dial accent). */
 
 /* scrollbars */
 *::-webkit-scrollbar{ height:10px; width:10px; }
