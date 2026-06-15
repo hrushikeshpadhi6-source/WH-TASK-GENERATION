@@ -682,8 +682,152 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
   .ops-break-grid { grid-template-columns: 1fr; gap: 18px; }
 }
 
+/* ═══════════════ Quick Summary header button ═══════════════ */
+.qs-btn { background: var(--secondary); color: #fff; border-color: var(--secondary); display: inline-flex; align-items: center; gap: 6px; }
+.qs-btn:hover { background: var(--secondary-90); }
+.qs-btn svg { width: 15px; height: 15px; }
+
+/* ═══════════════ Quick Summary overlay ═══════════════ */
+.qs-overlay { position: fixed; inset: 0; z-index: 1200; background: #EEF2F6; display: flex; flex-direction: column; }
+.qs-bar { flex: 0 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; background: var(--secondary); color: #fff; box-shadow: 0 2px 10px rgba(16,24,40,.18); }
+.qs-bar-l { display: flex; align-items: center; gap: 12px; }
+.qs-logo { height: 38px; padding: 4px 10px; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; }
+.qs-logo img { height: 28px; width: auto; display: block; }
+.qs-ttl { display: flex; flex-direction: column; line-height: 1.25; }
+.qs-ttl b { font-size: 14.5px; font-weight: 700; white-space: nowrap; }
+.qs-ttl span { font-size: 11px; color: rgba(255,255,255,.62); }
+.qs-bar-r { display: flex; align-items: center; gap: 12px; }
+.qs-wk { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .6px; color: rgba(255,255,255,.7); font-weight: 600; }
+.qs-wk select { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.22);
+  border-radius: 6px; padding: 6px 9px; font-weight: 600; }
+.qs-wk select option { color: #1B2430; }
+.qs-refreshed { font-size: 11px; color: rgba(255,255,255,.55); }
+.qs-bar .btn.ghost { color: #fff; border-color: rgba(255,255,255,.25); background: transparent; }
+.qs-bar .btn.ghost:hover { background: rgba(255,255,255,.12); }
+.qs-bar .btn:not(.ghost) { background: #fff; color: var(--secondary); border-color: #fff; display: inline-flex; align-items: center; gap: 5px; }
+.qs-bar .btn svg { width: 14px; height: 14px; }
+
+.qs-body { flex: 1 1 auto; overflow-y: auto; padding: 22px clamp(16px, 4vw, 46px) 60px; }
+.qs-sheet { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* section shell */
+.qs-sec { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.qs-sec-h { padding: 14px 18px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.qs-sec-h h3 { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--ink); }
+.qs-sec-h .sub { font-size: 11px; color: var(--ink-faint); }
+.qs-sec-b { padding: 16px 18px; }
+
+/* store scorecards row */
+.qs-stores { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.qs-card { border: 1px solid var(--border); border-radius: var(--r); padding: 12px 13px; background: #fff; position: relative; }
+.qs-card.flag { border-color: #F6C97A; background: #FFFDF8; }
+.qs-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 9px; }
+.qs-card-name { font-size: 15px; font-weight: 800; color: var(--ink); }
+.qs-card-tot { text-align: right; }
+.qs-card-tot b { font-size: 22px; font-weight: 800; color: var(--primary); font-family: var(--mono); line-height: 1; }
+.qs-card-tot span { display: block; font-size: 9.5px; color: var(--ink-faint); margin-top: 2px; }
+.qs-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 2.5px 0; border-top: 1px dashed var(--border-soft); white-space: nowrap; }
+.qs-line .lk { color: var(--ink-3); white-space: nowrap; }
+.qs-line:first-of-type { border-top: 0; }
+.qs-line .lv { font-weight: 700; color: var(--ink); font-family: var(--mono); display: inline-flex; align-items: center; gap: 5px; }
+.qs-d { font-size: 10px; font-weight: 700; font-family: var(--mono); }
+.qs-d.good { color: var(--success); } .qs-d.bad { color: var(--danger); } .qs-d.flat { color: var(--ink-faint); }
+.qs-pnf { margin-top: 7px; padding-top: 6px; border-top: 1px solid #F0D9A8; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--warning); cursor: pointer; }
+.qs-pnf:hover { text-decoration: underline; }
+
+/* KPI tiles */
+.qs-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.qs-kpi { border: 1px solid var(--border); border-radius: var(--r); padding: 14px 15px; display: flex; flex-direction: column; gap: 6px; background: #fff; }
+.qs-kpi .kl { font-size: 10.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.qs-kpi .kl .dot { width: 8px; height: 8px; border-radius: 50%; }
+.qs-kpi .kv { font-size: 30px; font-weight: 800; font-family: var(--mono); color: var(--ink); line-height: 1; }
+.qs-kpi .kf { font-size: 10.5px; color: var(--ink-faint); }
+.qs-kpi.k-blue { border-top: 3px solid var(--primary); }
+.qs-kpi.k-green { border-top: 3px solid var(--success); }
+.qs-kpi.k-amber { border-top: 3px solid var(--warning); }
+.qs-kpi.k-purple { border-top: 3px solid #7C5CD6; }
+
+/* 3-col chart row */
+.qs-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.qs-chart-wrap { height: 190px; position: relative; }
+
+/* drivers list */
+.qs-drv { display: flex; flex-direction: column; gap: 9px; }
+.qs-drv-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 10px; font-size: 11.5px; }
+.qs-drv-row .dl { color: var(--ink-2); font-weight: 600; }
+.qs-drv-bar { height: 9px; border-radius: 5px; background: var(--border-soft); overflow: hidden; }
+.qs-drv-bar i { display: block; height: 100%; border-radius: 5px; }
+.qs-drv-row .dv { font-family: var(--mono); font-weight: 700; color: var(--ink); white-space: nowrap; }
+.qs-drv-row .dv small { color: var(--ink-faint); font-weight: 600; margin-left: 4px; }
+
+/* mtd / mom mini callout */
+.qs-callout { margin-top: 12px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--primary-50); display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; }
+.qs-callout b { font-family: var(--mono); }
+
+/* tables */
+.qs-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.qs-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-faint); font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--border-soft); }
+.qs-table td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); color: var(--ink-2); }
+.qs-table tr:last-child td { border-bottom: 0; }
+.qs-table td.num { font-family: var(--mono); font-weight: 700; color: var(--ink); }
+.qs-table tr.tot td { background: #FAFBFC; font-weight: 800; color: var(--ink); border-top: 2px solid var(--border); }
+.qs-up { color: var(--danger); font-weight: 700; } .qs-down { color: var(--success); font-weight: 700; } .qs-flat2 { color: var(--ink-faint); }
+
+/* insights + actions */
+.qs-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.qs-ins { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+.qs-ins li { display: flex; gap: 9px; font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.qs-ins li .b { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; }
+.qs-ins li b { color: var(--ink); }
+.qs-status { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 700; }
+.qs-status.prog { background: var(--primary-50); color: var(--primary-700); }
+.qs-status.pend { background: var(--warning-bg); color: var(--warning); }
+.qs-status.done { background: var(--success-bg); color: var(--success); }
+.qs-focus { background: linear-gradient(100deg, #FFF8EC, #FEF6E7); border: 1px solid #F4D58C; border-radius: var(--r-lg); padding: 14px 18px; display: flex; gap: 12px; align-items: flex-start; }
+.qs-focus svg { width: 22px; height: 22px; color: var(--warning); flex: 0 0 auto; margin-top: 1px; }
+.qs-focus .ft { font-size: 12.5px; color: var(--ink); } .qs-focus .ft b { font-weight: 800; }
+.qs-focus .ft .g { display: block; color: var(--ink-3); font-size: 11.5px; margin-top: 3px; }
+
+/* report footer */
+.qs-foot { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 26px 18px 6px; }
+.qs-foot-line { display: flex; align-items: center; gap: 11px; }
+.qs-foot-by { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+.qs-foot-logo { height: 30px; width: auto; display: block; }
+.qs-foot-meta { font-size: 11px; color: var(--ink-faint); }
+
+/* branded header for print / image export (hidden on screen) */
+.qs-print-head { display: none; align-items: center; gap: 14px; padding: 4px 4px 14px; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
+.qs-print-head img { height: 34px; width: auto; display: block; }
+.qs-print-head .qph-t { display: flex; flex-direction: column; line-height: 1.3; }
+.qs-print-head .qph-t b { font-size: 16px; font-weight: 800; color: var(--ink); }
+.qs-print-head .qph-t span { font-size: 12px; color: var(--ink-3); }
+body.qs-printing .qs-print-head, body.qs-shooting .qs-print-head { display: flex; }
+
+/* picker-not-filled popover (reused order drill) */
+.qs-pop { position: absolute; z-index: 30; top: 100%; right: 0; margin-top: 4px; width: 290px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-lg); padding: 10px; max-height: 320px; overflow-y: auto; }
+.qs-pop .ph { font-size: 10.5px; font-weight: 700; color: var(--warning); margin-bottom: 7px; }
+.qs-pop .prow { padding: 6px 0; border-top: 1px dashed var(--border-soft); }
+.qs-pop .prow:first-of-type { border-top: 0; }
+.qs-pop .poid { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-50); border: 0; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+.qs-pop .pdim { font-size: 10px; color: var(--ink-faint); margin-top: 2px; }
+
+body.qs-printing > *:not(.qs-overlay) { display: none !important; }
+body.qs-printing .qs-overlay { position: static; }
+@media print {
+  .qs-bar { display: none; }
+  .qs-overlay { position: static; }
+  .qs-body { overflow: visible; padding: 0; }
+  .qs-sec { break-inside: avoid; box-shadow: none; }
+}
+@media (max-width: 880px) {
+  .qs-kpis { grid-template-columns: repeat(2, 1fr); }
+  .qs-grid3, .qs-2col { grid-template-columns: 1fr; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -759,6 +903,10 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
     </div>
     <div class="spacer"></div>
     <span id="livePill" class="pill-live demo"><i></i> Loading…</span>
+    <button id="openSummary" class="btn sm qs-btn" title="One-page executive VOC summary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <span>Quick Summary</span>
+    </button>
     <button id="refreshData" class="btn sm ghost" title="Reload from sheet">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>
     </button>
@@ -899,6 +1047,34 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 </aside>
 
 <div id="toast" class="toast"></div>
+
+<!-- ════════════════ QUICK SUMMARY (executive one-pager) ════════════════ -->
+<div id="qsOverlay" class="qs-overlay hidden">
+  <div class="qs-bar">
+    <div class="qs-bar-l">
+      <div class="qs-logo"><img src="gwc-dms-logo.png" alt="GWC · HP World DMS Pro"></div>
+      <div class="qs-ttl"><b>VOC V2 — Quick Summary</b><span id="qsPeriodSub">Store-wise executive scorecard</span></div>
+    </div>
+    <div class="qs-bar-r">
+      <label class="qs-wk">Week
+        <select id="qsWeek"></select>
+      </label>
+      <span id="qsRefreshed" class="qs-refreshed">—</span>
+      <button id="qsShot" class="btn sm ghost" title="Download whole report as one HD image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span>Save Image</span>
+      </button>
+      <button id="qsPrint" class="btn sm ghost" title="Print / save as PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+      </button>
+      <button id="qsClose" class="btn sm" title="Close (Esc)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Close
+      </button>
+    </div>
+  </div>
+  <div id="qsBody" class="qs-body"></div>
+</div>
 
 <script>
 /* assets/voc-icons.js */
@@ -1224,19 +1400,29 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+/* ── Timezone-safe dates ──────────────────────────────────────────────
+   The VOC V2 sheet records timestamps at IST midnight. JSON serialisation
+   turns those into UTC, which rolls a date BACK to the previous day (IST is
+   UTC+5:30). e.g. 2026-06-13 00:00 IST → 2026-06-12T18:30Z. That is exactly
+   why "date 13" rows went missing from the date filter and the daily trend.
+   We anchor EVERY day/month/label calculation to Asia/Kolkata so a sheet
+   date of the 13th always reads as the 13th, no matter the viewer's TZ. */
+const IST_TZ = 'Asia/Kolkata';
+const _istDayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: IST_TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
 function fmtDate(v) {
   if (!v) return '—';
   const d = new Date(v);
   if (isNaN(d)) return String(v);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short', year: 'numeric' });
 }
 function fmtDateTime(v) {
   if (!v) return '—';
   const d = new Date(v);
   if (isNaN(d)) return String(v);
-  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString('en-GB', { timeZone: IST_TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-function dayKey(v) { const d = new Date(v); return isNaN(d) ? null : d.toISOString().slice(0, 10); }
+// Day key in IST → "YYYY-MM-DD" (en-CA already yields ISO-ordered parts).
+function dayKey(v) { if (v == null || v === '') return null; const d = new Date(v); return isNaN(d) ? null : _istDayFmt.format(d); }
 function num(n) { return Number(n || 0).toLocaleString('en-US'); }
 function toast(msg, icon) {
   const t = $('#toast');
@@ -1270,8 +1456,7 @@ function normalize(rec) {
   r._concLabel = D.concessionLabel(r.concession);
   r._concGroup = D.concessionGroup(r.concession);
   r._day       = dayKey(r.date1);
-  const _d = new Date(r.date1);
-  r._month     = isNaN(_d) ? '' : (_d.getFullYear() + '-' + String(_d.getMonth() + 1).padStart(2, '0'));
+  r._month     = r._day ? r._day.slice(0, 7) : '';   // IST-anchored, matches _day
   return r;
 }
 
@@ -1394,13 +1579,12 @@ function populateFilters() {
   fillSelect('#fStore', stores, 'All stations');
   const weeks = [...new Set(S.all.map(r => r._week).filter(w => w != null))].sort((a, b) => a - b);
   fillSelect('#fWeek', weeks.map(w => ({ v: w, t: 'Week ' + w })), 'All weeks');
-  // Month options (YYYY-MM value, "June 2026" label), newest first.
+  // Month options (YYYY-MM value, "June 2026" label), newest first — IST-anchored.
   const mSeen = {};
   S.all.forEach(r => {
-    const d = new Date(r.date1);
-    if (isNaN(d)) return;
-    const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    if (!mSeen[v]) mSeen[v] = MONTH_NAMES_FULL[d.getMonth()] + ' ' + d.getFullYear();
+    const v = r._month;
+    if (!v) return;
+    if (!mSeen[v]) mSeen[v] = MONTH_NAMES_FULL[parseInt(v.slice(5, 7), 10) - 1] + ' ' + v.slice(0, 4);
   });
   const mOpts = Object.keys(mSeen).sort((a, b) => b.localeCompare(a)).map(v => ({ v: v, t: mSeen[v] }));
   fillSelect('#fMonth', mOpts, 'All months');
@@ -1474,6 +1658,23 @@ function clearFilters() {
   applyFilters();
 }
 
+/* Match a record against every active filter EXCEPT period (week / month / date).
+   Used to count a comparable "previous week" in the same store/category scope. */
+function periodNeutralMatch(r) {
+  const f = S.filters;
+  if (f.store       && r.storeCode !== f.store) return false;
+  if (f.category    && r.issueCategory !== f.category) return false;
+  if (f.description && r.issueDesc !== f.description) return false;
+  if (f.concession  && r._concGroup !== f.concession) return false;
+  if (f.search) {
+    const hay = (r.orderId + ' ' + r.asin + ' ' + r.productTitle + ' ' + r.comment + ' ' +
+                 r.customerId + ' ' + r.pickerId + ' ' + r.issueDesc + ' ' + r.rcaCap).toLowerCase();
+    if (!hay.includes(f.search)) return false;
+  }
+  return true;
+}
+window.VOC.periodNeutralMatch = periodNeutralMatch;
+
 const CHIP_LABELS = { dateFrom:'From', dateTo:'To', month:'Month', week:'Week', store:'Station', category:'Category',
   description:'Description', concession:'Concession', search:'Search' };
 function renderChips() {
@@ -1518,9 +1719,14 @@ function computeKpis(rows) {
   k.rcaDone = k.total - k.rcaPending;
   const weeks = [...new Set(rows.map(r => r._week).filter(w => w != null))].sort((a, b) => a - b);
   const curW = weeks[weeks.length - 1];
-  const prevW = weeks[weeks.length - 2];
+  // Previous week = the closest week BELOW the current one that exists ANYWHERE
+  // in the data — so filtering to Week 24 still shows Week 23 as "prev".
+  const allWeeks = [...new Set(S.all.map(r => r._week).filter(w => w != null))].sort((a, b) => a - b);
+  let prevW = weeks[weeks.length - 2];
+  if (curW != null && prevW == null) prevW = [...allWeeks].reverse().find(w => w < curW);
   k.curWeek = curW != null ? rows.filter(r => r._week === curW).length : 0;
-  k.prevWeek = prevW != null ? rows.filter(r => r._week === prevW).length : 0;
+  // Count prev-week from ALL data, honouring every active filter except week/date.
+  k.prevWeek = prevW != null ? S.all.filter(r => !r._dup && r._week === prevW && periodNeutralMatch(r)).length : 0;
   k.curWeekLabel = curW != null ? 'Week ' + curW : '—';
   k.prevWeekLabel = prevW != null ? 'Week ' + prevW : '—';
   k.wow = k.prevWeek ? Math.round(((k.curWeek - k.prevWeek) / k.prevWeek) * 100) : null;
@@ -2231,16 +2437,32 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderStores() {
     const period = activeView();
 
-    // Previous comparable period = a same-length date window immediately before the current one.
+    // Previous comparable period.
+    // 1) If the current view is a single week (week filter, or all rows share one
+    //    week), prev = the closest EARLIER week in the data (Week 24 → Week 23).
+    // 2) Otherwise fall back to a same-length date window immediately before.
     const DAY = 86400000;
-    const times = period.map(r => +new Date(r.date1)).filter(t => !isNaN(t));
     let prevRows = null, prevLabel = '';
-    if (times.length) {
-      const minT = Math.min(...times), maxT = Math.max(...times);
-      const span = Math.max(maxT - minT, DAY);
-      const prevEnd = minT - DAY, prevStart = prevEnd - span;
-      const pr = S.all.filter(r => { if (r._dup) return false; const t = +new Date(r.date1); return !isNaN(t) && t >= prevStart && t <= prevEnd; });
-      if (pr.length) { prevRows = pr; prevLabel = fmtDate(new Date(prevStart)) + ' – ' + fmtDate(new Date(prevEnd)); }
+    const viewWeeks = [...new Set(period.map(r => r._week).filter(w => w != null))];
+    const neutral = window.VOC.periodNeutralMatch || (() => true);
+    if (viewWeeks.length === 1) {
+      const curW = viewWeeks[0];
+      const allWeeks = [...new Set(S.all.map(r => r._week).filter(w => w != null))].sort((a, b) => a - b);
+      const prevW = [...allWeeks].reverse().find(w => w < curW);
+      if (prevW != null) {
+        prevRows = S.all.filter(r => !r._dup && r._week === prevW && neutral(r));
+        prevLabel = 'Week ' + prevW;
+      }
+    }
+    if (prevRows == null) {
+      const times = period.map(r => +new Date(r.date1)).filter(t => !isNaN(t));
+      if (times.length) {
+        const minT = Math.min(...times), maxT = Math.max(...times);
+        const span = Math.max(maxT - minT, DAY);
+        const prevEnd = minT - DAY, prevStart = prevEnd - span;
+        const pr = S.all.filter(r => { if (r._dup) return false; const t = +new Date(r.date1); return !isNaN(t) && t >= prevStart && t <= prevEnd; });
+        if (pr.length) { prevRows = pr; prevLabel = fmtDate(new Date(prevStart)) + ' – ' + fmtDate(new Date(prevEnd)); }
+      }
     }
 
     const pnfOf = r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim());
@@ -3012,6 +3234,412 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.VOCInsights = { renderTop15, renderCompare };
+})();
+
+</script>
+<script>
+/* assets/voc-summary.js */
+/* ═══════════════════════════════════════════════════════════════════
+   VOC V2 — QUICK SUMMARY: one-page executive scorecard.
+   Current week vs the closest earlier week (Week 24 → Week 23). Reads the
+   same live rows as the rest of the app; duplicates excluded everywhere.
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  const V = window.VOC, D = window.VOCData;
+  if (!V || !D) return;
+  const $ = s => document.querySelector(s);
+  const esc = V.esc, num = V.num, fmtDate = V.fmtDate;
+
+  const COL = { primary:'#146EB4', navy:'#232F3E', success:'#16A34A', warning:'#D97706',
+                danger:'#DC2626', steel:'#5B8DB8', grey:'#B6C0CC', purple:'#7C5CD6' };
+  const WD = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const _wdFmt = new Intl.DateTimeFormat('en-US', { timeZone:'Asia/Kolkata', weekday:'short' });
+  const charts = {};
+  let selWeek = null;
+
+  const pnfOf = r => !D.rcaPending(r) && !(r.pickerId && String(r.pickerId).trim());
+  const live  = () => V.S.all.filter(r => !r._dup);
+  const weeksAvail = () => [...new Set(live().map(r => r._week).filter(w => w != null))].sort((a,b)=>a-b);
+  const prevWeekOf = w => [...weeksAvail()].reverse().find(x => x < w);
+  const rowsForWeek = w => (w==null ? [] : live().filter(r => r._week === w));
+  const weekdayOf = r => { const d = new Date(r.date1); return isNaN(d) ? null : _wdFmt.format(d); };
+
+  function metrics(rows) {
+    const m = { total: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, ops:0, rcaPending:0, pnf:0 };
+    rows.forEach(r => {
+      const c = D.classify(r);
+      if (c.isUTR) m.utr++; if (c.isOTR) m.otr++; if (c.isPicker) m.picker++;
+      if (c.isQC) m.qc++; if (c.isNonOps) m.nonops++; if (c.kind === 'ops') m.ops++;
+      if (c.rcaPending) m.rcaPending++; if (pnfOf(r)) m.pnf++;
+    });
+    return m;
+  }
+  function topDriverOf(m) {
+    const d = [['RCA Pending', m.rcaPending], ['Non-Ops', m.nonops], ['Picker Errors', m.picker],
+              ['UTR (Ops)', m.utr], ['OTR (Ops)', m.otr], ['QC Issues', m.qc]];
+    d.sort((a,b)=>b[1]-a[1]); return d[0][1] ? d[0][0] : '—';
+  }
+  function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
+  function wowPct(cur,prev){ return prev ? Math.round((cur-prev)/prev*100) : null; }
+
+  function dCell(cur, prev, goodUp) {
+    if (prev == null) return '';
+    const diff = cur - prev;
+    if (diff === 0) return '<span class="qs-d flat">–</span>';
+    const up = diff > 0, good = (up === !!goodUp);
+    return '<span class="qs-d ' + (good ? 'good' : 'bad') + '">' + (up ? '▲' : '▼') + Math.abs(diff) + '</span>';
+  }
+  function prevMonthStr(ym){ let [y,mo] = ym.split('-').map(Number); mo--; if (mo < 1){ mo = 12; y--; } return y + '-' + String(mo).padStart(2,'0'); }
+  const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function monthLabel(ym){ if (!ym) return '—'; const [y,mo] = ym.split('-'); return MN[(+mo)-1] + ' ' + y; }
+  function fmtDue(days){ const d = new Date(Date.now() + days*86400000); return d.toLocaleDateString('en-GB',{ day:'2-digit', month:'short' }); }
+
+  /* ───────── store scorecards ───────── */
+  function storeCards(curRows, prevRows, prevW) {
+    const stores = [...new Set([...curRows, ...prevRows].map(r => r.storeCode).filter(Boolean))].sort();
+    if (!stores.length) return '<div style="padding:24px;color:var(--ink-faint)">No stations in this week.</div>';
+    return stores.map(s => {
+      const cr = curRows.filter(r => r.storeCode === s), pr = prevRows.filter(r => r.storeCode === s);
+      const cm = metrics(cr), pm = metrics(pr);
+      const hasPrev = prevW != null;
+      const line = (k, v, danger, d) =>
+        '<div class="qs-line"><span class="lk">' + k + '</span><span class="lv"><span' + (danger ? ' style="color:var(--danger)"' : '') + '>' + v + '</span>' + (d||'') + '</span></div>';
+      const pnfRows = cr.filter(pnfOf);
+      const pop = pnfRows.length ? '<div class="qs-pop" hidden>' +
+          '<div class="ph">RCA filled · Picker ID missing — back-fill needed</div>' +
+          pnfRows.sort((a,b)=>new Date(b.date1)-new Date(a.date1)).slice(0,14).map(r =>
+            '<div class="prow"><button type="button" class="poid" data-copy="' + esc(r.orderId||'') + '" title="Click to copy Order ID">' + esc(r.orderId||'—') + '</button>' +
+            '<div class="pdim">' + esc((r.productTitle||'—').slice(0,30)) + ' · ' + fmtDate(r.date1) + '</div></div>').join('') +
+          (pnfRows.length > 14 ? '<div class="pdim" style="padding-top:6px">+' + (pnfRows.length-14) + ' more</div>' : '') +
+        '</div>' : '';
+      return '<div class="qs-card' + (cm.pnf ? ' flag' : '') + '">' +
+          '<div class="qs-card-top"><div class="qs-card-name">' + esc(s) + '</div>' +
+            '<div class="qs-card-tot"><b>' + cm.total + '</b><span>VOC' + (hasPrev ? ' · prev ' + pm.total : '') + '</span></div></div>' +
+          line('UTR (Ops)', cm.utr, false, dCell(cm.utr, hasPrev?pm.utr:null, false)) +
+          line('OTR (Ops)', cm.otr, false, dCell(cm.otr, hasPrev?pm.otr:null, false)) +
+          line('Picker Err', cm.picker, cm.picker > 5, dCell(cm.picker, hasPrev?pm.picker:null, false)) +
+          line('QC Issue', cm.qc, cm.qc > 3, dCell(cm.qc, hasPrev?pm.qc:null, false)) +
+          line('Non-Ops', cm.nonops, false, dCell(cm.nonops, hasPrev?pm.nonops:null, false)) +
+          line('RCA Pending', cm.rcaPending + (cm.rcaPending ? ' ⏳' : ''), cm.rcaPending > 0) +
+          (cm.pnf ? '<div class="qs-pnf" data-pnf><span>Picker Not Filled</span><span>' + cm.pnf + ' ⚠</span>' + pop + '</div>' : '') +
+        '</div>';
+    }).join('');
+  }
+
+  /* ───────── KPI tiles ───────── */
+  function kpiTiles(cm, pm, prevW) {
+    const wl = prevW != null ? 'vs Week ' + prevW : 'no prior week';
+    const totWow = wowPct(cm.total, pm.total);
+    const tile = (cls, dot, label, val, foot) =>
+      '<div class="qs-kpi ' + cls + '"><div class="kl"><span class="dot" style="background:' + dot + '"></span>' + label + '</div>' +
+      '<div class="kv">' + val + '</div><div class="kf">' + foot + '</div></div>';
+    return '<div class="qs-kpis">' +
+      tile('k-blue', COL.primary, 'Total VOC', cm.total, 'Prev ' + (prevW!=null?'Wk':'') + ' ' + pm.total + (totWow!=null ? ' · ' + (totWow>=0?'▲':'▼') + Math.abs(totWow) + '%' : '')) +
+      tile('k-green', COL.success, 'Controllable VOC', cm.ops + ' <span style="font-size:14px;color:var(--ink-faint)">(' + pct(cm.ops, cm.total) + '%)</span>', 'Ops-controllable · ' + wl + ' ' + pm.ops) +
+      tile('k-amber', COL.warning, 'RCA Pending', cm.rcaPending, 'Prev ' + pm.rcaPending + ' · ' + wl) +
+      tile('k-purple', COL.purple, 'Picker Not Filled', cm.pnf, 'RCA filled, Picker ID blank') +
+    '</div>';
+  }
+
+  /* ───────── top VOC drivers ───────── */
+  function drivers(cm) {
+    const rows = [
+      ['Non-Ops', cm.nonops, COL.steel], ['RCA Pending', cm.rcaPending, COL.warning],
+      ['UTR (Ops)', cm.utr, COL.danger], ['Picker Errors', cm.picker, COL.primary],
+      ['OTR (Ops)', cm.otr, COL.navy], ['QC Issues', cm.qc, COL.purple]
+    ].sort((a,b)=>b[1]-a[1]);
+    const max = Math.max(1, ...rows.map(r=>r[1]));
+    return '<div class="qs-drv">' + rows.map(r =>
+      '<div class="qs-drv-row"><span class="dl">' + r[0] + '</span>' +
+        '<span class="qs-drv-bar"><i style="width:' + Math.round(r[1]/max*100) + '%;background:' + r[2] + '"></i></span>' +
+        '<span class="dv">' + r[1] + '<small>' + pct(r[1], cm.total) + '%</small></span></div>').join('') +
+    '</div>';
+  }
+
+  /* ───────── store comparison table ───────── */
+  function storeTable(curRows, prevRows, curW, prevW) {
+    const stores = [...new Set([...curRows, ...prevRows].map(r => r.storeCode).filter(Boolean))].sort();
+    let tc = 0, tp = 0;
+    const body = stores.map(s => {
+      const cm = metrics(curRows.filter(r=>r.storeCode===s));
+      const pm = metrics(prevRows.filter(r=>r.storeCode===s));
+      tc += cm.total; tp += pm.total;
+      const ch = cm.total - pm.total, p = wowPct(cm.total, pm.total);
+      const chCls = ch > 0 ? 'qs-up' : ch < 0 ? 'qs-down' : 'qs-flat2';
+      const td = topDriverOf(cm);
+      let insight = 'Stable vs last week';
+      if (cm.rcaPending >= 3 && cm.rcaPending >= cm.total*0.4) insight = 'High RCA pending — focus closure';
+      else if (cm.picker > 5) insight = 'Picker errors elevated';
+      else if (ch > 0) insight = 'Deterioration vs last week';
+      else if (ch < 0) insight = 'Improved vs last week';
+      return '<tr><td style="font-weight:700;color:var(--ink)">' + esc(s) + '</td>' +
+        '<td class="num">' + cm.total + '</td><td class="num" style="color:var(--ink-3)">' + pm.total + '</td>' +
+        '<td class="' + chCls + '">' + (ch>0?'+':'') + ch + '</td>' +
+        '<td class="' + chCls + '">' + (p==null?'—':(p>0?'+':'')+p+'%') + '</td>' +
+        '<td>' + td + '</td><td style="color:var(--ink-3)">' + insight + '</td></tr>';
+    }).join('');
+    const tch = tc - tp, tp2 = wowPct(tc, tp);
+    const totCls = tch > 0 ? 'qs-up' : tch < 0 ? 'qs-down' : 'qs-flat2';
+    return '<table class="qs-table"><thead><tr><th>Store</th><th>Total VOC (W' + curW + ')</th>' +
+      '<th>Prev (W' + (prevW!=null?prevW:'–') + ')</th><th>WoW Δ</th><th>WoW %</th><th>Top Driver</th><th>Key Insight</th></tr></thead>' +
+      '<tbody>' + body + '<tr class="tot"><td>TOTAL</td><td class="num">' + tc + '</td><td class="num">' + tp + '</td>' +
+      '<td class="' + totCls + '">' + (tch>0?'+':'') + tch + '</td><td class="' + totCls + '">' + (tp2==null?'—':(tp2>0?'+':'')+tp2+'%') + '</td><td>—</td><td>—</td></tr></tbody></table>';
+  }
+
+  /* ───────── key insights (auto) ───────── */
+  function insights(curRows, prevRows, cm, pm, curW, prevW) {
+    const stores = [...new Set(curRows.map(r=>r.storeCode).filter(Boolean))];
+    const byStore = stores.map(s => ({ s, m: metrics(curRows.filter(r=>r.storeCode===s)),
+                                       pm: metrics(prevRows.filter(r=>r.storeCode===s)) }));
+    const li = (col, html) => '<li><span class="b" style="background:' + col + '"></span><span>' + html + '</span></li>';
+    const out = [];
+    if (byStore.length) {
+      const hi = [...byStore].sort((a,b)=>b.m.total-a.m.total)[0];
+      out.push(li(COL.danger, '<b>' + esc(hi.s) + '</b> has the highest VOC (<b>' + hi.m.total + '</b>) — driven by ' + topDriverOf(hi.m) + ' (' + Math.max(hi.m.rcaPending, hi.m.nonops) + ').'));
+      const det = [...byStore].map(b => ({ s:b.s, ch:b.m.total-b.pm.total })).sort((a,b)=>b.ch-a.ch)[0];
+      if (det && det.ch > 0) out.push(li(COL.warning, '<b>' + esc(det.s) + '</b> shows the biggest week-on-week rise (<b>+' + det.ch + '</b>) — needs attention.'));
+    }
+    out.push(li(COL.primary, 'RCA Pending is <b>' + pct(cm.rcaPending, cm.total) + '%</b> of this week\u2019s VOC (' + cm.rcaPending + ' of ' + cm.total + ') — prioritise closure.'));
+    const w = wowPct(cm.total, pm.total);
+    if (w != null) out.push(li(w<=0?COL.success:COL.danger, 'Overall VOC is <b>' + (w>0?'up':'down') + ' ' + Math.abs(w) + '%</b> vs Week ' + prevW + ' (' + cm.total + ' vs ' + pm.total + ').'));
+    if (cm.pnf) out.push(li(COL.purple, '<b>' + cm.pnf + '</b> record' + (cm.pnf===1?'':'s') + ' have an RCA but no Picker ID — back-fill to fix accountability.'));
+    return '<ul class="qs-ins">' + out.join('') + '</ul>';
+  }
+
+  /* ───────── actions & ownership (data-aware defaults) ───────── */
+  function actions(cm) {
+    const rows = [];
+    if (cm.picker > 0) rows.push(['Daily picker coaching &amp; compliance checks', 'Operations Leads', fmtDue(1), cm.picker>5?'prog':'pend', cm.picker>5?'In Progress':'Pending']);
+    if (cm.qc > 0 || cm.utr > 0) rows.push(['QC validation before staging', 'QC Leads', fmtDue(1), 'prog', 'In Progress']);
+    if (cm.rcaPending > 0) rows.push(['Close all pending RCA within 24 hours', 'Store Managers', fmtDue(1), 'pend', 'Pending']);
+    rows.push(['Review repeat VOC orders &amp; standardise process', 'Process Team', fmtDue(2), 'pend', 'Pending']);
+    return '<table class="qs-table"><thead><tr><th style="width:34px">#</th><th>Action</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
+      rows.map((r,i) => '<tr><td class="num">' + (i+1) + '</td><td style="color:var(--ink)">' + r[0] + '</td><td>' + r[1] + '</td><td class="num" style="color:var(--ink-3)">' + r[2] + '</td>' +
+        '<td><span class="qs-status ' + r[3] + '">' + r[4] + '</span></td></tr>').join('') +
+    '</tbody></table>';
+  }
+
+  /* ───────── focus footer ───────── */
+  function focus(cm) {
+    const top = topDriverOf(cm);
+    return '<div class="qs-focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2h6c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>' +
+      '<div class="ft"><b>Focus for today:</b> Reduce ' + top + ' and close RCA pending (' + cm.rcaPending + ') to bring down controllable VOC.' +
+      '<span class="g">Goal: sustainable reduction in VOC counts → fewer concessions → better customer experience.</span></div></div>';
+  }
+
+  /* ───────── UTR target analysis (orders vs VOC) ───────── */
+  const orderCache = {};   // week -> {store:count} | 'na' | 'pending'
+  function fetchOrders(week) {
+    return new Promise(resolve => {
+      const cached = orderCache[week];
+      if (cached && cached !== 'pending') return resolve(cached);
+      const url = V.WEB_APP_URL, jp = V.jsonp;
+      if (!url || !jp) { orderCache[week] = 'na'; return resolve('na'); }
+      orderCache[week] = 'pending';
+      jp(url, { action:'orders', week:String(week) }).then(res => {
+        orderCache[week] = (res && res.status === 'ok') ? (res.stores || {}) : 'na';
+        resolve(orderCache[week]);
+      }).catch(() => { orderCache[week] = 'na'; resolve('na'); });
+    });
+  }
+  function utrSection(curRows, curW) {
+    const target = D.VOC_UTR_TARGET || 0.10;
+    const stores = [...new Set(curRows.map(r => r.storeCode).filter(Boolean))].sort();
+    const utrBy = {}; stores.forEach(s => utrBy[s] = 0);
+    curRows.forEach(r => { if (D.classify(r).isUTR) utrBy[r.storeCode]++; });
+    const oc = orderCache[curW];
+    const orders = (oc && oc !== 'na' && oc !== 'pending') ? oc : null;
+    const loading = oc === 'pending';
+    const liveReady = !!V.WEB_APP_URL;
+
+    let tUtr = 0, tOrd = 0;
+    const body = stores.map(s => {
+      const utr = utrBy[s] || 0; tUtr += utr;
+      const ord = orders ? (orders[s] || 0) : null; if (ord != null) tOrd += ord;
+      const rate = (ord != null && ord > 0) ? (utr / ord * 100) : null;
+      const over = rate != null && rate > target;
+      const rateTxt = rate == null ? '<span style="color:var(--ink-faint)">—</span>'
+        : '<b class="' + (over ? 'qs-up' : 'qs-down') + '">' + rate.toFixed(3) + '%</b>';
+      const stat = rate == null ? '<span style="color:var(--ink-faint)">awaiting orders</span>'
+        : '<span class="qs-status ' + (over ? 'pend' : 'done') + '">' + (over ? 'Over target' : 'On target') + '</span>';
+      return '<tr><td style="font-weight:700;color:var(--ink)">' + esc(s) + '</td>' +
+        '<td class="num">' + utr + '</td>' +
+        '<td class="num">' + (ord == null ? '—' : num(ord)) + '</td>' +
+        '<td class="num">' + rateTxt + '</td>' +
+        '<td class="num" style="color:var(--ink-3)">' + target.toFixed(2) + '%</td>' +
+        '<td>' + stat + '</td></tr>';
+    }).join('');
+    const tRate = (orders && tOrd > 0) ? (tUtr / tOrd * 100) : null;
+    const tOver = tRate != null && tRate > target;
+    const totRow = '<tr class="tot"><td>TOTAL</td><td class="num">' + tUtr + '</td>' +
+      '<td class="num">' + (orders ? num(tOrd) : '—') + '</td>' +
+      '<td class="num">' + (tRate == null ? '—' : '<span class="' + (tOver?'qs-up':'qs-down') + '">' + tRate.toFixed(3) + '%</span>') + '</td>' +
+      '<td class="num">' + target.toFixed(2) + '%</td><td>—</td></tr>';
+
+    const btn = '<button id="qsUtrFetch" class="btn sm primary"' + (loading ? ' disabled' : '') + '>' +
+      (loading ? 'Fetching…' : (orders ? 'Refresh orders' : 'Fetch Orders')) + '</button>';
+    const note = liveReady ? '' :
+      '<div style="font-size:11.5px;color:var(--ink-faint);padding:10px 12px 0">Order counts need the live Apps Script connection — UTR Count is shown; rates appear once orders load.</div>';
+    return '<div style="display:flex;align-items:center;justify-content:flex-end;padding:0 12px 10px;gap:10px">' +
+        '<span style="font-size:11.5px;color:var(--ink-faint);margin-right:auto;padding-left:0">Pulls orders for Week ' + curW + ' from the Store Metric sheet, then UTR ÷ Orders × 100.</span>' + btn + '</div>' +
+      '<table class="qs-table"><thead><tr><th>Store</th><th>UTR VOC</th><th>Orders</th><th>UTR Rate</th><th>Target</th><th>Status</th></tr></thead>' +
+      '<tbody>' + (body || '<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:18px">No stations in this week.</td></tr>') + totRow + '</tbody></table>' + note;
+  }
+  function wireUtr(curW) {
+    const b = document.getElementById('qsUtrFetch');
+    if (!b) return;
+    b.onclick = () => {
+      if (!V.WEB_APP_URL) { V.toast('Add the live Apps Script connection to pull order counts'); return; }
+      b.disabled = true; b.textContent = 'Fetching…';
+      fetchOrders(curW).then(() => { if (selWeek === curW) { const host = document.getElementById('qsUtrBody'); if (host) { host.innerHTML = utrSection(rowsForWeek(curW), curW); wireUtr(curW); } } });
+    };
+  }
+
+  /* ───────── HD screenshot of the whole report ───────── */
+  function saveImage() {
+    const sheet = document.querySelector('.qs-sheet');
+    if (!sheet || !window.html2canvas) { V.toast('Image export unavailable'); return; }
+    const btn = document.getElementById('qsShot');
+    if (btn) { btn.disabled = true; }
+    V.toast('Rendering HD image…');
+    document.body.classList.add('qs-shooting');
+    html2canvas(sheet, { scale: 2, backgroundColor: '#EEF2F6', useCORS: true, logging: false,
+      windowWidth: sheet.scrollWidth, windowHeight: sheet.scrollHeight }).then(canvas => {
+      document.body.classList.remove('qs-shooting');
+      canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'VOC_V2_Quick_Summary_W' + (selWeek||'') + '_' + new Date().toISOString().slice(0,10) + '.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+        V.toast('HD image downloaded');
+        if (btn) btn.disabled = false;
+      }, 'image/png');
+    }).catch(e => { document.body.classList.remove('qs-shooting'); V.toast('Image export failed: ' + e.message); if (btn) btn.disabled = false; });
+  }
+
+  /* ───────── charts ───────── */
+  function dailyByWeekday(rows) { const o = {}; WD.forEach(d=>o[d]=0); rows.forEach(r=>{ const w = weekdayOf(r); if (w && o[w]!=null) o[w]++; }); return WD.map(d=>o[d]); }
+  function drawCharts(curRows, prevRows, curW, prevW) {
+    if (!window.Chart) return;
+    Object.values(charts).forEach(c => c && c.destroy());
+    const cur = dailyByWeekday(curRows), prev = dailyByWeekday(prevRows);
+    const ctxW = document.getElementById('qsWoW');
+    if (ctxW) charts.wow = new Chart(ctxW, {
+      type:'line',
+      data:{ labels: WD, datasets:[
+        { label:'Week ' + curW, data: cur, borderColor: COL.primary, backgroundColor:'rgba(20,110,180,.10)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor: COL.primary, borderWidth:2 },
+        { label: prevW!=null?'Week '+prevW:'Prev', data: prev, borderColor: COL.grey, borderDash:[5,4], fill:false, tension:.3, pointRadius:2, pointBackgroundColor: COL.grey, borderWidth:2 }
+      ]},
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, boxWidth:7, padding:12, font:{ size:10.5 } } } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ color:'#94A0AE', font:{ size:10.5 } } }, y:{ beginAtZero:true, grid:{ color:'#EEF1F5' }, ticks:{ precision:0, color:'#94A0AE', font:{ size:10.5 } } } } }
+    });
+    // MoM
+    const months = [...new Set(live().map(r=>r._month).filter(Boolean))].sort();
+    const curM = months[months.length-1] || '';
+    const prevM = curM ? prevMonthStr(curM) : '';
+    const curMt = live().filter(r=>r._month===curM).length;
+    const prevMt = live().filter(r=>r._month===prevM).length;
+    const ctxM = document.getElementById('qsMoM');
+    if (ctxM) charts.mom = new Chart(ctxM, {
+      type:'bar',
+      data:{ labels:[ monthLabel(prevM), monthLabel(curM) ], datasets:[{ data:[ prevMt, curMt ],
+        backgroundColor:[ COL.grey, COL.primary ], borderRadius:6, barPercentage:.55 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ color:'#475467', font:{ size:11, weight:'600' } } }, y:{ beginAtZero:true, grid:{ color:'#EEF1F5' }, ticks:{ precision:0, color:'#94A0AE', font:{ size:10.5 } } } } }
+    });
+    return { curMt, prevMt, curM, prevM };
+  }
+
+  /* ───────── main render ───────── */
+  function render() {
+    const wk = weeksAvail();
+    if (!wk.length) { $('#qsBody').innerHTML = '<div class="qs-sheet"><div class="qs-sec"><div class="qs-sec-b" style="text-align:center;color:var(--ink-faint);padding:40px">No week data loaded yet.</div></div></div>'; return; }
+    if (selWeek == null || !wk.includes(selWeek)) selWeek = wk[wk.length-1];
+    const curW = selWeek, prevW = prevWeekOf(curW);
+    const curRows = rowsForWeek(curW), prevRows = rowsForWeek(prevW);
+    const cm = metrics(curRows), pm = metrics(prevRows);
+
+    // week selector
+    const sel = $('#qsWeek');
+    sel.innerHTML = [...wk].reverse().map(w => '<option value="' + w + '"' + (w===curW?' selected':'') + '>Week ' + w + '</option>').join('');
+    $('#qsPeriodSub').textContent = 'Week ' + curW + (prevW!=null ? ' vs Week ' + prevW : '') + ' · ' + curRows.length + ' VOC';
+    $('#qsRefreshed').textContent = V.S.lastRefreshed ? 'Refreshed ' + V.fmtDateTime(V.S.lastRefreshed) : (V.S.live ? 'Live' : 'Sample data');
+
+    const wWow = wowPct(cm.total, pm.total);
+
+    $('#qsBody').innerHTML =
+      '<div class="qs-sheet">' +
+        // print-only branded header (so the GWC logo lands in the PDF)
+        '<div class="qs-print-head"><img src="gwc-dms-logo.png" alt="GWC · HP World DMS Pro">' +
+          '<div class="qph-t"><b>VOC V2 — Quick Summary</b><span>Week ' + curW + (prevW!=null?' vs Week '+prevW:'') + ' · ' + curRows.length + ' VOC · ' +
+          new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) + '</span></div></div>' +
+        // store scorecards
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>Store-wise Scorecard</h3>' +
+          '<span class="sub">Week ' + curW + (prevW!=null?' vs Week '+prevW+' — Δ per metric':'') + '</span></div>' +
+          '<div class="qs-sec-b"><div class="qs-stores">' + storeCards(curRows, prevRows, prevW) + '</div></div></div>' +
+        // KPI tiles
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>Weekly VOC Analysis Summary</h3>' +
+          '<span class="sub">Week ' + curW + ' headline metrics</span></div>' +
+          '<div class="qs-sec-b">' + kpiTiles(cm, pm, prevW) + '</div></div>' +
+        // 3-col: drivers / WoW / MoM
+        '<div class="qs-grid3">' +
+          '<div class="qs-sec"><div class="qs-sec-h"><h3>Top VOC Drivers</h3><span class="sub">All stores</span></div>' +
+            '<div class="qs-sec-b">' + drivers(cm) + '</div></div>' +
+          '<div class="qs-sec"><div class="qs-sec-h"><h3>WoW Trend</h3><span class="sub">By weekday</span></div>' +
+            '<div class="qs-sec-b"><div class="qs-chart-wrap"><canvas id="qsWoW"></canvas></div>' +
+              '<div class="qs-callout"><span>Week ' + curW + ': <b>' + cm.total + '</b> · Week ' + (prevW!=null?prevW:'–') + ': <b>' + pm.total + '</b></span>' +
+              '<span class="' + (wWow!=null&&wWow<=0?'qs-down':'qs-up') + '">' + (wWow==null?'—':(wWow>0?'+':'')+wWow+'%') + '</span></div></div></div>' +
+          '<div class="qs-sec"><div class="qs-sec-h"><h3>MoM Trend</h3><span class="sub">Month-over-month</span></div>' +
+            '<div class="qs-sec-b"><div class="qs-chart-wrap"><canvas id="qsMoM"></canvas></div><div id="qsMoMCallout" class="qs-callout"></div></div></div>' +
+        '</div>' +
+        // store comparison
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>Store Comparison — Week ' + curW + '</h3><span class="sub">Current vs previous week</span></div>' +
+          '<div class="qs-sec-b" style="padding:0">' + storeTable(curRows, prevRows, curW, prevW) + '</div></div>' +
+        // UTR target analysis (order vs VOC rate)
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>UTR Target Analysis</h3>' +
+          '<span class="sub">UTR Rate = UTR Ops-Controllable VOC ÷ Orders × 100 · target ' + (D.VOC_UTR_TARGET||0.10).toFixed(2) + '%</span></div>' +
+          '<div class="qs-sec-b" id="qsUtrBody">' + utrSection(curRows, curW) + '</div></div>' +
+        // insights (full width)
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>Key Insights</h3></div><div class="qs-sec-b">' + insights(curRows, prevRows, cm, pm, curW, prevW) + '</div></div>' +
+        // report footer
+        '<div class="qs-foot"><div class="qs-foot-line"><span class="qs-foot-by">Report generated by</span>' +
+          '<img src="dms-pro-logo-t.png" class="qs-foot-logo" alt="HP World DMS Pro"></div>' +
+          '<div class="qs-foot-meta">VOC V2 · Voice of Customer Operations · Week ' + curW + ' · ' +
+          new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) + '</div></div>' +
+      '</div>';
+
+    wireUtr(curW);
+    const mom = drawCharts(curRows, prevRows, curW, prevW);
+    if (mom) {
+      const diff = mom.curMt - mom.prevMt, p = wowPct(mom.curMt, mom.prevMt);
+      $('#qsMoMCallout').innerHTML = '<span>' + monthLabel(mom.curM) + ': <b>' + mom.curMt + '</b> · ' + monthLabel(mom.prevM) + ': <b>' + mom.prevMt + '</b></span>' +
+        '<span class="' + (diff<=0?'qs-down':'qs-up') + '">' + (diff>0?'+':'') + diff + (p==null?'':' ('+(p>0?'+':'')+p+'%)') + '</span>';
+    }
+  }
+
+  /* ───────── open / close / wire ───────── */
+  function open()  { selWeek = null; document.getElementById('qsOverlay').classList.remove('hidden'); document.body.style.overflow = 'hidden'; render(); }
+  function close() { document.getElementById('qsOverlay').classList.add('hidden'); document.body.style.overflow = ''; }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const b = document.getElementById('openSummary'); if (b) b.onclick = open;
+    const c = document.getElementById('qsClose');     if (c) c.onclick = close;
+    const w = document.getElementById('qsWeek');       if (w) w.onchange = e => { selWeek = Number(e.target.value); render(); };
+    const p = document.getElementById('qsPrint');      if (p) p.onclick = () => {
+      document.body.classList.add('qs-printing'); window.print();
+      setTimeout(() => document.body.classList.remove('qs-printing'), 500);
+    };
+    const sh = document.getElementById('qsShot');      if (sh) sh.onclick = saveImage;
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('qsOverlay').classList.contains('hidden')) close(); });
+    // toggle PNF popovers
+    document.getElementById('qsBody').addEventListener('click', e => {
+      const pnf = e.target.closest('[data-pnf]');
+      if (pnf && !e.target.closest('.qs-pop')) { const pop = pnf.querySelector('.qs-pop'); if (pop) pop.hidden = !pop.hidden; }
+    });
+  });
+
+  window.VOCSummary = { open, close, render };
 })();
 
 </script>
