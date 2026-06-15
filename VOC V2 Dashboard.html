@@ -825,9 +825,15 @@ body.qs-printing .qs-overlay { position: static; }
   .qs-kpis { grid-template-columns: repeat(2, 1fr); }
   .qs-grid3, .qs-2col { grid-template-columns: 1fr; }
 }
+/* force full desktop layout while exporting to image (so phone exports match the reference) */
+.qs-exporting .qs-kpis { grid-template-columns: repeat(4, 1fr) !important; }
+.qs-exporting .qs-grid3 { grid-template-columns: 1fr 1fr 1fr !important; }
+.qs-exporting .qs-2col { grid-template-columns: 1fr 1fr !important; }
+.qs-exporting .qs-stores { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
 </head>
 <body>
 
@@ -3498,24 +3504,67 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ───────── HD screenshot of the whole report ───────── */
   function saveImage() {
     const sheet = document.querySelector('.qs-sheet');
-    if (!sheet || !window.html2canvas) { V.toast('Image export unavailable'); return; }
+    if (!sheet) { V.toast('Image export unavailable'); return; }
     const btn = document.getElementById('qsShot');
-    if (btn) { btn.disabled = true; }
+    if (btn) btn.disabled = true;
     V.toast('Rendering HD image…');
-    document.body.classList.add('qs-shooting');
-    html2canvas(sheet, { scale: 2, backgroundColor: '#EEF2F6', useCORS: true, logging: false,
-      windowWidth: sheet.scrollWidth, windowHeight: sheet.scrollHeight }).then(canvas => {
-      document.body.classList.remove('qs-shooting');
-      canvas.toBlob(blob => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'VOC_V2_Quick_Summary_W' + (selWeek||'') + '_' + new Date().toISOString().slice(0,10) + '.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-        V.toast('HD image downloaded');
-        if (btn) btn.disabled = false;
-      }, 'image/png');
-    }).catch(e => { document.body.classList.remove('qs-shooting'); V.toast('Image export failed: ' + e.message); if (btn) btn.disabled = false; });
+
+    const W = 1240;   // fixed desktop width so phone exports match the reference layout
+    document.body.classList.add('qs-shooting', 'qs-exporting');
+    const prev = { transform: sheet.style.transform, width: sheet.style.width, maxWidth: sheet.style.maxWidth, margin: sheet.style.margin };
+    sheet.style.transform = 'none';
+    sheet.style.width = W + 'px';
+    sheet.style.maxWidth = 'none';
+    sheet.style.margin = '0 auto';
+
+    const fileName = 'VOC_V2_Quick_Summary_W' + (selWeek||'') + '_' + new Date().toISOString().slice(0,10) + '.png';
+    const finish = () => {
+      sheet.style.transform = prev.transform; sheet.style.width = prev.width;
+      sheet.style.maxWidth = prev.maxWidth; sheet.style.margin = prev.margin;
+      document.body.classList.remove('qs-shooting', 'qs-exporting');
+      if (btn) btn.disabled = false;
+    };
+    const triggerDownload = (href, revoke) => {
+      const a = document.createElement('a');
+      a.href = href; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      if (revoke) setTimeout(() => URL.revokeObjectURL(href), 1500);
+      V.toast('HD image downloaded');
+    };
+
+    // wait for fonts + layout reflow to desktop width, resize charts to their new columns
+    const ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    ready.then(() => new Promise(r => setTimeout(r, 380))).then(() => {
+      Object.values(charts).forEach(ch => { try { ch.resize(); } catch (e) {} });
+      return new Promise(r => setTimeout(r, 200));
+    }).then(() => {
+      const H = sheet.scrollHeight;
+      // Primary: html-to-image renders text crisply at full pixel ratio (sharp, not rasterised-soft).
+      if (window.htmlToImage && window.htmlToImage.toPng) {
+        return window.htmlToImage.toPng(sheet, {
+          pixelRatio: 3, backgroundColor: '#EEF2F6', cacheBust: true,
+          width: W, height: H, style: { transform: 'none', margin: '0', maxWidth: 'none', width: W + 'px' }
+        }).then(dataUrl => { triggerDownload(dataUrl, false); });
+      }
+      throw new Error('lib-missing');
+    }).catch(() => {
+      // Fallback: html2canvas with chart-canvas → image swap.
+      if (!window.html2canvas) { V.toast('Image export unavailable'); finish(); return; }
+      const swaps = [];
+      Object.values(charts).forEach(ch => {
+        if (!ch || !ch.canvas) return;
+        try { const cv = ch.canvas; const img = document.createElement('img');
+          img.src = ch.toBase64Image('image/png', 1);
+          img.style.width = cv.clientWidth + 'px'; img.style.height = cv.clientHeight + 'px';
+          cv.style.display = 'none'; cv.parentNode.insertBefore(img, cv); swaps.push([cv, img]); } catch (e) {}
+      });
+      return new Promise(r => setTimeout(r, 220)).then(() =>
+        window.html2canvas(sheet, { scale: 3, backgroundColor: '#EEF2F6', useCORS: true, logging: false,
+          width: W, windowWidth: W + 80, height: sheet.scrollHeight, windowHeight: sheet.scrollHeight })
+        .then(canvas => new Promise(res => canvas.toBlob(blob => { triggerDownload(URL.createObjectURL(blob), true); res(); }, 'image/png')))
+        .finally(() => swaps.forEach(([cv, img]) => { cv.style.display = ''; img.remove(); }))
+      );
+    }).catch(e => { V.toast('Image export failed: ' + (e && e.message || e)); }).then(finish);
   }
 
   /* ───────── charts ───────── */
