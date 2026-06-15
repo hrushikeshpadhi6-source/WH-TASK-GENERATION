@@ -387,6 +387,13 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .ob-chip.warn    { background: var(--warning-bg); color: var(--warning); }
 .ob-chip.purple  { background: #F1ECFB; color: #7C3AED; }
 
+/* Active-week + last-refreshed context line above the banner */
+.ops-context { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+.oc-week { font-size: 12px; font-weight: 700; color: var(--primary-700); background: var(--primary-50);
+  border: 1px solid var(--primary-100, #DCE7F5); border-radius: 7px; padding: 4px 11px; letter-spacing: .2px; }
+.oc-refresh { font-size: 11.5px; color: var(--ink-faint); margin-left: auto; }
+.oc-refresh b { color: var(--ink-2); font-weight: 600; }
+
 /* RCA tracker per-store rows */
 .ops-rca-list { display: flex; flex-direction: column; gap: 9px; }
 .ops-store-rca { border: 1px solid var(--border); border-radius: var(--r); padding: 13px 15px; background: #fff; transition: border-color .12s, box-shadow .12s; }
@@ -1152,8 +1159,9 @@ function classify(r) {
 /* ── RCA STATUS HELPER ──
    Lightweight, objective RCA inspector. Reports only factual states:
      • notFilled   — the RCA & CAP field is blank / placeholder (pending)
-     • cctvPending — the RCA text says CCTV is still to be reviewed
-   The old subjective "unsatisfied RCA" classifier has been removed.
+     • cctvPending — CCTV review is outstanding: NOT reviewed, or explicitly
+                     pending/awaited. If CCTV was checked — issue found OR no
+                     issue found — it is NOT flagged.
    Called as rcaMismatch(comment, rcaCap, issueCategory, issueDesc).            */
 function rcaMismatch(comment, rcaReply, rcaCategory, issue) {
   var out = { notFilled:false, cctvPending:false, needsRefill:false };
@@ -1163,12 +1171,24 @@ function rcaMismatch(comment, rcaReply, rcaCategory, issue) {
   // Empty RCA = "Not Filled" — pending
   if (!rRaw || rRaw.length < 2 || ['-','na','n/a','nil','none'].indexOf(r) !== -1) { out.notFilled = true; return out; }
 
-  // CCTV still pending → RCA incomplete, needs to be filled again
+  // Does the RCA reference CCTV / camera / footage at all?
   var ci = r.indexOf('cctv'); if (ci < 0) ci = r.indexOf('camera'); if (ci < 0) ci = r.indexOf('footage');
   if (ci >= 0) {
-    var ctx = r.slice(Math.max(0, ci - 45), ci + 55);
-    var pend = /(to be (checked|verified|reviewed|seen|done))|(yet to (check|verify|review|see))|(not yet (checked|verified|reviewed|seen|done))|(not (checked|verified|reviewed|seen)( yet)?)|((need|needs|have|has|will|going|want)[a-z ]{0,14}(to )?(check|verify|review|watch|recheck))|((check|footage|cctv|review|camera|verif[a-z]*)[a-z ]{0,6}pending)|(pending[a-z ]{0,6}(check|review|cctv|footage|camera))|awaited|awaiting|waiting (for|on)|dekhna|dekhni|baki hai/;
-    if (pend.test(ctx)) { out.cctvPending = true; out.needsRefill = true; }
+    var ctx = r.slice(Math.max(0, ci - 55), ci + 75);
+
+    // (a) Explicit "still pending / not yet reviewed" phrasing → FLAG
+    var pend = /(to be (checked|verified|reviewed|seen|done|pulled))|(yet to (check|verify|review|see|pull))|(not yet (checked|verified|reviewed|seen|done|pulled))|(not (checked|verified|reviewed|seen|pulled)( yet)?)|((need|needs|have|has|will|to|going|want)[a-z ]{0,16}(check|verify|review|watch|recheck|pull)[a-z]*)|((check|footage|cctv|review|camera|verif[a-z]*)[a-z ]{0,8}(pending|awaited|awaiting|left))|(pending[a-z ]{0,8}(check|review|cctv|footage|camera))|awaited|awaiting|waiting (for|on)|under review|in progress|dekhna|dekhni|baki|pending hai/;
+
+    // (b) Explicit "CCTV checked / reviewed" resolution → NOT flagged
+    //     (covers both "issue found on cctv" and "checked cctv, no issue found")
+    var done = /(cctv|camera|footage)[a-z ,.\-:]{0,40}(checked|reviewed|verified|seen|watched|pulled|confirmed|found|shows?|showed|reveal[a-z]*|observed)|(checked|reviewed|verified|seen|watched|confirmed|observed)[a-z ,.\-:]{0,25}(cctv|camera|footage)|no issue (found|observed|seen|noticed|on (cctv|camera|footage))|nothing (found|observed|wrong)/;
+
+    if (pend.test(ctx)) {
+      out.cctvPending = true; out.needsRefill = true;      // pending / not yet reviewed
+    } else if (!done.test(ctx)) {
+      out.cctvPending = true; out.needsRefill = true;      // mentioned but no review evidence → treat as NOT reviewed
+    }
+    // else: CCTV checked (issue found OR no issue found) → leave un-flagged
   }
   return out;
 }
@@ -1231,6 +1251,7 @@ const S = {
   view: [],         // after filters
   live: false,
   lastModified: '',
+  lastRefreshed: '',
   filters: { dateFrom: '', dateTo: '', month: '', week: '', store: '', category: '', description: '', status: '', concession: '', search: '' },
   sort: { key: 'date1', dir: 'desc' },
   page: 1,
@@ -1349,6 +1370,7 @@ async function loadData() {
   if (!rows) { rows = D.buildSampleData(); S.live = false; }
 
   S.all = rows.map(normalize);
+  S.lastRefreshed = new Date().toISOString();
   markDuplicates(S.all);
   S.catDescMap = rebuildCatDescMap(S.all);
   populateFilters();
@@ -1907,6 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
   const S = window.VOC.S, esc = window.VOC.esc, fmtDate = window.VOC.fmtDate, num = window.VOC.num;
+  const fmtDateTime = window.VOC.fmtDateTime;
   const D = window.VOCData;
 
   /* Click-to-copy for Order IDs inside the "Picker Not Filled" popover
@@ -2065,20 +2088,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* Shared period + last-refreshed context bar — shown on the RCA tracker
+     and the Store-wise Scorecard so screenshots always carry the active
+     filter (week / month / date range) and the data's refresh time. */
+  function periodLabel() {
+    const f = S.filters;
+    if (f.week) return 'Week ' + f.week;
+    if (f.month) {
+      const p = String(f.month).split('-');
+      const dt = new Date(+p[0], (+p[1] || 1) - 1, 1);
+      return isNaN(dt) ? f.month : dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    }
+    if (f.dateFrom || f.dateTo) {
+      return (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…');
+    }
+    return 'All periods';
+  }
+  function contextBar() {
+    const refreshed = S.lastRefreshed ? fmtDateTime(S.lastRefreshed) : '—';
+    return `<div class="ops-context">
+        <span class="oc-week">${esc(periodLabel())}</span>
+        <span class="oc-refresh">Last refreshed · <b>${esc(refreshed)}</b></span>
+      </div>`;
+  }
+
   /* ───────── 1 · RCA & CAP TRACKER ───────── */
   function renderRca() {
     const period = S.view, all = S.all;
     const pPend = period.filter(D.rcaPending).length;
     const pDone = period.length - pPend;
-    const pCctv = period.filter(r => D.rcaMismatch(r.comment, r.rcaCap, r.issueCategory, r.issueDesc).cctvPending).length;
     const pPnf  = period.filter(r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim())).length;
 
     const banner = `
+      ${contextBar()}
       <div class="ops-banner">
         <span class="ob-chip neutral"><b>${num(period.length)}</b> VOC in view</span>
         <span class="ob-chip ${pPend ? 'danger' : 'success'}"><b>${num(pPend)}</b> RCA &amp; CAP Pending</span>
         <span class="ob-chip success"><b>${num(pDone)}</b> RCA &amp; CAP Done</span>
-        ${pCctv ? `<span class="ob-chip purple"><b>${num(pCctv)}</b> CCTV Pending</span>` : ''}
         ${pPnf ? `<span class="ob-chip warn"><b>${num(pPnf)}</b> RCA done · Picker ID missing</span>` : ''}
       </div>`;
 
@@ -2261,6 +2307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('opsStores').innerHTML = `
       <div class="card ops-card">
         <div class="ops-head"><h3>Store-wise Scorecard</h3><span class="ops-sub">${sub}</span></div>
+        ${contextBar()}
         <div class="ops-score-grid">${cards || emptyState('No stations in view')}</div>
       </div>`;
   }
