@@ -836,33 +836,59 @@ body.qs-printing .qs-overlay { position: static; }
 .qs-exporting .qs-grid3 { grid-template-columns: 1fr 1fr 1fr !important; }
 .qs-exporting .qs-2col { grid-template-columns: 1fr 1fr !important; }
 .qs-exporting .qs-stores { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; }
-/* WhatsApp-friendly export: enlarge text relative to the report height so it stays
-   legible after WhatsApp's downscale, keep spacing tight so the image isn't extra-tall,
-   and force one-line labels so nothing breaks awkwardly.
-   (Final on-screen text after WhatsApp ≈ text-size ÷ report-height.) */
+/* WhatsApp-friendly export: what governs how readable the shared image is on a phone
+   is the size of the text RELATIVE TO THE IMAGE WIDTH — when someone opens the picture
+   it's scaled to fit their screen, so 11px text in a 1240px-wide image lands at ~3px.
+   So we (a) render the export a bit narrower, (b) give every card/cell wider columns,
+   and (c) push all the small labels up hard — the cards have plenty of headroom.
+   Everything still stays on one line so nothing breaks awkwardly. */
 .qs-exporting .qs-sheet { gap: 14px !important; }
-.qs-exporting .qs-sec-h { padding: 13px 18px !important; }
-.qs-exporting .qs-sec-h h3 { font-size: 13px !important; }
-.qs-exporting .qs-sec-h .sub { font-size: 13px !important; }
-.qs-exporting .qs-sec-b { padding: 14px 16px !important; }
-.qs-exporting .qs-chart-wrap { height: 168px !important; }
-.qs-exporting .qs-foot { padding: 18px 18px 4px !important; }
-.qs-exporting .qs-card-name { font-size: 16px !important; }
-.qs-exporting .qs-card-tot span { font-size: 12px !important; }
-.qs-exporting .qs-line { font-size: 13.5px !important; white-space: nowrap !important; }
-.qs-exporting .qs-d { font-size: 12px !important; }
-.qs-exporting .qs-kpi .kl { font-size: 12.5px !important; }
-.qs-exporting .qs-kpi .kf { font-size: 12.5px !important; white-space: nowrap !important; }
-.qs-exporting .qs-drv-row { font-size: 13.5px !important; }
-.qs-exporting .qs-table { font-size: 14px !important; }
-.qs-exporting .qs-table th { font-size: 12px !important; }
-.qs-exporting .qs-table td { padding: 10px 12px !important; }
-.qs-exporting .qs-ins li { font-size: 14px !important; }
-.qs-exporting .qs-foot-by { font-size: 14px !important; }
-.qs-exporting .qs-foot-meta { font-size: 13px !important; }
-.qs-exporting .qs-status { font-size: 12.5px !important; }
-.qs-exporting .qs-print-head .qph-t b { font-size: 18px !important; }
-.qs-exporting .qs-print-head .qph-t span { font-size: 13px !important; }
+.qs-exporting .qs-sec-h { padding: 14px 20px !important; }
+.qs-exporting .qs-sec-h h3 { font-size: 16px !important; letter-spacing: .5px !important; }
+.qs-exporting .qs-sec-h .sub { font-size: 15px !important; }
+.qs-exporting .qs-sec-b { padding: 16px 18px !important; }
+.qs-exporting .qs-chart-wrap { height: 200px !important; }
+.qs-exporting .qs-foot { padding: 20px 18px 6px !important; }
+
+/* wider columns so the bigger text has room to breathe (fewer, larger tiles) */
+.qs-exporting .qs-stores { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important; gap: 14px !important; }
+.qs-exporting .qs-kpis { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+
+/* store scorecards */
+.qs-exporting .qs-card { padding: 15px 16px !important; }
+.qs-exporting .qs-card-name { font-size: 21px !important; }
+.qs-exporting .qs-card-tot b { font-size: 30px !important; }
+.qs-exporting .qs-card-tot span { font-size: 14px !important; }
+.qs-exporting .qs-line { font-size: 16.5px !important; padding: 4px 0 !important; white-space: nowrap !important; }
+.qs-exporting .qs-line .lk { font-size: 16.5px !important; }
+.qs-exporting .qs-d { font-size: 14px !important; }
+.qs-exporting .qs-pnf { font-size: 15px !important; }
+
+/* KPI tiles */
+.qs-exporting .qs-kpi { padding: 18px 20px !important; }
+.qs-exporting .qs-kpi .kl { font-size: 16px !important; }
+.qs-exporting .qs-kpi .kv { font-size: 44px !important; }
+.qs-exporting .qs-kpi .kf { font-size: 16px !important; white-space: nowrap !important; }
+
+/* drivers */
+.qs-exporting .qs-drv-row { font-size: 16.5px !important; grid-template-columns: 130px 1fr auto !important; }
+.qs-exporting .qs-drv-bar { height: 12px !important; }
+
+/* tables */
+.qs-exporting .qs-table { font-size: 17px !important; }
+.qs-exporting .qs-table th { font-size: 14px !important; padding: 11px 14px !important; }
+.qs-exporting .qs-table td { padding: 13px 14px !important; }
+
+/* insights + footer + misc */
+.qs-exporting .qs-ins li { font-size: 17px !important; }
+.qs-exporting .qs-callout { font-size: 15px !important; }
+.qs-exporting .qs-focus .ft { font-size: 16px !important; }
+.qs-exporting .qs-focus .ft .g { font-size: 15px !important; }
+.qs-exporting .qs-foot-by { font-size: 16px !important; }
+.qs-exporting .qs-foot-meta { font-size: 14px !important; }
+.qs-exporting .qs-status { font-size: 15px !important; padding: 3px 11px !important; }
+.qs-exporting .qs-print-head .qph-t b { font-size: 24px !important; }
+.qs-exporting .qs-print-head .qph-t span { font-size: 16px !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -3655,7 +3681,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.disabled = true;
     V.toast('Rendering HD image…');
 
-    const W = 1240;   // fixed desktop width so phone exports match the reference layout
+    const W = 1200;   // export width — kept tight so text reads large relative to the image on phones
     document.body.classList.add('qs-shooting', 'qs-exporting');
     const prev = { transform: sheet.style.transform, width: sheet.style.width, maxWidth: sheet.style.maxWidth, margin: sheet.style.margin };
     sheet.style.transform = 'none';
@@ -3675,10 +3701,38 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (period.mode === 'range') tag = (period.from && period.to) ? period.from + '_to_' + period.to : 'range';
     else                              tag = period.mode;
     const fileName = 'VOC_V2_Quick_Summary_' + tag + '_' + stamp + '.png';
+
+    // crisp, larger chart text for the export — multiply each chart's tick/legend
+    // font off a remembered base, so it scales up for capture and resets cleanly after.
+    const scaleChartFonts = (mult) => {
+      Object.values(charts).forEach(ch => {
+        if (!ch || !ch.options) return;
+        try {
+          const o = ch.options;
+          ['x', 'y'].forEach(ax => {
+            const t = o.scales && o.scales[ax] && o.scales[ax].ticks;
+            if (!t) return;
+            t.font = t.font || {};
+            if (t.font.__base == null) t.font.__base = t.font.size || 11;
+            t.font.size = Math.round(t.font.__base * mult);
+          });
+          const lg = o.plugins && o.plugins.legend && o.plugins.legend.labels;
+          if (lg) {
+            lg.font = lg.font || {};
+            if (lg.font.__base == null) lg.font.__base = lg.font.size || 11;
+            lg.font.size = Math.round(lg.font.__base * mult);
+          }
+          ch.update('none');
+        } catch (e) {}
+      });
+    };
+
     const finish = () => {
       sheet.style.transform = prev.transform; sheet.style.width = prev.width;
       sheet.style.maxWidth = prev.maxWidth; sheet.style.margin = prev.margin;
       document.body.classList.remove('qs-shooting', 'qs-exporting');
+      scaleChartFonts(1);
+      Object.values(charts).forEach(ch => { try { ch.resize(); } catch (e) {} });
       if (btn) btn.disabled = false;
     };
     const triggerDownload = (href, revoke) => {
@@ -3693,13 +3747,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
     ready.then(() => new Promise(r => setTimeout(r, 380))).then(() => {
       Object.values(charts).forEach(ch => { try { ch.resize(); } catch (e) {} });
-      return new Promise(r => setTimeout(r, 200));
+      scaleChartFonts(1.55);   // larger, crisper chart axis & legend text in the export
+      return new Promise(r => setTimeout(r, 260));
     }).then(() => {
       const H = sheet.scrollHeight;
+      // pick the sharpest pixel ratio that still stays under the browser canvas cap (~16k px)
+      const pr = Math.max(2, Math.min(4, Math.floor(16000 / Math.max(H, W))));
       // Primary: html-to-image renders text crisply at full pixel ratio (sharp, not rasterised-soft).
       if (window.htmlToImage && window.htmlToImage.toPng) {
         return window.htmlToImage.toPng(sheet, {
-          pixelRatio: 3, backgroundColor: '#EEF2F6', cacheBust: true,
+          pixelRatio: pr, backgroundColor: '#EEF2F6', cacheBust: true,
           width: W, height: H, style: { transform: 'none', margin: '0', maxWidth: 'none', width: W + 'px' }
         }).then(dataUrl => { triggerDownload(dataUrl, false); });
       }
@@ -3715,12 +3772,14 @@ document.addEventListener('DOMContentLoaded', () => {
           img.style.width = cv.clientWidth + 'px'; img.style.height = cv.clientHeight + 'px';
           cv.style.display = 'none'; cv.parentNode.insertBefore(img, cv); swaps.push([cv, img]); } catch (e) {}
       });
-      return new Promise(r => setTimeout(r, 220)).then(() =>
-        window.html2canvas(sheet, { scale: 3, backgroundColor: '#EEF2F6', useCORS: true, logging: false,
-          width: W, windowWidth: W + 80, height: sheet.scrollHeight, windowHeight: sheet.scrollHeight })
+      return new Promise(r => setTimeout(r, 220)).then(() => {
+        const fh = sheet.scrollHeight;
+        const fscale = Math.max(2, Math.min(4, Math.floor(16000 / Math.max(fh, W))));
+        return window.html2canvas(sheet, { scale: fscale, backgroundColor: '#EEF2F6', useCORS: true, logging: false,
+          width: W, windowWidth: W + 80, height: fh, windowHeight: fh })
         .then(canvas => new Promise(res => canvas.toBlob(blob => { triggerDownload(URL.createObjectURL(blob), true); res(); }, 'image/png')))
-        .finally(() => swaps.forEach(([cv, img]) => { cv.style.display = ''; img.remove(); }))
-      );
+        .finally(() => swaps.forEach(([cv, img]) => { cv.style.display = ''; img.remove(); }));
+      });
     }).catch(e => { V.toast('Image export failed: ' + (e && e.message || e)); }).then(finish);
   }
 
