@@ -415,6 +415,11 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .ops-issue { color: var(--danger); font-size: 11.5px; font-weight: 600; }
 
 /* picker contribution table */
+/* This table has a SINGLE header row (no group row), so its sticky column
+   header must pin to the very top — the global `tr.cols th { top: 28px }`
+   (meant for the 2-row records header) otherwise left a 28px gap that hid rank #1. */
+.ops-pk-table thead tr.cols th { top: 0; }
+table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records header rule's specificity */
 .ops-pk-table tbody tr.ops-pk-row { cursor: pointer; }
 .ops-pk-table .ops-rank { font-family: var(--mono); font-weight: 600; color: var(--ink-3); }
 .ops-pk-table .ops-num { font-family: var(--mono); font-weight: 700; }
@@ -1510,6 +1515,28 @@ function fmtRefreshed(v) {
 }
 // Day key in IST → "YYYY-MM-DD" (en-CA already yields ISO-ordered parts).
 function dayKey(v) { if (v == null || v === '') return null; const d = new Date(v); return isNaN(d) ? null : _istDayFmt.format(d); }
+
+/* ── Date filter key (sheet date format changed) ──────────────────────
+   The date filter keys off Order Timestamp (col B), which is written in a
+   stable ISO shape: "2026-05-18T15:32:47 UTC". We extract ONLY the date
+   portion by pure string slicing — no Date()/timezone math — so a row can
+   never roll to another day or go missing. Date_1 (col A) is now displayed
+   as DD/MM/YYYY which Date() can't parse, so it's only a last-resort fallback
+   (handled here too). Returns "YYYY-MM-DD" or null. */
+function isoDayKey(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);                 // ISO: 2026-05-18T...
+  if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/);          // DD/MM/YYYY (Date_1 fallback)
+  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  const d = new Date(s);                                           // last resort
+  return isNaN(d) ? null : _istDayFmt.format(d);
+}
+// Prefer col B (Order Timestamp); fall back to Date_1 if the timestamp is blank.
+function rowDayKey(rec) { return isoDayKey(rec && rec.orderTimestamp) || isoDayKey(rec && rec.date1); }
+// Stable chronological sort value (day-level, UTC midnight) — robust to either date format.
+function rowTs(rec) { const k = rowDayKey(rec); return k ? Date.parse(k + 'T00:00:00Z') : 0; }
 function num(n) { return Number(n || 0).toLocaleString('en-US'); }
 function toast(msg, icon) {
   const t = $('#toast');
@@ -1542,8 +1569,9 @@ function normalize(rec) {
   r._week      = D.weekNum(r.week);
   r._concLabel = D.concessionLabel(r.concession);
   r._concGroup = D.concessionGroup(r.concession);
-  r._day       = dayKey(r.date1);
-  r._month     = r._day ? r._day.slice(0, 7) : '';   // IST-anchored, matches _day
+  r._day       = rowDayKey(r);                       // ← date filter keyed on Order Timestamp (col B)
+  r._month     = r._day ? r._day.slice(0, 7) : '';   // matches _day
+  r._ts        = rowTs(r);                            // robust chronological sort key
   return r;
 }
 
@@ -1571,7 +1599,7 @@ function markDuplicates(rows) {
     if (g.length < 2) return;
     pairs++;
     // keep earliest, flag the rest
-    g.sort((a, b) => new Date(a.date1 || 0) - new Date(b.date1 || 0));
+    g.sort((a, b) => (a._ts||0) - (b._ts||0));
     g.forEach((r, i) => { if (i > 0) { r._dup = true; excluded++; } });
     const first = g[0];
     detail.push({
@@ -2021,7 +2049,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { g: 'Issue',    key: 'comment',  label: 'Customer Comment', cls: 'comment', cell: r => '<span title="' + esc(r.comment) + '">' + esc(trunc(r.comment, 46)) + '</span>' },
     { g: 'Resolution', key: '_status', label: 'Status', cell: r => statusBadge(r._status) },
     { g: 'Timeline', key: '_week',    label: 'Week', cls: 'id', sortVal: r => r._week == null ? -1 : r._week, cell: r => r._week == null ? '—' : 'W' + r._week },
-    { g: 'Timeline', key: 'date1',    label: 'VOC Date', sortVal: r => +new Date(r.date1) || 0, cell: r => fmtDate(r.date1) }
+    { g: 'Timeline', key: 'date1',    label: 'VOC Date', sortVal: r => r._ts || 0, cell: r => fmtDate(r.date1) }
   ];
   const GROUPS = [
     { name: 'Customer Information', span: 3 },
@@ -2431,7 +2459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const drawer = sPeriodPend.length ? `
         <div class="ops-drawer" data-drawer="rca-${si}">
-          ${sPeriodPend.sort((a, b) => new Date(b.date1) - new Date(a.date1)).map(r => `
+          ${sPeriodPend.sort((a, b) => (b._ts||0) - (a._ts||0)).map(r => `
             <div class="ops-pend-row">
               <div><span class="mono strong">${esc(r.orderId || '—')}</span>
                 <span class="ops-dim"> · ASIN ${esc(r.asin || '—')}</span></div>
@@ -2484,7 +2512,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const risk = m >= 8 ? ['danger', 'High'] : m >= 4 ? ['warn', 'Medium'] : ['success', 'Low'];
       const drawer = `
         <tr class="ops-pk-drawer hidden" data-pkdrawer="pk-${i}"><td colspan="6"><div class="ops-pk-details">
-          ${det[p].sort((a, b) => new Date(b.date1) - new Date(a.date1)).map((d, di) => {
+          ${det[p].sort((a, b) => (b._ts||0) - (a._ts||0)).map((d, di) => {
             const flag = notFilled && !D.rcaPending(d);   // RCA filled but Picker ID blank
             return `<div class="ops-pk-item ${flag ? 'flagged' : ''}">
               <div class="opi-head"><span class="strong">${di + 1}. ${esc(d.productTitle || '—')}</span><span class="ops-dim mono">${esc(d.storeCode || '—')} · ${esc(d.orderId)} · ${fmtDate(d.date1)}</span></div>
@@ -2542,12 +2570,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (prevRows == null) {
-      const times = period.map(r => +new Date(r.date1)).filter(t => !isNaN(t));
+      const times = period.map(r => r._ts).filter(Boolean);
       if (times.length) {
         const minT = Math.min(...times), maxT = Math.max(...times);
         const span = Math.max(maxT - minT, DAY);
         const prevEnd = minT - DAY, prevStart = prevEnd - span;
-        const pr = S.all.filter(r => { if (r._dup) return false; const t = +new Date(r.date1); return !isNaN(t) && t >= prevStart && t <= prevEnd; });
+        const pr = S.all.filter(r => { if (r._dup) return false; const t = r._ts; return !!t && t >= prevStart && t <= prevEnd; });
         if (pr.length) { prevRows = pr; prevLabel = fmtDate(new Date(prevStart)) + ' – ' + fmtDate(new Date(prevEnd)); }
       }
     }
@@ -2581,7 +2609,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pnfPop = pnf ? `<div class="osc-pnf-pop">
           <div class="opp-h">RCA filled · Picker ID missing — back-fill needed</div>
-          ${pnfRows.sort((a, b) => new Date(b.date1) - new Date(a.date1)).slice(0, 12).map(r =>
+          ${pnfRows.sort((a, b) => (b._ts||0) - (a._ts||0)).slice(0, 12).map(r =>
             `<div class="opp-row">
                <div class="opp-rtop">
                  <button type="button" class="opp-oid" data-copy="${esc(r.orderId || '')}" title="Click to copy Order ID">${esc(r.orderId || '—')}</button>
@@ -2993,7 +3021,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '<div class="t15-sop-foot">Auto-matched from the complaint text — confirm against the actual investigation before closing.</div>' +
       '</div>';
 
-    const recs = (it.records || []).slice().sort((a, b) => new Date(b.date1) - new Date(a.date1));
+    const recs = (it.records || []).slice().sort((a, b) => (b._ts||0) - (a._ts||0));
     const vocHtml = recs.map(r => {
       const pending = D.rcaPending(r);
       const pnf = !pending && !(r.pickerId && r.pickerId.trim());
@@ -3108,11 +3136,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function monthOptions() {
     const seen = {};
     V.S.all.forEach(r => {
-      const d = new Date(r.date1);
-      if (isNaN(d)) return;
-      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      if (!seen[key]) seen[key] = { key, monthName: MONTHS[d.getMonth()], year: String(d.getFullYear()),
-                                    label: MONTHS[d.getMonth()] + ' ' + d.getFullYear() };
+      const key = r._month;                       // "YYYY-MM" from Order Timestamp
+      if (!key) return;
+      const mi = parseInt(key.slice(5, 7), 10) - 1, yr = key.slice(0, 4);
+      if (!seen[key]) seen[key] = { key, monthName: MONTHS[mi], year: yr,
+                                    label: MONTHS[mi] + ' ' + yr };
     });
     return Object.values(seen).sort((a, b) => b.key.localeCompare(a.key));
   }
@@ -3128,9 +3156,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (r._dup) return false;            // exclude duplicates from compare
       if (store && r.storeCode !== store) return false;
       if (C.by === 'month') {
-        const d = new Date(r.date1);
-        if (isNaN(d)) return false;
-        return MONTHS[d.getMonth()] === p.monthName && String(d.getFullYear()) === p.year;
+        if (!r._month) return false;
+        const mi = parseInt(r._month.slice(5, 7), 10) - 1;
+        return MONTHS[mi] === p.monthName && r._month.slice(0, 4) === p.year;
       }
       return String(r._week) === String(p.week);
     });
@@ -3349,7 +3377,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const weeksAvail = () => [...new Set(live().map(r => r._week).filter(w => w != null))].sort((a,b)=>a-b);
   const prevWeekOf = w => [...weeksAvail()].reverse().find(x => x < w);
   const rowsForWeek = w => (w==null ? [] : live().filter(r => r._week === w));
-  const weekdayOf = r => { const d = new Date(r.date1); return isNaN(d) ? null : _wdFmt.format(d); };
+  const weekdayOf = r => { if (!r._day) return null; const d = new Date(r._day + 'T12:00:00Z'); return isNaN(d) ? null : _wdFmt.format(d); };
 
   // ── period (Week / Month / Date / Range) helpers ──
   const period = { mode: 'week', week: null, month: '', date: '', from: '', to: '' };
@@ -3481,7 +3509,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pnfRows = cr.filter(pnfOf);
       const pop = pnfRows.length ? '<div class="qs-pop" hidden>' +
           '<div class="ph">RCA filled · Picker ID missing — back-fill needed</div>' +
-          pnfRows.sort((a,b)=>new Date(b.date1)-new Date(a.date1)).slice(0,14).map(r =>
+          pnfRows.sort((a,b)=>(b._ts||0)-(a._ts||0)).slice(0,14).map(r =>
             '<div class="prow"><button type="button" class="poid" data-copy="' + esc(r.orderId||'') + '" title="Click to copy Order ID">' + esc(r.orderId||'—') + '</button>' +
             '<div class="pdim">' + esc((r.productTitle||'—').slice(0,30)) + ' · ' + fmtDate(r.date1) + '</div></div>').join('') +
           (pnfRows.length > 14 ? '<div class="pdim" style="padding-top:6px">+' + (pnfRows.length-14) + ' more</div>' : '') +
