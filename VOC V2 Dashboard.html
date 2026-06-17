@@ -304,6 +304,15 @@ table.voc td.strong { color: var(--ink); font-weight: 500; }
 .badge.ops     { color: #B45309;            background: #FEF3E2; }
 .badge.nonops  { color: var(--ink-2);       background: #EEF1F4; }
 
+/* OE remarks stage badge (Pending / To Discuss / Discussed / Closed) */
+.oe-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.oe-badge i { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Click-to-copy Order ID inside the records table */
+.oid-copy { font: inherit; color: inherit; background: transparent; border: 0; padding: 1px 4px; margin: -1px -4px; border-radius: 5px; cursor: pointer; letter-spacing: inherit; }
+.oid-copy:hover { background: var(--primary-50); color: var(--primary-700); box-shadow: inset 0 0 0 1px var(--primary-100, #DCE7F5); }
+.oid-copy.copied { background: var(--success-bg); color: var(--success); box-shadow: inset 0 0 0 1px #BFE6CF; }
+
 .table-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
 .pager { display: flex; align-items: center; gap: 4px; }
 .pager button { min-width: 32px; height: 32px; border: 1px solid var(--border); background: #fff; border-radius: var(--r-sm); color: var(--ink-2); font-size: 12.5px; }
@@ -490,6 +499,54 @@ table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records 
 /* ───────────── Top 15 Products ───────────── */
 #panelTop15, #panelCompare { display: flex; flex-direction: column; gap: 16px; }
 .ins-card { padding: 0; overflow: hidden; }
+
+/* ───────────── OE Remarks tab ───────────── */
+#panelOE { display: flex; flex-direction: column; gap: 16px; }
+.oe-card { padding: 18px 20px 20px; }
+.oe-head h2 { font-size: 17px; font-weight: 700; margin: 0; color: var(--ink); }
+.oe-head p { font-size: 13px; color: var(--ink-3); margin: 3px 0 0; }
+.oe-overview { display: grid; grid-template-columns: 240px 1fr; gap: 26px; align-items: center; margin-top: 18px; }
+@media (max-width: 820px) { .oe-overview { grid-template-columns: 1fr; } }
+.oe-donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.oe-donut { position: relative; width: 200px; height: 200px; }
+.oe-donut svg { transform: rotate(-90deg); }
+.oe-donut .oe-seg { transition: opacity .15s, stroke-width .15s; cursor: pointer; }
+.oe-donut .oe-seg.dim { opacity: .28; }
+.oe-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.oe-donut-center b { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--ink); line-height: 1; }
+.oe-donut-center span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink-faint); margin-top: 4px; }
+.oe-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+@media (max-width: 560px) { .oe-legend { grid-template-columns: 1fr; } }
+.oe-leg { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; background: #fff; cursor: pointer; transition: border-color .12s, box-shadow .12s, transform .12s; text-align: left; }
+.oe-leg:hover { border-color: #D3DBE3; box-shadow: var(--shadow-sm); }
+.oe-leg.on { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(20,110,180,.08); }
+.oe-leg-dot { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.oe-leg-main { flex: 1; min-width: 0; }
+.oe-leg-name { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oe-leg-sub { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
+.oe-leg-num { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1; }
+.oe-leg-pct { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); display: block; text-align: right; }
+.oe-leg .oe-leg-num.muted { color: var(--ink-faint); }
+
+/* drill-down list */
+.oe-drill-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.oe-drill-head h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--ink); }
+.oe-drill-note { font-size: 12.5px; color: var(--ink-3); margin: 0 0 14px; }
+.oe-list { display: flex; flex-direction: column; gap: 9px; }
+.oe-item { border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: var(--r); padding: 12px 14px; background: #fff; }
+.oe-item-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.oe-num { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--ink-faint); min-width: 26px; }
+.oe-st { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--primary-700); background: var(--primary-50); padding: 2px 8px; border-radius: 6px; }
+.oe-item-dim { font-size: 11.5px; color: var(--ink-faint); }
+.oe-item-meta { margin-left: auto; font-size: 11.5px; color: var(--ink-faint); font-family: var(--mono); }
+.oe-item-q { font-size: 12.5px; color: var(--ink-2); font-style: italic; background: #F7F9FB; border-radius: 6px; padding: 7px 10px; margin: 4px 0 6px; }
+.oe-item-rca { font-size: 12.5px; color: var(--ink); }
+.oe-item-rca b { color: var(--ink-3); font-weight: 600; }
+.oe-item-rca .pend { color: var(--warning); font-weight: 600; }
+.oe-raw { font-size: 12px; color: var(--ink-3); margin-top: 5px; }
+.oe-raw b { color: var(--ink-3); font-weight: 600; }
+.oe-empty { padding: 40px 20px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+
 
 /* product type tag */
 .t15-type { font-size: 9.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
@@ -994,10 +1051,11 @@ body.qs-printing .qs-overlay { position: static; }
         <div class="field"><label>Date from</label><input type="date" id="fDateFrom" /></div>
         <div class="field"><label>Date to</label><input type="date" id="fDateTo" /></div>
       </div>
-      <div class="frow r2" style="grid-template-columns:repeat(3,1fr)">
+      <div class="frow r2" style="grid-template-columns:repeat(4,1fr)">
         <div class="field"><label>Issue Category</label><select id="fCategory"></select></div>
         <div class="field"><label>Issue Description</label><select id="fDescription"></select></div>
         <div class="field"><label>Concession Group</label><select id="fConcession"></select></div>
+        <div class="field"><label>OE Status</label><select id="fOe"></select></div>
       </div>
       <div class="frow r2" style="grid-template-columns:1fr">
         <div class="field"><label>Search Customer Comment / Order / ASIN</label><input type="text" id="fSearch" placeholder="Search customer comments, order IDs, ASIN, picker, RCA…" /></div>
@@ -1018,6 +1076,7 @@ body.qs-printing .qs-overlay { position: static; }
     <div id="tabs" class="tabs">
       <button class="on" data-tab="records">Records <span class="count" id="recCount">0</span></button>
       <button data-tab="operations">Operations</button>
+      <button data-tab="oe">OE Remarks</button>
       <button data-tab="top15">Top 15 Products</button>
       <button data-tab="compare">Compare</button>
       <button data-tab="analytics">Analytics</button>
@@ -1060,6 +1119,9 @@ body.qs-printing .qs-overlay { position: static; }
       <div id="opsRca"></div>
       <div id="opsPicker"></div>
     </div>
+
+    <!-- OE Remarks panel -->
+    <div id="panelOE" class="hidden"></div>
 
     <!-- Top 15 products panel -->
     <div id="panelTop15" class="hidden"></div>
@@ -1196,8 +1258,11 @@ window.ICON = ICON;
    When a live Apps Script URL is configured, live rows replace samples.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Sheet column order in the "VOC V2" tab (A → Q).
-   The Apps Script handleVOCV2() returns objects keyed exactly like this. */
+/* Sheet column order in the "VOC V2" tab (A → R).
+   The Apps Script handleVOCV2() returns objects keyed exactly like this.
+   ⚠ June 2026 schema change: "OE remarks" was inserted at column Q, so the
+   Week column moved from Q → R. The Apps Script must build rows with the SAME
+   key order (oeRemark before week) — see the migration note at WEB_APP_URL. */
 const VOCV2_FIELDS = [
   'date1',          // A  Date_1
   'orderTimestamp', // B  Order Timestamp
@@ -1215,8 +1280,32 @@ const VOCV2_FIELDS = [
   'issueDesc',      // N  Issue Description
   'pickerId',       // O  Picker ID
   'rcaCap',         // P  RCA & CAP
-  'week'            // Q  Week  (e.g. "week22")
+  'oeRemark',       // Q  OE remarks  (workflow note: pending / to discuss / discussed …)
+  'week'            // R  Week  (e.g. "week22")
 ];
+
+/* ── OE remarks → discussion stage ───────────────────────────────────
+   The new "OE remarks" column (Q) is a free-text workflow note the OE team
+   uses to track the review conversation. We bucket it into ordered stages
+   so it can be filtered, badged and counted. */
+const OE_STAGES = ['Pending to Discuss', 'Pending to fill RCA', 'Discussed'];
+const OE_STAGE_META = {
+  'Pending to Discuss': { bg: '#FBEEDF', fg: '#A4630E', dot: '#E08A2B', short: 'To discuss' },
+  'Pending to fill RCA':{ bg: '#FCEAEA', fg: '#B42318', dot: '#E0483B', short: 'Fill RCA' },
+  'Discussed':          { bg: '#E3F3EA', fg: '#1B7A49', dot: '#1F8A5B', short: 'Discussed' },
+  'Other':              { bg: '#EEF1F5', fg: '#5A6675', dot: '#9AA6B2', short: 'Other' }
+};
+function oeStage(raw) {
+  const v = String(raw == null ? '' : raw).trim().toLowerCase();
+  if (!v || v === '-' || v === 'na' || v === 'n/a' || v === 'nil' || v === 'none') return '';
+  // Real sheet vocabulary: "Discussed", "Pending to disscus", "Pending to fill RCA".
+  if (/fill\s*-?\s*rca|rca\s*pending|pending.*rca/.test(v)) return 'Pending to fill RCA';
+  if (/disc?cus|discuss/.test(v) && /pending|to\s*be|need|yet|await/.test(v)) return 'Pending to Discuss';
+  if (/discussed|discussion done|spoke|talked|aligned|closed|resolved|done|complete/.test(v)) return 'Discussed';
+  if (/disc?cus/.test(v)) return 'Pending to Discuss';
+  if (/pending|wip|in[- ]?progress|await|on hold|hold|open/.test(v)) return 'Pending to Discuss';
+  return 'Other';
+}
 
 /* Controlled vocabulary — exactly the values from the sheet's data-validation. */
 const ISSUE_CATEGORIES = ['Ops Controllable', 'Non Ops Controllable'];
@@ -1370,6 +1459,12 @@ function buildSampleData() {
       issueDesc:       triaged ? desc : '',
       pickerId:        (triaged && desc === 'Picker Mistake' && rand() < 0.14) ? '' : pick(SAMPLE_PICKERS),
       rcaCap:          triaged ? rca : '',
+      oeRemark:        (function () {
+        const o = rand();
+        if (resolved)  return o < 0.52 ? 'Discussed' : o < 0.72 ? 'Pending to disscus' : o < 0.84 ? 'Pending to fill RCA' : '';
+        if (triaged)   return o < 0.40 ? 'Pending to fill RCA' : o < 0.70 ? 'Pending to disscus' : o < 0.86 ? 'Discussed' : '';
+        return o < 0.6 ? 'Pending to fill RCA' : '';
+      })(),
       week:            'week' + wk
     });
   }
@@ -1455,6 +1550,7 @@ function rcaMismatch(comment, rcaReply, rcaCategory, issue) {
 /* expose */
 window.VOCData = {
   FIELDS: VOCV2_FIELDS,
+  OE_STAGES, OE_STAGE_META, oeStage,
   ISSUE_CATEGORIES, ISSUE_DESCRIPTIONS, CATEGORY_DESCRIPTION_SEED,
   CONCESSION_MAP, concessionLabel, concessionGroup,
   deriveStatus, STATUS_META, weekNum, weekLabel,
@@ -1569,6 +1665,7 @@ function normalize(rec) {
   r._week      = D.weekNum(r.week);
   r._concLabel = D.concessionLabel(r.concession);
   r._concGroup = D.concessionGroup(r.concession);
+  r._oeStage   = D.oeStage(r.oeRemark);
   r._day       = rowDayKey(r);                       // ← date filter keyed on Order Timestamp (col B)
   r._month     = r._day ? r._day.slice(0, 7) : '';   // matches _day
   r._ts        = rowTs(r);                            // robust chronological sort key
@@ -1706,6 +1803,9 @@ function populateFilters() {
   fillSelect('#fCategory', D.ISSUE_CATEGORIES, 'All categories');
   const concGroups = [...new Set(S.all.map(r => r._concGroup).filter(Boolean))].sort();
   fillSelect('#fConcession', concGroups, 'All concession groups');
+  const oeSeen = new Set(S.all.map(r => r._oeStage).filter(Boolean));
+  const oeOpts = [...D.OE_STAGES, 'Other'].filter(s => oeSeen.has(s));
+  fillSelect('#fOe', oeOpts, 'All OE status');
   refreshDescriptionOptions();
 }
 const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1738,6 +1838,7 @@ function readFilters() {
     category:    $('#fCategory').value,
     description: $('#fDescription').value,
     concession:  $('#fConcession').value,
+    oe:          $('#fOe').value,
     search:      $('#fSearch').value.trim().toLowerCase()
   };
 }
@@ -1754,9 +1855,10 @@ function applyFilters() {
     if (f.category    && r.issueCategory !== f.category) return false;
     if (f.description && r.issueDesc !== f.description) return false;
     if (f.concession  && r._concGroup !== f.concession) return false;
+    if (f.oe          && r._oeStage !== f.oe) return false;
     if (f.search) {
       const hay = (r.orderId + ' ' + r.asin + ' ' + r.productTitle + ' ' + r.comment + ' ' +
-                   r.customerId + ' ' + r.pickerId + ' ' + r.issueDesc + ' ' + r.rcaCap).toLowerCase();
+                   r.customerId + ' ' + r.pickerId + ' ' + r.issueDesc + ' ' + r.rcaCap + ' ' + (r.oeRemark || '')).toLowerCase();
       if (!hay.includes(f.search)) return false;
     }
     return true;
@@ -1767,7 +1869,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  ['fDateFrom','fDateTo','fMonth','fWeek','fStore','fCategory','fDescription','fConcession','fSearch']
+  ['fDateFrom','fDateTo','fMonth','fWeek','fStore','fCategory','fDescription','fConcession','fOe','fSearch']
     .forEach(id => { const n = document.getElementById(id); if (n) n.value = ''; });
   refreshDescriptionOptions();
   applyFilters();
@@ -1783,7 +1885,7 @@ function periodNeutralMatch(r) {
   if (f.concession  && r._concGroup !== f.concession) return false;
   if (f.search) {
     const hay = (r.orderId + ' ' + r.asin + ' ' + r.productTitle + ' ' + r.comment + ' ' +
-                 r.customerId + ' ' + r.pickerId + ' ' + r.issueDesc + ' ' + r.rcaCap).toLowerCase();
+                 r.customerId + ' ' + r.pickerId + ' ' + r.issueDesc + ' ' + r.rcaCap + ' ' + (r.oeRemark || '')).toLowerCase();
     if (!hay.includes(f.search)) return false;
   }
   return true;
@@ -1791,7 +1893,7 @@ function periodNeutralMatch(r) {
 window.VOC.periodNeutralMatch = periodNeutralMatch;
 
 const CHIP_LABELS = { dateFrom:'From', dateTo:'To', month:'Month', week:'Week', store:'Station', category:'Category',
-  description:'Description', concession:'Concession', search:'Search' };
+  description:'Description', concession:'Concession', oe:'OE status', search:'Search' };
 function renderChips() {
   const f = S.filters;
   const chips = Object.keys(f).filter(k => f[k]).map(k => {
@@ -1806,7 +1908,7 @@ function renderChips() {
   $$('[data-clear]', box).forEach(b => b.onclick = () => {
     const k = b.dataset.clear;
     const map = { dateFrom:'fDateFrom', dateTo:'fDateTo', month:'fMonth', week:'fWeek', store:'fStore', category:'fCategory',
-      description:'fDescription', concession:'fConcession', search:'fSearch' };
+      description:'fDescription', concession:'fConcession', oe:'fOe', search:'fSearch' };
     document.getElementById(map[k]).value = '';
     if (k === 'category') refreshDescriptionOptions();
     applyFilters();
@@ -1889,6 +1991,7 @@ function renderAll() {
   if (S.tab === 'records') window.VOCTable.render();
   else if (S.tab === 'analytics') window.VOCCharts.render();
   else if (S.tab === 'operations') window.VOCOps.render();
+  else if (S.tab === 'oe' && window.VOCOE) window.VOCOE.render();
   else if (S.tab === 'top15' && window.VOCInsights) window.VOCInsights.renderTop15();
   else if (S.tab === 'compare' && window.VOCInsights) window.VOCInsights.renderCompare();
 }
@@ -1899,6 +2002,7 @@ function switchTab(tab) {
   $('#panelRecords').classList.toggle('hidden', tab !== 'records');
   $('#panelAnalytics').classList.toggle('hidden', tab !== 'analytics');
   $('#panelOps').classList.toggle('hidden', tab !== 'operations');
+  const pOE = $('#panelOE'); if (pOE) pOE.classList.toggle('hidden', tab !== 'oe');
   const pT = $('#panelTop15');   if (pT) pT.classList.toggle('hidden', tab !== 'top15');
   const pC = $('#panelCompare'); if (pC) pC.classList.toggle('hidden', tab !== 'compare');
   // Compare has its own period pickers — the global filter bar doesn't apply there.
@@ -1985,7 +2089,7 @@ function wireEvents() {
   loadSessionUser();
   const back = $('#backToHub'); if (back) back.onclick = () => { window.location.href = 'index.html'; };
 
-  ['fDateFrom','fDateTo','fMonth','fWeek','fStore','fConcession','fDescription'].forEach(id =>
+  ['fDateFrom','fDateTo','fMonth','fWeek','fStore','fConcession','fDescription','fOe'].forEach(id =>
     $('#' + id).addEventListener('change', applyFilters));
   $('#fCategory').addEventListener('change', () => { refreshDescriptionOptions(); applyFilters(); });
   let st; $('#fSearch').addEventListener('input', () => { clearTimeout(st); st = setTimeout(applyFilters, 220); });
@@ -2040,7 +2144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // group | key | label | className | sortVal(r) | cell(r)
   const COLS = [
-    { g: 'Customer', key: 'orderId',  label: 'Order ID',  cls: 'id',    cell: r => esc(r.orderId) + (r._dup ? ' <span class="dup-badge" title="Duplicate VOC — same Order ID + ASIN; excluded from counts">DUP</span>' : '') },
+    { g: 'Customer', key: 'orderId',  label: 'Order ID',  cls: 'id',    cell: r => '<button type="button" class="oid-copy" data-copy="' + esc(r.orderId || '') + '" title="Click to copy Order ID">' + esc(r.orderId) + '</button>' + (r._dup ? ' <span class="dup-badge" title="Duplicate VOC — same Order ID + ASIN; excluded from counts">DUP</span>' : '') },
     { g: 'Customer', key: 'storeCode',label: 'Station',   cls: 'strong',cell: r => esc(r.storeCode) },
     { g: 'Customer', key: 'productTitle', label: 'Product', cls: 'strong', cell: r => '<span title="' + esc(r.productTitle) + '">' + esc(trunc(r.productTitle, 26)) + '</span>' },
     { g: 'Issue',    key: '_concLabel', label: 'Concession', cell: r => esc(r._concLabel) },
@@ -2048,13 +2152,14 @@ document.addEventListener('DOMContentLoaded', () => {
     { g: 'Issue',    key: 'issueDesc', label: 'Issue Description', cell: r => esc(r.issueDesc || '—') },
     { g: 'Issue',    key: 'comment',  label: 'Customer Comment', cls: 'comment', cell: r => '<span title="' + esc(r.comment) + '">' + esc(trunc(r.comment, 46)) + '</span>' },
     { g: 'Resolution', key: '_status', label: 'Status', cell: r => statusBadge(r._status) },
+    { g: 'Resolution', key: '_oeStage', label: 'OE Remarks', sortVal: r => D.OE_STAGES.indexOf(r._oeStage), cell: r => oeBadge(r._oeStage, r.oeRemark) },
     { g: 'Timeline', key: '_week',    label: 'Week', cls: 'id', sortVal: r => r._week == null ? -1 : r._week, cell: r => r._week == null ? '—' : 'W' + r._week },
     { g: 'Timeline', key: 'date1',    label: 'VOC Date', sortVal: r => r._ts || 0, cell: r => fmtDate(r.date1) }
   ];
   const GROUPS = [
     { name: 'Customer Information', span: 3 },
     { name: 'Issue Information', span: 4 },
-    { name: 'Resolution', span: 1 },
+    { name: 'Resolution', span: 2 },
     { name: 'Timeline', span: 2 }
   ];
 
@@ -2068,6 +2173,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function statusBadge(s) {
     const m = D.STATUS_META[s] || { cls: 'open', label: s };
     return '<span class="badge ' + m.cls + '"><i></i>' + esc(m.label) + '</span>';
+  }
+  function oeBadge(stage, raw) {
+    if (!stage) return '<span style="color:var(--ink-faint)">—</span>';
+    const m = D.OE_STAGE_META[stage] || D.OE_STAGE_META.Other;
+    const tip = raw ? ' title="' + esc(raw) + '"' : '';
+    return '<span class="oe-badge"' + tip + ' style="background:' + m.bg + ';color:' + m.fg + '">' +
+           '<i style="background:' + m.dot + '"></i>' + esc(stage) + '</span>';
   }
 
   function sorted() {
@@ -2123,7 +2235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // row handlers — sorted() is recomputed identically, so map by data-idx into sorted list
     const sortedRows = rows;
-    $$('#vocTable tbody tr[data-idx]').forEach(tr => tr.onclick = () => openDetail(sortedRows[+tr.dataset.idx]));
+    $$('#vocTable tbody tr[data-idx]').forEach(tr => tr.onclick = (e) => { if (e.target.closest('[data-copy]')) return; openDetail(sortedRows[+tr.dataset.idx]); });
 
     // footer
     const from = total ? start + 1 : 0, to = Math.min(start + S.pageSize, total);
@@ -2159,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const customer = '<div class="p-grid">' +
       row('Customer ID', '<span class="mono">' + esc(r.customerId) + '</span>') +
-      row('Order ID', '<span class="mono">' + esc(r.orderId) + '</span>') +
+      row('Order ID', '<button type="button" class="oid-copy mono" data-copy="' + esc(r.orderId || '') + '" title="Click to copy Order ID">' + esc(r.orderId) + '</button>') +
       row('Station', esc(r.storeCode)) +
       row('Product Title', esc(r.productTitle)) +
       row('ASIN', esc(r.asin), true) +
@@ -2175,7 +2287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const resolution = '<div class="p-grid">' +
       row('Status', statusBadge(r._status)) +
-      row('RCA &amp; CAP', r.rcaCap ? esc(r.rcaCap) : '<span style="color:var(--ink-faint)">Not yet recorded</span>') + '</div>';
+      row('RCA &amp; CAP', r.rcaCap ? esc(r.rcaCap) : '<span style="color:var(--ink-faint)">Not yet recorded</span>') +
+      row('OE Remarks', (r._oeStage ? oeBadge(r._oeStage, r.oeRemark) + ' ' : '') + (r.oeRemark ? esc(r.oeRemark) : '<span style="color:var(--ink-faint)">No OE remark</span>')) + '</div>';
 
     // timeline
     const tl = [];
@@ -2207,7 +2320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['Customer ID', r => r.customerId], ['Product Category', r => r.productCategory],
     ['Product Subcategory', r => r.productSub], ['Issue Category', r => r.issueCategory],
     ['Issue Description', r => r.issueDesc], ['Picker ID', r => r.pickerId],
-    ['RCA & CAP', r => r.rcaCap], ['Week', r => r.week], ['Derived Status', r => r._status]
+    ['RCA & CAP', r => r.rcaCap], ['OE Remarks', r => r.oeRemark], ['OE Status', r => r._oeStage], ['Week', r => r.week], ['Derived Status', r => r._status]
   ];
   function exportCSV() {
     const rows = sorted();
@@ -2269,20 +2382,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!insidePop) {
       document.querySelectorAll('.osc-pnf.open').forEach(el => el.classList.remove('open'));
     }
-    // 3 · Copy Order ID to clipboard.
-    const btn = e.target.closest('.opp-oid[data-copy]');
+    // 3 · Copy any Order ID (or other [data-copy] value) to the clipboard.
+    //     Works for every copy control: records table, RCA tracker, scorecards,
+    //     Top-15 lists, duplicate popover and Quick Summary.
+    const btn = e.target.closest('[data-copy]');
     if (!btn) return;
+    e.stopPropagation();
     const text = btn.getAttribute('data-copy') || '';
     if (!text) return;
     // Show feedback immediately — don't gate UI on the (possibly slow/blocked) clipboard promise.
     btn.classList.add('copied');
-    if (!btn._cpOrig) btn._cpOrig = btn.textContent;
-    btn.textContent = 'Copied';
+    if (btn._cpOrig == null) btn._cpOrig = btn.textContent;
+    if (!btn.hasAttribute('data-keep-text')) btn.textContent = 'Copied';
     clearTimeout(btn._cpT);
     btn._cpT = setTimeout(() => { btn.classList.remove('copied'); btn.textContent = btn._cpOrig; }, 1100);
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
     } else { fallbackCopy(text); }
+    try { window.VOC.toast('Order ID copied', window.VOC.ICON ? window.VOC.ICON.check : ''); } catch (_) {}
   });
   function fallbackCopy(text) {
     const ta = document.createElement('textarea');
@@ -2459,13 +2576,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const drawer = sPeriodPend.length ? `
         <div class="ops-drawer" data-drawer="rca-${si}">
-          ${sPeriodPend.sort((a, b) => (b._ts||0) - (a._ts||0)).map(r => `
+          ${sPeriodPend.sort((a, b) => (b._ts||0) - (a._ts||0)).map(r => {
+            const oeM = r._oeStage ? (D.OE_STAGE_META[r._oeStage] || D.OE_STAGE_META.Other) : null;
+            const oeChip = oeM ? `<span class="oe-badge" title="${esc(r.oeRemark||'')}" style="background:${oeM.bg};color:${oeM.fg}"><i style="background:${oeM.dot}"></i>${esc(r._oeStage)}</span>` : '';
+            return `
             <div class="ops-pend-row">
-              <div><span class="mono strong">${esc(r.orderId || '—')}</span>
+              <div><button type="button" class="oid-copy mono strong" data-copy="${esc(r.orderId || '')}" title="Click to copy Order ID">${esc(r.orderId || '—')}</button>
                 <span class="ops-dim"> · ASIN ${esc(r.asin || '—')}</span></div>
               <div class="ops-pend-meta"><span class="ops-issue">${esc(r.issueDesc || r.issueCategory || 'Untriaged')}</span>
-                <span class="ops-dim">${fmtDate(r.date1)} · ${esc(D.weekLabel(r.week))}</span></div>
-            </div>`).join('')}
+                <span class="ops-dim">${fmtDate(r.date1)} · ${esc(D.weekLabel(r.week))}</span>${oeChip ? '<span style="margin-top:2px">'+oeChip+'</span>' : ''}</div>
+            </div>`; }).join('')}
         </div>` : '';
 
       return `
@@ -2682,7 +2802,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function wireToggles() {
     const root = document.getElementById('panelOps');
-    root.querySelectorAll('[data-toggle]').forEach(el => el.onclick = () => {
+    root.querySelectorAll('[data-toggle]').forEach(el => el.onclick = (e) => {
+      if (e.target.closest('[data-copy]')) return;
       const d = root.querySelector('[data-drawer="' + el.dataset.toggle + '"]');
       if (d) { d.classList.toggle('open'); el.classList.toggle('expanded'); }
     });
@@ -2702,6 +2823,144 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.VOCOps = { render };
+})();
+
+/* ═══════════════════════════════════════════════════════════════════
+   OE REMARKS TAB
+   Discussion-status breakdown sourced from the OE remarks column (Q).
+   Donut + clickable legend → drill into each order one-by-one.
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  const V = window.VOC, D = window.VOCData;
+  const esc = V.esc, fmtDate = V.fmtDate, num = V.num;
+  let sel = null;   // currently selected stage key ('' = no remark, or a stage name)
+
+  function dataRows() {
+    const av = V.activeView ? V.activeView() : V.S.view;
+    return av.filter(r => !r._dup);
+  }
+
+  // ordered buckets: the three real stages, then "Other", then "No remark yet"
+  function buckets(rows) {
+    const order = [...D.OE_STAGES, 'Other'];
+    const out = order.map(stage => ({
+      key: stage,
+      label: stage,
+      meta: D.OE_STAGE_META[stage] || D.OE_STAGE_META.Other,
+      rows: rows.filter(r => r._oeStage === stage)
+    }));
+    out.push({
+      key: '',
+      label: 'No remark yet',
+      meta: { bg: '#F1F4F7', fg: '#7A8794', dot: '#C2CCD6', short: 'No remark' },
+      rows: rows.filter(r => !r._oeStage)
+    });
+    return out.filter(b => b.key === '' || b.rows.length > 0 || D.OE_STAGES.indexOf(b.key) !== -1);
+  }
+
+  function donut(bks, total) {
+    const R = 80, C = 2 * Math.PI * R, sw = 26;
+    let acc = 0;
+    const segs = bks.filter(b => b.rows.length > 0).map(b => {
+      const frac = b.rows.length / total;
+      const len = frac * C;
+      const dash = `${len.toFixed(2)} ${(C - len).toFixed(2)}`;
+      const off = (-acc * C).toFixed(2);
+      acc += frac;
+      const dim = sel != null && sel !== b.key ? ' dim' : '';
+      return `<circle class="oe-seg${dim}" data-stage="${esc(b.key)}" r="${R}" cx="110" cy="110" fill="none"
+        stroke="${b.meta.dot}" stroke-width="${sw}" stroke-dasharray="${dash}" stroke-dashoffset="${off}"
+        stroke-linecap="butt"></circle>`;
+    }).join('');
+    return `<div class="oe-donut">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle r="${R}" cx="110" cy="110" fill="none" stroke="#EEF1F5" stroke-width="${sw}"></circle>
+        ${segs}
+      </svg>
+      <div class="oe-donut-center"><b>${num(total)}</b><span>VOC in view</span></div>
+    </div>`;
+  }
+
+  function render() {
+    const panel = document.getElementById('panelOE');
+    if (!panel) return;
+    const rows = dataRows();
+    const total = rows.length;
+    const bks = buckets(rows);
+
+    if (!total) {
+      panel.innerHTML = '<div class="card oe-card"><div class="oe-head"><h2>OE Remarks Tracker</h2>' +
+        '<p>Discussion status from the OE remarks column.</p></div>' +
+        '<div class="oe-empty">No records in the current view. Clear a filter to see OE status.</div></div>';
+      return;
+    }
+
+    // keep a sensible default selection: most urgent pending bucket with rows
+    if (sel == null) {
+      const firstWithRows = bks.find(b => b.key && b.rows.length > 0);
+      sel = firstWithRows ? firstWithRows.key : '';
+    }
+
+    const legend = bks.map(b => {
+      const pct = total ? Math.round(b.rows.length / total * 100) : 0;
+      const on = sel === b.key ? ' on' : '';
+      const muted = b.rows.length === 0 ? ' muted' : '';
+      return `<button type="button" class="oe-leg${on}" data-stage="${esc(b.key)}">
+        <span class="oe-leg-dot" style="background:${b.meta.dot}"></span>
+        <span class="oe-leg-main">
+          <span class="oe-leg-name">${esc(b.label)}</span>
+          <span class="oe-leg-sub">${pct}% of view</span>
+        </span>
+        <span><span class="oe-leg-num${muted}">${num(b.rows.length)}</span><span class="oe-leg-pct">orders</span></span>
+      </button>`;
+    }).join('');
+
+    const overview = `<div class="card oe-card">
+      <div class="oe-head"><h2>OE Remarks Tracker</h2>
+        <p>Discussion status pulled live from the OE remarks column — click a status to see each order one by one.</p></div>
+      <div class="oe-overview">
+        <div class="oe-donut-wrap">${donut(bks, total)}</div>
+        <div class="oe-legend">${legend}</div>
+      </div>
+    </div>`;
+
+    const selBucket = bks.find(b => b.key === sel) || bks[0];
+    const drillRows = [...selBucket.rows].sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    const list = drillRows.length ? drillRows.map((r, i) => {
+      const pending = D.rcaPending(r);
+      return `<div class="oe-item" style="border-left-color:${selBucket.meta.dot}">
+        <div class="oe-item-top">
+          <span class="oe-num">${i + 1}.</span>
+          <button type="button" class="oid-copy oe-st" data-copy="${esc(r.orderId || '')}" title="Click to copy Order ID">${esc(r.orderId || '—')}</button>
+          <span class="oe-item-dim">${esc(r.storeCode || '—')} · ${esc((r.productTitle || '—').slice(0, 40))}</span>
+          <span class="oe-item-meta">${fmtDate(r.date1)} · ${esc(D.weekLabel(r.week))}</span>
+        </div>
+        ${r.comment ? `<div class="oe-item-q">“${esc(r.comment)}”</div>` : ''}
+        <div class="oe-item-rca"><b>RCA &amp; CAP:</b> ${pending ? '<span class="pend">Not yet recorded — pending</span>' : esc(r.rcaCap)}</div>
+        ${r.oeRemark ? `<div class="oe-raw"><b>OE remark:</b> ${esc(r.oeRemark)}</div>` : ''}
+      </div>`;
+    }).join('') : '<div class="oe-empty">No orders with this status in the current view.</div>';
+
+    const drill = `<div class="card oe-card">
+      <div class="oe-drill-head">
+        <span class="oe-leg-dot" style="background:${selBucket.meta.dot};width:14px;height:14px"></span>
+        <h3>${esc(selBucket.label)}</h3>
+        <span class="oe-item-dim">${num(selBucket.rows.length)} order${selBucket.rows.length === 1 ? '' : 's'}</span>
+      </div>
+      <p class="oe-drill-note">Every order currently marked “${esc(selBucket.label)}”. Click any Order ID to copy it.</p>
+      <div class="oe-list">${list}</div>
+    </div>`;
+
+    panel.innerHTML = overview + drill;
+
+    panel.querySelectorAll('[data-stage]').forEach(el => el.addEventListener('click', e => {
+      if (e.target.closest('[data-copy]')) return;
+      sel = el.getAttribute('data-stage');
+      render();
+    }));
+  }
+
+  window.VOCOE = { render };
 })();
 
 </script>
@@ -3027,7 +3286,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pnf = !pending && !(r.pickerId && r.pickerId.trim());
       return '<div class="t15-voc' + (pending ? ' pending' : '') + '">' +
         '<div class="t15-voc-top"><span class="t15-voc-st">' + esc(r.storeCode || '—') + '</span>' +
-          '<span class="t15-voc-meta">' + esc(r.orderId || '—') + ' · ' + fmtDate(r.date1) + (r.pickerId ? ' · picker ' + esc(r.pickerId) : '') + '</span></div>' +
+          '<span class="t15-voc-meta"><button type="button" class="oid-copy" data-copy="' + esc(r.orderId || '') + '" title="Click to copy Order ID">' + esc(r.orderId || '—') + '</button> · ' + fmtDate(r.date1) + (r.pickerId ? ' · picker ' + esc(r.pickerId) : '') + '</span></div>' +
         (r.comment ? '<div class="t15-voc-q">💬 "' + esc(r.comment) + '"</div>' : '') +
         '<div class="t15-voc-rca"><b>RCA &amp; CAP:</b> ' + (pending ? '<span class="pend">Not yet recorded — pending</span>' : esc(r.rcaCap)) + '</div>' +
         (pnf ? '<div class="t15-voc-pnf">⚠ RCA filled but Picker ID missing at ' + esc(r.storeCode || 'this station') + '</div>' : '') +
@@ -3558,6 +3817,25 @@ document.addEventListener('DOMContentLoaded', () => {
     '</div>';
   }
 
+  /* ───────── OE remarks — discussion status ───────── */
+  function oeRemarks(curRows, prevRows, hasPrev) {
+    const order = [...D.OE_STAGES, 'Other', ''];
+    const metaFor = k => k === ''
+      ? { dot:'#C2CCD6' }
+      : (D.OE_STAGE_META[k] || D.OE_STAGE_META.Other);
+    const labelFor = k => k === '' ? 'No remark yet' : k;
+    const tally = rows => { const m = {}; order.forEach(k => m[k] = 0); rows.forEach(r => { const s = r._oeStage || ''; m[s] = (m[s] || 0) + 1; }); return m; };
+    const cur = tally(curRows), prev = tally(prevRows);
+    const total = curRows.length;
+    const max = Math.max(1, ...order.map(k => cur[k]));
+    return '<div class="qs-drv">' + order.map(k => {
+      const v = cur[k], m = metaFor(k);
+      return '<div class="qs-drv-row"><span class="dl" style="display:inline-flex;align-items:center;gap:7px"><i style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:' + m.dot + '"></i>' + labelFor(k) + '</span>' +
+        '<span class="qs-drv-bar"><i style="width:' + Math.round(v / max * 100) + '%;background:' + m.dot + '"></i></span>' +
+        '<span class="dv">' + v + '<small>' + pct(v, total) + '%</small>' + dCell(v, hasPrev ? prev[k] : null, k === 'Discussed') + '</span></div>';
+    }).join('') + '</div>';
+  }
+
   /* ───────── store comparison table ───────── */
   function storeTable(curRows, prevRows, pd) {
     const stores = [...new Set([...curRows, ...prevRows].map(r => r.storeCode).filter(Boolean))].sort();
@@ -3884,6 +4162,10 @@ document.addEventListener('DOMContentLoaded', () => {
           '<div class="qs-sec"><div class="qs-sec-h"><h3>MoM Trend</h3><span class="sub">Month-over-month</span></div>' +
             '<div class="qs-sec-b"><div class="qs-chart-wrap"><canvas id="qsMoM"></canvas></div><div id="qsMoMCallout" class="qs-callout"></div></div></div>' +
         '</div>' +
+        // OE remarks discussion status
+        '<div class="qs-sec"><div class="qs-sec-h"><h3>OE Remarks — Discussion Status</h3>' +
+          '<span class="sub">From the OE remarks column · ' + pd.curLabel + '</span></div>' +
+          '<div class="qs-sec-b">' + oeRemarks(curRows, prevRows, pd.hasPrev) + '</div></div>' +
         // store comparison
         '<div class="qs-sec"><div class="qs-sec-h"><h3>Store Comparison — ' + pd.curLabel + '</h3><span class="sub">Current vs ' + pd.prevWord + '</span></div>' +
           '<div class="qs-sec-b" style="padding:0">' + storeTable(curRows, prevRows, pd) + '</div></div>' +
