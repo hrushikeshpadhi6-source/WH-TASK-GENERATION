@@ -496,6 +496,104 @@ table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records 
 .obc-bar > div { height: 100%; border-radius: 999px; transition: width .5s ease; }
 .obc-val { text-align: right; font-weight: 600; font-size: 12px; color: var(--ink); }
 
+/* ───────────── Complaint Categories ───────────── */
+#panelCategories { display: flex; flex-direction: column; gap: 16px; }
+.cc-card { padding: 18px 20px 20px; }
+.cc-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.cc-head h3 { font-size: 17px; font-weight: 700; margin: 0; color: var(--ink); }
+.cc-sub { font-size: 12px; color: var(--ink-3); margin-top: 4px; max-width: 680px; line-height: 1.5; }
+.cc-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.cc-pill { font-size: 11.5px; color: var(--ink-2); background: #F1F4F8; border: 1px solid var(--border-soft); border-radius: 999px; padding: 5px 11px; white-space: nowrap; }
+.cc-pill b { color: var(--ink); font-weight: 700; font-family: var(--mono); }
+
+.cc-overview { display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: center; margin-top: 18px; }
+.cc-donut-wrap { display: grid; place-items: center; }
+.cc-donut { width: 188px; height: 188px; border-radius: 50%; position: relative; }
+.cc-donut::after { content: ""; position: absolute; inset: 32px; background: var(--card); border-radius: 50%; box-shadow: var(--shadow-sm); }
+.cc-donut-c { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; z-index: 2; }
+.cc-donut-c b { font-size: 32px; font-weight: 800; color: var(--ink); line-height: 1; font-family: var(--mono); }
+.cc-donut-c span { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
+.cc-bars { display: flex; flex-direction: column; gap: 12px; }
+.cc-bar-row { display: grid; grid-template-columns: 168px 1fr 104px; align-items: center; gap: 13px; cursor: pointer; }
+.cc-bar-row:hover .cc-bar-name { color: var(--ink); }
+.cc-bar-row:hover .cc-bar-track { box-shadow: 0 0 0 2px rgba(20,110,180,.18); }
+.cc-bar-name { font-size: 12.5px; color: var(--ink-2); font-weight: 600; display: flex; align-items: center; gap: 9px; }
+.cc-bar-name i { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.cc-bar-track { height: 13px; background: #EEF1F5; border-radius: 999px; overflow: hidden; transition: box-shadow .12s; }
+.cc-bar-fill { height: 100%; border-radius: 999px; transition: width .55s cubic-bezier(.4,0,.2,1); }
+.cc-bar-val { font-size: 12px; color: var(--ink-3); text-align: right; white-space: nowrap; }
+.cc-bar-val b { color: var(--ink); font-family: var(--mono); font-weight: 700; font-size: 13.5px; }
+
+.cc-stores-sec { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+.cc-stores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 28px; }
+.cc-store-row { display: grid; grid-template-columns: 22px 56px 1fr 92px 98px; align-items: center; gap: 11px; cursor: pointer; padding: 5px 7px; border-radius: 7px; transition: background .12s; }
+.cc-store-row:hover { background: #F4F7FB; }
+.cc-store-rank { font-size: 11px; font-weight: 700; color: var(--ink-faint); font-family: var(--mono); text-align: center; }
+.cc-store-name { font-size: 12.5px; font-weight: 700; color: var(--ink); font-family: var(--mono); }
+.cc-store-track { height: 9px; background: #EEF1F5; border-radius: 999px; overflow: hidden; }
+.cc-store-track i { display: block; height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.cc-store-val { font-size: 11.5px; color: var(--ink-3); text-align: right; white-space: nowrap; }
+.cc-store-val b { color: var(--ink); font-family: var(--mono); font-weight: 700; font-size: 12.5px; }
+.cc-store-dom { font-size: 10.5px; color: var(--ink-2); display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-store-dom i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+@media (max-width: 860px) { .cc-stores { grid-template-columns: 1fr; } }
+
+.cc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(278px, 1fr)); gap: 14px; }
+.cc-cat { border: 1px solid var(--border); border-radius: var(--r); background: #fff; overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; cursor: pointer; transition: border-color .12s, box-shadow .12s, transform .12s; }
+.cc-cat:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: #D3DBE3; }
+.cc-cat-top { padding: 13px 15px 12px; border-top: 3px solid; display: flex; align-items: flex-start; gap: 10px; }
+.cc-cat-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.cc-cat-sub { font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
+.cc-cat-nums { margin-left: auto; text-align: right; }
+.cc-cat-nums b { font-size: 25px; font-weight: 800; color: var(--ink); line-height: 1; font-family: var(--mono); }
+.cc-cat-nums span { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+.cc-cat-body { padding: 11px 15px 13px; display: flex; flex-direction: column; gap: 11px; flex: 1; }
+.cc-mini-h { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-faint); font-weight: 700; margin-bottom: 6px; }
+.cc-chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.cc-chip { font-size: 11px; color: var(--ink-2); background: #F4F6F9; border-radius: 6px; padding: 3px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-chip b { color: var(--ink); font-weight: 700; font-family: var(--mono); }
+.cc-quote { font-size: 11.5px; color: var(--ink-3); font-style: italic; line-height: 1.45; border-left: 2px solid var(--border); padding-left: 9px; }
+.cc-cat-foot { margin-top: auto; }
+.cc-view-btn { width: 100%; border: 1px solid var(--border); background: #fff; color: var(--ink-2); border-radius: var(--r-sm); padding: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: background .12s, border-color .12s, color .12s; }
+.cc-view-btn:hover { background: var(--primary-50); border-color: var(--primary); color: var(--primary-700); }
+
+.cc-matrix-wrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--border-soft); border-radius: var(--r); }
+table.cc-matrix { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12.5px; min-width: 640px; }
+table.cc-matrix th, table.cc-matrix td { padding: 9px 11px; text-align: center; border-bottom: 1px solid var(--border-soft); }
+table.cc-matrix thead th { font-size: 11px; color: var(--ink-2); font-weight: 700; background: #F7F9FC; position: sticky; top: 0; z-index: 1; }
+table.cc-matrix thead th i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: middle; }
+table.cc-matrix td.rca-name, table.cc-matrix th.rca-name { text-align: left; font-weight: 600; color: var(--ink); white-space: nowrap; position: sticky; left: 0; background: #fff; }
+table.cc-matrix thead th.rca-name { background: #F7F9FC; z-index: 2; }
+table.cc-matrix tbody tr:last-child td { border-bottom: 0; }
+.cc-cell { cursor: pointer; font-family: var(--mono); font-weight: 700; color: var(--ink); }
+.cc-cell.z { color: var(--ink-faint); font-weight: 400; cursor: default; }
+.cc-cell:not(.z):hover { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 4px; }
+table.cc-matrix td.tot, table.cc-matrix th.tot { font-weight: 800; background: #F4F7FB; color: var(--ink); }
+table.cc-matrix tr.tot-row td { background: #EEF3F9; border-top: 1.5px solid var(--border); }
+
+.cc-drill-back { position: fixed; inset: 0; background: rgba(16,24,40,.45); z-index: 95; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.cc-drill-back.show { opacity: 1; pointer-events: auto; }
+.cc-drill { position: fixed; top: 0; right: 0; bottom: 0; width: 560px; max-width: 94vw; background: var(--bg); z-index: 96; transform: translateX(100%); transition: transform .24s cubic-bezier(.4,0,.2,1); display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+.cc-drill.show { transform: translateX(0); }
+.cc-drill-head { padding: 16px 20px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex: none; }
+.cc-drill-head h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+.cc-drill-sub { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.cc-dot-lg { width: 12px; height: 12px; border-radius: 4px; flex: none; }
+.cc-drill-head .x { margin-left: auto; border: 1px solid var(--border); background: #fff; width: 30px; height: 30px; border-radius: 7px; font-size: 19px; line-height: 1; color: var(--ink-3); cursor: pointer; flex: none; }
+.cc-drill-head .x:hover { background: var(--bg); color: var(--ink); }
+.cc-drill-body { padding: 14px 18px 22px; overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 9px; }
+.cc-rec { background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 11px 13px; }
+.cc-rec-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cc-rec-badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.cc-rec-st { font-size: 12px; font-weight: 700; color: var(--ink); }
+.cc-rec-meta { font-size: 11px; color: var(--ink-faint); font-family: var(--mono); margin-left: auto; }
+.cc-rec-prod { font-size: 12.5px; font-weight: 600; color: var(--ink); margin-top: 7px; }
+.cc-rec-q { font-size: 12px; color: var(--ink-2); font-style: italic; background: #F7F9FC; border-radius: 6px; padding: 7px 9px; margin-top: 6px; line-height: 1.45; }
+.cc-rec-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 7px; font-size: 11px; color: var(--ink-3); }
+.cc-rec-rca i { color: var(--warning); font-style: normal; font-weight: 600; }
+.cc-empty { color: var(--ink-faint); text-align: center; padding: 40px 10px; font-size: 13px; }
+@media (max-width: 720px) { .cc-overview { grid-template-columns: 1fr; } }
+
 /* ───────────── Top 15 Products ───────────── */
 #panelTop15, #panelCompare { display: flex; flex-direction: column; gap: 16px; }
 .ins-card { padding: 0; overflow: hidden; }
@@ -1076,6 +1174,7 @@ body.qs-printing .qs-overlay { position: static; }
     <div id="tabs" class="tabs">
       <button class="on" data-tab="records">Records <span class="count" id="recCount">0</span></button>
       <button data-tab="operations">Operations</button>
+      <button data-tab="categories">Complaint Categories</button>
       <button data-tab="oe">OE Remarks</button>
       <button data-tab="top15">Top 15 Products</button>
       <button data-tab="compare">Compare</button>
@@ -1119,6 +1218,9 @@ body.qs-printing .qs-overlay { position: static; }
       <div id="opsRca"></div>
       <div id="opsPicker"></div>
     </div>
+
+    <!-- Complaint Categories panel -->
+    <div id="panelCategories" class="hidden"></div>
 
     <!-- OE Remarks panel -->
     <div id="panelOE" class="hidden"></div>
@@ -1351,6 +1453,77 @@ function concessionGroup(raw) {
   return (CONCESSION_MAP[key] && CONCESSION_MAP[key].group) || 'Other';
 }
 
+/* ── COMPLAINT CLASSIFICATION (manager-level buckets) ────────────────
+   The VOC V2 sheet has NO complaint-category column. We derive exactly
+   one bucket per record so the counts always total the rows in view:
+     1) Concession Reason  (primary — the most structured signal)
+     2) Customer comment / Transcript text  (fallback when blank/ambiguous)
+     3) Other / Unclassified  (nothing matched)
+   Buckets: Missing/Not Delivered · Wrong Item · Damaged · Defective/Quality
+   · Unwanted · Other.                                                    */
+const COMPLAINT_CATS = [
+  { key: 'missing',   label: 'Missing / Not Delivered', short: 'Missing',   color: '#DC2626', tint: '#FEF1F1' },
+  { key: 'wrong',     label: 'Wrong Item',              short: 'Wrong',     color: '#D97706', tint: '#FEF6E7' },
+  { key: 'damaged',   label: 'Damaged',                 short: 'Damaged',   color: '#7C3AED', tint: '#F2ECFB' },
+  { key: 'defective', label: 'Defective / Quality',     short: 'Defective', color: '#146EB4', tint: '#EAF3FA' },
+  { key: 'unwanted',  label: 'Unwanted',                short: 'Unwanted',  color: '#16A34A', tint: '#ECFDF3' },
+  { key: 'other',     label: 'Other / Unclassified',    short: 'Other',     color: '#94A0AE', tint: '#EEF1F5' }
+];
+const COMPLAINT_CAT_META = {};
+COMPLAINT_CATS.forEach(c => { COMPLAINT_CAT_META[c.key] = c; });
+
+/* ── CLASSIFICATION LOGIC (comment-first, then concession code) ──────
+   ACCURACY RULE: the customer's own words (Transcript) are the ground
+   truth, so we read the COMMENT first. Only when the comment carries no
+   clear signal do we fall back to the Concession Reason code, then Other.
+   Why: a generic concession like `missed_edd` (a late / EDD-miss) does
+   NOT tell us the real complaint — "I don't need it" is Unwanted, "Too
+   late for party" is just late (→ Other), "never arrived" is Missing.
+   So `missed_edd`/late is NOT auto-mapped to Missing; the comment decides,
+   and a bare late-delivery with no other signal lands in Other.           */
+
+/* 1) CUSTOMER-COMMENT text → category (checked FIRST). Patterns are kept
+      explicit so unrelated phrases don't misfire (e.g. "wrong address" is
+      a delivery issue, NOT a Wrong Item). Order = intent priority.        */
+const TEXT_CAT_RULES = [
+  // Unwanted / change-of-mind — customer no longer wants it
+  [/\b(do ?n'?t|dont|does ?n'?t|did ?n'?t) (need|want)\b|no longer (need|want)|change(d)? (of )?mind|by mistake|order(ed)?.{0,14}(by mistake|wrongly|extra|twice|double|two)|want(ed)? to (cancel|return)|cancel( my| the)? order|placed.{0,14}mistake/, 'unwanted'],
+  // Damaged — physical damage in transit / on arrival
+  [/damag|broke|broken|crush|crack|dent|leak|smash|tore|torn|spill|thaw|defrost|melt|soggy|seal.{0,8}brok/, 'damaged'],
+  // Wrong item — a DIFFERENT product than ordered (not address/time)
+  [/(wrong|incorrect|different) (item|product|one|model|size|colou?r|shade|variant|flavou?r|brand|thing|stuff)|not as described|not what i (order|want|ask)|sent.{0,14}(wrong|different)|received.{0,16}(wrong|different)|item.{0,8}(not match|differ)/, 'wrong'],
+  // Defective / quality — faulty, expired, poor quality, spoiled
+  [/defect|faulty|not working|does ?n'?t work|stopped working|(poor|low|bad|cheap) quality|quality (is|was) (low|poor|bad)|expir|malfunction|rotten|mou?ld|spoil|stale|smell|not fresh|fungus/, 'defective'],
+  // Missing — genuinely NOT received / item missing / short delivery
+  [/not (received|delivered)|never (arriv|came|receiv|deliver)|did ?n'?t (arriv|receiv|get|come)|have ?n'?t (receiv|got)|item.{0,8}(missing|not (there|receiv))|missing (item|piece|unit|product|part)|nothing.{0,10}deliver|empty (box|bag|packag)|short(-| )?(deliver|quantit)|less quantit|parts? missing|one.{0,10}missing|did not get/, 'missing']
+];
+
+/* 2) CONCESSION-REASON code → category (fallback when comment is silent).
+      `missed_edd` deliberately matches NOTHING here → falls through to Other. */
+const CONC_CAT_RULES = [
+  [/unwant|change.{0,4}of.{0,4}mind|no.?longer|remorse|return.?request/, 'unwanted'],
+  [/damag|broken|crush|crack|dent|leak|smash|torn|spill|thaw|defrost|melt/, 'damaged'],
+  [/wrong|switch|materially.?different|not.?as.?described|mismatch|incorrect.?item|different.?item/, 'wrong'],
+  [/defect|faulty|performance|quality|expir|not.?working|malfunction|rotten|spoil|stale/, 'defective'],
+  [/item.?not.?received|not.?received|undeliver|did.?not.?receive|\bdnr\b|incomplete|_missing|^missing|short|lost/, 'missing']
+];
+
+function complaintCat(rec) {
+  const txt = String(rec && rec.comment || '').toLowerCase();
+  if (txt) for (const pair of TEXT_CAT_RULES) if (pair[0].test(txt)) return pair[1];
+  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
+  for (const pair of CONC_CAT_RULES) if (pair[0].test(conc)) return pair[1];
+  return 'other';
+}
+/* how the bucket was decided — powers the transparency pills. */
+function complaintCatSource(rec) {
+  const txt = String(rec && rec.comment || '').toLowerCase();
+  if (txt) for (const pair of TEXT_CAT_RULES) if (pair[0].test(txt)) return 'comment';
+  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
+  for (const pair of CONC_CAT_RULES) if (pair[0].test(conc)) return 'concession';
+  return 'none';
+}
+
 /* ── Derived status ──────────────────────────────────────────────────
    The VOC V2 sheet has no Status column, so status is derived from the
    triage + corrective-action signals that DO exist:
@@ -1556,7 +1729,8 @@ window.VOCData = {
   deriveStatus, STATUS_META, weekNum, weekLabel,
   buildSampleData,
   V2_UTR_DESCS, V2_OTR_DESCS, V2_PICKER_DESC, V2_QC_DESC, VOC_UTR_TARGET,
-  catKind, rcaPending, classify, rcaMismatch
+  catKind, rcaPending, classify, rcaMismatch,
+  COMPLAINT_CATS, COMPLAINT_CAT_META, complaintCat, complaintCatSource
 };
 
 </script>
@@ -1666,6 +1840,8 @@ function normalize(rec) {
   r._concLabel = D.concessionLabel(r.concession);
   r._concGroup = D.concessionGroup(r.concession);
   r._oeStage   = D.oeStage(r.oeRemark);
+  r._cat       = D.complaintCat(r);                  // manager-level complaint bucket
+  r._catSrc    = D.complaintCatSource(r);            // 'concession' | 'comment' | 'none'
   r._day       = rowDayKey(r);                       // ← date filter keyed on Order Timestamp (col B)
   r._month     = r._day ? r._day.slice(0, 7) : '';   // matches _day
   r._ts        = rowTs(r);                            // robust chronological sort key
@@ -1994,6 +2170,7 @@ function renderAll() {
   else if (S.tab === 'oe' && window.VOCOE) window.VOCOE.render();
   else if (S.tab === 'top15' && window.VOCInsights) window.VOCInsights.renderTop15();
   else if (S.tab === 'compare' && window.VOCInsights) window.VOCInsights.renderCompare();
+  else if (S.tab === 'categories' && window.VOCCategories) window.VOCCategories.render();
 }
 
 function switchTab(tab) {
@@ -2005,6 +2182,7 @@ function switchTab(tab) {
   const pOE = $('#panelOE'); if (pOE) pOE.classList.toggle('hidden', tab !== 'oe');
   const pT = $('#panelTop15');   if (pT) pT.classList.toggle('hidden', tab !== 'top15');
   const pC = $('#panelCompare'); if (pC) pC.classList.toggle('hidden', tab !== 'compare');
+  const pCat = $('#panelCategories'); if (pCat) pCat.classList.toggle('hidden', tab !== 'categories');
   // Compare has its own period pickers — the global filter bar doesn't apply there.
   const fb = document.querySelector('.filters'); if (fb) fb.classList.toggle('hidden', tab === 'compare');
   renderAll();
@@ -3608,6 +3786,246 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.VOCInsights = { renderTop15, renderCompare };
+})();
+
+/* ═════════════════════════════════════════════════════════════════
+   VOC V2 — Complaint Categories
+   Manager-friendly classification of every VOC into Missing / Wrong /
+   Damaged / Defective-Quality / Unwanted (+ Other). Buckets are derived
+   in the data layer (Concession Reason → comment text → Other). Shows
+   the overall split (donut + bars), a card per category (top products &
+   stations + a sample comment), and a Root-Cause × Category cross-tab.
+   Every count is clickable and slides in the matching records. Honours
+   the global filter bar (uses the dedup-aware active view).
+   ═════════════════════════════════════════════════════════════════ */
+(function () {
+  const V = window.VOC, D = window.VOCData;
+  if (!V || !D) return;
+  const $ = s => document.querySelector(s);
+  const esc = V.esc, num = V.num, fmtDate = V.fmtDate;
+  const CATS = D.COMPLAINT_CATS, META = D.COMPLAINT_CAT_META;
+
+  const catOf = r => r._cat || D.complaintCat(r);
+  const rcaOf = r => (String(r.issueDesc || '').trim() || 'Untriaged / No RCA');
+  function rows() { return V.activeView ? V.activeView() : (V.S ? V.S.view : []); }
+
+  function hexA(hex, a) {
+    const h = String(hex).replace('#', '');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  function topN(obj, n) {
+    return Object.keys(obj).sort((a, b) => obj[b] - obj[a]).slice(0, n).map(k => ({ k: k, n: obj[k] }));
+  }
+  function clip(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+  function recordsFor(catKey, rcaLabel, storeCode) {
+    return rows().filter(r => {
+      if (catKey && catKey !== 'all' && catOf(r) !== catKey) return false;
+      if (rcaLabel && rcaLabel !== 'all' && rcaOf(r) !== rcaLabel) return false;
+      if (storeCode && storeCode !== 'all' && String(r.storeCode || '').trim() !== storeCode) return false;
+      return true;
+    });
+  }
+
+  /* ── drill-in drawer ── */
+  let drillEl = null, backEl = null;
+  function ensureDrill() {
+    if (drillEl) return;
+    backEl = document.createElement('div'); backEl.className = 'cc-drill-back';
+    drillEl = document.createElement('div'); drillEl.className = 'cc-drill';
+    document.body.appendChild(backEl); document.body.appendChild(drillEl);
+    backEl.addEventListener('click', closeDrill);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrill(); });
+  }
+  function closeDrill() { if (drillEl) drillEl.classList.remove('show'); if (backEl) backEl.classList.remove('show'); }
+  function recCard(r) {
+    const cat = META[catOf(r)] || META.other;
+    const pending = D.rcaPending(r);
+    return '<div class="cc-rec">' +
+      '<div class="cc-rec-top">' +
+        '<span class="cc-rec-badge" style="color:' + cat.color + ';background:' + cat.tint + '">' + esc(cat.short) + '</span>' +
+        '<span class="cc-rec-st">' + esc(r.storeCode || '—') + '</span>' +
+        '<span class="cc-rec-meta">' + esc(r.orderId || '—') + ' · ' + fmtDate(r.date1 || r.orderTimestamp) + '</span>' +
+      '</div>' +
+      '<div class="cc-rec-prod">' + esc(r.productTitle || '(no product title)') + '</div>' +
+      (r.comment ? '<div class="cc-rec-q">“' + esc(r.comment) + '”</div>' : '') +
+      '<div class="cc-rec-foot">' +
+        '<span>' + esc(r._concLabel || r.concession || '—') + '</span>' +
+        '<span class="cc-rec-rca">' + esc(rcaOf(r)) + (pending ? ' · <i>RCA pending</i>' : '') + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+  function openDrill(catKey, rcaLabel, storeCode) {
+    ensureDrill();
+    const recs = recordsFor(catKey, rcaLabel, storeCode).slice().sort((a, b) => (b._ts || 0) - (a._ts || 0));
+    const cm = catKey && catKey !== 'all' ? META[catKey] : null;
+    const parts = [];
+    if (storeCode && storeCode !== 'all') parts.push('Station ' + storeCode);
+    parts.push(cm ? cm.label : 'All categories');
+    if (rcaLabel && rcaLabel !== 'all') parts.push(rcaLabel);
+    const title = parts.join(' · ');
+    drillEl.innerHTML =
+      '<div class="cc-drill-head">' +
+        (cm ? '<span class="cc-dot-lg" style="background:' + cm.color + '"></span>' : '') +
+        '<div><h4>' + esc(title) + '</h4><div class="cc-drill-sub">' + num(recs.length) + ' record' + (recs.length === 1 ? '' : 's') + ' · honours current filters</div></div>' +
+        '<button class="x" type="button" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="cc-drill-body">' + (recs.map(recCard).join('') || '<div class="cc-empty">No matching records.</div>') + '</div>';
+    drillEl.querySelector('.x').onclick = closeDrill;
+    requestAnimationFrame(() => { drillEl.classList.add('show'); backEl.classList.add('show'); });
+  }
+
+  function wire() {
+    const panel = document.getElementById('panelCategories');
+    if (!panel || panel._ccWired) return;
+    panel._ccWired = true;
+    panel.addEventListener('click', e => {
+      const el = e.target.closest('[data-cat],[data-rca],[data-store]');
+      if (!el || !panel.contains(el) || el.classList.contains('z')) return;
+      openDrill(el.dataset.cat || 'all', el.dataset.rca || 'all', el.dataset.store || 'all');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', wire);
+
+  function render() {
+    const panel = $('#panelCategories');
+    if (!panel) return;
+    wire();
+    const rs = rows();
+    const total = rs.length;
+    if (!total) {
+      panel.innerHTML = '<div class="card cc-card"><div class="state"><h4>No records in view</h4><p>Adjust the filters above to see the complaint classification.</p></div></div>';
+      return;
+    }
+
+    const byCat = {};
+    CATS.forEach(c => byCat[c.key] = { count: 0, stores: {}, products: {}, sample: '' });
+    const rcaMap = {};
+    const storeAgg = {};
+    let srcConc = 0, srcComment = 0;
+    rs.forEach(r => {
+      const ck = catOf(r), b = byCat[ck] || byCat.other;
+      b.count++;
+      const st = String(r.storeCode || '').trim();
+      if (st) {
+        b.stores[st] = (b.stores[st] || 0) + 1;
+        if (!storeAgg[st]) storeAgg[st] = { count: 0, cats: {} };
+        storeAgg[st].count++; storeAgg[st].cats[ck] = (storeAgg[st].cats[ck] || 0) + 1;
+      }
+      const pt = String(r.productTitle || '').trim() || '(no title)'; b.products[pt] = (b.products[pt] || 0) + 1;
+      const src = r._catSrc || D.complaintCatSource(r);
+      if (src === 'concession') srcConc++; else if (src === 'comment') srcComment++;
+      if (!b.sample && r.comment) b.sample = r.comment;
+      const rk = rcaOf(r);
+      if (!rcaMap[rk]) { rcaMap[rk] = { total: 0, cats: {} }; CATS.forEach(c => rcaMap[rk].cats[c.key] = 0); }
+      rcaMap[rk].total++; rcaMap[rk].cats[ck]++;
+    });
+
+    const present = CATS.filter(c => byCat[c.key].count > 0);
+
+    /* donut */
+    let acc = 0; const segs = [];
+    CATS.forEach(c => { const n = byCat[c.key].count; if (!n) return; const s0 = acc / total * 360; acc += n; const s1 = acc / total * 360; segs.push(c.color + ' ' + s0 + 'deg ' + s1 + 'deg'); });
+    const donutBg = segs.length ? 'conic-gradient(' + segs.join(',') + ')' : '#EEF1F5';
+
+    const maxCat = Math.max(1, ...CATS.map(c => byCat[c.key].count));
+    const bars = present.map(c => {
+      const n = byCat[c.key].count, pct = Math.round(n / total * 100);
+      return '<div class="cc-bar-row" data-cat="' + c.key + '" data-rca="all" title="View ' + esc(c.label) + ' records">' +
+        '<div class="cc-bar-name"><i style="background:' + c.color + '"></i>' + esc(c.label) + '</div>' +
+        '<div class="cc-bar-track"><div class="cc-bar-fill" style="width:' + Math.round(n / maxCat * 100) + '%;background:' + c.color + '"></div></div>' +
+        '<div class="cc-bar-val"><b>' + num(n) + '</b> · ' + pct + '%</div>' +
+      '</div>';
+    }).join('');
+
+    const storeKeys = Object.keys(storeAgg).sort((a, b) => storeAgg[b].count - storeAgg[a].count);
+    const maxStore = storeKeys.length ? storeAgg[storeKeys[0]].count : 1;
+    const storeRows = storeKeys.slice(0, 10).map((s, i) => {
+      const o = storeAgg[s];
+      const dom = Object.keys(o.cats).sort((a, b) => o.cats[b] - o.cats[a])[0] || 'other';
+      const dm = META[dom] || META.other;
+      const pct = Math.round(o.count / total * 100);
+      return '<div class="cc-store-row" data-store="' + esc(s) + '" data-cat="all" data-rca="all" title="View ' + esc(s) + ' records">' +
+        '<span class="cc-store-rank">' + (i + 1) + '</span>' +
+        '<span class="cc-store-name">' + esc(s) + '</span>' +
+        '<span class="cc-store-track"><i style="width:' + Math.round(o.count / maxStore * 100) + '%;background:' + dm.color + '"></i></span>' +
+        '<span class="cc-store-val"><b>' + num(o.count) + '</b> · ' + pct + '%</span>' +
+        '<span class="cc-store-dom" title="Most common category here"><i style="background:' + dm.color + '"></i>' + esc(dm.short) + '</span>' +
+      '</div>';
+    }).join('');
+
+    const overview =
+      '<div class="card cc-card">' +
+        '<div class="cc-head">' +
+          '<div><h3>Complaint Classification</h3>' +
+          '<div class="cc-sub">Every VOC is bucketed into one manager-level category, derived from the Concession Reason and — where that is blank or ambiguous — inferred from the customer comment. Counts always total the records in view. Click any bar or card to drill in.</div></div>' +
+          '<div class="cc-pills">' +
+            '<span class="cc-pill"><b>' + num(total) + '</b> VOC in view</span>' +
+            '<span class="cc-pill"><b>' + num(srcConc) + '</b> from concession</span>' +
+            '<span class="cc-pill"><b>' + num(srcComment) + '</b> inferred from comment</span>' +
+            '<span class="cc-pill"><b>' + num(byCat.other.count) + '</b> unclassified</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cc-overview">' +
+          '<div class="cc-donut-wrap"><div class="cc-donut" style="background:' + donutBg + '"><div class="cc-donut-c"><b>' + num(total) + '</b><span>Total VOC</span></div></div></div>' +
+          '<div class="cc-bars">' + bars + '</div>' +
+        '</div>' +
+        (storeRows ? '<div class="cc-stores-sec"><div class="cc-mini-h">Most affected stations · click any to drill in</div><div class="cc-stores">' + storeRows + '</div></div>' : '') +
+      '</div>';
+
+    const cards = present.map(c => {
+      const b = byCat[c.key], pct = Math.round(b.count / total * 100);
+      const prods = topN(b.products, 3).map(p => '<span class="cc-chip" title="' + esc(p.k) + '">' + esc(clip(p.k, 30)) + ' <b>' + p.n + '</b></span>').join('') || '<span class="cc-chip">—</span>';
+      const stores = topN(b.stores, 4).map(s => '<span class="cc-chip">' + esc(s.k) + ' <b>' + s.n + '</b></span>').join('') || '<span class="cc-chip">—</span>';
+      return '<div class="cc-cat" data-cat="' + c.key + '" data-rca="all">' +
+        '<div class="cc-cat-top" style="border-top-color:' + c.color + '">' +
+          '<div><div class="cc-cat-name">' + esc(c.label) + '</div><div class="cc-cat-sub">' + pct + '% of VOC in view</div></div>' +
+          '<div class="cc-cat-nums"><b>' + num(b.count) + '</b><span>records</span></div>' +
+        '</div>' +
+        '<div class="cc-cat-body">' +
+          '<div><div class="cc-mini-h">Top products</div><div class="cc-chip-row">' + prods + '</div></div>' +
+          '<div><div class="cc-mini-h">Top stations</div><div class="cc-chip-row">' + stores + '</div></div>' +
+          (b.sample ? '<div class="cc-quote">“' + esc(clip(b.sample, 120)) + '”</div>' : '') +
+          '<div class="cc-cat-foot"><button class="cc-view-btn" type="button" data-cat="' + c.key + '" data-rca="all">View ' + num(b.count) + ' record' + (b.count === 1 ? '' : 's') + ' →</button></div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    const cardsCard = '<div class="card cc-card"><div class="cc-head" style="margin-bottom:14px"><div><h3 style="font-size:15px">By category</h3><div class="cc-sub">Where each complaint type concentrates — top products and stations driving it.</div></div></div><div class="cc-grid">' + cards + '</div></div>';
+
+    /* cross-tab: Root Cause (Issue Description) × Category */
+    const rcaKeys = Object.keys(rcaMap).sort((a, b) => rcaMap[b].total - rcaMap[a].total);
+    const colCats = present;
+    let maxCell = 1;
+    rcaKeys.forEach(rk => colCats.forEach(c => { if (rcaMap[rk].cats[c.key] > maxCell) maxCell = rcaMap[rk].cats[c.key]; }));
+    const thead = '<thead><tr><th class="rca-name">Root Cause (RCA) ↓ / Category →</th>' +
+      colCats.map(c => '<th><i style="background:' + c.color + '"></i>' + esc(c.short) + '</th>').join('') +
+      '<th class="tot">Total</th></tr></thead>';
+    const tbody = rcaKeys.map(rk => {
+      const row = rcaMap[rk];
+      return '<tr><td class="rca-name">' + esc(rk) + '</td>' +
+        colCats.map(c => {
+          const v = row.cats[c.key];
+          if (!v) return '<td class="cc-cell z">·</td>';
+          const a = 0.12 + 0.6 * (v / maxCell);
+          return '<td class="cc-cell" data-cat="' + c.key + '" data-rca="' + esc(rk) + '" style="background:' + hexA(c.color, a) + '">' + v + '</td>';
+        }).join('') +
+        '<td class="tot cc-cell" data-cat="all" data-rca="' + esc(rk) + '">' + row.total + '</td></tr>';
+    }).join('');
+    const totRow = '<tr class="tot-row"><td class="rca-name tot">Total</td>' +
+      colCats.map(c => '<td class="tot cc-cell" data-cat="' + c.key + '" data-rca="all">' + byCat[c.key].count + '</td>').join('') +
+      '<td class="tot cc-cell" data-cat="all" data-rca="all">' + total + '</td></tr>';
+    const matrixCard =
+      '<div class="card cc-card">' +
+        '<div class="cc-head"><div><h3 style="font-size:15px">Category per Root Cause</h3>' +
+        '<div class="cc-sub">How each RCA bucket splits across complaint categories — e.g. of all Picker Mistakes, how many were Missing vs Wrong vs Damaged. Click any number to open those records.</div></div></div>' +
+        '<div class="cc-matrix-wrap"><table class="cc-matrix">' + thead + '<tbody>' + tbody + totRow + '</tbody></table></div>' +
+      '</div>';
+
+    panel.innerHTML = overview + cardsCard + matrixCard;
+  }
+
+  window.VOCCategories = { render };
 })();
 
 </script>
