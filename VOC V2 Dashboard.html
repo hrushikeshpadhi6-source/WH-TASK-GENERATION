@@ -496,6 +496,23 @@ table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records 
 .obc-bar > div { height: 100%; border-radius: 999px; transition: width .5s ease; }
 .obc-val { text-align: right; font-weight: 600; font-size: 12px; color: var(--ink); }
 
+/* ───────────── Active filter bar ───────────── */
+.afbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #fff; border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm); padding: 9px 14px; margin-bottom: 14px; font-size: 12.5px; }
+.afbar.on { border-color: #C9DEF1; background: linear-gradient(0deg, #F6FBFE, #FFFFFF); }
+.afbar.hidden { display: none; }
+.afb-ico { display: inline-flex; color: var(--primary); }
+.afb-ico svg { width: 15px; height: 15px; }
+.afb-label { color: var(--ink-3); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; font-size: 11px; }
+.afb-period { font-weight: 700; color: var(--ink-2); background: #EEF1F5; border-radius: 999px; padding: 4px 13px; }
+.afb-period.hot { color: #fff; background: var(--primary); box-shadow: 0 1px 2px rgba(20,110,180,.3); }
+.afb-chip { color: var(--ink-2); background: #F1F4F8; border: 1px solid var(--border-soft); border-radius: 999px; padding: 4px 10px; }
+.afb-chip b { color: var(--ink-3); font-weight: 600; }
+.afb-spacer { flex: 1; min-width: 12px; }
+.afb-count { color: var(--ink-3); white-space: nowrap; }
+.afb-count b { color: var(--ink); font-family: var(--mono); font-weight: 700; }
+.afb-clear { border: 1px solid var(--border); background: #fff; color: var(--ink-2); border-radius: var(--r-sm); padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+.afb-clear:hover { background: var(--bg); border-color: #CDD6E0; }
+
 /* ───────────── Complaint Categories ───────────── */
 #panelCategories { display: flex; flex-direction: column; gap: 16px; }
 .cc-card { padding: 18px 20px 20px; }
@@ -503,6 +520,8 @@ table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records 
 .cc-head h3 { font-size: 17px; font-weight: 700; margin: 0; color: var(--ink); }
 .cc-sub { font-size: 12px; color: var(--ink-3); margin-top: 4px; max-width: 680px; line-height: 1.5; }
 .cc-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.cc-period { font-size: 12.5px; font-weight: 700; color: var(--ink-2); background: #EEF1F5; border-radius: 999px; padding: 4px 13px; }
+.cc-period.hot { color: #fff; background: var(--primary); box-shadow: 0 1px 2px rgba(20,110,180,.3); }
 .cc-pill { font-size: 11.5px; color: var(--ink-2); background: #F1F4F8; border: 1px solid var(--border-soft); border-radius: 999px; padding: 5px 11px; white-space: nowrap; }
 .cc-pill b { color: var(--ink); font-weight: 700; font-family: var(--mono); }
 
@@ -1164,6 +1183,9 @@ body.qs-printing .qs-overlay { position: static; }
       </div>
     </div>
 
+    <!-- Active filter scope (always visible across every tab) -->
+    <div id="activeFilterBar" class="afbar"></div>
+
     <!-- KPIs -->
     <div id="kpiGrid" class="kpi-grid"></div>
 
@@ -1465,7 +1487,8 @@ const COMPLAINT_CATS = [
   { key: 'missing',   label: 'Missing / Not Delivered', short: 'Missing',   color: '#DC2626', tint: '#FEF1F1' },
   { key: 'wrong',     label: 'Wrong Item',              short: 'Wrong',     color: '#D97706', tint: '#FEF6E7' },
   { key: 'damaged',   label: 'Damaged',                 short: 'Damaged',   color: '#7C3AED', tint: '#F2ECFB' },
-  { key: 'defective', label: 'Defective / Quality',     short: 'Defective', color: '#146EB4', tint: '#EAF3FA' },
+  { key: 'defective', label: 'Defective & Quality',     short: 'Defective', color: '#146EB4', tint: '#EAF3FA' },
+  { key: 'quality',   label: 'Quality',                 short: 'Quality',   color: '#0E8A6E', tint: '#E5F5F0' },
   { key: 'unwanted',  label: 'Unwanted',                short: 'Unwanted',  color: '#16A34A', tint: '#ECFDF3' },
   { key: 'other',     label: 'Other / Unclassified',    short: 'Other',     color: '#94A0AE', tint: '#EEF1F5' }
 ];
@@ -1509,11 +1532,24 @@ const CONC_CAT_RULES = [
 ];
 
 function complaintCat(rec) {
+  const ck = rawComplaintCat(rec);
+  // Split the faulty-product bucket by product type: a fresh/food item with a
+  // quality issue is a QUALITY problem (rotten, stale, not fresh); a packaged
+  // item that fails is a DEFECTIVE product (faulty, broken function, expired).
+  if (ck === 'defective') return isFreshFood(rec) ? 'quality' : 'defective';
+  return ck;
+}
+function rawComplaintCat(rec) {
   const txt = String(rec && rec.comment || '').toLowerCase();
   if (txt) for (const pair of TEXT_CAT_RULES) if (pair[0].test(txt)) return pair[1];
   const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
   for (const pair of CONC_CAT_RULES) if (pair[0].test(conc)) return pair[1];
   return 'other';
+}
+/* Fresh / food detector from Product Category + Subcategory text. */
+function isFreshFood(rec) {
+  const c = (String(rec && rec.productCategory || '') + ' ' + String(rec && rec.productSub || '')).toLowerCase();
+  return /meat|poultry|veg|fruit|fresh|dairy|milk|cheese|egg|bakery|bread|fish|seafood|frozen|flower|plant|herb|grocery|food|snack|beverage|drink|juice|produce|deli|yogurt|yoghurt|fruits|chicken|mutton|beef/.test(c);
 }
 /* how the bucket was decided — powers the transparency pills. */
 function complaintCatSource(rec) {
@@ -2160,7 +2196,40 @@ function renderKpis() {
 }
 
 /* ═══════════ ORCHESTRATION ═══════════ */
+/* ── ACTIVE FILTER BAR (always visible, every tab) ──
+   Surfaces the period / station scope so anyone on any tab can see exactly
+   what's filtered (e.g. "Week 24"). The count is the de-duplicated active
+   view — same number every metric uses — and says so explicitly. */
+function renderActiveFilterBar() {
+  const bar = document.getElementById('activeFilterBar');
+  if (!bar) return;
+  const f = S.filters;
+  let period = 'All periods', active = false;
+  if (f.week) { period = 'Week ' + f.week; active = true; }
+  else if (f.month) { const p = String(f.month).split('-'); const dt = new Date(+p[0], (+p[1] || 1) - 1, 1); period = isNaN(dt) ? f.month : dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); active = true; }
+  else if (f.dateFrom || f.dateTo) { period = (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…'); active = true; }
+  const extras = [];
+  if (f.store) extras.push(['Station', f.store]);
+  if (f.category) extras.push(['Category', f.category]);
+  if (f.description) extras.push(['Description', f.description]);
+  if (f.concession) extras.push(['Concession', f.concession]);
+  if (f.oe) extras.push(['OE', f.oe]);
+  if (f.search) extras.push(['Search', '“' + f.search + '”']);
+  const count = activeView().length;
+  bar.className = 'afbar' + (active || extras.length ? ' on' : '') + (S.tab === 'compare' ? ' hidden' : '');
+  bar.innerHTML =
+    '<span class="afb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></span>' +
+    '<span class="afb-label">Showing</span>' +
+    '<span class="afb-period' + (active ? ' hot' : '') + '">' + esc(period) + '</span>' +
+    extras.map(e => '<span class="afb-chip"><b>' + esc(e[0]) + '</b> ' + esc(e[1]) + '</span>').join('') +
+    '<span class="afb-spacer"></span>' +
+    '<span class="afb-count"><b>' + num(count) + '</b> VOC · duplicates excluded</span>' +
+    (active || extras.length ? '<button id="afbClear" class="afb-clear" type="button">Clear all</button>' : '');
+  const cb = document.getElementById('afbClear'); if (cb) cb.onclick = () => clearFilters();
+}
+
 function renderAll() {
+  renderActiveFilterBar();
   renderKpis();
   renderDuplicateCard();
   $('#recCount').textContent = num(S.view.length);
@@ -2185,6 +2254,7 @@ function switchTab(tab) {
   const pCat = $('#panelCategories'); if (pCat) pCat.classList.toggle('hidden', tab !== 'categories');
   // Compare has its own period pickers — the global filter bar doesn't apply there.
   const fb = document.querySelector('.filters'); if (fb) fb.classList.toggle('hidden', tab === 'compare');
+  const afb = document.getElementById('activeFilterBar'); if (afb) afb.classList.toggle('hidden', tab === 'compare');
   renderAll();
 }
 window.VOC.applyFilters = applyFilters;
@@ -3808,6 +3878,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const catOf = r => r._cat || D.complaintCat(r);
   const rcaOf = r => (String(r.issueDesc || '').trim() || 'Untriaged / No RCA');
   function rows() { return V.activeView ? V.activeView() : (V.S ? V.S.view : []); }
+  // Active period label for the header (Week 24 / month / date range / All periods).
+  function periodLabel() {
+    const f = (V.S && V.S.filters) || {};
+    if (f.week) return 'Week ' + f.week;
+    if (f.month) { const p = String(f.month).split('-'); const dt = new Date(+p[0], (+p[1] || 1) - 1, 1); return isNaN(dt) ? f.month : dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
+    if (f.dateFrom || f.dateTo) return (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…');
+    return 'All periods';
+  }
 
   function hexA(hex, a) {
     const h = String(hex).replace('#', '');
@@ -3958,8 +4036,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const overview =
       '<div class="card cc-card">' +
         '<div class="cc-head">' +
-          '<div><h3>Complaint Classification</h3>' +
-          '<div class="cc-sub">Every VOC is bucketed into one manager-level category, derived from the Concession Reason and — where that is blank or ambiguous — inferred from the customer comment. Counts always total the records in view. Click any bar or card to drill in.</div></div>' +
+          '<div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap"><h3>Complaint Classification</h3>' +
+          '<span class="cc-period' + (periodLabel() === 'All periods' ? '' : ' hot') + '">' + esc(periodLabel()) + '</span></div>' +
           '<div class="cc-pills">' +
             '<span class="cc-pill"><b>' + num(total) + '</b> VOC in view</span>' +
             '<span class="cc-pill"><b>' + num(srcConc) + '</b> from concession</span>' +
