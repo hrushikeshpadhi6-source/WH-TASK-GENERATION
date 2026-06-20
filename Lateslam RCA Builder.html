@@ -201,8 +201,8 @@
   <div class="kpis hide" id="kpis"></div>
 
   <div class="fc-panel hide" id="fcPanel">
-    <h4>Hourly Forecast &amp; Manpower</h4>
-    <p class="hint">Actual orders are filled automatically. Type the <b>forecast</b> (from your Google Sheet) and <b>Active MP</b> per hour — Gap % and the export columns update live.</p>
+    <h4>30-Minute Forecast &amp; Manpower</h4>
+    <p class="hint">Actual orders are filled automatically. Type the <b>forecast</b> (from your Google Sheet) and <b>Active MP</b> per 30-min slot — Gap % and the export columns update live.</p>
     <div style="overflow-x:auto;">
       <table class="fc-table" id="fcTable"></table>
     </div>
@@ -248,13 +248,13 @@ const COLS = [
   {g:"raw",name:"promise_utr",                   key:"promise_utr",                   src:"raw"},
   {g:"raw",name:"units_picked",                  key:"units_picked",                  src:"raw"},
   {g:"cls",name:"Lateslam Only",      key:"lateslam",      src:"derive", note:"Filter to Lateslam orders only"},
-  {g:"der",name:"Lateslam Time slot", key:"slot",          src:"derive", note:"Hour bucket of pick-list created time"},
+  {g:"der",name:"Lateslam Time slot", key:"slot",          src:"derive", note:"30-min bucket of pick-list created time"},
   {g:"der",name:"Accepting Time",     key:"accept",        src:"derive", note:"Pick-list created time → pick assignment time"},
   {g:"fva",name:"Gap %",              key:"gap",           src:"slot",   note:"Forecast vs actual orders gap"},
-  {g:"fva",name:"Forecasting Orders", key:"forecast",      src:"slot",   note:"From Google Sheet — hour-wise forecast orders"},
-  {g:"fva",name:"Actual Orders",      key:"actual",        src:"slot",   note:"Actual orders received in that hour"},
-  {g:"fva",name:"Forecast Units",     key:"forecastUnits", src:"slot",   note:"From Google Sheet — hour-wise forecast units"},
-  {g:"fva",name:"Actual Units",       key:"actualUnits",   src:"slot",   note:"Sum of units_picked in that hour"},
+  {g:"fva",name:"Forecasting Orders", key:"forecast",      src:"slot",   note:"From Google Sheet — 30-min forecast orders"},
+  {g:"fva",name:"Actual Orders",      key:"actual",        src:"slot",   note:"Actual orders received in that 30-min slot"},
+  {g:"fva",name:"Forecast Units",     key:"forecastUnits", src:"slot",   note:"From Google Sheet — 30-min forecast units"},
+  {g:"fva",name:"Actual Units",       key:"actualUnits",   src:"slot",   note:"Sum of units_picked in that 30-min slot"},
   {g:"man",name:"Active MP",          key:"mp",            src:"slot",   note:"To be filled manually"},
   {g:"man",name:"Picker Name",        key:"picker",        src:"derive", note:"From outbound-pick raw data"},
 ];
@@ -278,8 +278,13 @@ function fmtDur(sec){ if(sec==null||isNaN(sec)) return ""; sec=Math.max(0,Math.r
   const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
   const p=n=>String(n).padStart(2,"0");
   return h>0 ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`; }
-function hourSlot(d){ if(!d) return ""; const h=d.getHours(); const p=n=>String(n).padStart(2,"0");
-  return `${p(h)}:00 - ${p(h)}:59`; }
+// 30-minute slot key: 0..47  (hour*2 + first/second half)
+function slotKey(d){ if(!d&&d!==0) return null; return d.getHours()*2 + (d.getMinutes()>=30?1:0); }
+function slotLabel(k){ const p=n=>String(n).padStart(2,"0"); const h=Math.floor(k/2), half=k%2;
+  const sm=half*30, em=half*30+29; return `${p(h)}:${p(sm)} - ${p(h)}:${p(em)}`; }
+function fmtClock(d){ if(!d) return ""; const p=n=>String(n).padStart(2,"0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
+function hourSlot(d){ if(!d) return ""; return slotLabel(slotKey(d)); }
 // strip a trailing midnight time (" 0:00:00", "T00:00:00", etc.) from a date-only value
 function stripMidnight(v){ if(v==null) return ""; const s=String(v).trim();
   const m=s.match(/^(.*?)[ T]0{1,2}:0{2}(?::0{2})?(?:\.0+)?Z?$/); return m?m[1].trim():s; }
@@ -349,11 +354,12 @@ function appsScriptJSONP(params, onSuccess, onError){
   sc.onerror=()=>{cleanup();onError(new Error('Script load error — check Apps Script deployment / internet'));};
   document.head.appendChild(sc);
 }
-// sum 30-min slots ("HH:MM") into hour buckets, matched to the store filter
+// keep 30-min slots ("HH:MM") as half-hour slot keys (0..47), matched to the store filter
 function fcToHour(rawMap, store, storesInData){
   const out={}; if(!rawMap) return out;
   const add=storeObj=>Object.keys(storeObj||{}).forEach(slot=>{
-    const hh=parseInt(String(slot).split(':')[0]); if(!isNaN(hh)) out[hh]=(out[hh]||0)+Math.round(storeObj[slot]||0); });
+    const parts=String(slot).split(':'); const hh=parseInt(parts[0]); const mm=parseInt(parts[1]||'0');
+    if(!isNaN(hh)){ const k=hh*2+(mm>=30?1:0); out[k]=(out[k]||0)+Math.round(storeObj[slot]||0); } });
   const keys=Object.keys(rawMap);
   if(store==='all'){
     keys.forEach(sk=>{ if(storesInData.some(as=>sk===as||sk.indexOf(as)>=0||as.indexOf(sk)>=0)) add(rawMap[sk]); });
@@ -402,13 +408,13 @@ function build(){
 
   let rows = store==="all" ? F1 : F1.filter(r=>r.delivery_station_code===store);
 
-  // actual orders + units per hour (all orders in scope, before LS filter)
+  // actual orders + units per 30-min slot (all orders in scope, before LS filter)
   const actualByHour={}, actualUnitsByHour={};
   rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(!d) return;
-    const h=d.getHours(); actualByHour[h]=(actualByHour[h]||0)+1;
+    const h=slotKey(d); actualByHour[h]=(actualByHour[h]||0)+1;
     actualUnitsByHour[h]=(actualUnitsByHour[h]||0)+(parseInt(r.units_picked)||0); });
 
-  // forecast (orders + units) per hour from fetched sheet, matched to store filter
+  // forecast (orders + units) per 30-min slot from fetched sheet, matched to store filter
   const storesInData=[...new Set(rows.map(r=>r.delivery_station_code).filter(Boolean))];
   const fcOrdersByHour = fcLoaded ? fcToHour(fcData.orders, store, storesInData) : {};
   const fcUnitsByHour  = fcLoaded ? fcToHour(fcData.units,  store, storesInData) : {};
@@ -425,9 +431,9 @@ function build(){
     const pk=picks[oid];
     records.push({
       raw:r,
-      hour: plc?plc.getHours():null,
+      hour: plc?slotKey(plc):null,
       lateslam: isLS?"Lateslam":"On time",
-      slot: plc?hourSlot(plc):"",
+      slot: plc?(hourSlot(plc)+" · "+fmtClock(plc)):"",
       accept: (plc&&asg)?fmtDur((asg-plc)/1000):"",
       picker: pk&&pk.length?(pk[0].User||pk[0].user||""):"—",
       isLS
@@ -490,7 +496,7 @@ function renderKpis(){
     {l:scopeLbl+" in view", v:records.length.toLocaleString()},
     {l:"Late Slams", v:ls.toLocaleString(), cls:"alert"},
     {l:"Pickers involved", v:pickers},
-    {l:"Hour slots", v:slots},
+    {l:"30-min slots", v:slots},
   ];
   $("kpis").innerHTML=k.map(x=>`<div class="kpi ${x.cls||''}"><div class="v">${x.v}</div><div class="l">${x.l}</div></div>`).join("");
 }
@@ -501,7 +507,7 @@ function renderFcPanel(hours){
   hours.forEach(hr=>{
     const o=hourly[hr]; const p=n=>String(n).padStart(2,"0");
     h+=`<tr>
-      <td>${p(hr)}:00 - ${p(hr)}:59</td>
+      <td>${slotLabel(hr)}</td>
       <td>${o.actual}</td>
       <td><input data-h="${hr}" data-k="forecast" value="${o.forecast}" placeholder="—" inputmode="numeric"></td>
       <td>${o.actualUnits}</td>
