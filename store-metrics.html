@@ -811,9 +811,26 @@ tbody tr:hover{background:var(--row-hover);}
   <!-- NETWORK LOSS — WAREHOUSE LOSS (WHL) + WAREHOUSE DAMAGE (WHD) -->
   <div class="chart-card ani2" id="nl-card" style="margin-bottom:14px;">
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span>🏭 Warehouse Loss &amp; Damage <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— WHL &amp; WHD as % of GMS · follows the date / store filter ↑</span></span>
+      <span>🏭 Warehouse Loss &amp; Damage <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— full detail per store · <span style="color:#EF4444;font-weight:800;">positive loss flagged in red</span> · follows the date / store filter ↑</span></span>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span id="nl-label" style="font-family:'Inter',monospace;font-size:11px;font-weight:800;letter-spacing:0.3px;color:var(--accent);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:7px;padding:4px 11px;white-space:nowrap;"></span>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:3px 6px 3px 10px;">
+          <span style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">💱 Currency</span>
+          <select id="nl-cur" onchange="nlSetCur(this.value)" class="fsel" style="padding:4px 8px;font-size:11px;font-weight:700;" title="All figures are USD — pick a currency to convert">
+            <option value="USD">USD — $ (base)</option>
+            <option value="EUR">EUR — €</option>
+            <option value="GBP">GBP — £</option>
+            <option value="INR">INR — ₹</option>
+            <option value="AED">AED — د.إ</option>
+            <option value="SAR">SAR — ﷼</option>
+            <option value="SGD">SGD — S$</option>
+            <option value="JPY">JPY — ¥</option>
+            <option value="CAD">CAD — C$</option>
+            <option value="AUD">AUD — A$</option>
+          </select>
+          <span style="font-size:9px;font-weight:700;color:var(--muted);">×</span>
+          <input id="nl-rate" type="number" step="0.0001" min="0" value="1" onchange="nlSetRate(this.value)" title="Conversion rate from USD — editable" style="width:74px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 7px;font-family:'Inter',monospace;font-size:11px;font-weight:700;outline:none;">
+        </div>
         <button onclick="smFetchNetworkLoss()" id="nl-btn" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(37,99,235,0.3);">↻ Network Loss</button>
       </div>
     </div>
@@ -1311,6 +1328,37 @@ function nlPct(v){ return (Math.round(v*100)/100).toFixed(2)+'%'; }
 function nlWhlCol(v){ var p=whlPoints(v); return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }   // colour by WHL score band (10/2.5/0)
 function nlWhdCol(v){ var p=whPoints(v);  return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }   // colour by WHD score band (10/2.5/0)
 
+// ── CURRENCY — base data is USD; convert by an editable rate ──────────
+var NL_CUR   = { code:'USD', sym:'$', rate:1 };
+var NL_RATES = { USD:1, EUR:0.92, GBP:0.79, INR:83.3, AED:3.67, SAR:3.75, SGD:1.35, JPY:157, CAD:1.36, AUD:1.52 };
+var NL_SYM   = { USD:'$', EUR:'€', GBP:'£', INR:'₹', AED:'د.إ ', SAR:'﷼ ', SGD:'S$', JPY:'¥', CAD:'C$', AUD:'A$' };
+function nlSetCur(code){
+  NL_CUR.code = code;
+  NL_CUR.sym  = NL_SYM[code] || (code+' ');
+  NL_CUR.rate = NL_RATES[code] || 1;
+  var ri=document.getElementById('nl-rate'); if(ri) ri.value=NL_CUR.rate;
+  smNetworkLoss();
+}
+function nlSetRate(v){ var r=parseFloat(v); NL_CUR.rate=(isNaN(r)||r<=0)?1:r; smNetworkLoss(); }
+// Money in the selected currency (USD value × rate), sign-aware.
+function nlMoney(usd){ var v=(Number(usd)||0)*NL_CUR.rate; return (v<0?'-':'')+NL_CUR.sym+fmt(Math.abs(v)); }
+// A right-aligned numeric cell. mode: 'loss'(red tint) | 'good'(green) | 'signed' | 'neutral'
+function nlNumCell(usd, mode, bold){
+  var v=Number(usd)||0, txt=nlMoney(v), w=bold?900:800;
+  // Loss/damage emphasis — only POSITIVE loss figures get red; NEGATIVE figures stay neutral (never red).
+  if(mode==='loss'){
+    if(v<0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:var(--text);">'+txt+'</td>';
+    return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(239,68,68,0.10);">'+txt+'</td>';
+  }
+  if(mode==='good')  return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:#10B981!important;">'+txt+'</td>';
+  // Warehouse Damage — always flagged (damage arrives negative): red text on an orange wash = orange/red combo.
+  if(mode==='damage') return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(249,115,22,0.16);">'+txt+'</td>';
+  if(mode==='signed'){ var c=v>0?'#10B981':'var(--text)'; return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:'+c+(v>0?'!important':'')+';">'+txt+'</td>'; }
+  return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:600)+';color:var(--text);">'+txt+'</td>';
+}
+// Band colour for the % columns — never red when the percentage is negative.
+function nlBandCol(v, isWhd){ var c=isWhd?nlWhdCol(v):nlWhlCol(v); if(v<0 && c==='#EF4444') return 'var(--text)'; return c; }
+
 function smNetworkLoss(){
   var card=document.getElementById('nl-card'); if(!card) return;
   var lbl=document.getElementById('nl-label'); if(lbl) lbl.textContent='📅 '+smActivePeriodText();
@@ -1320,45 +1368,82 @@ function smNetworkLoss(){
   var rows=smNlFilter();
   if(!rows.length){ if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='<tr><td class="empty">No network-loss rows for this filter</td></tr>'; return; }
 
-  // group by store, GMS-weighted average of WHL / WHD
+  // group by store — sum the value columns, GMS-weight the percentages
   var g={};
   rows.forEach(function(r){
-    if(!g[r.store]) g[r.store]={store:r.store,gms:0,wWhl:0,wWhd:0,n:0};
+    if(!g[r.store]) g[r.store]={store:r.store,found:0,missing:0,trans:0,whl:0,whd:0,grand:0,gms:0,wWhl:0,wWhd:0,n:0};
     var o=g[r.store]; var w=Number(r.gms)||0;
-    o.gms+=w; o.wWhl+=(Number(r.whl)||0)*w; o.wWhd+=(Number(r.whd)||0)*w; o.n++;
+    o.found  +=Number(r.found)||0;
+    o.missing+=Number(r.missing)||0;
+    o.trans  +=Number(r.transshipIn)||0;
+    o.whl    +=Number(r.whlVal)||0;
+    o.whd    +=Number(r.whdVal)||0;
+    o.grand  +=Number(r.grandTotal)||0;
+    o.gms    +=w;
+    o.wWhl   +=(Number(r.whl)||0)*w;   // r.whl = % to GMS (WHL)
+    o.wWhd   +=(Number(r.whd)||0)*w;   // r.whd = % to GMS (WHD)
+    o.n++;
   });
-  var list=Object.keys(g).map(function(k){ var o=g[k]; var w=o.gms||0; return {store:o.store,gms:o.gms,whl:w?o.wWhl/w:0,whd:w?o.wWhd/w:0,n:o.n}; })
-                         .sort(function(a,b){ return b.gms-a.gms; });
-  var totGms=sum(list.map(function(o){ return o.gms; }));
-  var avgWhl=totGms?sum(list.map(function(o){ return o.whl*o.gms; }))/totGms:0;
-  var avgWhd=totGms?sum(list.map(function(o){ return o.whd*o.gms; }))/totGms:0;
+  var list=Object.keys(g).map(function(k){ var o=g[k]; var w=o.gms||0;
+    return {store:o.store,found:o.found,missing:o.missing,trans:o.trans,whl:o.whl,whd:o.whd,grand:o.grand,gms:o.gms,whlPct:w?o.wWhl/w:0,whdPct:w?o.wWhd/w:0,n:o.n};
+  }).sort(function(a,b){ return b.gms-a.gms; });
+
+  var T={found:0,missing:0,trans:0,whl:0,whd:0,grand:0,gms:0};
+  list.forEach(function(o){ T.found+=o.found; T.missing+=o.missing; T.trans+=o.trans; T.whl+=o.whl; T.whd+=o.whd; T.grand+=o.grand; T.gms+=o.gms; });
+  var avgWhl=T.gms?sum(list.map(function(o){ return o.whlPct*o.gms; }))/T.gms:0;
+  var avgWhd=T.gms?sum(list.map(function(o){ return o.whdPct*o.gms; }))/T.gms:0;
 
   if(kpis){
     var k=[
-      {icon:'💰',lbl:'GMS (USD)',     val:'$'+fmt(totGms),       sub:list.length+' store'+(list.length>1?'s':''), col:'#2563EB'},
-      {icon:'📉',lbl:'Avg WHL %',     val:nlPct(avgWhl),         sub:'warehouse loss', col:nlWhlCol(avgWhl)},
-      {icon:'📦',lbl:'Avg WHD %',     val:nlPct(avgWhd),         sub:'warehouse damage', col:nlWhdCol(avgWhd)},
-      {icon:'🧾',lbl:'Records',       val:fmt(rows.length),      sub:'network-loss rows', col:'#64748B'}
+      {icon:'💰',lbl:'GMS ('+NL_CUR.code+')',  val:nlMoney(T.gms),   sub:list.length+' store'+(list.length>1?'s':''), col:'#2563EB'},
+      {icon:'📉',lbl:'Total WHL',              val:nlMoney(T.whl),   sub:'warehouse loss',   col:T.whl>0?'#EF4444':'#64748B'},
+      {icon:'📦',lbl:'Total WHD',              val:nlMoney(T.whd),   sub:'warehouse damage', col:'#EF4444'},
+      {icon:'🧮',lbl:'Net Grand Total',        val:nlMoney(T.grand), sub:'across all rows',  col:T.grand>0?'#10B981':'#64748B'},
+      {icon:'📊',lbl:'Avg WHL %',              val:nlPct(avgWhl),    sub:'% of GMS',         col:nlWhlCol(avgWhl)},
+      {icon:'📊',lbl:'Avg WHD %',              val:nlPct(avgWhd),    sub:'% of GMS',         col:nlWhdCol(avgWhd)}
     ];
     kpis.innerHTML=k.map(function(c){ return '<div class="kpi" style="--kc:'+c.col+';"><div class="kpi-icon">'+c.icon+'</div><div class="kpi-lbl">'+c.lbl+'</div><div class="kpi-val" style="color:'+c.col+';">'+c.val+'</div><div class="kpi-sub">'+c.sub+'</div></div>'; }).join('');
   }
 
-  if(th) th.innerHTML='<tr><th>Store</th><th style="text-align:right;">GMS_USD</th><th style="text-align:right;">% to GMS — WHL</th><th style="text-align:right;">% to GMS — WHD</th></tr>';
+  if(th) th.innerHTML='<tr>'+
+    '<th>Store</th>'+
+    '<th style="text-align:right;">Found</th>'+
+    '<th style="text-align:right;">Missing</th>'+
+    '<th style="text-align:right;">Transship In</th>'+
+    '<th style="text-align:right;color:#EF4444;">WHL</th>'+
+    '<th style="text-align:right;color:#EF4444;">WHD</th>'+
+    '<th style="text-align:right;">Grand Total</th>'+
+    '<th style="text-align:right;">GMS ('+NL_CUR.code+')</th>'+
+    '<th style="text-align:right;color:#EF4444;">% GMS — WHL</th>'+
+    '<th style="text-align:right;color:#EF4444;">% GMS — WHD</th>'+
+  '</tr>';
   if(tb){
     var body=list.map(function(o){
       var sc=(typeof SC!=='undefined'&&SC[o.store])?SC[o.store]:'var(--accent)';
       return '<tr>'+
         '<td style="font-weight:800;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+sc+';margin-right:7px;"></span>'+o.store+'</td>'+
-        '<td style="text-align:right;font-family:Inter,monospace;">$'+fmt(o.gms)+'</td>'+
-        '<td style="text-align:right;font-family:Inter,monospace;font-weight:800;color:'+nlWhlCol(o.whl)+';">'+nlPct(o.whl)+'</td>'+
-        '<td style="text-align:right;font-family:Inter,monospace;font-weight:800;color:'+nlWhdCol(o.whd)+';">'+nlPct(o.whd)+'</td>'+
+        nlNumCell(o.found,'good')+
+        nlNumCell(o.missing,'loss')+
+        nlNumCell(o.trans,'neutral')+
+        nlNumCell(o.whl,'loss')+
+        nlNumCell(o.whd,'damage')+
+        nlNumCell(o.grand,'signed')+
+        nlNumCell(o.gms,'neutral')+
+        '<td style="text-align:right;font-family:Inter,monospace;font-weight:800;color:'+nlBandCol(o.whlPct,false)+'!important;">'+nlPct(o.whlPct)+'</td>'+
+        '<td style="text-align:right;font-family:Inter,monospace;font-weight:800;color:'+nlBandCol(o.whdPct,true)+'!important;">'+nlPct(o.whdPct)+'</td>'+
       '</tr>';
     }).join('');
     body+='<tr style="border-top:2px solid var(--border);background:var(--note-bg);">'+
-      '<td style="font-weight:900;">TOTAL · weighted</td>'+
-      '<td style="text-align:right;font-family:Inter,monospace;font-weight:900;">$'+fmt(totGms)+'</td>'+
-      '<td style="text-align:right;font-family:Inter,monospace;font-weight:900;color:'+nlWhlCol(avgWhl)+';">'+nlPct(avgWhl)+'</td>'+
-      '<td style="text-align:right;font-family:Inter,monospace;font-weight:900;color:'+nlWhdCol(avgWhd)+';">'+nlPct(avgWhd)+'</td>'+
+      '<td style="font-weight:900;">TOTAL</td>'+
+      nlNumCell(T.found,'good',true)+
+      nlNumCell(T.missing,'loss',true)+
+      nlNumCell(T.trans,'neutral',true)+
+      nlNumCell(T.whl,'loss',true)+
+      nlNumCell(T.whd,'damage',true)+
+      nlNumCell(T.grand,'signed',true)+
+      nlNumCell(T.gms,'neutral',true)+
+      '<td style="text-align:right;font-family:Inter,monospace;font-weight:900;color:'+nlBandCol(avgWhl,false)+'!important;">'+nlPct(avgWhl)+'</td>'+
+      '<td style="text-align:right;font-family:Inter,monospace;font-weight:900;color:'+nlBandCol(avgWhd,true)+'!important;">'+nlPct(avgWhd)+'</td>'+
     '</tr>';
     tb.innerHTML=body;
   }
