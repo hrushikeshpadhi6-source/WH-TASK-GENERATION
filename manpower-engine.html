@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manpower Allocation Engine — HP World DMS PRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+[data-theme="dark"]{
+  --bg:#07060f;--surface:#0f0e1c;--card:#13121f;--border:rgba(255,255,255,0.08);
+  --text:#e8e6ff;--muted:#7e7ca0;--th-bg:#0d0c1a;--row-hover:rgba(255,255,255,0.03);
+  --filter-bg:rgba(255,255,255,0.05);--hdr-bg:rgba(7,6,15,0.95);--note-bg:rgba(37,99,235,0.10);
+  --input-bg:rgba(255,255,255,0.04);
+}
+[data-theme="light"]{
+  --bg:#eeedf8;--surface:#fff;--card:#fff;--border:rgba(0,0,0,0.1);
+  --text:#0d0c1a;--muted:#4a4870;--th-bg:#e8e6f8;--row-hover:rgba(37,99,235,0.06);
+  --filter-bg:rgba(0,0,0,0.05);--hdr-bg:rgba(238,237,248,0.98);--note-bg:rgba(37,99,235,0.06);
+  --input-bg:#f4f3fb;
+}
+:root{--accent:#2563EB;--green:#10B981;--yellow:#F59E0B;--red:#EF4444;--cyan:#0EA5E9;--purple:#7C3AED;--slate:#64748B;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:background .3s,color .3s;}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:var(--hdr-bg);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);min-height:62px;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px;flex-wrap:wrap;}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.logo-circle{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#2563EB,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35);}
+.logo-text .sub{font-size:8px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);}
+.logo-text .main{font-size:15px;font-weight:900;color:var(--text);letter-spacing:.3px;line-height:1.1;}
+.logo-text .main span{background:linear-gradient(90deg,#2563EB,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.vr{width:1px;height:30px;background:var(--border);}
+.page-ttl{font-size:14px;font-weight:900;color:var(--text);}
+.page-sub{font-size:10px;color:var(--muted);font-family:'Inter',monospace;margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.back-btn,.theme-btn{background:var(--filter-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
+.back-btn{padding:8px 14px;}
+.theme-btn{width:36px;height:36px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.back-btn:hover,.theme-btn:hover{background:rgba(37,99,235,.15);border-color:var(--accent);}
+.load-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-weight:800;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 14px rgba(37,99,235,.3);transition:all .2s;}
+.load-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.45);}
+.load-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+.top-progress{height:3px;background:rgba(127,127,160,.15);position:relative;overflow:hidden;}
+.top-progress-bar{height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB);width:0%;transition:width .3s;}
+
+.main{position:relative;z-index:1;max-width:1380px;margin:0 auto;padding:22px 20px 80px;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.06);}
+.sec-hdr{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;color:var(--text);padding:15px 20px;border-bottom:1px solid var(--border);}
+.sec-hdr .ico{width:26px;height:26px;border-radius:8px;background:var(--note-bg);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.sec-hdr small{font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);font-size:10px;margin-left:auto;font-family:'Inter',monospace;}
+
+/* CONTROLS */
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:18px 20px;}
+.fld{display:flex;flex-direction:column;gap:6px;}
+.fld label{font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.fld input,.fld select{background:var(--input-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;outline:none;transition:border .15s;width:100%;}
+.fld input:focus,.fld select:focus{border-color:var(--accent);}
+.fld .unit{font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;}
+.seg{display:flex;background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:3px;gap:3px;}
+.seg button{flex:1;border:none;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:800;padding:7px 6px;border-radius:7px;cursor:pointer;transition:all .15s;}
+.seg button.on{background:var(--accent);color:#fff;}
+
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;padding:0 20px 18px;align-items:center;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:11px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .2s;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.48);}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.btn-ghost{display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border-radius:11px;border:1px solid var(--border);background:var(--filter-bg);color:var(--text);font-weight:800;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08);}
+.btn-ghost.xls:hover{border-color:#1D6F42;color:#1D6F42;background:rgba(29,111,66,.08);}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin:18px 0;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kc,var(--accent));}
+.kpi .k-lbl{font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.kpi .k-val{font-size:30px;font-weight:900;color:var(--text);line-height:1.1;margin:7px 0 3px;font-variant-numeric:tabular-nums;}
+.kpi .k-val small{font-size:14px;font-weight:800;color:var(--muted);}
+.kpi .k-sub{font-size:10px;font-weight:700;color:var(--kc,var(--accent));}
+
+/* TABLE */
+.tbl-wrap{overflow:auto;border-radius:0 0 16px 16px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{position:sticky;top:0;background:var(--th-bg);color:var(--muted);font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:11px 12px;text-align:right;white-space:nowrap;z-index:2;}
+thead th:first-child,tbody td:first-child{text-align:left;position:sticky;left:0;background:var(--th-bg);z-index:1;}
+tbody td:first-child{background:var(--card);}
+tbody td{padding:10px 12px;text-align:right;border-top:1px solid var(--border);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+tbody tr:hover td{background:var(--row-hover);}
+tbody tr:hover td:first-child{background:var(--row-hover);}
+tbody tr.peak td{background:rgba(239,68,68,.07);}
+tbody tr.peak td:first-child{background:rgba(239,68,68,.07);}
+tfoot td{padding:12px;text-align:right;font-weight:900;border-top:2px solid var(--border);background:var(--th-bg);font-variant-numeric:tabular-nums;}
+tfoot td:first-child{text-align:left;}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:800;}
+.bar-cell{display:flex;align-items:center;gap:7px;justify-content:flex-end;}
+.minibar{height:7px;border-radius:20px;background:linear-gradient(90deg,var(--accent),#1D4ED8);min-width:4px;}
+
+.charts-2{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin:18px 0;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.06);}
+.chart-card .body{padding:16px 18px;}
+.chart-card canvas{width:100%!important;}
+
+.day-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:14px 20px 0;}
+.day-tab{padding:7px 13px;border-radius:9px;border:1px solid var(--border);background:var(--filter-bg);color:var(--muted);font-size:11px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;font-variant-numeric:tabular-nums;}
+.day-tab:hover{border-color:var(--accent);color:var(--accent);}
+.day-tab.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.day-tab .pk{display:block;font-size:8.5px;font-weight:700;opacity:.85;margin-top:1px;}
+
+.empty{padding:34px;text-align:center;color:var(--muted);font-size:13px;font-weight:600;}
+.note{font-size:11px;color:var(--muted);font-weight:600;line-height:1.5;padding:0 20px 16px;}
+.note b{color:var(--text);}
+.tag{font-family:'Inter',monospace;font-size:11px;font-weight:800;color:var(--accent);background:var(--note-bg);border:1px solid var(--border);border-radius:7px;padding:3px 9px;}
+.status{font-size:11px;font-weight:700;color:var(--muted);font-family:'Inter',monospace;}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:0 20px 14px;font-size:11px;font-weight:700;color:var(--muted);}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+.callout{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;border-top:1px solid var(--border);}
+.callout>div{padding:15px 18px;border-right:1px solid var(--border);}
+.callout>div:last-child{border-right:none;}
+.callout .cl-lbl{font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);}
+.callout .cl-val{font-size:22px;font-weight:900;margin-top:5px;font-variant-numeric:tabular-nums;}
+.callout .cl-sub{font-size:10px;font-weight:700;color:var(--muted);margin-top:2px;}
+
+@media(max-width:860px){.charts-2{grid-template-columns:1fr;}}
+#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .4s;}
+#loader.hide{opacity:0;pointer-events:none;}
+.ld-bar{width:240px;height:4px;background:rgba(127,127,160,.2);border-radius:50px;overflow:hidden;}
+.ld-bar i{display:block;height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB);animation:lda 1.6s ease-in-out infinite;}
+@keyframes lda{0%{width:0}60%{width:85%}100%{width:100%}}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="logo-circle" style="width:54px;height:54px;border-radius:16px;font-size:26px;">🧮</div>
+  <div style="font-size:16px;font-weight:900;">Manpower Allocation Engine</div>
+  <div class="ld-bar"><i></i></div>
+  <div id="ld-msg" class="status">Connecting to Google Sheet…</div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <img src="assets/gwc-dms-logo.png" alt="GWC · HP World DMS PRO" style="height:34px;width:auto;display:block;background:#fff;padding:4px 8px;border-radius:8px;border:1px solid var(--border);">
+    <div class="vr"></div>
+    <div>
+      <div class="page-ttl">Manpower Allocation Engine</div>
+      <div class="page-sub" id="hdr-sub">OB + IB hourly workforce planning</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="src-status" class="status"></span>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌓</button>
+    <button class="load-btn" id="refresh-btn" onclick="loadIB(true)">⟳ Refresh Data</button>
+  </div>
+</div>
+<div class="top-progress"><div class="top-progress-bar" id="top-bar"></div></div>
+
+<div class="main">
+
+  <!-- QUICK CALCULATOR -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="sec-hdr"><span class="ico">⚡</span>Quick Manpower Calculator<small>instant — single hour / shipment</small></div>
+    <div class="ctrl-grid" style="grid-template-columns:repeat(auto-fill,minmax(135px,1fr));">
+      <div class="fld"><label>Hourly OB Orders</label><input type="number" id="q-orders" value="34" min="0" oninput="quickCalc()"></div>
+      <div class="fld"><label>IB Units</label><input type="number" id="q-ib" value="2500" min="0" oninput="quickCalc()"></div>
+      <div class="fld"><label>OB <span class="unit">orders / AA / hr</span></label><input type="number" id="q-obrate" value="12" min="1" oninput="quickCalc()"></div>
+      <div class="fld"><label>IB <span class="unit">units / AA / hr</span></label><input type="number" id="q-ibrate" value="150" min="1" oninput="quickCalc()"></div>
+      <div class="fld"><label>SLA <span class="unit">hours</span></label><input type="number" id="q-sla" value="6" min="1" step="0.5" oninput="quickCalc()"></div>
+      <div class="fld"><label>Buffer <span class="unit">AA / hr</span></label><input type="number" id="q-buf" value="1" min="0" oninput="quickCalc()"></div>
+    </div>
+    <div class="callout" id="q-out"></div>
+    <div class="note" style="padding-top:14px;"><b>OB AA</b> = ROUNDUP(Orders ÷ <span id="q-f1">12</span>) &nbsp;·&nbsp; <b>IB AA</b> = ROUNDUP(IB Units ÷ (<span id="q-f2">150</span> × <span id="q-f3">6</span> SLA)) &nbsp;·&nbsp; <b>Total</b> = OB + IB + Buffer</div>
+  </div>
+
+  <!-- PLANNER CONTROLS -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="sec-hdr"><span class="ico">🗓️</span>Forecast Planner<small id="ib-src">IB FORECAST tab · OB FORECAST tab</small></div>
+    <div class="ctrl-grid">
+      <div class="fld"><label>Store</label><select id="p-store" onchange="rebuild()"></select></div>
+      <div class="fld"><label>IB Basis</label><select id="p-cat" onchange="onCatChange()"></select></div>
+      <div class="fld"><label>From</label><input type="date" id="p-from" onchange="rebuild()"></div>
+      <div class="fld"><label>To</label><input type="date" id="p-to" onchange="rebuild()"></div>
+      <div class="fld"><label>SLA <span class="unit">hrs</span></label><input type="number" id="p-sla" value="6" min="1" step="0.5" onchange="rebuild()"></div>
+      <div class="fld"><label>OB <span class="unit">ord/AA/hr</span></label><input type="number" id="p-obrate" value="12" min="1" onchange="rebuild()"></div>
+      <div class="fld"><label>IB <span class="unit">u/AA/hr</span></label><input type="number" id="p-ibrate" value="150" min="1" onchange="rebuild()"></div>
+      <div class="fld"><label>Buffer <span class="unit">AA/hr</span></label><input type="number" id="p-buf" value="1" min="0" onchange="rebuild()"></div>
+      <div class="fld"><label>Shift 1 <span class="unit">start · 10h</span></label><input type="number" id="p-s1" value="0" min="0" max="23" onchange="rebuild()"></div>
+      <div class="fld"><label>Shift 2 <span class="unit">start · 10h</span></label><input type="number" id="p-s2" value="8" min="0" max="23" onchange="rebuild()"></div>
+      <div class="fld"><label>Shift 3 <span class="unit">start · 10h</span></label><input type="number" id="p-s3" value="16" min="0" max="23" onchange="rebuild()"></div>
+      <div class="fld"><label>IB Slot From <span class="unit">hr · manual</span></label><input type="number" id="p-ibfrom" value="0" min="0" max="23" onchange="saveSlot();rebuild()"></div>
+      <div class="fld"><label>IB Slot To <span class="unit">hr · manual</span></label><input type="number" id="p-ibto" value="6" min="0" max="24" onchange="saveSlot();rebuild()"></div>
+      <div class="fld" style="grid-column:span 2;"><label>IB Distribution <span class="unit">how this transshipment lands across the day</span></label>
+        <div class="seg" id="p-mode">
+          <button class="on" data-m="even" onclick="setMode('even')" title="Spread IB evenly across all 24 hours (24/7 store)">24h even</button>
+          <button data-m="sla" onclick="setMode('sla')" title="Concentrate IB across the SLA window">SLA window</button>
+          <button data-m="manual" onclick="setMode('manual')" title="Place this transshipment's IB units into the manual IB Slot From–To hours above">Manual slot</button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="build-btn" onclick="rebuild()">🧮 Build Plan</button>
+      <button class="btn-ghost xls" onclick="exportXlsx()">📊 Export Excel</button>
+      <button class="btn-ghost" onclick="copySheets()">📋 Copy for Google Sheets</button>
+      <span class="status" id="plan-status" style="margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <!-- SUMMARY KPIs -->
+  <div class="kpi-grid" id="kpis"></div>
+
+  <!-- DATE-RANGE SUMMARY -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="sec-hdr"><span class="ico">📆</span>Date-Range Manpower Summary<small id="range-lbl"></small></div>
+    <div class="tbl-wrap"><table id="range-tbl"><thead></thead><tbody><tr><td class="empty">Loading IB FORECAST…</td></tr></tbody></table></div>
+  </div>
+
+  <!-- HOURLY DETAIL -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="sec-hdr"><span class="ico">⏱️</span>Hourly Manpower Requirement<small id="focus-lbl"></small></div>
+    <div class="day-tabs" id="day-tabs"></div>
+    <div class="legend">
+      <span><i style="background:#2563EB;"></i>OB AA</span>
+      <span><i style="background:#0EA5E9;"></i>IB AA</span>
+      <span><i style="background:#64748B;"></i>Buffer</span>
+      <span><i style="background:#EF4444;"></i>Peak hour</span>
+    </div>
+    <div class="chart-card" style="border:none;box-shadow:none;"><div class="body"><canvas id="hourly-chart" height="120"></canvas></div></div>
+    <div class="tbl-wrap"><table id="hourly-tbl"><thead></thead><tbody><tr><td class="empty">Build a plan to see the hourly breakdown.</td></tr></tbody></table></div>
+    <div class="note" id="ob-note"></div>
+  </div>
+
+  <!-- SHIFT PLAN + CAPACITY -->
+  <div class="charts-2">
+    <div class="chart-card">
+      <div class="sec-hdr"><span class="ico">👥</span>Recommended Shift Plan<small id="shift-lbl"></small></div>
+      <div class="body"><canvas id="shift-chart" height="150"></canvas></div>
+      <div class="callout" id="shift-callout"></div>
+    </div>
+    <div class="chart-card">
+      <div class="sec-hdr"><span class="ico">📈</span>Capacity & Gap<small></small></div>
+      <div class="body"><canvas id="gap-chart" height="150"></canvas></div>
+      <div class="callout" id="gap-callout"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// CONFIG  (same deployment as the rest of DMS PRO)
+// ════════════════════════════════════════════════════
+var APPS_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+var SC = {QAA1:'#2563EB',QAA6:'#10B981',QAA7:'#F59E0B',QDC6:'#EC4899',QDD3:'#7C3AED',QDG5:'#0EA5E9'};
+
+// State
+var IB = null;            // ib forecast model {stores,categories,dates,dateHeaders,data}
+var obCache = {};         // 'store|iso' -> {hourly:{hr:orders}} (from OB FORECAST)
+var mode = 'even';   // 24/7 — IB spread across all 24 hours by default
+var focusDate = '';
+var lastPlan = null;      // computed plan for export
+var charts = {};
+var buildToken = 0;       // guards against stale async OB callbacks
+
+// ════════════════════════════════════════════════════
+// THEME / NAV / PROGRESS
+// ════════════════════════════════════════════════════
+(function(){ var t=localStorage.getItem('sm-theme')||'light'; document.documentElement.setAttribute('data-theme',t); })();
+function toggleTheme(){ var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('sm-theme',t); if(lastPlan) renderAll(); }
+function goBack(){ location.href='index.html'; }
+function setProgress(p){ document.getElementById('top-bar').style.width=p+'%'; }
+function hideLoader(){ var l=document.getElementById('loader'); l.classList.add('hide'); setTimeout(function(){l.style.display='none';},420); }
+
+// ════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════
+function $(id){ return document.getElementById(id); }
+function num(id){ return Number($(id).value)||0; }
+function ceil(x){ return Math.ceil(x-1e-9); }
+function fmt(n){ n=Number(n); if(!isFinite(n)) n=0; return (Math.round(n*100)/100).toLocaleString(); }
+function hLabel(h){ var a=((h%24)+24)%24; var b=(a+1)%24; function p(x){return (x<10?'0':'')+x+':00';} return p(a)+'–'+p(b); }
+function isoLabel(iso){ if(IB&&IB.dateHeaders&&IB.dateHeaders[iso]) return IB.dateHeaders[iso]; var p=(iso||'').split('-'); return p.length===3?(+p[2])+'/'+(+p[1]):iso; }
+function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function eachDate(from,to){ var out=[],d=new Date(from+'T00:00:00'),e=new Date(to+'T00:00:00'); if(isNaN(d)||isNaN(e)||d>e)return out; var g=0; while(d<=e&&g<120){ out.push(ymd(d)); d.setDate(d.getDate()+1); g++; } return out; }
+
+// ════════════════════════════════════════════════════
+// QUICK CALCULATOR  (matches the spec example exactly)
+// ════════════════════════════════════════════════════
+function quickCalc(){
+  var orders=num('q-orders'), ib=num('q-ib'), obr=num('q-obrate')||12, ibr=num('q-ibrate')||150, sla=num('q-sla')||6, buf=num('q-buf');
+  var obAA=ceil(orders/obr), ibAA=ceil(ib/(ibr*sla)), total=obAA+ibAA+buf;
+  $('q-f1').textContent=obr; $('q-f2').textContent=ibr; $('q-f3').textContent=sla;
+  $('q-out').innerHTML=
+    cl('OB Associates',obAA,'#2563EB',orders+' orders ÷ '+obr)+
+    cl('IB Associates',ibAA,'#0EA5E9',fmt(ib)+' u ÷ ('+ibr+'×'+sla+')')+
+    cl('Buffer',buf,'#64748B','breaks · absence')+
+    cl('Total AA / hr',total,'#10B981','peak-hour headcount');
+}
+function cl(lbl,val,col,sub){ return '<div><div class="cl-lbl">'+lbl+'</div><div class="cl-val" style="color:'+col+';">'+fmt(val)+'</div><div class="cl-sub">'+sub+'</div></div>'; }
+
+// ════════════════════════════════════════════════════
+// JSONP
+// ════════════════════════════════════════════════════
+function jsonp(params, cb){
+  var name='cb_'+Math.random().toString(36).slice(2);
+  var t=setTimeout(function(){ cleanup(); cb(null,'timeout'); },22000);
+  function cleanup(){ clearTimeout(t); delete window[name]; var s=$('j-'+name); if(s)s.remove(); }
+  window[name]=function(d){ cleanup(); cb(d,null); };
+  var s=document.createElement('script'); s.id='j-'+name;
+  s.src=APPS_URL+'?'+params+'&callback='+name;
+  s.onerror=function(){ cleanup(); cb(null,'network'); };
+  document.head.appendChild(s);
+}
+
+// ════════════════════════════════════════════════════
+// LOAD IB FORECAST  (single call → all stores/dates)
+// ════════════════════════════════════════════════════
+function loadIB(isRefresh){
+  var btn=$('refresh-btn'); btn.disabled=true; btn.textContent='⏳ Loading…';
+  setProgress(25); $('ld-msg').textContent='Reading IB FORECAST tab…';
+  var yr=new Date().getFullYear();
+  jsonp('action=ibForecast&year='+yr, function(d,err){
+    btn.disabled=false; btn.textContent='⟳ Refresh Data'; setProgress(70);
+    if(err||!d||d.status!=='ok'){
+      $('src-status').textContent='⚠ '+(d&&d.message?d.message:(err||'load failed'));
+      $('src-status').style.color='#EF4444';
+      $('range-tbl').querySelector('tbody').innerHTML='<tr><td class="empty">Could not load IB FORECAST — check the tab name &amp; Apps Script deployment.<br><span style="font-size:11px;">'+(d&&d.message?d.message:err)+'</span></td></tr>';
+      setProgress(100); hideLoader(); return;
+    }
+    IB=d;
+    populateControls();
+    $('src-status').innerHTML='✓ '+(IB.stores.length)+' stores · '+IB.dates.length+' days '+(IB.sheetLastModified?'<span style="opacity:.6">· '+IB.sheetLastModified.slice(0,10)+'</span>':'');
+    $('src-status').style.color='var(--green)';
+    setProgress(85);
+    rebuild();
+    setProgress(100); hideLoader();
+  });
+}
+
+function populateControls(){
+  // Store
+  var ss=$('p-store'); var prev=ss.value;
+  ss.innerHTML='<option value="__ALL__">All stores (sum)</option>'+IB.stores.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+  if(prev) ss.value=prev; else if(IB.stores.length) ss.value=IB.stores[0];
+  // Category (IB basis) — prefer "With Buffer", else first
+  var cs=$('p-cat'); var pc=cs.value;
+  var cats=IB.categories.slice();
+  cs.innerHTML=cats.map(function(c){return '<option value="'+c.replace(/"/g,'&quot;')+'">'+c+'</option>';}).join('');
+  if(pc&&cats.indexOf(pc)>-1) cs.value=pc;
+  else { var pref=cats.filter(function(c){return /with buffer/i.test(c);})[0]||cats.filter(function(c){return /total ib/i.test(c);})[0]||cats.filter(function(c){return /total fc/i.test(c);})[0]||cats[0]; if(pref) cs.value=pref; }
+  // Dates
+  if(IB.dates.length){
+    var f=$('p-from'), t=$('p-to');
+    f.min=t.min=IB.dates[0]; f.max=t.max=IB.dates[IB.dates.length-1];
+    if(!f.value) f.value=IB.dates[0];
+    if(!t.value) t.value=IB.dates[IB.dates.length-1];
+  }
+}
+var slotMap={};
+try{ slotMap=JSON.parse(localStorage.getItem('mpe-slots')||'{}'); }catch(e){ slotMap={}; }
+function loadSlot(){ var cat=$('p-cat').value; if(slotMap[cat]){ $('p-ibfrom').value=slotMap[cat].from; $('p-ibto').value=slotMap[cat].to; } }
+function saveSlot(){ var cat=$('p-cat').value; slotMap[cat]={from:num('p-ibfrom'),to:num('p-ibto')}; try{ localStorage.setItem('mpe-slots',JSON.stringify(slotMap)); }catch(e){} }
+function onCatChange(){ if(mode==='manual') loadSlot(); rebuild(); }
+function setMode(m){ mode=m; document.querySelectorAll('#p-mode button').forEach(function(b){ b.classList.toggle('on',b.dataset.m===m); }); if(m==='manual') loadSlot(); rebuild(); }
+// Hours covered by a manual slot (handles wrap past midnight, e.g. 22→4).
+function slotHours(f,t){ f=((f%24)+24)%24; t=((t%24)+24)%24; var len=(t-f+24)%24; if(len===0) len=24; var set={}; for(var k=0;k<len;k++) set[(f+k)%24]=1; return {set:set,len:len}; }
+
+// ════════════════════════════════════════════════════
+// IB lookup for a store/date/category
+// ════════════════════════════════════════════════════
+function ibUnits(store, iso, cat){
+  if(!IB||!IB.data) return 0;
+  if(store==='__ALL__'){ var s=0; IB.stores.forEach(function(st){ s+=ibUnits(st,iso,cat); }); return s; }
+  var d=IB.data[store]; if(!d||!d[iso]) return 0;
+  return Number(d[iso][cat])||0;
+}
+
+// ════════════════════════════════════════════════════
+// OB hourly fetch for focus day (action=forecast)
+// ════════════════════════════════════════════════════
+function fetchOB(store, iso, done){
+  var key=store+'|'+iso;
+  if(obCache[key]){ done(obCache[key]); return; }
+  $('plan-status').textContent='Fetching OB FORECAST for '+isoLabel(iso)+'…';
+  jsonp('action=forecast&date='+iso, function(d,err){
+    $('plan-status').textContent='';
+    var hourly={};
+    if(d&&d.orders){
+      var stores = store==='__ALL__' ? Object.keys(d.orders) : [store];
+      stores.forEach(function(st){
+        var slots=d.orders[st]; if(!slots) return;
+        Object.keys(slots).forEach(function(slot){
+          var hr=parseInt(String(slot).split(':')[0],10); if(isNaN(hr))return;
+          hourly[hr]=(hourly[hr]||0)+(Number(slots[slot])||0);
+        });
+      });
+    }
+    var res={hourly:hourly, found:Object.keys(hourly).length>0};
+    obCache[key]=res; done(res);
+  });
+}
+
+// ════════════════════════════════════════════════════
+// CORE — compute one day's hourly manpower plan
+// ════════════════════════════════════════════════════
+function computeDay(obHourly, ibTotal, opts){
+  ibTotal=Number(ibTotal); if(!isFinite(ibTotal)) ibTotal=0;
+  var obr=opts.obrate||12, ibr=opts.ibrate||150, sla=Math.max(1,opts.sla||6), buf=opts.buffer||0;
+  var H=24;                                            // 24/7 store — always the full day
+  var hours=[]; for(var i=0;i<H;i++) hours.push(i);     // 00:00 … 23:00
+  var slaN=Math.min(Math.round(sla),H);
+  var man = (opts.mode==='manual') ? slotHours(opts.ibfrom, opts.ibto) : null;
+
+  var rows=hours.map(function(h){
+    var ob=Math.round(obHourly[h]||0);
+    var obAA=ceil(ob/obr);
+    var ibPerHr, ibAA;
+    if(opts.mode==='sla'){ ibPerHr= h<slaN ? ibTotal/slaN : 0; ibAA= h<slaN ? ceil((ibTotal/slaN)/ibr) : 0; }
+    else if(opts.mode==='manual'){ var inw=man&&man.set[h]?1:0; ibPerHr= inw ? ibTotal/man.len : 0; ibAA= inw ? ceil((ibTotal/man.len)/ibr) : 0; }
+    else { ibPerHr=ibTotal/H; ibAA=ceil((ibTotal/H)/ibr); }    // even across 24h
+    var total=obAA+ibAA+buf;
+    return {hr:h, ob:ob, obAA:obAA, ibUnits:ibPerHr, ibAA:ibAA, buffer:buf, total:total};
+  });
+  var peak=rows.reduce(function(m,r){return Math.max(m,r.total);},0);
+  rows.forEach(function(r){ r.peak=(r.total===peak&&peak>0); });
+  var sumOB=rows.reduce(function(s,r){return s+r.obAA;},0);
+  var sumIB=rows.reduce(function(s,r){return s+r.ibAA;},0);
+  var sumBuf=rows.reduce(function(s,r){return s+r.buffer;},0);
+  var reqAAh=sumOB+sumIB+sumBuf;
+  var totOB=rows.reduce(function(s,r){return s+r.ob;},0);
+  return {rows:rows, peak:peak, sumOB:sumOB, sumIB:sumIB, sumBuf:sumBuf, reqAAh:reqAAh, totOB:totOB, ibTotal:ibTotal, H:H, opts:opts};
+}
+
+function opts(){ return {obrate:num('p-obrate')||12,ibrate:num('p-ibrate')||150,sla:num('p-sla')||6,buffer:num('p-buf'),mode:mode,ibfrom:num('p-ibfrom'),ibto:num('p-ibto'),shifts:[num('p-s1'),num('p-s2'),num('p-s3')],shiftLen:10,hours:24,start:0}; }
+
+// ════════════════════════════════════════════════════
+// SHIFTS — 24/7 store, 3 fixed 10-hour shifts (wrap midnight)
+// Each shift staffs to the PEAK per-hour demand within its window.
+// ════════════════════════════════════════════════════
+function hh(h){ h=((h%24)+24)%24; return ('0'+h).slice(-2)+':00'; }
+function computeShifts(rows,o){
+  var len=o.shiftLen||10;
+  var totals={}; rows.forEach(function(r){ totals[r.hr]=r.total; });
+  return (o.shifts||[0,8,16]).map(function(start,i){
+    var hrs=[], peak=0;
+    for(var k=0;k<len;k++){ var h=((start+k)%24); hrs.push(h); peak=Math.max(peak,totals[h]||0); }
+    return {idx:i+1, start:((start%24)+24)%24, len:len, hours:hrs, head:peak};
+  });
+}
+
+// ════════════════════════════════════════════════════
+// REBUILD — range summary (IB-only) + fetch OB for focus day
+// ════════════════════════════════════════════════════
+function rebuild(){
+  if(!IB){ return; }
+  var store=$('p-store').value, cat=$('p-cat').value, from=$('p-from').value, to=$('p-to').value;
+  var dates=eachDate(from,to).filter(function(d){ return IB.dates.indexOf(d)>-1; });
+  if(!dates.length){ dates=IB.dates.slice(); }
+  if(!focusDate || dates.indexOf(focusDate)<0) focusDate=dates[dates.length-1]||dates[0];
+  $('range-lbl').textContent=store+' · '+cat;
+  $('ib-src').textContent='IB basis: '+cat;
+
+  // Range summary uses IB daily formula (no OB fetch needed for every day)
+  var o=opts();
+  var rangeRows=dates.map(function(iso){
+    var ib=ibUnits(store,iso,cat);
+    var pp=computeDay({}, ib, o);                       // IB-only day (24h)
+    var peakIBaa=Math.max.apply(null,pp.rows.map(function(r){return r.ibAA;}).concat([0]));
+    return {iso:iso, ib:ib, ibAAday:peakIBaa, ibAAh:pp.sumIB, bufAAh:pp.sumBuf};
+  });
+  renderRange(rangeRows, o);
+  renderDayTabs(dates);
+
+  // Focus day → fetch OB then compute full hourly
+  buildFocus(store,cat,o);
+}
+
+function buildFocus(store,cat,o){
+  if(!focusDate) return;
+  var my=++buildToken, iso=focusDate;
+  var ib=ibUnits(store,iso,cat);
+  fetchOB(store,iso,function(ob){
+    if(my!==buildToken) return;     // a newer build superseded this one
+    var hourly=ob.hourly;
+    var plan=computeDay(hourly, ib, o);
+    plan.store=store; plan.cat=cat; plan.iso=iso; plan.obFound=ob.found;
+    lastPlan={plan:plan, o:o, store:store, cat:cat};
+    renderAll();
+    $('ob-note').innerHTML = ob.found
+      ? '<b>OB orders</b> pulled live from the OB FORECAST tab for '+isoLabel(iso)+' ('+fmt(plan.totOB)+' orders), across all 24 hours. IB '+(o.mode==='sla'?'concentrated in the '+Math.min(Math.round(o.sla),24)+'-hour SLA window':o.mode==='manual'?'placed manually in the '+hh(o.ibfrom)+'–'+hh(o.ibto)+' slot':'spread evenly across all 24 hours')+'. Store runs <b>24/7</b> — rostered as 3 shifts × 10h.'
+      : '<b>No OB FORECAST</b> found for '+isoLabel(iso)+' — hourly OB shows 0 (IB &amp; buffer still planned across 24h). Add the OB hourly forecast for this date in the sheet, or use the Quick Calculator above.';
+  });
+}
+
+// ════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════
+function renderRange(rows,o){
+  var th=$('range-tbl').querySelector('thead'), tb=$('range-tbl').querySelector('tbody');
+  th.innerHTML='<tr><th>Date</th><th>IB Units</th><th>IB AA / hr</th><th>IB AA-hrs</th><th>Buffer AA-hrs</th><th>IB+Buf AA-hrs</th></tr>';
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty">No dates in range.</td></tr>'; return; }
+  var maxIB=Math.max.apply(null,rows.map(function(r){return r.ib;}).concat([1]));
+  var tIB=0,tAAh=0,tBuf=0;
+  tb.innerHTML=rows.map(function(r){
+    tIB+=r.ib; tAAh+=r.ibAAh; tBuf+=r.bufAAh;
+    var on=r.iso===focusDate;
+    return '<tr style="cursor:pointer;'+(on?'outline:2px solid var(--accent);outline-offset:-2px;':'')+'" onclick="jumpDay(\''+r.iso+'\')">'+
+      '<td>'+isoLabel(r.iso)+(on?' <span class="tag" style="padding:1px 6px;">focus</span>':'')+'</td>'+
+      '<td><div class="bar-cell"><div class="minibar" style="width:'+(r.ib/maxIB*70+4)+'px;background:linear-gradient(90deg,#0EA5E9,#2563EB);"></div>'+fmt(r.ib)+'</div></td>'+
+      '<td><span class="pill" style="background:rgba(14,165,233,.12);color:#0EA5E9;">'+r.ibAAday+'</span></td>'+
+      '<td>'+r.ibAAh+'</td><td>'+r.bufAAh+'</td><td style="font-weight:900;">'+(r.ibAAh+r.bufAAh)+'</td></tr>';
+  }).join('');
+  $('range-tbl').querySelector('tbody').insertAdjacentHTML('beforeend',
+    '<tr style="background:var(--th-bg);"><td style="font-weight:900;">Σ '+rows.length+' days</td>'+
+    '<td style="font-weight:900;">'+fmt(tIB)+'</td><td>—</td><td style="font-weight:900;">'+tAAh+'</td>'+
+    '<td style="font-weight:900;">'+tBuf+'</td><td style="font-weight:900;">'+(tAAh+tBuf)+'</td></tr>');
+}
+
+function renderDayTabs(dates){
+  $('day-tabs').innerHTML=dates.map(function(iso){
+    return '<button class="day-tab '+(iso===focusDate?'on':'')+'" onclick="jumpDay(\''+iso+'\')">'+isoLabel(iso)+'</button>';
+  }).join('');
+}
+function jumpDay(iso){ focusDate=iso; var o=opts(); renderDayTabs(eachDate($('p-from').value,$('p-to').value).filter(function(d){return IB.dates.indexOf(d)>-1;})); buildFocus($('p-store').value,$('p-cat').value,o); var rl=$('range-lbl'); rebuildRangeHighlight(); }
+function rebuildRangeHighlight(){ var store=$('p-store').value,cat=$('p-cat').value,o=opts(); var dates=eachDate($('p-from').value,$('p-to').value).filter(function(d){return IB.dates.indexOf(d)>-1;}); var rows=dates.map(function(iso){var ib=ibUnits(store,iso,cat);var pp=computeDay({},ib,o);var peakIBaa=Math.max.apply(null,pp.rows.map(function(r){return r.ibAA;}).concat([0]));return {iso:iso,ib:ib,ibAAday:peakIBaa,ibAAh:pp.sumIB,bufAAh:pp.sumBuf};}); renderRange(rows,o); }
+
+function renderAll(){
+  if(!lastPlan) return;
+  var p=lastPlan.plan, o=lastPlan.o;
+  $('focus-lbl').textContent=isoLabel(p.iso)+' · '+p.store+' · 24/7 (00:00–24:00)';
+  $('shift-lbl').textContent='3 shifts × 10h · 24/7';
+  renderKPIs(p,o);
+  renderHourly(p);
+  renderShift(p,o);
+  renderGap(p,o);
+}
+
+function renderKPIs(p,o){
+  var shifts=computeShifts(p.rows,o);
+  var roster=shifts.reduce(function(s,sh){return s+sh.head;},0);
+  var rosterAAh=shifts.reduce(function(s,sh){return s+sh.head*sh.len;},0);
+  var util=rosterAAh>0?(p.reqAAh/rosterAAh*100):0;
+  var cards=[
+    {lbl:'Peak AA / hour',val:p.peak,sub:'busiest single hour',col:'#EF4444'},
+    {lbl:'Required AA-hours',val:p.reqAAh,sub:'OB '+p.sumOB+' · IB '+p.sumIB+' · Buf '+p.sumBuf,col:'#2563EB'},
+    {lbl:'Shift Roster (heads)',val:roster,sub:'3 shifts × 10h',col:'#7C3AED'},
+    {lbl:'IB Units (day)',val:p.ibTotal,sub:lastPlan.cat,col:'#0EA5E9'},
+    {lbl:'OB Orders (day)',val:p.totOB,sub:p.obFound?'from OB FORECAST':'no OB FC for day',col:'#1D4ED8'},
+    {lbl:'Roster Util.',val:util.toFixed(0),unit:'%',sub:util>=85?'tight':util>=60?'balanced':'slack',col:util>=85?'#EF4444':util>=60?'#10B981':'#F59E0B'},
+  ];
+  $('kpis').innerHTML=cards.map(function(c){
+    return '<div class="kpi" style="--kc:'+c.col+';"><div class="k-lbl">'+c.lbl+'</div><div class="k-val">'+fmt(c.val)+(c.unit?'<small>'+c.unit+'</small>':'')+'</div><div class="k-sub">'+c.sub+'</div></div>';
+  }).join('');
+}
+
+function renderHourly(p){
+  var th=$('hourly-tbl').querySelector('thead'), tb=$('hourly-tbl').querySelector('tbody');
+  th.innerHTML='<tr><th>Hour</th><th>OB Orders</th><th>OB AA</th><th>IB Units</th><th>IB AA</th><th>Buffer</th><th>Total AA</th></tr>';
+  tb.innerHTML=p.rows.map(function(r){
+    return '<tr class="'+(r.peak?'peak':'')+'"><td>'+hLabel(r.hr)+(r.peak?' 🔴':'')+'</td>'+
+      '<td>'+fmt(r.ob)+'</td><td><span class="pill" style="background:rgba(37,99,235,.12);color:#2563EB;">'+r.obAA+'</span></td>'+
+      '<td>'+fmt(r.ibUnits)+'</td><td><span class="pill" style="background:rgba(14,165,233,.12);color:#0EA5E9;">'+r.ibAA+'</span></td>'+
+      '<td>'+r.buffer+'</td><td style="font-weight:900;"><span class="pill" style="background:'+(r.peak?'rgba(239,68,68,.15);color:#EF4444':'rgba(16,185,129,.12);color:#10B981')+';">'+r.total+'</span></td></tr>';
+  }).join('');
+  var tf=$('hourly-tbl').querySelector('tfoot'); if(tf) tf.remove();
+  $('hourly-tbl').insertAdjacentHTML('beforeend','<tfoot><tr><td>Σ AA-hours</td><td>'+fmt(p.totOB)+'</td><td>'+p.sumOB+'</td><td>'+fmt(p.ibTotal)+'</td><td>'+p.sumIB+'</td><td>'+p.sumBuf+'</td><td>'+p.reqAAh+'</td></tr></tfoot>');
+
+  drawChart('hourly-chart','bar',{
+    labels:p.rows.map(function(r){return hLabel(r.hr).split('–')[0];}),
+    datasets:[
+      {label:'OB AA',data:p.rows.map(function(r){return r.obAA;}),backgroundColor:'#2563EB',stack:'s'},
+      {label:'IB AA',data:p.rows.map(function(r){return r.ibAA;}),backgroundColor:'#0EA5E9',stack:'s'},
+      {label:'Buffer',data:p.rows.map(function(r){return r.buffer;}),backgroundColor:'#64748B',stack:'s'},
+    ]
+  },{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{display:false}}}, p.peak);
+}
+
+function renderShift(p,o){
+  var shifts=computeShifts(p.rows,o);
+  var cap=p.rows.map(function(r){ var c=0; shifts.forEach(function(sh){ if(sh.hours.indexOf(r.hr)>-1) c+=sh.head; }); return c; });
+  drawChart('shift-chart','bar',{
+    labels:p.rows.map(function(r){return ('0'+r.hr).slice(-2);}),
+    datasets:[
+      {type:'bar',label:'Required AA',data:p.rows.map(function(r){return r.total;}),backgroundColor:p.rows.map(function(r){return r.peak?'#EF4444':'#2563EB';}),borderRadius:3},
+      {type:'line',label:'Rostered capacity',data:cap,borderColor:'#7C3AED',borderWidth:2,stepped:true,pointRadius:0,fill:false}
+    ]
+  },{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}});
+  var roster=shifts.reduce(function(s,sh){return s+sh.head;},0);
+  var cols=['#2563EB','#0EA5E9','#7C3AED'];
+  $('shift-callout').innerHTML=shifts.map(function(sh){
+    return cl('Shift '+sh.idx+' · '+hh(sh.start)+'–'+hh(sh.start+sh.len), sh.head, cols[sh.idx-1], sh.len+'h · '+sh.head+' AA on shift');
+  }).join('')+cl('Total Roster',roster,'#10B981','3 shifts · '+roster+' people');
+}
+
+function renderGap(p,o){
+  var shifts=computeShifts(p.rows,o);
+  var cap=p.rows.map(function(r){ var c=0; shifts.forEach(function(sh){ if(sh.hours.indexOf(r.hr)>-1) c+=sh.head; }); return c; });
+  var gap=p.rows.map(function(r,i){return cap[i]-r.total;}); // + = idle/over, - = short
+  drawChart('gap-chart','bar',{
+    labels:p.rows.map(function(r){return ('0'+r.hr).slice(-2);}),
+    datasets:[{label:'Gap',data:gap,backgroundColor:gap.map(function(g){return g<0?'#EF4444':g===0?'#10B981':'#F59E0B';}),borderRadius:3}]
+  },{plugins:{legend:{display:false}},scales:{y:{ticks:{precision:0}}}});
+  var over=gap.filter(function(g){return g>0;}).reduce(function(s,g){return s+g;},0);
+  var under=Math.abs(gap.filter(function(g){return g<0;}).reduce(function(s,g){return s+g;},0));
+  var rosterAAh=shifts.reduce(function(s,sh){return s+sh.head*sh.len;},0);
+  var util=rosterAAh>0?(p.reqAAh/rosterAAh*100):0;
+  $('gap-callout').innerHTML=
+    cl('Roster util.',util.toFixed(0)+'%','#2563EB','required ÷ rostered AA-hrs')+
+    cl('Idle AA-hrs',over,'#F59E0B','over-covered hours')+
+    cl('Short AA-hrs',under,under>0?'#EF4444':'#10B981',under>0?'understaffed — shift more':'fully covered 24/7');
+}
+
+// ════════════════════════════════════════════════════
+// CHART helper
+// ════════════════════════════════════════════════════
+function drawChart(id,type,data,extra,peakLine){
+  var ctx=$(id); if(!ctx) return;
+  if(charts[id]) charts[id].destroy();
+  var dark=document.documentElement.getAttribute('data-theme')==='dark';
+  var grid=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)', tick=dark?'#9a98c0':'#5a5878';
+  var base={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{enabled:true}},
+    scales:{x:{grid:{display:false},ticks:{color:tick,font:{size:10,weight:'600'}}},
+            y:{grid:{color:grid},ticks:{color:tick,font:{size:10,weight:'600'}}}}};
+  var opt=Object.assign({},base);
+  if(extra){ if(extra.scales){opt.scales=deepMerge(base.scales,extra.scales);} if(extra.plugins){opt.plugins=Object.assign({},base.plugins,extra.plugins);} }
+  charts[id]=new Chart(ctx,{type:type,data:data,options:opt});
+}
+function deepMerge(a,b){ var o=Object.assign({},a); Object.keys(b).forEach(function(k){ o[k]=(typeof b[k]==='object'&&b[k]&&a[k])?Object.assign({},a[k],b[k]):b[k]; }); return o; }
+
+// ════════════════════════════════════════════════════
+// EXPORT — Excel (multi-sheet) + Copy for Google Sheets
+// ════════════════════════════════════════════════════
+function planMatrix(){
+  var store=$('p-store').value, cat=$('p-cat').value, o=opts();
+  var dates=eachDate($('p-from').value,$('p-to').value).filter(function(d){return IB.dates.indexOf(d)>-1;});
+  var hourly=[['Date','Hour','OB Orders','OB AA','IB Units','IB AA','Buffer','Total AA']];
+  var daily=[['Date','IB Units','OB Orders','Peak AA','Req AA-hrs','OB AA-hrs','IB AA-hrs','Buffer AA-hrs']];
+  dates.forEach(function(iso){
+    var ob=(obCache[store+'|'+iso]||{hourly:{}}).hourly;
+    var ibu=ibUnits(store,iso,cat);
+    var pp=computeDay(ob,ibu,o);
+    pp.rows.forEach(function(r){ hourly.push([iso,hLabel(r.hr),r.ob,r.obAA,Math.round(r.ibUnits),r.ibAA,r.buffer,r.total]); });
+    daily.push([iso,ibu,pp.totOB,pp.peak,pp.reqAAh,pp.sumOB,pp.sumIB,pp.sumBuf]);
+  });
+  return {hourly:hourly,daily:daily,store:store,cat:cat,o:o,dates:dates};
+}
+
+// Make sure OB hourly is loaded for EVERY date before an export, so the
+// workbook contains real OB+IB for all dates (not just the days viewed).
+function ensureOB(dates, store, done){
+  var pending=dates.filter(function(iso){ return !obCache[store+'|'+iso]; });
+  if(!pending.length){ done(); return; }
+  var i=0, total=pending.length;
+  (function next(){
+    if(i>=pending.length){ $('plan-status').textContent=''; done(); return; }
+    var iso=pending[i++];
+    $('plan-status').textContent='Fetching OB '+i+'/'+total+' · '+isoLabel(iso)+'…';
+    fetchOB(store, iso, function(){ next(); });
+  })();
+}
+
+function exportXlsx(){
+  if(!IB){ alert('Load data first'); return; }
+  var store=$('p-store').value;
+  var dates=eachDate($('p-from').value,$('p-to').value).filter(function(d){return IB.dates.indexOf(d)>-1;});
+  if(!dates.length){ alert('No dates in range'); return; }
+  ensureOB(dates, store, function(){
+    var m=planMatrix();
+    var wb=XLSX.utils.book_new();
+    var meta=[
+      ['HP World DMS PRO — Manpower Allocation Plan'],
+      ['Store',m.store],['IB Basis',m.cat],
+      ['Date range',m.dates[0]+' → '+m.dates[m.dates.length-1]+' ('+m.dates.length+' days)'],
+      ['Coverage','24/7 · full 00:00–24:00 (24 hours)'],
+      ['Shifts','3 × 10h — starts '+m.o.shifts.map(function(s){return ('0'+(((s%24)+24)%24)).slice(-2)+':00';}).join(' · ')],
+      ['OB rate',m.o.obrate+' orders/AA/hr'],['IB rate',m.o.ibrate+' units/AA/hr'],
+      ['SLA',m.o.sla+' hours'],['Buffer',m.o.buffer+' AA/hr'],
+      ['IB distribution',m.o.mode==='sla'?'Across SLA window':m.o.mode==='manual'?('Manual slot '+hh(m.o.ibfrom)+'–'+hh(m.o.ibto)):'Even across 24h'],
+      ['Generated',new Date().toLocaleString()]
+    ];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(meta),'Plan Info');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(m.daily),'Daily Summary');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(m.hourly),'Hourly Plan');
+    XLSX.writeFile(wb,'Manpower_Plan_'+m.store+'_'+m.dates[0]+'_to_'+m.dates[m.dates.length-1]+'.xlsx');
+    flash('plan-status','✅ Excel exported — '+m.dates.length+' days');
+  });
+}
+
+function copySheets(){
+  if(!IB){ alert('Load data first'); return; }
+  var store=$('p-store').value;
+  var dates=eachDate($('p-from').value,$('p-to').value).filter(function(d){return IB.dates.indexOf(d)>-1;});
+  if(!dates.length){ alert('No dates in range'); return; }
+  ensureOB(dates, store, function(){
+    var m=planMatrix();
+    var tsv=m.daily.map(function(r){return r.join('\t');}).join('\n')+'\n\n'+m.hourly.map(function(r){return r.join('\t');}).join('\n');
+    navigator.clipboard.writeText(tsv).then(function(){ flash('plan-status','✅ Copied '+m.dates.length+' days — paste into Google Sheets'); },
+      function(){ var ta=document.createElement('textarea');ta.value=tsv;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');flash('plan-status','✅ Copied');}catch(e){flash('plan-status','⚠ Copy failed');}ta.remove(); });
+  });
+}
+function flash(id,msg){ var el=$(id); el.textContent=msg; el.style.color='var(--green)'; setTimeout(function(){el.textContent='';},2600); }
+
+// ════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',function(){
+  setProgress(10); quickCalc(); loadIB(false);
+});
+</script>
+</body>
+</html>
