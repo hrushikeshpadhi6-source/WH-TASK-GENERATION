@@ -5167,12 +5167,23 @@ function generateAuditLoc() {
       const bayData = map[selPfx] || {};
       let pool = [];
       if (selBay) {
-        pool = bayData[selBay] || [];
+        const bayPool = bayData[selBay] || [];
+        if (bayPool.length >= 60) {
+          pool = bayPool;
+        } else {
+          // Bay has fewer than 60 — expand to full prefix (all bays) to reach 60
+          const fullPool = Object.values(bayData).reduce((a, locs) => a.concat(locs), []);
+          const rest = fullPool.filter(l => !bayPool.includes(l));
+          pool = [...bayPool, ...pickRandUnique(rest, Math.min(60 - bayPool.length, rest.length))];
+          if (pool.length < 60 && bayPool.length) {
+            showToast('Bay ' + selBay + ' only has ' + bayPool.length + ' locations — expanded to prefix ' + selPfx);
+          }
+        }
       } else {
         Object.values(bayData).forEach(locs => { pool = pool.concat(locs); });
       }
       if (!pool.length) { showLoading('audit-loc',false); showToast('No locations found for this filter — try a different selection'); return; }
-      pickRandUnique(pool, 60).forEach(loc => locations.push({zone: detectZone(loc), loc}));
+      pickRandUnique(pool, Math.min(60, pool.length)).forEach(loc => locations.push({zone: detectZone(loc), loc}));
       locations = locations.sort(() => Math.random()-0.5);
     } else {
       // Original mode — 90 locations across all zones
