@@ -2491,6 +2491,16 @@ function hideVocPrimeBar() {
   <div class="ctrl-row" id="ctrl-audit-asin" style="display:none">
     <button class="btn btn-primary" onclick="generateAuditAsin()">⚡ Pick Random ASINs</button>
   </div>
+  <!-- BULK PASTE SECTION -->
+  <div style="margin-top:18px;padding:16px 18px;background:#fff;border:1.5px solid #d5d2f0;border-radius:12px;">
+    <div style="font-size:12px;font-weight:800;color:#3d3a6b;letter-spacing:.5px;margin-bottom:10px;">📋 Bulk ASIN Paste <span style="font-size:10px;font-weight:500;color:#7b78a8;">&nbsp;— paste any number of ASINs, get a QR sheet instantly</span></div>
+    <textarea id="bulk-asin-input" placeholder="Paste ASINs here — one per line or comma separated&#10;e.g.&#10;B01N5IB20Q&#10;B07FZ8S74R&#10;B08N5WRWNW" style="width:100%;height:130px;padding:10px 12px;border:1.5px solid #d5d2f0;border-radius:9px;font-family:'DM Mono',monospace;font-size:12px;color:#1a1830;background:#f8f7ff;resize:vertical;outline:none;transition:border-color .2s;" oninput="onBulkAsinInput()" onfocus="this.style.borderColor='#2563EB'" onblur="this.style.borderColor='#d5d2f0'"></textarea>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap;">
+      <span id="bulk-asin-count" style="font-size:11px;font-weight:700;color:#7b78a8;font-family:'DM Mono',monospace;"></span>
+      <button class="btn btn-primary" id="bulk-asin-btn" onclick="generateBulkAsinAudit()" style="display:none;">⚡ Generate QR Sheet</button>
+      <button class="btn btn-outline" onclick="document.getElementById('bulk-asin-input').value='';onBulkAsinInput();" style="font-size:11px;padding:5px 12px;">✕ Clear</button>
+    </div>
+  </div>
   <div class="loading" id="load-audit-asin">
   <div class="loading-inner">
     <div class="spinner"></div>
@@ -5158,7 +5168,9 @@ function generateAuditLoc() {
     const locKey = findCol(h, ['location','bin','shelf','locationid','loc.?id','storage.?loc','aisle','slot']);
     const selPfx = (document.getElementById('aloc-prefix')||{}).value || '';
     const selBay = (document.getElementById('aloc-bay')||{}).value || '';
-    const useFilter = !!(selPfx && d.length && locKey);
+    // Filtered mode works from _auditLocPfxMap alone — locKey not required for it
+    const hasPfxData = !!(window._auditLocPfxMap && selPfx && window._auditLocPfxMap[selPfx]);
+    const useFilter = hasPfxData || !!(selPfx && d.length && locKey);
     let locations = [];
 
     if (useFilter) {
@@ -5357,8 +5369,65 @@ function generateAuditAsin() {
       bottomHTML: item => '<div class="asin-txt">' + item.asin + '</div>'
     });
 
+}
+
+function parseBulkAsins(text) {
+  return [...new Set(
+    text.split(/[\n,;\s]+/)
+      .map(s => s.trim().toUpperCase())
+      .filter(s => s.length >= 8 && /^[A-Z0-9]+$/.test(s))
+  )];
+}
+
+function onBulkAsinInput() {
+  const ta = document.getElementById('bulk-asin-input');
+  const btn = document.getElementById('bulk-asin-btn');
+  const countEl = document.getElementById('bulk-asin-count');
+  if (!ta) return;
+  const asins = parseBulkAsins(ta.value);
+  if (countEl) countEl.textContent = asins.length ? asins.length + ' ASIN' + (asins.length > 1 ? 's' : '') + ' detected' : '';
+  if (btn) btn.style.display = asins.length ? '' : 'none';
+}
+
+function generateBulkAsinAudit() {
+  const ta = document.getElementById('bulk-asin-input');
+  if (!ta) return;
+  const asins = parseBulkAsins(ta.value);
+  if (!asins.length) { showToast('No valid ASINs found — paste at least one ASIN'); return; }
+  showLoading('audit-asin', true);
+  document.getElementById('out-audit-asin').innerHTML = '';
+  setTimeout(() => {
+    // Cross-reference with uploaded inventory for zone/location if available
+    const d = state['audit-asin'].data;
+    const h = state['audit-asin'].headers;
+    const asinCol = h.length ? findCol(h, ['asin','product.?id','item.?id','sku','fnsku']) : '';
+    const locCol  = h.length ? findCol(h, ['location','bin','shelf','locationid']) : '';
+    const asinMap = {};
+    if (d.length && asinCol) {
+      d.forEach(row => {
+        const a = String(row[asinCol]||'').trim().toUpperCase();
+        if (a && !asinMap[a]) asinMap[a] = row;
+      });
+    }
+    const items = asins.map(asin => ({ asin, row: asinMap[asin] || {} }));
+    showLoading('audit-asin', false);
+    buildQRSheet({
+      container: document.getElementById('out-audit-asin'),
+      idPrefix: 'audit-asin-grid',
+      title: '\uD83D\uDD0E ASIN Audit Sheet \u2014 Bulk',
+      infoHTML: '<div class="alert alert-info" style="margin-bottom:16px">' + items.length + ' ASINs from bulk paste \u2014 ' + Math.ceil(items.length/32) + ' page(s) \u00D7 32 per page.</div>',
+      items: items,
+      qrText: item => item.asin,
+      topHTML: (item, idx) => {
+        const loc  = locCol ? String(item.row[locCol]||'').trim() : '';
+        const zone = loc ? detectZone(loc) : '';
+        return '<div style="font-size:7px;color:var(--muted);margin-bottom:1px;">#' + String(idx+1).padStart(2,'0') + '</div>' +
+          (zone && zone !== 'Other' ? qrBadge(zone, zoneColor(zone)) : '<div style="height:14px;"></div>');
+      },
+      bottomHTML: item => '<div class="asin-txt">' + item.asin + '</div>'
+    });
     document.getElementById('export-audit-asin').style.display = 'flex';
-    showToast(picked.length + ' ASINs — known zones only!');
+    showToast(items.length + ' ASINs \u2192 QR sheet ready!');
   }, 100);
 }
 
