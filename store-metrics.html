@@ -892,6 +892,7 @@ tbody tr:hover{background:var(--row-hover);}
           <button class="pb" id="lb-lay-card" onclick="smSetLbLayout('card')" title="Card view — store on top">▦ Cards</button>
           <button class="pb" id="lb-lay-board" onclick="smSetLbLayout('board')" title="Board view — centered header + metric strip">▣ Board</button>
         </div>
+        <button onclick="smOpenQS()" style="background:linear-gradient(135deg,#7C3AED,#6D28D9);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;" title="Quick Summary — HD exportable store overview">📊 Quick Summary</button>
         <input type="date" id="voc-date-filter" class="fsel" style="display:none;" title="Filter VOC by specific date" onchange="if(window.smVocRaw&&smVocRaw.length){if(this.value){var p=document.getElementById('voc-period-sel');if(p&&p.value==='all')p.value='day';}smUpdateVocStatus();smLeaderboard(smFilter());}">
         <select id="voc-period-sel" class="fsel" style="display:none;" onchange="if(window.smVocRaw&&smVocRaw.length){smUpdateVocStatus();smLeaderboard(smFilter());}">
           <option value="all">VOC — All Dates</option>
@@ -906,19 +907,17 @@ tbody tr:hover{background:var(--row-hover);}
     </div>
     <div id="sm-lb"><div class="empty">Loading…</div></div>
     <div class="score-rubric">
-      <div class="sr-head">Weighted Scorecard <span>— 8 KPIs. Final Score = total points out of <b>100</b>.</span></div>
+        <div class="sr-head">Weighted Scorecard <span>— 6 KPIs. Final Score = total points out of <b>100</b>. WHL/WHD excluded from score (separate dashboard).</span></div>
       <div class="sr-grid">
         <div class="sr-item"><span class="sr-w" style="color:#F59E0B;">20</span><div class="sr-tx"><b>Late Slam v2</b><i>&lt;1% →20 · ≤1.5% →10 · else 0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#7C3AED;">20</span><div class="sr-tx"><b>VOC / UTR</b><i>≤0.010% →20 · ≤0.020% →10 · else 0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#0EA5E9;">10</span><div class="sr-tx"><b>IB TPH</b><i>&gt;140 →10 · ≥126 →5 · else 0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#c79a4b;">10</span><div class="sr-tx"><b>Skip</b><i>0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#EF4444;">10</span><div class="sr-tx"><b>Short</b><i>0 →10 · 1–3 →5 · &gt;3 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#10B981;">10</span><div class="sr-tx"><b>SLA</b><i>≥99% →10 · ≥98% →5 · ≥97% →2.5 · else 0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#2563EB;">10</span><div class="sr-tx"><b>WHL</b><i>&lt;0.1% →10 · &lt;0.5% →2.5 · ≥0.5% →0 <span style="opacity:.7;">(+tive=loss)</span></i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#2563EB;">10</span><div class="sr-tx"><b>WHD</b><i>&gt;-0.1% →10 · &gt;-0.5% →2.5 · else 0</i></div></div>
-        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#10B981;">/100</span><div class="sr-tx"><b>Final Score</b><i>sum of all 8 KPIs</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#0EA5E9;">15</span><div class="sr-tx"><b>IB TPH</b><i>&gt;140 →15 · ≥126 →7.5 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#c79a4b;">15</span><div class="sr-tx"><b>Skip</b><i>0 →15 · 1–3 →7.5 · &gt;3 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#EF4444;">15</span><div class="sr-tx"><b>Short</b><i>0 →15 · 1–3 →7.5 · &gt;3 →0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#10B981;">15</span><div class="sr-tx"><b>SLA</b><i>≥99% →15 · ≥98% →7.5 · ≥97% →3.75 · else 0</i></div></div>
+        <div class="sr-item sr-perfect"><span class="sr-w" style="color:#10B981;">/100</span><div class="sr-tx"><b>Final Score</b><i>sum of all 6 KPIs</i></div></div>
       </div>
-      <div class="sr-note"><b>Final Score = sum of the 8 KPIs (max 100).</b> WHL/WHD use the Network Loss data (auto-fetched). Stores with <b>no orders aren't ranked</b>; under <b>100 orders</b> can't take a top spot.</div>
+      <div class="sr-note"><b>Final Score = sum of the 6 KPIs (max 100).</b> WHL/WHD are tracked in the Warehouse Loss section — not part of this score. Stores with <b>no orders aren't ranked</b>; under <b>100 orders</b> can't take a top spot.</div>
     </div>
   </div>
 
@@ -1978,28 +1977,28 @@ function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return v.
 //   Skip           10    0 →10 · 1–3 →5 · >3 →0
 //   Short          10    0 →10 · 1–3 →5 · >3 →0
 //   SLA            10    ≥99% →10 · ≥98% →5 · ≥97% →2.5 · else 0
-//   WHL            10    +tive = loss/impact · <0.1% →10 · <0.5% →2.5 · ≥0.5% →0
-//   WHD            10    >-0.1% →10 · >-0.5% →2.5 · <-0.5% →0
-var SCORE_MAX = 20 + 20 + 10 + 10 + 10 + 10 + 10 + 10; // 100 points possible — Final % = points earned
+//   IB TPH         15    >140 →15 · ≥126 →7.5 · else 0
+//   Skip           15    0 →15 · 1–3 →7.5 · >3 →0
+//   Short          15    0 →15 · 1–3 →7.5 · >3 →0
+//   SLA            15    ≥99% →15 · ≥98% →7.5 · ≥97% →3.75 · else 0
+var SCORE_MAX = 20 + 20 + 15 + 15 + 15 + 15; // 100 pts — WHL/WHD removed; redistributed to IB TPH/Skip/Short/SLA
 function lsV2Points(pct){ if(pct<1) return 20; if(pct<=1.5) return 10; return 0; }
-function tphPoints(t){ if(t>140) return 10; if(t>=126) return 5; return 0; }
+function tphPoints(t){ if(t>140) return 15; if(t>=126) return 7.5; return 0; }
 function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 20; if(rate<=VOC_UTR_TARGET*2) return 10; return 0; }
-function skipPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
-function shortPoints(n){ if(n<=0) return 10; if(n<=3) return 5; return 0; }
-function slaPoints(p){ if(p>=99) return 10; if(p>=98) return 5; if(p>=97) return 2.5; return 0; }
-function whlPoints(v){ if(v===null||v===undefined) return 0; if(v<0.1) return 10; if(v<0.5) return 2.5; return 0; }  // WHL: +tive = loss/impact (bad) · ≤~0 = OK (full)
-function whPoints(v){ if(v===null||v===undefined) return 0; if(v>-0.1) return 10; if(v>-0.5) return 2.5; return 0; }  // WHD
+function skipPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
+function shortPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
+function slaPoints(p){ if(p>=99) return 15; if(p>=98) return 7.5; if(p>=97) return 3.75; return 0; }
+function whlPoints(v){ if(v===null||v===undefined) return 0; if(v<0.1) return 10; if(v<0.5) return 2.5; return 0; }  // kept for NL colour bands only
+function whPoints(v){ if(v===null||v===undefined) return 0; if(v>-0.1) return 10; if(v>-0.5) return 2.5; return 0; }  // kept for NL colour bands only
 // Weighted point breakdown for a store data row
 function smScoreParts(d){
   return [
     {k:'Late Slam v2', max:20, pts:lsV2Points(d.lsV2Pct||0), detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt <1%)'},
     {k:'VOC / UTR',    max:20, pts:vocPoints(d.utrRate||0),  detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
-    {k:'IB TPH',       max:10, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (>140 =10)'},
-    {k:'Skip',         max:10, pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (0 =10)'},
-    {k:'Short',        max:10, pts:shortPoints(d.short||0),  detail:(d.short||0)+' (0 =10)'},
-    {k:'SLA',          max:10, pts:slaPoints(d.sla||0),      detail:(d.sla||0).toFixed(2)+'% (≥99% =10)'},
-    {k:'WHL',          max:10, pts:whlPoints(d.whl),         detail:(d.whl==null?'n/a':(d.whl).toFixed(2)+'%')+' (+tive=impact · <0.1% =10)'},
-    {k:'WHD',          max:10, pts:whPoints(d.whd),          detail:(d.whd==null?'n/a':(d.whd).toFixed(2)+'%')+' (>-0.1% =10)'}
+    {k:'IB TPH',       max:15, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (>140 =15)'},
+    {k:'Skip',         max:15, pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (0 =15)'},
+    {k:'Short',        max:15, pts:shortPoints(d.short||0),  detail:(d.short||0)+' (0 =15)'},
+    {k:'SLA',          max:15, pts:slaPoints(d.sla||0),      detail:(d.sla||0).toFixed(2)+'% (≥99% =15)'}
   ];
 }
 function smScore(d){
@@ -2350,6 +2349,13 @@ function smLeaderboard(rows){
     var nl = smNlForStore(s);
     d.whl = nl?nl.whl:null;
     d.whd = nl?nl.whd:null;
+    // Extra fields for Quick Summary
+    d.expSync  = sum(sr.map(function(r){return gNum(r,['EXP-DATE SYNC','Exp-Date Sync','EXP DATE SYNC','F']);}));
+    d.expDest  = sum(sr.map(function(r){return gNum(r,['EXP-DESTROYED','Exp-Destroyed','EXP DESTROYED','G']);}));
+    d.donate   = sum(sr.map(function(r){return gNum(r,['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H']);}));
+    d.qualRem  = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
+    d.damRem   = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
+    d.expRem   = sum(sr.map(function(r){return gNum(r,['EXPIRED REMOVAL','Expired Removal','M']);}));
     d.parts = smScoreParts(d);
     d.score = smScore(d);
     return d;
@@ -2392,8 +2398,6 @@ function smLeaderboard(rows){
       '</div>'+
       '<div class="lb-chips">'+
         ch('SLA',d.sla.toFixed(2)+'%',slaC)+
-        ch('WHL',d.whl==null?'—':d.whl.toFixed(2)+'%', d.whl==null?'#64748B':(whlPoints(d.whl)===10?'#10B981':whlPoints(d.whl)===2.5?'#F59E0B':'#EF4444'),'Warehouse Loss — +tive = impact · <0.1% =10 · <0.5% =2.5 · else 0')+
-        ch('WHD',d.whd==null?'—':d.whd.toFixed(2)+'%', d.whd==null?'#64748B':(whPoints(d.whd)===10?'#10B981':whPoints(d.whd)===2.5?'#F59E0B':'#EF4444'),'Warehouse Damage — >-0.1% =10 · >-0.5% =2.5 · else 0')+
         ch('Inbound',fmt(d.inbound),'#10B981')+
         ch('Transs',fmt(d.transs),'#0EA5E9')+
         ch('Vendor',fmt(d.vendor),'#0EA5E9')+
@@ -3173,6 +3177,225 @@ function copySummary(){
     setTimeout(function(){btn.textContent='📋 Copy Summary';btn.style.color='';btn.style.borderColor='';},2000);
   });
 }
+</script>
+
+<!-- QUICK SUMMARY OVERLAY -->
+<style>
+#qs-overlay{display:none;position:fixed;inset:0;z-index:300;overflow:auto;background:var(--bg);}
+.qs-hdr{position:sticky;top:0;z-index:10;background:var(--hdr-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.qs-hdr-left{display:flex;align-items:center;gap:12px;}
+.qs-hdr-title{font-size:15px;font-weight:900;color:var(--text);}
+.qs-hdr-sub{font-size:10px;color:var(--muted);font-family:'Inter',monospace;margin-top:1px;}
+.qs-hdr-btns{display:flex;gap:7px;}
+.qs-btn{border:none;border-radius:8px;font-weight:800;font-size:11px;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;}
+.qs-btn.export{background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;}
+.qs-btn.close{background:var(--filter-bg);border:1px solid var(--border);color:var(--text);}
+.qs-body{padding:16px 18px 32px;min-width:max-content;}
+/* rows */
+.qs-row{display:flex;align-items:stretch;gap:0;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;border-left:4px solid var(--sc,#64748B);}
+.qs-row:hover{box-shadow:0 2px 12px rgba(0,0,0,.08);}
+.qs-store-col{display:flex;align-items:center;gap:8px;padding:10px 14px;min-width:130px;border-right:1px solid var(--border);}
+.qs-medal{font-size:18px;width:24px;flex-shrink:0;}
+.qs-sname{font-size:14px;font-weight:900;letter-spacing:.3px;}
+/* chip strip */
+.qs-chips{display:flex;align-items:center;flex-wrap:nowrap;gap:0;padding:0 4px;overflow:visible;}
+.qs-chip{display:flex;flex-direction:column;align-items:center;padding:7px 8px;min-width:62px;border-right:1px solid var(--border-soft,rgba(0,0,0,.05));}
+.qs-chip:last-child{border-right:none;}
+.qs-chip-l{font-size:7px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);white-space:nowrap;margin-bottom:3px;}
+.qs-chip-v{font-size:11.5px;font-weight:800;font-family:'Inter',monospace;white-space:nowrap;}
+.qs-divider{width:1px;background:var(--border);flex-shrink:0;align-self:stretch;margin:0 2px;}
+/* insights */
+.qs-insights{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-top:14px;}
+.qs-ins-head{font-size:10px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.qs-ins-row{display:flex;flex-wrap:wrap;gap:10px;}
+.qs-ins-card{background:var(--filter-bg);border:1px solid var(--border);border-radius:9px;padding:9px 13px;min-width:170px;}
+.qs-ins-lbl{font-size:8.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.qs-ins-store{font-size:14px;font-weight:900;margin-bottom:1px;}
+.qs-ins-val{font-size:10.5px;font-weight:700;font-family:'Inter',monospace;color:var(--muted);}
+@media print{
+  body>*:not(#qs-overlay){display:none!important;}
+  #qs-overlay{position:static!important;}
+  .qs-hdr{position:static!important;}
+  .qs-hdr-btns{display:none!important;}
+  @page{size:A2 landscape;margin:8mm;}
+}
+</style>
+
+<div id="qs-overlay">
+  <div class="qs-hdr">
+    <div class="qs-hdr-left">
+      <div id="qs-gwc-logo" style="display:flex;align-items:center;"></div>
+      <div style="display:flex;align-items:center;gap:8px;border-left:1px solid var(--border);padding-left:12px;">
+        <div><div class="qs-hdr-title">Quick Summary</div><div class="qs-hdr-sub" id="qs-period-label">Store-wise executive scorecard</div></div>
+      </div>
+    </div>
+    <div class="qs-hdr-btns">
+      <button class="qs-btn export" onclick="qsExport()">📸 HD Export</button>
+      <button class="qs-btn close" onclick="qsClose()">✕ Close</button>
+    </div>
+  </div>
+  <div class="qs-body">
+    <div id="qs-rows"></div>
+    <div class="qs-insights" id="qs-insights"></div>
+    <!-- Bottom branding -->
+    <div id="qs-footer-bar" style="display:flex;align-items:center;gap:12px;padding:16px 2px 4px;border-top:1px solid var(--border);margin-top:18px;">
+      <img id="qs-hp-logo" src="" style="height:34px;display:block;" alt="HP logo">
+      <div>
+        <div style="font-size:12px;font-weight:900;color:var(--text);">HP World DMS <span style="background:linear-gradient(90deg,#2563EB,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">PRO</span></div>
+        <div style="font-size:9px;color:var(--muted);font-family:'Inter',monospace;margin-top:1px;">&copy; 2026 HP World &middot; Dark Store Management System</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SC_QS={QAA1:'#2563EB',QAA6:'#3aa17e',QAA7:'#c79a4b',QDC6:'#EC4899',QDD3:'#7C3AED',QDG5:'#0EA5E9'};
+
+function smOpenQS(){
+  var ov=document.getElementById('qs-overlay'); if(!ov) return;
+  var data=smLbData||[]; if(!data.length){alert('Load data first');return;}
+
+  var gwcSvg = document.querySelector('.gwc-logo');
+  var gwcDiv = document.getElementById('qs-gwc-logo');
+  if(gwcSvg && gwcDiv) { var cl = gwcSvg.cloneNode(true); cl.style.height='38px'; cl.style.width='auto'; gwcDiv.innerHTML=''; gwcDiv.appendChild(cl); }
+  // HP logo at bottom
+  var hpLoaderImg = document.querySelector('#page-loader img');
+  var qsHpLogo = document.getElementById('qs-hp-logo');
+  if(hpLoaderImg && qsHpLogo) qsHpLogo.src = hpLoaderImg.src;
+
+  // period label
+  var pl=document.getElementById('qs-period-label');
+  if(pl) pl.textContent=(typeof smActivePeriodText==='function'?smActivePeriodText():smPeriodLabel?smPeriodLabel():'');
+
+  var medals=['🥇','🥈','🥉'];
+
+  function chip(label,val,col){
+    return '<div class="qs-chip"><div class="qs-chip-l">'+label+'</div><div class="qs-chip-v" style="color:'+(col||'var(--text)')+';">'+val+'</div></div>';
+  }
+  function div(){ return '<div class="qs-divider"></div>'; }
+  function g(v,c1,c2,thr1,thr2){ return v>=thr1?c1:v>=thr2?c2:'#EF4444'; }
+
+  var rows=data.map(function(d,i){
+    var col=SC_QS[d.store]||'#64748B';
+    var lowVol=d.orders<100;
+    var medal=lowVol?'▫':'<span style="font-size:13px;">'+(medals[i]||('#'+(i+1)))+'</span>';
+    var slaC=d.sla>=99?'#10B981':d.sla>=95?'#F59E0B':'#EF4444';
+    var lsC=d.lsV2Pct<1?'#10B981':d.lsV2Pct<=1.5?'#F59E0B':'#EF4444';
+    var tphC=d.ibTph>=140?'#10B981':d.ibTph>=100?'#F59E0B':'#EF4444';
+    var skipC=d.skip===0?'#10B981':d.skip<=3?'#F59E0B':'#EF4444';
+    var shortC=d.short===0?'#10B981':d.short<=3?'#F59E0B':'#EF4444';
+    var utrC=(d.utrRate||0)<=0.010?'#10B981':(d.utrRate||0)<=0.020?'#F59E0B':'#EF4444';
+    var scoreC=d.score>=90?'#10B981':d.score>=70?'#F59E0B':'#EF4444';
+    var lsV2Txt=d.lsV2+'('+d.lsV2Pct.toFixed(2)+'%)';
+    var vocC=(d.voc||0)===0?'#10B981':(d.voc||0)<=3?'#F59E0B':'#7C3AED';
+    var lsPct=d.orders>0?(d.ls/d.orders*100).toFixed(1):'0';
+    // quality colours
+    var qualC=(d.qualRem||0)===0?'#10B981':(d.qualRem||0)<=3?'#F59E0B':'#EF4444';
+    var damC=(d.damRem||0)===0?'#10B981':(d.damRem||0)<=2?'#F59E0B':'#EF4444';
+    var expRemC=(d.expRem||0)===0?'#10B981':(d.expRem||0)<=3?'#F59E0B':'#EF4444';
+    var syncC=(d.expSync||0)===0?'#10B981':(d.expSync||0)<=5?'#F59E0B':'#EF4444';
+    var destC=(d.expDest||0)===0?'#10B981':(d.expDest||0)<=50?'#F59E0B':'#EF4444';
+    var donC=(d.donate||0)===0?'#10B981':'#F59E0B';
+
+    return '<div class="qs-row" style="--sc:'+col+';">'+
+      '<div class="qs-store-col">'+
+        '<div class="qs-medal">'+medal+'</div>'+
+        '<div class="qs-sname" style="color:'+col+';">'+d.store+
+          (lowVol?'<br><span style="font-size:8px;color:#2563EB;background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.3);border-radius:4px;padding:1px 4px;font-weight:800;">&lt;100</span>':'')+
+        '</div>'+
+      '</div>'+
+      '<div class="qs-chips">'+
+        chip('SLA',d.sla.toFixed(2)+'%',slaC)+
+        chip('Inbound',fmt(d.inbound),'#10B981')+
+        chip('Transs',fmt(d.transs),'#0EA5E9')+
+        chip('Vendor',fmt(d.vendor),'#0EA5E9')+
+        chip('Orders',fmt(d.orders),'#2563EB')+
+        chip('Units',fmt(d.obUnits),'#F59E0B')+
+        chip('UPO',d.upo.toFixed(2),'#64748B')+
+        chip('IB TPH',d.ibTph.toFixed(0),tphC)+
+        chip('OB TPH',d.obTph?d.obTph.toFixed(0):'—','#2563EB')+
+        chip('LS',d.ls+' ('+lsPct+'%)',lsC)+
+        chip('LS V2',lsV2Txt,lsC)+
+        chip('Skip',d.skip,skipC)+
+        chip('Short',d.short,shortC)+
+        chip('VOC',d.voc||0,vocC)+
+        chip('UTR',d.utr+' ('+((d.utrRate||0).toFixed(3))+'%)',utrC)+
+        chip('Sh.Pts',(d.pts||0).toFixed(1)+'%','#0EA5E9')+
+        chip('Score',d.score.toFixed(1)+'%',scoreC)+
+        div()+
+        chip('Qual Rem',d.qualRem||0,qualC)+
+        chip('Dam Rem',d.damRem||0,damC)+
+        chip('Exp Rem',d.expRem||0,expRemC)+
+        div()+
+        chip('Exp Sync',d.expSync||0,syncC)+
+        chip('Destroyed',d.expDest||0,destC)+
+        chip('Donated',d.donate||0,donC)+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('qs-rows').innerHTML=rows||'<div class="empty">No data loaded.</div>';
+
+  // Insights
+  function best(key,inv){
+    var b=null;
+    data.forEach(function(d){var v=Number(d[key])||0;if(!b||(inv?v<b.v:v>b.v))b={store:d.store,v:v};});
+    return b;
+  }
+  function insCard(emoji,label,store,val){
+    if(!store) return '';
+    var c=SC_QS[store]||'#64748B';
+    return '<div class="qs-ins-card"><div class="qs-ins-lbl">'+emoji+' '+label+'</div>'+
+      '<div class="qs-ins-store" style="color:'+c+';">'+store+'</div>'+
+      '<div class="qs-ins-val">'+val+'</div></div>';
+  }
+  var ordBest=data.slice().sort(function(a,b){return b.orders-a.orders;})[0];
+  var lsBest=data.slice().sort(function(a,b){return b.lsV2-a.lsV2;})[0];
+  var qBest=best('qualRem');
+  var dBest=best('damRem');
+  var eBest=best('expDest');
+
+  document.getElementById('qs-insights').innerHTML=
+    '<div class="qs-ins-head">🔦 Auto Insights — Store Highlights</div>'+
+    '<div class="qs-ins-row">'+
+      (ordBest?insCard('🏆','Most Orders',ordBest.store,fmt(ordBest.orders)+' orders'):'') +
+      (lsBest&&lsBest.lsV2>0?insCard('🚨','Highest Late Slam',lsBest.store,lsBest.lsV2+' · '+lsBest.lsV2Pct.toFixed(2)+'%'):'') +
+      (qBest&&qBest.v>0?insCard('🔵','Most Quality Removals',qBest.store,qBest.v+' removals'):'') +
+      (dBest&&dBest.v>0?insCard('🔴','Most Damage Removals',dBest.store,dBest.v+' removals'):'') +
+      (eBest&&eBest.v>0?insCard('📅','Most Expiry/Destroyed',eBest.store,eBest.v+' destroyed'):'') +
+    '</div>';
+
+  ov.style.display='block'; ov.scrollTop=0; document.body.style.overflow='hidden';
+}
+
+function qsClose(){
+  var ov=document.getElementById('qs-overlay');
+  if(ov){ov.style.display='none';document.body.style.overflow='';}
+}
+
+function qsExport(){
+  if(window.html2canvas){ _qsCapture(); return; }
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s.onload=_qsCapture; s.onerror=function(){window.print();};
+  document.head.appendChild(s);
+}
+function _qsCapture(){
+  var body=document.getElementById('qs-overlay');
+  var btn=document.querySelector('.qs-btn.export');
+  if(btn){btn.textContent='⏳ Capturing…';btn.disabled=true;}
+  var bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f5f5fb';
+  html2canvas(body,{scale:2,backgroundColor:bg,useCORS:true,logging:false,
+    scrollX:0,scrollY:0,windowWidth:body.scrollWidth,width:body.scrollWidth})
+  .then(function(canvas){
+    var a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download='QuickSummary_'+new Date().toISOString().slice(0,10)+'.png';
+    a.click();
+    if(btn){btn.textContent='📸 HD Export';btn.disabled=false;}
+  }).catch(function(){window.print();if(btn){btn.textContent='📸 HD Export';btn.disabled=false;}});
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')qsClose();});
 </script>
 </body>
 </html>
