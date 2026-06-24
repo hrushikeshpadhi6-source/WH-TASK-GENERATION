@@ -5369,6 +5369,9 @@ function generateAuditAsin() {
       bottomHTML: item => '<div class="asin-txt">' + item.asin + '</div>'
     });
 
+    document.getElementById('export-audit-asin').style.display = 'flex';
+    showToast(picked.length + ' ASINs — known zones only!');
+  }, 100);
 }
 
 function parseBulkAsins(text) {
