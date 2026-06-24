@@ -485,6 +485,10 @@ table.voc.ops-pk-table thead tr.cols th { top: 0; }   /* beat the 2-row records 
 .osc-pnf-pop .opp-nocmt { color: #5C6772; font-style: normal; }
 .osc-pnf-pop .opp-more { color: #7E8B98; font-size: 10.5px; padding-top: 6px; }
 .ops-pnf-flag { color: var(--warning); font-weight: 600; }
+.osc-pnf.nt > span:first-child { color: #7C3AED; }
+.osc-pnf.nt::after { color: #7C3AED; }
+.ops-scorecard.has-fnt { border-color: #C7A9F2; box-shadow: 0 0 0 1px #C7A9F2 inset; background: #FBF9FF; }
+.osc-pnf-pop.nt .opp-h { color: #C4A6F5; }
 
 /* breakdown columns */
 .ops-break-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
@@ -921,6 +925,8 @@ table.cc-matrix tr.tot-row td { background: #EEF3F9; border-top: 1.5px solid var
 .qs-d.good { color: var(--success); } .qs-d.bad { color: var(--danger); } .qs-d.flat { color: var(--ink-faint); }
 .qs-pnf { margin-top: 7px; padding-top: 6px; border-top: 1px solid #F0D9A8; display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--warning); cursor: pointer; }
 .qs-pnf:hover { text-decoration: underline; }
+.qs-pnf.nt { color: #7C3AED; border-top-color: #E4D5F7; }
+.qs-pop.nt .ph { color: #7C3AED; }
 
 /* KPI tiles */
 .qs-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -1706,6 +1712,16 @@ function rcaPending(r) {
   var v = String(r.rcaCap || '').trim().toLowerCase();
   return (!v || v === '-' || v === 'na' || v === 'n/a' || v === 'nil' || v === 'none');
 }
+// rcaTriggered = the VOC has been triaged: BOTH the Issue Category (col M) and
+// Issue Description (col N) are filled in. Until then an RCA is "filled but not
+// triggered". (NOTE: this is independent of the OE remarks column.)
+function rcaTriggered(r) {
+  return !!(String(r.issueCategory || '').trim() && String(r.issueDesc || '').trim());
+}
+// RCA is written but NOT yet triggered (Issue Category / Description blank) — needs triage.
+function rcaFilledNotTriggered(r) {
+  return !rcaPending(r) && !rcaTriggered(r);
+}
 function classify(r) {
   var kind = catKind(r), d = r.issueDesc || '';
   return {
@@ -1765,7 +1781,7 @@ window.VOCData = {
   deriveStatus, STATUS_META, weekNum, weekLabel,
   buildSampleData,
   V2_UTR_DESCS, V2_OTR_DESCS, V2_PICKER_DESC, V2_QC_DESC, VOC_UTR_TARGET,
-  catKind, rcaPending, classify, rcaMismatch,
+  catKind, rcaPending, rcaTriggered, rcaFilledNotTriggered, classify, rcaMismatch,
   COMPLAINT_CATS, COMPLAINT_CAT_META, complaintCat, complaintCatSource
 };
 
@@ -2809,17 +2825,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ───────── 1 · RCA & CAP TRACKER ───────── */
   function renderRca() {
-    const period = S.view, all = S.all;
+    // Use the deduplicated, filter-aware view so counts match the scorecard
+    // exactly (re-raised VOCs are excluded — they were the source of phantom
+    // "pending" rows whose original record already had RCA filled & triggered).
+    const period = activeView(), all = S.all.filter(r => !r._dup);
     const pPend = period.filter(D.rcaPending).length;
-    const pDone = period.length - pPend;
-    const pPnf  = period.filter(r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim())).length;
+    const pFnt  = period.filter(D.rcaFilledNotTriggered).length;   // filled, not triggered
+    const pDone = period.length - pPend - pFnt;                    // filled AND triggered
+    const pPnf  = period.filter(r => !D.rcaPending(r) && !(r.pickerId && String(r.pickerId).trim())).length;
 
     const banner = `
       ${contextBar()}
       <div class="ops-banner">
         <span class="ob-chip neutral"><b>${num(period.length)}</b> VOC in view</span>
         <span class="ob-chip ${pPend ? 'danger' : 'success'}"><b>${num(pPend)}</b> RCA &amp; CAP Pending</span>
-        <span class="ob-chip success"><b>${num(pDone)}</b> RCA &amp; CAP Done</span>
+        ${pFnt ? `<span class="ob-chip purple"><b>${num(pFnt)}</b> Filled · not triggered</span>` : ''}
+        <span class="ob-chip success"><b>${num(pDone)}</b> Triggered &amp; closed</span>
         ${pPnf ? `<span class="ob-chip warn"><b>${num(pPnf)}</b> RCA done · Picker ID missing</span>` : ''}
       </div>`;
 
@@ -2958,6 +2979,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const pnfOf = r => !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim());
+    const fntOf = r => D.rcaFilledNotTriggered(r);   // RCA filled but not yet triggered (OE not "Discussed")
     const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : (s || '—'); };
     const delta = (cur, prev, goodUp) => {
       if (prevRows == null) return '';
@@ -2967,7 +2989,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<span class="osc-delta ${good ? 'good' : 'bad'}">${up ? '▲' : '▼'}${Math.abs(diff)}</span>`;
     };
 
-    let totalPnf = 0;
+    let totalPnf = 0, totalFnt = 0;
     const cards = stores(period).map(s => {
       const sr = period.filter(r => r.storeCode === s);
       const pr = prevRows ? prevRows.filter(r => r.storeCode === s) : [];
@@ -2981,6 +3003,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const pnfRows = sr.filter(pnfOf);
       const pnf = pnfRows.length;
       totalPnf += pnf;
+      const fntRows = sr.filter(fntOf);
+      const fnt = fntRows.length;
+      totalFnt += fnt;
 
       const line = (k, v, danger, d) => `<div class="osc-line"><span>${k}</span><span class="osc-v"><span class="${danger ? 'danger' : ''} strong">${v}</span>${d || ''}</span></div>`;
 
@@ -2997,8 +3022,21 @@ document.addEventListener('DOMContentLoaded', () => {
           ${pnf > 12 ? `<div class="opp-more">+${pnf - 12} more…</div>` : ''}
         </div>` : '';
 
+      const fntPop = fnt ? `<div class="osc-pnf-pop nt">
+          <div class="opp-h">RCA filled · not triggered — Issue Category / Description blank, triage to trigger</div>
+          ${fntRows.sort((a, b) => (b._ts||0) - (a._ts||0)).slice(0, 12).map(r =>
+            `<div class="opp-row">
+               <div class="opp-rtop">
+                 <button type="button" class="opp-oid" data-copy="${esc(r.orderId || '')}" title="Click to copy Order ID">${esc(r.orderId || '—')}</button>
+                 <span class="opp-dim">${esc(clip(r.productTitle, 22))} · ${fmtDate(r.date1)}</span>
+               </div>
+               <div class="opp-cmt opp-nocmt">Missing · ${esc([String(r.issueCategory||'').trim()?'':'Issue Category', String(r.issueDesc||'').trim()?'':'Issue Description'].filter(Boolean).join(' & '))}</div>
+             </div>`).join('')}
+          ${fnt > 12 ? `<div class="opp-more">+${fnt - 12} more…</div>` : ''}
+        </div>` : '';
+
       return `
-        <div class="ops-scorecard ${pnf ? 'has-pnf' : ''}">
+        <div class="ops-scorecard ${pnf ? 'has-pnf' : (fnt ? 'has-fnt' : '')}">
           <div class="osc-top">
             <div class="osc-name">${esc(s)}</div>
             <div class="osc-total mono">${sr.length}<span>VOC${prevRows ? ` · prev ${pr.length}` : ''}</span></div>
@@ -3009,6 +3047,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${line('QC Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3, delta(qc, pqc))}
           ${line('Non-Ops', nonops, false, delta(nonops, pnon))}
           ${line('RCA Pending', pend + (pend > 0 ? ' ⏳' : ''), pend > 0)}
+          ${fnt ? `<div class="osc-line osc-pnf nt"><span>RCA Not Triggered</span><span class="osc-v"><span class="strong" style="color:#7C3AED">${fnt} ⚠</span></span>${fntPop}</div>` : ''}
           ${pnf ? `<div class="osc-line osc-pnf"><span>Picker Not Filled</span><span class="osc-v"><span class="warn strong">${pnf} ⚠</span></span>${pnfPop}</div>` : ''}
         </div>`;
     }).join('');
@@ -3016,7 +3055,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sub = (prevRows
         ? `Current vs previous period (${esc(prevLabel)}) — Δ shown per metric`
         : 'Per-station breakdown for the current filter')
-      + (totalPnf ? ` · <span class="ops-pnf-flag">⚠ ${totalPnf} record${totalPnf === 1 ? '' : 's'} have an RCA but no Picker ID — click "Picker Not Filled" to view & copy Order IDs</span>` : '');
+      + (totalPnf ? ` · <span class="ops-pnf-flag">⚠ ${totalPnf} record${totalPnf === 1 ? '' : 's'} have an RCA but no Picker ID — click "Picker Not Filled" to view & copy Order IDs</span>` : '')
+      + (totalFnt ? ` · <span class="ops-pnf-flag" style="color:#7C3AED">⚠ ${totalFnt} RCA${totalFnt === 1 ? '' : 's'} filled but not triggered — click "RCA Not Triggered" to view</span>` : '');
 
     document.getElementById('opsStores').innerHTML = `
       <div class="card ops-card">
@@ -4232,12 +4272,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function metrics(rows) {
-    const m = { total: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, ops:0, rcaPending:0, pnf:0 };
+    const m = { total: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, ops:0, rcaPending:0, pnf:0, fnt:0 };
     rows.forEach(r => {
       const c = D.classify(r);
       if (c.isUTR) m.utr++; if (c.isOTR) m.otr++; if (c.isPicker) m.picker++;
       if (c.isQC) m.qc++; if (c.isNonOps) m.nonops++; if (c.kind === 'ops') m.ops++;
-      if (c.rcaPending) m.rcaPending++; if (pnfOf(r)) m.pnf++;
+      if (c.rcaPending) m.rcaPending++; if (pnfOf(r)) m.pnf++; if (D.rcaFilledNotTriggered(r)) m.fnt++;
     });
     return m;
   }
@@ -4271,6 +4311,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const line = (k, v, danger, d) =>
         '<div class="qs-line"><span class="lk">' + k + '</span><span class="lv"><span' + (danger ? ' style="color:var(--danger)"' : '') + '>' + v + '</span>' + (d||'') + '</span></div>';
       const pnfRows = cr.filter(pnfOf);
+      const fntRows = cr.filter(r => D.rcaFilledNotTriggered(r));
       const pop = pnfRows.length ? '<div class="qs-pop" hidden>' +
           '<div class="ph">RCA filled · Picker ID missing — back-fill needed</div>' +
           pnfRows.sort((a,b)=>(b._ts||0)-(a._ts||0)).slice(0,14).map(r =>
@@ -4278,7 +4319,14 @@ document.addEventListener('DOMContentLoaded', () => {
             '<div class="pdim">' + esc((r.productTitle||'—').slice(0,30)) + ' · ' + fmtDate(r.date1) + '</div></div>').join('') +
           (pnfRows.length > 14 ? '<div class="pdim" style="padding-top:6px">+' + (pnfRows.length-14) + ' more</div>' : '') +
         '</div>' : '';
-      return '<div class="qs-card' + (cm.pnf ? ' flag' : '') + '">' +
+      const popnt = fntRows.length ? '<div class="qs-pop nt" hidden>' +
+          '<div class="ph">RCA filled · not triggered — Issue Category / Description blank</div>' +
+          fntRows.sort((a,b)=>(b._ts||0)-(a._ts||0)).slice(0,14).map(r =>
+            '<div class="prow"><button type="button" class="poid" data-copy="' + esc(r.orderId||'') + '" title="Click to copy Order ID">' + esc(r.orderId||'—') + '</button>' +
+            '<div class="pdim">Missing: ' + esc([String(r.issueCategory||'').trim()?'':'Issue Category', String(r.issueDesc||'').trim()?'':'Issue Description'].filter(Boolean).join(' & ')) + ' · ' + fmtDate(r.date1) + '</div></div>').join('') +
+          (fntRows.length > 14 ? '<div class="pdim" style="padding-top:6px">+' + (fntRows.length-14) + ' more</div>' : '') +
+        '</div>' : '';
+      return '<div class="qs-card' + ((cm.pnf || cm.fnt) ? ' flag' : '') + '">' +
           '<div class="qs-card-top"><div class="qs-card-name">' + esc(s) + '</div>' +
             '<div class="qs-card-tot"><b>' + cm.total + '</b><span>VOC' + (hasPrev ? ' · prev ' + pm.total : '') + '</span></div></div>' +
           line('UTR (Ops)', cm.utr, false, dCell(cm.utr, hasPrev?pm.utr:null, false)) +
@@ -4287,6 +4335,7 @@ document.addEventListener('DOMContentLoaded', () => {
           line('QC Issue', cm.qc, cm.qc > 3, dCell(cm.qc, hasPrev?pm.qc:null, false)) +
           line('Non-Ops', cm.nonops, false, dCell(cm.nonops, hasPrev?pm.nonops:null, false)) +
           line('RCA Pending', cm.rcaPending + (cm.rcaPending ? ' ⏳' : ''), cm.rcaPending > 0) +
+          (cm.fnt ? '<div class="qs-pnf nt" data-pnf><span>RCA Not Triggered</span><span>' + cm.fnt + ' ⚠</span>' + popnt + '</div>' : '') +
           (cm.pnf ? '<div class="qs-pnf" data-pnf><span>Picker Not Filled</span><span>' + cm.pnf + ' ⚠</span>' + pop + '</div>' : '') +
         '</div>';
     }).join('');

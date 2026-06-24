@@ -2409,8 +2409,8 @@ function hideVocPrimeBar() {
   <div class="task-header">
     <span class="task-header-icon">📍</span>
     <div>
-      <h2>Generate 90 Random Locations</h2>
-      <p>Generates 90 random locations across all zone types from your inventory data.</p>
+      <h2>Audit by Location</h2>
+      <p>Upload your inventory file to filter by <b>prefix</b> (P-1-A, P-1-C...) and <b>bay</b> then generate 60 locations — or generate 90 across all zones without a filter.</p>
     </div>
   </div>
   <div class="upload-zone" id="uz-audit-loc" onclick="triggerUpload('f-audit-loc')">
@@ -2430,8 +2430,19 @@ function hideVocPrimeBar() {
     </div>
     <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="resetUpload('audit-loc')">✕</button>
   </div>
-  <div class="btn-row">
-    <button class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 90 Locations</button>
+  <!-- Location filter: dropdowns populated after file upload -->
+  <div id="audit-loc-filters" class="ctrl-row" style="gap:12px;flex-wrap:wrap;align-items:flex-end;margin:14px 0;">
+    <div>
+      <div class="ctrl-label">Location Prefix</div>
+      <select class="select-field" id="aloc-prefix" onchange="onAuditLocPrefixChange()" style="min-width:130px;"><option value="">All zones</option></select>
+    </div>
+    <div id="aloc-bay-wrap" style="display:none;">
+      <div class="ctrl-label">Bay</div>
+      <select class="select-field" id="aloc-bay" style="min-width:110px;"><option value="">All bays</option></select>
+    </div>
+    <div>
+      <button id="audit-loc-gen-btn" class="btn btn-primary" onclick="generateAuditLoc()">⚡ Generate 90 Locations</button>
+    </div>
   </div>
   <div class="loading" id="load-audit-loc">
   <div class="loading-inner">
@@ -4728,6 +4739,7 @@ function handleUpload(input, task) {
       if (task === 'slow-moving') buildSlowMovingCols();
       if (task === 'ysm') buildYSMMapper();
       if (task === 'consolidation') buildConBaySelect();
+      if (task === 'audit-loc') buildAuditLocFilters();
       showToast('✅ Loaded ' + json.length.toLocaleString() + ' records');
     } catch (err) {
       showToast('❌ Could not read file. Check format.');
@@ -4754,6 +4766,15 @@ function resetUpload(task) {
   if (task === 'ysm') {
     const mapper = document.getElementById('mapper-ysm');
     if (mapper) mapper.style.display = 'none';
+  }
+  if (task === 'audit-loc') {
+    const pfxSel = document.getElementById('aloc-prefix');
+    if (pfxSel) pfxSel.innerHTML = '<option value="">All zones</option>';
+    const bayWrap = document.getElementById('aloc-bay-wrap');
+    if (bayWrap) bayWrap.style.display = 'none';
+    const btn = document.getElementById('audit-loc-gen-btn');
+    if (btn) btn.textContent = '⚡ Generate 90 Locations';
+    window._auditLocPfxMap = null;
   }
 }
 
@@ -5066,36 +5087,118 @@ function generateConsolidation() {
 }
 
 // TASK 2: AUDIT BY LOCATION
+// -- Extract zone prefix + bay from a location string --
+function extractLocParts(loc) {
+  const l = String(loc||'').toUpperCase().replace(/\s/g,'');
+  const pfxs = ['P-1-C','P-1-F','P-1-D','P-1-A','P-1-V','P-1-X','P-1-T','P-1-H','P-1-R','HRV','HAZ'];
+  for (const pfx of pfxs) {
+    const idx = l.indexOf(pfx);
+    if (idx >= 0) {
+      const rest = l.slice(idx + pfx.length);
+      const m = rest.match(/(\d{2,4})/);
+      return { prefix: pfx, bay: m ? m[1] : '' };
+    }
+  }
+  return null;
+}
+
+// -- Build prefix/bay filter dropdowns after upload --
+function buildAuditLocFilters() {
+  const d = state['audit-loc'].data;
+  const h = state['audit-loc'].headers;
+  if (!d.length) return;
+  const locColIdx = findCol(h, ['location','bin','shelf','locationid','loc.?id','storage.?loc','aisle','slot']);
+  if (!locColIdx) return;
+  const locKey = locColIdx;
+  const prefixBayMap = {};
+  const seen = new Set();
+  d.forEach(row => {
+    const loc = String(row[locKey]||'').trim();
+    if (!loc || seen.has(loc)) return;
+    seen.add(loc);
+    const parts = extractLocParts(loc);
+    if (!parts) return;
+    if (!prefixBayMap[parts.prefix]) prefixBayMap[parts.prefix] = {};
+    const bay = parts.bay || 'Other';
+    if (!prefixBayMap[parts.prefix][bay]) prefixBayMap[parts.prefix][bay] = [];
+    prefixBayMap[parts.prefix][bay].push(loc);
+  });
+  const prefixes = Object.keys(prefixBayMap).sort();
+  if (!prefixes.length) return;
+  window._auditLocPfxMap = prefixBayMap;
+  const psel = document.getElementById('aloc-prefix');
+  if (psel) psel.innerHTML = '<option value="">All zones (90)</option>' + prefixes.map(p => '<option value="'+p+'">'+p+'</option>').join('');
+  const btn = document.getElementById('audit-loc-gen-btn');
+  if (btn) btn.textContent = '⚡ Generate 90 Locations';
+}
+
+function onAuditLocPrefixChange() {
+  const pfx = (document.getElementById('aloc-prefix')||{}).value || '';
+  const bayWrap = document.getElementById('aloc-bay-wrap');
+  const baysel = document.getElementById('aloc-bay');
+  const btn = document.getElementById('audit-loc-gen-btn');
+  if (!pfx) {
+    if (bayWrap) bayWrap.style.display = 'none';
+    if (btn) btn.textContent = '⚡ Generate 90 Locations';
+    return;
+  }
+  const bayData = (window._auditLocPfxMap && window._auditLocPfxMap[pfx]) || {};
+  const bays = Object.keys(bayData).sort();
+  if (baysel) baysel.innerHTML = '<option value="">All bays (' + Object.values(bayData).reduce((s,a)=>s+a.length,0) + ')</option>' + bays.map(b => '<option value="'+b+'">Bay '+b+' ('+bayData[b].length+')</option>').join('');
+  if (bayWrap && bays.length) bayWrap.style.display = 'block';
+  if (btn) btn.textContent = '⚡ Generate 60 Locations';
+}
+
 function generateAuditLoc() {
   showLoading('audit-loc', true);
   document.getElementById('out-audit-loc').innerHTML = '';
   setTimeout(() => {
     const d = state['audit-loc'].data;
     const h = state['audit-loc'].headers;
-    const locCol = findCol(h, ['location','bin','shelf','locationid','loc.?id','storage.?loc','aisle','slot']);
+    const locKey = findCol(h, ['location','bin','shelf','locationid','loc.?id','storage.?loc','aisle','slot']);
+    const selPfx = (document.getElementById('aloc-prefix')||{}).value || '';
+    const selBay = (document.getElementById('aloc-bay')||{}).value || '';
+    const useFilter = !!(selPfx && d.length && locKey);
     let locations = [];
-    const targets = {
-      Freezer:15, Chiller:15, Hazmat:10, Ambient:28, HRV:10,
-      HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1
-    };
-    // Note: "Other" zone intentionally excluded — only standard P-1-R type locations
-    if (d.length && locCol) {
-      const zoneLocs = {};
-      const seen = new Set();
-      d.forEach(row => {
-        const loc = String(row[locCol]||'').trim();
-        if (!loc || seen.has(loc)) return;
-        seen.add(loc);
-        const zone = detectZone(loc);
-        if (!zoneLocs[zone]) zoneLocs[zone] = [];
-        zoneLocs[zone].push(loc);
-      });
-      Object.entries(targets).forEach(([zone, n]) => {
-        const avail = zoneLocs[zone] || [];
-        if (avail.length) pickRandUnique(avail, n).forEach(loc => locations.push({zone, loc}));
-      });
-      locations = locations.sort(() => Math.random()-0.5).slice(0, 90);
+
+    if (useFilter) {
+      // Filtered mode — 60 locations from selected prefix (+ optional bay)
+      const map = window._auditLocPfxMap || {};
+      const bayData = map[selPfx] || {};
+      let pool = [];
+      if (selBay) {
+        pool = bayData[selBay] || [];
+      } else {
+        Object.values(bayData).forEach(locs => { pool = pool.concat(locs); });
+      }
+      if (!pool.length) { showLoading('audit-loc',false); showToast('No locations found for this filter — try a different selection'); return; }
+      pickRandUnique(pool, 60).forEach(loc => locations.push({zone: detectZone(loc), loc}));
+      locations = locations.sort(() => Math.random()-0.5);
+    } else {
+      // Original mode — 90 locations across all zones
+      const targets = {
+        Freezer:15, Chiller:15, Hazmat:10, Ambient:28, HRV:10,
+        HeavyDuty:4, 'V-Bin':3, 'X-Bin':2, 'H-Bin':2, 'R-Bin':2, 'T-Bin':1
+      };
+      if (d.length && locKey) {
+        const zoneLocs = {};
+        const seen = new Set();
+        d.forEach(row => {
+          const loc = String(row[locKey]||'').trim();
+          if (!loc || seen.has(loc)) return;
+          seen.add(loc);
+          const zone = detectZone(loc);
+          if (!zoneLocs[zone]) zoneLocs[zone] = [];
+          zoneLocs[zone].push(loc);
+        });
+        Object.entries(targets).forEach(([zone, n]) => {
+          const avail = zoneLocs[zone] || [];
+          if (avail.length) pickRandUnique(avail, n).forEach(loc => locations.push({zone, loc}));
+        });
+        locations = locations.sort(() => Math.random()-0.5).slice(0, 90);
+      }
     }
+
     if (!locations.length) {
       showToast('Location column not found — using sample data');
       const fb = [
@@ -18025,6 +18128,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
   function dnNorm(s){ return String(s==null?'':s).trim(); }
+  function dnTrunc(s,n){ s=String(s==null?'':s); return s.length>n ? s.slice(0,n-1)+'...' : s; }
   function dnFindCol(headers, names){
     var norm = headers.map(function(h){ return String(h==null?'':h).toLowerCase().replace(/[^a-z0-9]/g,''); });
     for(var j=0;j<names.length;j++){ for(var i=0;i<norm.length;i++){ if(norm[i]===names[j]) return i; } }
@@ -18038,7 +18142,8 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       if(it.tote) toteSet[it.tote.toUpperCase()] = true;   // repeated tote IDs count once
       units += (Number(it.qty)||0);
     });
-    return { uniqueTotes:Object.keys(toteSet).length, totalUnits:units, lines:items.length };
+    var totalAsins = items.filter(function(it){ return it.asin && it.asin.trim(); }).length || items.length;
+    return { uniqueTotes:Object.keys(toteSet).length, totalUnits:units, lines:items.length, totalAsins:totalAsins };
   }
 
   window.dnFileChosen = function(input){
@@ -18160,7 +18265,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     ok.innerHTML =
       '<div class="dn-fok-icon">\u2713</div>' +
       '<div class="dn-fok-info"><b>'+dnEsc(dnFileName)+'</b>' +
-        '<span>'+s.lines+' line items&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.uniqueTotes+' unique tote'+(s.uniqueTotes===1?'':'s')+'&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.totalUnits+' units &nbsp;\u2192 embedded in the Word note</span></div>' +
+        '<span>'+s.uniqueTotes+' unique tote'+(s.uniqueTotes===1?'':'s')+'&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.totalAsins+' ASIN'+(s.totalAsins===1?'':'s')+'&nbsp;&nbsp;\u00b7&nbsp;&nbsp;'+s.totalUnits+' units &nbsp;\u2192 embedded in the Word note</span></div>' +
       '<button class="dn-fok-remove" onclick="dnRemoveFile()">Remove</button>';
   }
 
@@ -18180,10 +18285,10 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     if(!dnItems || !dnItems.length){ wrap.innerHTML=''; return; }
     var s=dnComputeSummary(dnItems);
     var h='<div class="dn-doc-items-title">ITEMS MANIFEST</div>' +
-      '<div class="dn-doc-items-sub">'+s.lines+' line items &nbsp;\u00b7&nbsp; '+s.uniqueTotes+' tote'+(s.uniqueTotes===1?'':'s')+' &nbsp;\u00b7&nbsp; '+s.totalUnits+' units</div>' +
+      '<div class="dn-doc-items-sub">'+s.uniqueTotes+' unique tote'+(s.uniqueTotes===1?'':'s')+' &nbsp;\u00b7&nbsp; '+s.totalAsins+' ASIN'+(s.totalAsins===1?'':'s')+' &nbsp;\u00b7&nbsp; '+s.totalUnits+' units</div>' +
       '<table class="dn-doc-items"><thead><tr><th>Tote ID</th><th>ASIN</th><th>Title</th><th>Qty</th></tr></thead><tbody>';
     dnItems.forEach(function(it){
-      h+='<tr><td>'+dnEsc(it.tote)+'</td><td>'+dnEsc(it.asin)+'</td><td>'+dnEsc(it.title)+'</td><td>'+dnEsc(it.qty)+'</td></tr>';
+      h+='<tr><td>'+dnEsc(it.tote)+'</td><td>'+dnEsc(it.asin)+'</td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+dnEsc(it.title)+'">'+dnEsc(dnTrunc(it.title,42))+'</td><td>'+dnEsc(it.qty)+'</td></tr>';
     });
     h+='</tbody></table>';
     wrap.innerHTML=h;
@@ -18232,7 +18337,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       rowsXml+='<w:tr>' +
         dnTcell(it.tote,{w:cols[0],shade:sh}) +
         dnTcell(it.asin,{w:cols[1],shade:sh}) +
-        dnTcell(it.title,{w:cols[2],shade:sh}) +
+        dnTcell(dnTrunc(it.title,46),{w:cols[2],shade:sh}) +
         dnTcell(String(it.qty),{w:cols[3],center:true,shade:sh}) + '</w:tr>';
     });
     return '<w:tbl>'+tblPr+grid+hdr+rowsXml+'</w:tbl>';
@@ -18242,7 +18347,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     var s=dnComputeSummary(items);
     var heading='<w:p><w:pPr><w:spacing w:before="200" w:after="60"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="0E7490"/></w:pBdr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:pPr>' +
       '<w:r><w:rPr><w:b/><w:color w:val="0E7490"/><w:sz w:val="26"/></w:rPr><w:t>ITEMS MANIFEST</w:t></w:r></w:p>';
-    var sub=para(s.lines+' line items     \u00b7     '+s.uniqueTotes+' tote'+(s.uniqueTotes===1?'':'s')+'     \u00b7     '+s.totalUnits+' units', {sz:20, spacing:120});
+    var sub=para(s.uniqueTotes+' unique tote'+(s.uniqueTotes===1?'':'s')+'     \u00b7     '+s.totalAsins+' ASIN'+(s.totalAsins===1?'':'s')+'     \u00b7     '+s.totalUnits+' units', {sz:20, spacing:120});
     return emptyPara()+heading+sub+dnItemsTableXml(items)+emptyPara();
   }
 
