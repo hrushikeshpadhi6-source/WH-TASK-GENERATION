@@ -5183,7 +5183,17 @@ function generateAuditLoc() {
         Object.values(bayData).forEach(locs => { pool = pool.concat(locs); });
       }
       if (!pool.length) { showLoading('audit-loc',false); showToast('No locations found for this filter — try a different selection'); return; }
-      pickRandUnique(pool, Math.min(60, pool.length)).forEach(loc => locations.push({zone: detectZone(loc), loc}));
+      // Always produce exactly 60 — cycle through pool if needed
+      const pickExact = (arr, n) => {
+        if (!arr.length) return [];
+        const out = [];
+        while (out.length < n) {
+          const sh = arr.slice().sort(() => Math.random()-0.5);
+          out.push(...sh);
+        }
+        return out.slice(0, n);
+      };
+      pickExact(pool, 60).forEach(loc => locations.push({zone: detectZone(loc), loc}));
       locations = locations.sort(() => Math.random()-0.5);
     } else {
       // Original mode — 90 locations across all zones
