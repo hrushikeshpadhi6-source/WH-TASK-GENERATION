@@ -915,6 +915,7 @@ tbody tr:hover{background:var(--row-hover);}
   <!-- CALLOUT STORES -->
   <div id="sm-callout" style="margin-bottom:14px;"></div>
 
+
   <!-- LEADERBOARD -->
   <div class="lb-wrap ani3">
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;">
@@ -1694,7 +1695,7 @@ function smKPI(rows){
     {icon:'⚡',lbl:'IB TPH',         val:ibTph.toFixed(1),    sub:'inbound/hr avg',     col:'#0EA5E9'},
     {icon:'🚀',lbl:'OB TPH',         val:obTph.toFixed(1),    sub:'outbound/hr avg',    col:'#2563EB'},
     {icon:'🚨',lbl:'Late Slams',     val:fmt(lateSlam),       sub:'LS Rate: '+lsRate,   col:lsCol},
-    {icon:'⚡',lbl:'LS V2 Count',     val:fmt(lsV2),           sub:'Rate: '+lsV2Rate.toFixed(2)+'%  ·  tgt ≤1%', col:lsV2Col},
+    {icon:'⚡',lbl:'LS V2',     val:fmt(lsV2),           sub:'Rate: '+lsV2Rate.toFixed(2)+'%  ·  tgt ≤1%', col:lsV2Col},
     {icon:'✅',lbl:'Avg SLA %',      val:avgSla.toFixed(2)+'%',sub:avgSla>=99?'✅ On Target':'⚠️ Below Target',col:slaCol},
     {icon:'⏭️',lbl:'Skip',          val:fmt(skip),           sub:'skipped orders',     col:skipCol},
     {icon:'📭',lbl:'Short',          val:fmt(short),          sub:'short orders',       col:shortCol},
@@ -2441,6 +2442,7 @@ function smLeaderboard(rows){
   var medals=['🥇','🥈','🥉'];
   smLbData=data;
   try{ smCallout(data,rows); }catch(e){ console.warn('callout skipped:',e); }
+
   function smProsCons(d){
     var pc=smStorePC(d);
     var t='⭐ '+d.store+'  —  Score '+d.score.toFixed(1)+'%';
@@ -2519,7 +2521,7 @@ function smCallout(data,rows){
     return d.ibSlaTrans<99 || d.ibTph<140;
   });
 
-  if(!flagged.length){ el.innerHTML=''; return; }
+
 
   function chip(label,val,color,bg,border,tip){
     return '<div style="display:flex;flex-direction:column;align-items:center;background:'+bg+';border:1.5px solid '+border+';border-radius:8px;padding:5px 11px;min-width:72px;"'+(tip?' title="'+tip+'"':'')+'>'+
@@ -2579,16 +2581,50 @@ function smCallout(data,rows){
     '</div>';
   }).join('');
 
+  // Removal highlights
+  var remValid=data.filter(function(d){ return d.orders>0 && d.store!=='QAA1'; });
+  var mostDam=remValid.length?remValid.reduce(function(a,b){ return (b.damRem||0)>(a.damRem||0)?b:a; }):null;
+  var mostQual=remValid.length?remValid.reduce(function(a,b){ return (b.qualRem||0)>(a.qualRem||0)?b:a; }):null;
+
+  if(!flagged.length && !mostDam && !mostQual){ el.innerHTML=''; return; }
+
+  function remRow(label, badgeColor, borderClr, bgClr, d, val){
+    if(!d) return '';
+    var col=SC[d.store]||badgeColor;
+    return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:'+bgClr+';border:1px solid '+borderClr.replace('0.40','0.20')+';border-left:4px solid '+col+';border-radius:10px;padding:10px 14px;">'+
+      '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;min-width:56px;">'+
+        '<div style="font-size:13px;font-weight:800;font-family:\'Inter\',monospace;color:'+col+';">'+d.store+'</div>'+
+        '<div style="font-size:9px;font-family:\'Inter\',monospace;font-weight:700;color:var(--muted);white-space:nowrap;">'+label+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'+
+        chip(label, fmt(val), badgeColor, bgClr, borderClr, label)+
+      '</div>'+
+    '</div>';
+  }
+
+  var remHtml=(mostDam||mostQual)?
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">'+
+      '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">📦 Removal Highlights</div>'+
+      '<div style="display:flex;flex-direction:column;gap:8px;">'+
+        remRow('Most Damaged Removal', '#EF4444', 'rgba(239,68,68,0.40)', 'rgba(239,68,68,0.05)', mostDam, mostDam?(mostDam.damRem||0):0)+
+        remRow('Most Quality Removal',  '#2563EB', 'rgba(37,99,235,0.40)',  'rgba(37,99,235,0.05)',  mostQual, mostQual?(mostQual.qualRem||0):0)+
+      '</div>'+
+    '</div>' : '';
+
   el.innerHTML=
     '<div class="callout-wrap">'+
-      '<div class="callout-hdr">'+
-        '<span class="callout-badge">⚠ Callout</span>'+
-        '<span class="callout-title">Stores Below Target — Quick Analysis</span>'+
-        '<span class="callout-count">'+flagged.length+' store'+(flagged.length>1?'s':'')+' flagged</span>'+
-      '</div>'+
-      '<div class="callout-rows">'+rowsHtml+'</div>'+
+      (flagged.length?
+        '<div class="callout-hdr">'+
+          '<span class="callout-badge">⚠ Callout</span>'+
+          '<span class="callout-title">Stores Below Target — Quick Analysis</span>'+
+          '<span class="callout-count">'+flagged.length+' store'+(flagged.length>1?'s':'')+' flagged</span>'+
+        '</div>'+
+        '<div class="callout-rows">'+rowsHtml+'</div>'
+        : '')+
+      remHtml+
     '</div>';
 }
+
 
 // ═══════════════════════════════════════════════
 // UTR TARGET ANALYSIS CARDS
@@ -3410,7 +3446,7 @@ function copySummary(){
     <div class="qs-insights" id="qs-insights"></div>
     <!-- Bottom branding -->
     <div id="qs-footer-bar" style="display:flex;align-items:center;gap:12px;padding:16px 2px 4px;border-top:1px solid var(--border);margin-top:18px;">
-      <img id="qs-hp-logo" src="" style="height:34px;display:block;" alt="HP logo">
+      <img id="qs-hp-logo" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" style="height:34px;display:block;" alt="HP logo">
       <div>
         <div style="font-size:12px;font-weight:900;color:var(--text);">HP World DMS <span style="background:linear-gradient(90deg,#2563EB,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">PRO</span></div>
         <div style="font-size:9px;color:var(--muted);font-family:'Inter',monospace;margin-top:1px;">&copy; 2026 HP World &middot; Dark Store Management System</div>
