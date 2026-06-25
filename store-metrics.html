@@ -499,6 +499,18 @@ th{font-size:10px; color:#64748B; letter-spacing:0.04em; font-weight:600; paddin
 td{padding:10px 14px; opacity:1 !important; color:var(--text) !important; font-weight:500; border-bottom:1px solid var(--border);}
 tbody tr:hover{background:var(--row-hover);}
 
+/* ---------- CALLOUT STORES ---------- */
+.callout-wrap{background:var(--card);border:1.5px solid rgba(239,68,68,0.35);border-radius:14px;padding:16px 18px;box-shadow:0 2px 14px rgba(239,68,68,0.10);}
+.callout-hdr{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(239,68,68,0.2);}
+.callout-badge{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#EF4444;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.28);border-radius:20px;padding:3px 10px;white-space:nowrap;}
+.callout-title{font-size:11px;font-weight:800;color:var(--text);letter-spacing:0.3px;}
+.callout-count{font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);margin-left:auto;}
+.callout-rows{display:flex;flex-direction:column;gap:8px;}
+.callout-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-left:4px solid var(--cs,#EF4444);border-radius:10px;padding:9px 12px;}
+.callout-store{font-size:13px;font-weight:800;font-family:'Inter',monospace;min-width:52px;color:var(--cs,#EF4444);flex-shrink:0;}
+.callout-score{font-family:'Inter',monospace;font-size:11px;font-weight:800;color:var(--muted);flex-shrink:0;}
+.callout-flags{display:flex;flex-wrap:wrap;gap:4px;flex:1;}
+.callout-flag{font-size:10px;font-weight:800;font-family:'Inter',monospace;padding:2px 8px;border-radius:6px;border:1px solid;white-space:nowrap;}
 /* ---------- LEADERBOARD ---------- */
 .lb-wrap{border-radius:12px; box-shadow:var(--shadow-sm);}
 .lb-row{border-radius:10px; box-shadow:none; border-left-width:4px;}
@@ -899,6 +911,9 @@ tbody tr:hover{background:var(--row-hover);}
     </div>
     <canvas id="sm-rank" style="height:272px;max-height:272px;width:100%;"></canvas>
   </div>
+
+  <!-- CALLOUT STORES -->
+  <div id="sm-callout" style="margin-bottom:14px;"></div>
 
   <!-- LEADERBOARD -->
   <div class="lb-wrap ani3">
@@ -2425,6 +2440,7 @@ function smLeaderboard(rows){
 
   var medals=['🥇','🥈','🥉'];
   smLbData=data;
+  try{ smCallout(data,rows); }catch(e){ console.warn('callout skipped:',e); }
   function smProsCons(d){
     var pc=smStorePC(d);
     var t='⭐ '+d.store+'  —  Score '+d.score.toFixed(1)+'%';
@@ -2470,6 +2486,108 @@ function smLeaderboard(rows){
       '</div></div>';
   }).join('');
   try{ smRenderUTR(rows); }catch(e){ console.warn('UTR render skipped:', e); }
+}
+
+// ═══════════════════════════════════════════════
+// CALLOUT STORES — at-risk stores with KPI flags
+// ═══════════════════════════════════════════════
+function smCallout(data,rows){
+  var el=document.getElementById('sm-callout'); if(!el) return;
+
+  // Build per-store raw rows lookup for IB SLA TRANS + date info
+  var storeRowMap={};
+  (rows||[]).forEach(function(r){
+    var s=gStore(r); if(!s) return;
+    if(!storeRowMap[s]) storeRowMap[s]=[];
+    storeRowMap[s].push(r);
+  });
+
+  // Enrich each store with IB SLA TRANS and date string
+  var enriched=data.map(function(d){
+    var sr=storeRowMap[d.store]||[];
+    var slaTR=avg(sr.map(function(r){return gNum(r,['IB SLA TRANS','IB SLA Trans','R']);}));
+    var ibSlaTrans=toP(slaTR);
+    var dates=[...new Set(sr.map(gDate).filter(Boolean))].sort();
+    var dateStr=dates.length===0?'—':dates.length===1?dates[0]:(dates[0]+' → '+dates[dates.length-1]);
+    return Object.assign({},d,{ibSlaTrans:ibSlaTrans,dateStr:dateStr});
+  });
+
+  // Flag stores: IB SLA TRANS < 99% OR IB TPH < 140. Exclude QAA1.
+  var flagged=enriched.filter(function(d){
+    if(!d.orders) return false;
+    if(d.store==='QAA1') return false;
+    return d.ibSlaTrans<99 || d.ibTph<140;
+  });
+
+  if(!flagged.length){ el.innerHTML=''; return; }
+
+  function chip(label,val,color,bg,border,tip){
+    return '<div style="display:flex;flex-direction:column;align-items:center;background:'+bg+';border:1.5px solid '+border+';border-radius:8px;padding:5px 11px;min-width:72px;"'+(tip?' title="'+tip+'"':'')+'>'+
+      '<span style="font-size:8px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:'+color+';">'+label+'</span>'+
+      '<span style="font-size:12px;font-weight:800;font-family:\'Inter\',monospace;color:'+color+';white-space:nowrap;">'+val+'</span>'+
+    '</div>';
+  }
+
+  function stat(label,val){
+    return '<div style="display:flex;flex-direction:column;align-items:center;background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:8px;padding:5px 11px;min-width:72px;">'+
+      '<span style="font-size:8px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);">'+label+'</span>'+
+      '<span style="font-size:12px;font-weight:800;font-family:\'Inter\',monospace;color:var(--text);">'+val+'</span>'+
+    '</div>';
+  }
+
+  var rowsHtml=flagged.map(function(d){
+    var col=SC[d.store]||'#EF4444';
+    var chips='';
+
+    // IB SLA TRANS — only if below 99%
+    if(d.ibSlaTrans<99){
+      var slaC='#EF4444';
+      chips+=chip('IB SLA TRANS', d.ibSlaTrans.toFixed(2)+'%', slaC, 'rgba(239,68,68,0.12)', 'rgba(239,68,68,0.40)', 'IB Transhipment SLA — tgt ≥99%');
+    }
+
+    // IB TPH — only if below 140
+    if(d.ibTph<140){
+      var tphC=d.ibTph>=126?'#F59E0B':'#EF4444';
+      var tphBg=d.ibTph>=126?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
+      var tphBd=d.ibTph>=126?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
+      chips+=chip('IB TPH', d.ibTph.toFixed(0), tphC, tphBg, tphBd, 'IB TPH — tgt ≥140');
+    }
+
+    // LS v2 — only if > 1%
+    if(d.lsV2Pct>1){
+      var ls2C=d.lsV2Pct<=1.5?'#F59E0B':'#EF4444';
+      var ls2Bg=d.lsV2Pct<=1.5?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
+      var ls2Bd=d.lsV2Pct<=1.5?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
+      chips+=chip('LS v2', d.lsV2+' ('+d.lsV2Pct.toFixed(2)+'%)', ls2C, ls2Bg, ls2Bd, 'Late Slam v2 — tgt <1%');
+    }
+
+    // Skip / Short — only if > 0
+    if(d.skip>0)  chips+=chip('Skip',  String(d.skip),  '#EF4444','rgba(239,68,68,0.12)','rgba(239,68,68,0.40)','Skipped orders');
+    if(d.short>0) chips+=chip('Short', String(d.short), '#EF4444','rgba(239,68,68,0.12)','rgba(239,68,68,0.40)','Short orders');
+
+    // Always: Inbound, OB Units, Orders
+    chips+=stat('Inbound', fmt(d.inbound));
+    chips+=stat('OB Units', fmt(d.obUnits));
+    chips+=stat('Orders', fmt(d.orders));
+
+    return '<div class="callout-row" style="--cs:'+col+';">'+
+      '<div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;min-width:56px;">'+
+        '<div class="callout-store">'+d.store+'</div>'+
+        '<div style="font-size:9px;font-family:\'Inter\',monospace;font-weight:700;color:var(--muted);white-space:nowrap;">'+d.dateStr+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'+chips+'</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML=
+    '<div class="callout-wrap">'+
+      '<div class="callout-hdr">'+
+        '<span class="callout-badge">⚠ Callout</span>'+
+        '<span class="callout-title">Stores Below Target — Quick Analysis</span>'+
+        '<span class="callout-count">'+flagged.length+' store'+(flagged.length>1?'s':'')+' flagged</span>'+
+      '</div>'+
+      '<div class="callout-rows">'+rowsHtml+'</div>'+
+    '</div>';
 }
 
 // ═══════════════════════════════════════════════
