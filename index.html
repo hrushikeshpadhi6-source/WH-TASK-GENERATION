@@ -788,31 +788,29 @@ to{width:65%;} }
 #page-locid .alert-info { background:rgba(22,163,74,0.07); color:#14532d; border:1px solid #86efac; }
 
 /* Barcode + QR Label screen preview */
-.bql-label { display:flex; align-items:stretch; background:#fff; border:1.5px solid #bbb; border-radius:4px; overflow:hidden; width:480px; height:120px; box-shadow:0 2px 12px rgba(0,0,0,0.10); font-family:Arial,Helvetica,sans-serif; }
-.bql-label-left { display:flex; flex-direction:column; justify-content:space-between; padding:10px; min-width:72px; max-width:72px; }
-.bql-label-left .bql-rack { font-size:14px; font-weight:800; color:#1e1b4b; line-height:1; }
-.bql-label-left .bql-bin  { font-size:18px; font-weight:900; color:#1e1b4b; line-height:1; }
-.bql-label-center { flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:8px 6px 8px 0; overflow:hidden; }
-.bql-label-center .bql-locid { font-size:40px; font-weight:900; color:#1e1b4b; line-height:1; }
-.bql-label-center .bql-barcode-wrap { height:60px; }
-.bql-label-center .bql-barcode-wrap svg { height:60px !important; width:100% !important; }
-.bql-label-right-arrow { display:flex; align-items:center; justify-content:center; width:30px; flex-shrink:0; font-size:28px; color:#1e1b4b; font-weight:900; border-left:1px solid #eee; }
-.bql-label-right-qr { display:flex; align-items:center; justify-content:center; width:96px; flex-shrink:0; padding:4px; border-left:1px solid #eee; }
-.bql-label-right-qr canvas,.bql-label-right-qr img { width:88px !important; height:88px !important; }
-/* Print sheet — 24 labels per A4 (2 cols × 12 rows) */
-.bql-sheet { background:#fff; width:210mm; padding:3mm 5mm; box-sizing:border-box; }
-.bql-sheet-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.5mm 2mm; }
-.bql-print-label { display:flex; align-items:stretch; background:#fff; border:0.3mm solid #aaa; border-radius:0.8mm; overflow:hidden; width:100%; height:24mm; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; page-break-inside:avoid; break-inside:avoid; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
-.bql-pl-left { display:flex; flex-direction:column; justify-content:space-between; padding:1.5mm 2mm; min-width:15mm; max-width:15mm; }
-.bql-pl-left .bql-pl-rack { font-size:6pt;   font-weight:800; color:#1e1b4b; line-height:1; }
-.bql-pl-left .bql-pl-bin  { font-size:8.5pt; font-weight:900; color:#1e1b4b; line-height:1; }
-.bql-pl-center { flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:1.5mm 1mm 1.5mm 0; overflow:hidden; }
-.bql-pl-center .bql-pl-locid { font-size:15pt; font-weight:900; color:#1e1b4b; line-height:1; }
-.bql-pl-center .bql-pl-barcode { height:14mm; }
-.bql-pl-center .bql-pl-barcode svg { height:14mm !important; width:100% !important; }
-.bql-pl-arrow { display:flex; align-items:center; justify-content:center; width:7mm; flex-shrink:0; font-size:13pt; color:#1e1b4b; font-weight:900; border-left:0.3mm solid #ddd; }
-.bql-pl-qr { display:flex; align-items:center; justify-content:center; width:23mm; flex-shrink:0; padding:1mm; border-left:0.3mm solid #ddd; }
-.bql-pl-qr canvas,.bql-pl-qr img { width:20mm !important; height:20mm !important; }
+.bql-label { display:flex; align-items:stretch; border:1.5px solid #ccc; border-radius:6px; overflow:hidden; width:580px; height:110px; box-shadow:0 2px 12px rgba(0,0,0,0.12); font-family:Arial,Helvetica,sans-serif; background:#fff; }
+/* Colored wrapper: left + center share the color */
+.bql-label-colored,.bql-pl-colored { display:flex; flex:1; }
+/* Left: rack top, bin bottom — white text on color */
+.bql-label-left,.bql-pl-left { display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:4px 8px 10px 8px; min-width:96px; max-width:96px; }
+.bql-label-left .bql-rack,.bql-pl-left .bql-pl-rack { font-size:22px; font-weight:900; line-height:1; margin-top:14px; text-align:center; width:100%; color:#fff; }
+.bql-label-left .bql-bin,.bql-pl-left .bql-pl-bin   { font-size:52px; font-weight:900; line-height:1; margin-bottom:10px; text-align:center; width:100%; color:#fff; }
+/* Center: locid white, barcode on white bg */
+.bql-label-center,.bql-pl-center { flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:6px 0 4px 2px; overflow:hidden; border-left:2px solid rgba(255,255,255,0.35); }
+.bql-label-center .bql-locid,.bql-pl-center .bql-pl-locid { font-size:46px; font-weight:900; color:#fff; line-height:1; text-align:center; letter-spacing:2px; text-shadow:0 1px 4px rgba(0,0,0,0.2); }
+.bql-label-center .bql-barcode-wrap,.bql-pl-center .bql-pl-barcode { flex:1; margin-top:1px; margin-bottom:3px; background:transparent; border-radius:0; padding:0 5px; width:100%; box-sizing:border-box; }
+.bql-label-center .bql-barcode-wrap svg,.bql-pl-center .bql-pl-barcode svg { height:58px !important; width:100% !important; display:block; }
+/* Arrow — white bg */
+.bql-label-right-arrow,.bql-pl-arrow { display:flex; align-items:center; justify-content:center; width:30px; flex-shrink:0; font-size:28px; font-weight:900; background:#fff; border-left:1px solid #ddd; }
+/* QR — white bg */
+.bql-label-right-qr,.bql-pl-qr { display:flex; align-items:center; justify-content:center; width:100px; flex-shrink:0; padding:5px; background:#fff; border-left:1px solid #ddd; }
+.bql-label-right-qr canvas,.bql-label-right-qr img,
+.bql-pl-qr canvas,.bql-pl-qr img { width:90px !important; height:90px !important; }
+
+/* Print sheet */
+.bql-sheet { background:#fff; width:1240px; padding:16px 20px; box-sizing:border-box; }
+.bql-sheet-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; }
+.bql-print-label { display:flex; align-items:stretch; border:1px solid #bbb; border-radius:4px; overflow:hidden; width:100%; height:110px; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; page-break-inside:avoid; break-inside:avoid; print-color-adjust:exact; -webkit-print-color-adjust:exact; background:#fff; }
 
 /* ── GATE PASS (Task 11) ── */
 #page-gatepass { background:#f4f4fa; min-height:100vh; }
@@ -4037,12 +4035,26 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
     <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:14px;">
       <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:8px;">📦 Barcode + QR Label Generator</div>
       <div style="font-size:12px;color:#7b78a8;margin-bottom:14px;">
-        Paste one location per line — format: <code style="background:#ede9fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#4f46e5;">RACK, LOCATION, BIN</code>.
-        Each line = one label. Color auto-assigned by Location letter (A=Red, B=White, C=Green, D=Blue, E=Yellow…).
+        Paste one location per line — format: <code style="background:#ede9fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#4f46e5;">P-1-A116F182</code>.
+        Each line = one label. Color by first letter: A=Red, B=Blue, C=Green, D=Orange, E=Purple, F=Yellow… Or upload CSV.
+      </div>
+      <!-- File upload -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;border:1.5px dashed #c7d2fe;background:#f5f3ff;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#4f46e5;">
+          📂 Upload CSV / Excel
+          <input type="file" accept=".csv,.xlsx,.xls,.txt" style="display:none;" onchange="bqlHandleFile(this)">
+        </label>
+        <!-- Text color toggle -->
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:12px;font-weight:700;color:#3d3a6b;">Text Color:</span>
+          <button id="bql-txt-black" onclick="bqlSetTextColor('black')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #1a1a1a;background:#1a1a1a;color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬛ Black</button>
+          <button id="bql-txt-white" onclick="bqlSetTextColor('white')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #ccc;background:#fff;color:#555;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬜ White</button>
+        </div>
+        <span style="font-size:11px;color:#9ca3af;">Columns: Rack, Location, Bin (header optional)</span>
       </div>
       <textarea id="bql-bulk-input" rows="8"
         style="width:100%;border:1px solid #d5d2f0;border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:13px;color:#1a1830;resize:vertical;outline:none;background:#fff;box-sizing:border-box;"
-        placeholder="P-1-A, E120, 114&#10;P-1-A, F130, 215&#10;P-2-B, C105, 308&#10;P-2-B, A210, 401"
+        placeholder="P-1-A116F182&#10;P-1-A215A130&#10;P-2-B308C105&#10;P-2-B401B210"
         oninput="bqlBulkPreview()"></textarea>
       <div style="font-size:11px;color:#7b78a8;margin-top:6px;">Separator: comma, tab or pipe. One label per line. 24 per A4 page.</div>
     </div>
@@ -9888,77 +9900,115 @@ function bqlLoadLibs(cb) {
   s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
   s2.onload = done; s2.onerror = done; document.head.appendChild(s2);
 }
-function bqlFull(v) { return [v.rack, v.loc, v.bin].filter(Boolean).join('-'); }
+var bqlTextColor = '#000';
+function bqlSetTextColor(c) {
+  bqlTextColor = c === 'white' ? '#fff' : '#000';
+  var bBtn = document.getElementById('bql-txt-black');
+  var wBtn = document.getElementById('bql-txt-white');
+  if (bBtn) { bBtn.style.background = c==='black'?'#1a1a1a':'#fff'; bBtn.style.color = c==='black'?'#fff':'#555'; bBtn.style.borderColor = c==='black'?'#1a1a1a':'#ccc'; }
+  if (wBtn) { wBtn.style.background = c==='white'?'#1a1a1a':'#fff'; wBtn.style.color = c==='white'?'#fff':'#555'; wBtn.style.borderColor = c==='white'?'#1a1a1a':'#ccc'; }
+  bqlBulkPreview();
+}
+function bqlFull(v) {
+  // Always encode the ORIGINAL input string exactly as typed
+  return v.full || [v.rack, v.loc, v.bin].filter(Boolean).join('-');
+}
 function bqlGetColor(locId) {
-  // Use LAST alphabetic character as color key — e.g. "F" from "F182", "G" from "G182"
-  // This matches the existing Location ID Maker color system
+  // Use FIRST letter of location ID: F182 → F
   var letters = (locId || '').match(/[A-Za-z]/g);
-  var letter = letters ? letters[letters.length - 1].toUpperCase() : '';
+  var letter = letters ? letters[0].toUpperCase() : '';
   var map = {
-    A:{bg:'#9c27b0',fg:'#fff'}, // Purple
-    B:{bg:'#5aabdb',fg:'#fff'}, // Blue
-    C:{bg:'#4caf50',fg:'#fff'}, // Green
-    D:{bg:'#f5c200',fg:'#1a1a1a'}, // Yellow
-    E:{bg:'#e8500a',fg:'#fff'}, // Orange
-    F:{bg:'#e63329',fg:'#fff'}, // Red
-    G:{bg:'#9e9e9e',fg:'#fff'}, // Gray
-    H:{bg:'#009688',fg:'#fff'}, // Teal
-    I:{bg:'#e91e63',fg:'#fff'}, // Pink
-    J:{bg:'#3f51b5',fg:'#fff'}, // Indigo
-    K:{bg:'#795548',fg:'#fff'}, // Brown
-    L:{bg:'#607d8b',fg:'#fff'}, // Blue Gray
-    M:{bg:'#00bcd4',fg:'#fff'}, // Cyan
-    N:{bg:'#8bc34a',fg:'#1a1a1a'}, // Light Green
-    P:{bg:'#ff5722',fg:'#fff'}, // Deep Orange
-    Q:{bg:'#673ab7',fg:'#fff'}, // Deep Purple
-    R:{bg:'#f44336',fg:'#fff'}, // Material Red
-    S:{bg:'#2196f3',fg:'#fff'}, // Material Blue
-    T:{bg:'#009688',fg:'#fff'}, // Teal
-    U:{bg:'#ff9800',fg:'#1a1a1a'}, // Amber
-    V:{bg:'#4caf50',fg:'#fff'}, // Green
-    W:{bg:'#37474f',fg:'#fff'}, // Dark
-    X:{bg:'#d4a017',fg:'#fff'}, // Gold
-    Y:{bg:'#f5c200',fg:'#1a1a1a'}, // Yellow
-    Z:{bg:'#e63329',fg:'#fff'}  // Red
+    A:{bg:'#DC2626',fg:'#000'}, B:{bg:'#2563EB',fg:'#000'}, C:{bg:'#16a34a',fg:'#000'},
+    D:{bg:'#EA580C',fg:'#000'}, E:{bg:'#7C3AED',fg:'#000'}, F:{bg:'#CA8A04',fg:'#000'},
+    G:{bg:'#0D9488',fg:'#000'}, H:{bg:'#92400E',fg:'#000'}, I:{bg:'#DB2777',fg:'#000'},
+    J:{bg:'#0891B2',fg:'#000'}, K:{bg:'#65A30D',fg:'#000'}, L:{bg:'#4338CA',fg:'#000'},
+    M:{bg:'#881337',fg:'#000'}, N:{bg:'#1E3A5F',fg:'#000'}, O:{bg:'#713F12',fg:'#000'},
+    P:{bg:'#D97706',fg:'#000'}, Q:{bg:'#94A3B8',fg:'#000'}, R:{bg:'#E11D48',fg:'#000'},
+    S:{bg:'#0284C7',fg:'#000'}, T:{bg:'#6D28D9',fg:'#000'}, U:{bg:'#B45309',fg:'#000'},
+    V:{bg:'#059669',fg:'#000'}, W:{bg:'#475569',fg:'#000'}, X:{bg:'#E11D48',fg:'#000'},
+    Y:{bg:'#F97316',fg:'#000'}, Z:{bg:'#6B7280',fg:'#000'}
   };
-  return map[letter] || {bg:'#475569',fg:'#fff'};
+  return map[letter] || {bg:'#475569',fg:'#000'};
 }
 function bqlParseLine(line) {
   if (!line.trim()) return null;
-  var parts = line.split(/[,\t|]+/).map(function(s){ return s.trim(); }).filter(Boolean);
-  if (parts.length >= 3) return { rack:parts[0].toUpperCase(), loc:parts[1].toUpperCase(), bin:parts[2] };
-  if (parts.length === 2) return { rack:'', loc:parts[0].toUpperCase(), bin:parts[1] };
-  if (parts.length === 1) return { rack:'', loc:parts[0].toUpperCase(), bin:'' };
+  var raw = line.trim();
+  var up  = raw.toUpperCase();
+  // Format 1: Direct — P-1-A116F182 → encode original string exactly
+  var m = up.match(/^([A-Z]+-\d+-[A-Z]+)(\d+)([A-Z]\d+)$/);
+  if (m) return { rack:m[1], bin:m[2], loc:m[3], full:up };
+  // Format 2: Comma/tab/pipe separated — RACK, LOC, BIN
+  var parts = raw.split(/[,\t|]+/).map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean);
+  if (parts.length >= 3) return { rack:parts[0], loc:parts[1], bin:parts[2], full:parts[0]+parts[1]+parts[2] };
+  if (parts.length === 2) return { rack:'', loc:parts[0], bin:parts[1], full:parts[0]+parts[1] };
+  if (parts.length === 1) return { rack:'', loc:parts[0], bin:'', full:parts[0] };
   return null;
 }
 function bqlBuildLabel(v, full, forPrint) {
   var color = bqlGetColor(v.loc);
   var outer = document.createElement('div');
   outer.className = forPrint ? 'bql-print-label' : 'bql-label';
-  // Left: colored strip — rack + bin
+  // COLORED WRAPPER — left + center both sit on color bg
+  var colored = document.createElement('div');
+  colored.className = forPrint ? 'bql-pl-colored' : 'bql-label-colored';
+  colored.style.background = color.bg;
+
+  // LEFT: rack top, bin bottom — white text
   var left = document.createElement('div'); left.className = forPrint ? 'bql-pl-left' : 'bql-label-left';
-  left.style.background = color.bg;
-  var rack = document.createElement('span'); rack.className = forPrint ? 'bql-pl-rack' : 'bql-rack'; rack.textContent = v.rack; rack.style.color = color.fg;
-  var bin  = document.createElement('span'); bin.className  = forPrint ? 'bql-pl-bin'  : 'bql-bin';  bin.textContent  = v.bin;  bin.style.color  = color.fg;
-  left.appendChild(rack); left.appendChild(bin); outer.appendChild(left);
-  // Center: colored loc ID + barcode
+  var rack = document.createElement('span'); rack.className = forPrint ? 'bql-pl-rack' : 'bql-rack'; rack.textContent = v.rack; rack.style.color = bqlTextColor;
+  var bin  = document.createElement('span'); bin.className  = forPrint ? 'bql-pl-bin'  : 'bql-bin';  bin.textContent  = v.bin;  bin.style.color  = bqlTextColor;
+  left.appendChild(rack); left.appendChild(bin); colored.appendChild(left);
+
+  // CENTER: locid (white) + barcode (white bg strip, full width)
   var ctr = document.createElement('div'); ctr.className = forPrint ? 'bql-pl-center' : 'bql-label-center';
-  var locEl = document.createElement('span'); locEl.className = forPrint ? 'bql-pl-locid' : 'bql-locid'; locEl.textContent = v.loc;
+  var locEl = document.createElement('span'); locEl.className = forPrint ? 'bql-pl-locid' : 'bql-locid'; locEl.textContent = v.loc; locEl.style.color = bqlTextColor; locEl.style.textShadow='none';
   var bcWrap = document.createElement('div'); bcWrap.className = forPrint ? 'bql-pl-barcode' : 'bql-barcode-wrap';
   var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); bcWrap.appendChild(svg);
-  ctr.appendChild(locEl); ctr.appendChild(bcWrap); outer.appendChild(ctr);
-  // Arrow (colored)
-  var arr = document.createElement('div'); arr.className = forPrint ? 'bql-pl-arrow' : 'bql-label-right-arrow'; arr.textContent = '↑'; outer.appendChild(arr);
-  // QR
+  ctr.appendChild(locEl); ctr.appendChild(bcWrap); colored.appendChild(ctr);
+  outer.appendChild(colored);
+
+  // ARROW — white bg, colored arrow
+  var arr = document.createElement('div'); arr.className = forPrint ? 'bql-pl-arrow' : 'bql-label-right-arrow';
+  arr.textContent = '↑'; arr.style.color = color.bg; outer.appendChild(arr);
+
+  // QR — white bg
   var qrWrap = document.createElement('div'); qrWrap.className = forPrint ? 'bql-pl-qr' : 'bql-label-right-qr'; outer.appendChild(qrWrap);
   setTimeout(function() {
-    try { if (typeof JsBarcode !== 'undefined' && full) JsBarcode(svg, full, { format:'CODE128', displayValue:false, margin:0, background:'#fff', lineColor:'#1e1b4b' }); } catch(e) {}
+    try {
+    if (typeof JsBarcode !== 'undefined' && full) {
+      JsBarcode(svg, full, { format:'CODE128', displayValue:false, margin:0, marginTop:0, marginBottom:0, marginLeft:0, marginRight:0, background:'transparent', lineColor:'#000000' });
+      // Override fixed width JsBarcode sets so SVG fills container
+      svg.removeAttribute('width');
+      svg.setAttribute('width','100%');
+      svg.setAttribute('preserveAspectRatio','none');
+    }
+  } catch(e) {}
     try { if (typeof QRCode !== 'undefined' && full) new QRCode(qrWrap, { text:full, width:forPrint?74:88, height:forPrint?74:88, colorDark:'#1e1b4b', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M }); } catch(e) {}
   }, 0);
   return outer;
 }
-function bqlBulkPreview() {
-  var raw = (document.getElementById('bql-bulk-input').value || '').split('\n');
+function bqlHandleFile(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    // Strip BOM if present
+    text = text.replace(/^\uFEFF/, '');
+    // Convert Excel-style line endings
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // If it's a TSV (Excel copy-paste), convert tabs to commas
+    var lines = text.split('\n').filter(function(l){ return l.trim(); });
+    // Skip header row if first cell looks like text (not a location format)
+    var firstCell = lines[0] ? lines[0].split(/[,\t|]/)[0].trim() : '';
+    var looksLikeHeader = /^(rack|location|bin|prefix|id|name)/i.test(firstCell);
+    if (looksLikeHeader) lines = lines.slice(1);
+    var ta = document.getElementById('bql-bulk-input');
+    if (ta) { ta.value = lines.join('\n'); bqlBulkPreview(); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+function bqlBulkPreview() {  var raw = (document.getElementById('bql-bulk-input').value || '').split('\n');
   var items = raw.map(bqlParseLine).filter(Boolean);
   var wrap = document.getElementById('bql-bulk-preview');
   var wrapOuter = document.getElementById('bql-bulk-preview-wrap');
@@ -9991,8 +10041,9 @@ function bqlBulkPDF() {
   var raw = (document.getElementById('bql-bulk-input').value || '').split('\n');
   var items = raw.map(bqlParseLine).filter(Boolean);
   if (!items.length) { showToast('Paste at least one location first.'); return; }
-  showToast('⏳ Preparing PDF — save as PDF from the print dialog…');
+  showToast('⏳ Building PDF — each page rendered separately…');
   bqlLoadLibs(function() {
+    // Build print area first
     var printEl = document.getElementById('bql-print-area');
     printEl.innerHTML = ''; printEl.style.display = 'block';
     var PER = 24, pages = Math.ceil(items.length / PER), made = 0;
@@ -10004,10 +10055,68 @@ function bqlBulkPDF() {
       for (var i = 0; i < cnt; i++) { var v=items[made], full=bqlFull(v); grid.appendChild(bqlBuildLabel(v, full, true)); made++; }
       sheet.appendChild(grid); printEl.appendChild(sheet);
     }
+    // Wait for barcodes + QR codes to render, then export
     setTimeout(function() {
-      window.print();
-      setTimeout(function() { printEl.style.display='none'; printEl.innerHTML=''; }, 800);
-    }, 1400);
+      (async function() {
+        try {
+          printEl.style.position = 'fixed';
+          printEl.style.left = '0';
+          printEl.style.top = '0';
+          printEl.style.width = '794px';
+          printEl.style.zIndex = '-1';
+          printEl.style.background = '#fff';
+
+          var { jsPDF } = window.jspdf;
+          var pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+          var pgW = pdf.internal.pageSize.getWidth();
+          var pgH = pdf.internal.pageSize.getHeight();
+
+          var sheets = printEl.querySelectorAll('.bql-sheet');
+          if (!sheets.length) sheets = [printEl];
+
+          for (var pi = 0; pi < sheets.length; pi++) {
+            var sh = sheets[pi];
+            var orig = sh.style.pageBreakBefore;
+            sh.style.pageBreakBefore = 'auto';
+
+            var canvas = await html2canvas(sh, {
+              scale: 4,
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              logging: false,
+              width: 1240,
+              windowWidth: 1240,
+              imageTimeout: 0,
+              x: 0, y: 0
+            });
+
+            sh.style.pageBreakBefore = orig;
+
+            var pgW = pdf.internal.pageSize.getWidth();
+            var pgH = pdf.internal.pageSize.getHeight();
+            var imgW = pgW;
+            var imgH = (canvas.height * imgW) / canvas.width;
+            if (pi > 0) pdf.addPage();
+            if (imgH > pgH) { var sc = pgH/imgH; imgW *= sc; imgH = pgH; }
+
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, imgW, imgH);
+          }
+
+          pdf.save('BQL_Labels_' + new Date().toISOString().slice(0,10) + '.pdf');
+          showToast('✅ PDF exported!');
+        } catch(e) {
+          showToast('PDF error: ' + e.message);
+        } finally {
+          printEl.style.position = '';
+          printEl.style.left = '';
+          printEl.style.top = '';
+          printEl.style.width = '';
+          printEl.style.zIndex = '';
+          printEl.style.display = 'none';
+          printEl.innerHTML = '';
+        }
+      })();
+    }, 1400); // wait for QR/barcode async renders
   });
 }
 
