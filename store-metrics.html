@@ -2519,7 +2519,7 @@ function smCallout(data,rows){
     if(!d.orders) return false;
     if(d.store==='QAA1') return false;
     var lsPct=d.orders>0?(d.ls/d.orders*100):0;
-    return d.ibSlaTrans<99 || d.ibTph<140 || lsPct>1;
+    return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1;
   });
 
 
@@ -2542,10 +2542,10 @@ function smCallout(data,rows){
     var col=SC[d.store]||'#EF4444';
     var chips='';
 
-    // IB SLA TRANS — only if below 99%
-    if(d.ibSlaTrans<99){
+    // IB SLA TRANS — only if below 90%
+    if(d.ibSlaTrans<90){
       var slaC='#EF4444';
-      chips+=chip('IB SLA TRANS', d.ibSlaTrans.toFixed(2)+'%', slaC, 'rgba(239,68,68,0.12)', 'rgba(239,68,68,0.40)', 'IB Transhipment SLA — tgt ≥99%');
+      chips+=chip('IB SLA TRANS', d.ibSlaTrans.toFixed(2)+'%', slaC, 'rgba(239,68,68,0.12)', 'rgba(239,68,68,0.40)', 'IB Transhipment SLA — tgt ≥90%');
     }
 
     // IB TPH — only if below 140
