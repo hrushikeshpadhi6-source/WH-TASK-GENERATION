@@ -2514,11 +2514,12 @@ function smCallout(data,rows){
     return Object.assign({},d,{ibSlaTrans:ibSlaTrans,dateStr:dateStr});
   });
 
-  // Flag stores: IB SLA TRANS < 99% OR IB TPH < 140. Exclude QAA1.
+  // Flag stores: IB SLA TRANS < 99% OR IB TPH < 140 OR LateSLAM rate > 1%. Exclude QAA1.
   var flagged=enriched.filter(function(d){
     if(!d.orders) return false;
     if(d.store==='QAA1') return false;
-    return d.ibSlaTrans<99 || d.ibTph<140;
+    var lsPct=d.orders>0?(d.ls/d.orders*100):0;
+    return d.ibSlaTrans<99 || d.ibTph<140 || lsPct>1;
   });
 
 
@@ -2555,6 +2556,15 @@ function smCallout(data,rows){
       chips+=chip('IB TPH', d.ibTph.toFixed(0), tphC, tphBg, tphBd, 'IB TPH — tgt ≥140');
     }
 
+    // LateSLAM — only if rate > 1%
+    var lsPctRow=d.orders>0?(d.ls/d.orders*100):0;
+    if(lsPctRow>1){
+      var lsC2=lsPctRow<=1.5?'#F59E0B':'#EF4444';
+      var lsBg2=lsPctRow<=1.5?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
+      var lsBd2=lsPctRow<=1.5?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
+      chips+=chip('LateSLAM', d.ls+' ('+lsPctRow.toFixed(1)+'%)', lsC2, lsBg2, lsBd2, 'Late Slam — tgt <1%');
+    }
+
     // LS v2 — only if > 1%
     if(d.lsV2Pct>1){
       var ls2C=d.lsV2Pct<=1.5?'#F59E0B':'#EF4444';
@@ -2586,7 +2596,11 @@ function smCallout(data,rows){
   var mostDam=remValid.length?remValid.reduce(function(a,b){ return (b.damRem||0)>(a.damRem||0)?b:a; }):null;
   var mostQual=remValid.length?remValid.reduce(function(a,b){ return (b.qualRem||0)>(a.qualRem||0)?b:a; }):null;
 
-  if(!flagged.length && !mostDam && !mostQual){ el.innerHTML=''; return; }
+  // Expiry donation > 0
+  var donateStores=remValid.filter(function(d){ return (d.donate||0)>0; });
+  var mostDonate=donateStores.length?donateStores.reduce(function(a,b){ return (b.donate||0)>(a.donate||0)?b:a; }):null;
+
+  if(!flagged.length && !mostDam && !mostQual && !mostDonate){ el.innerHTML=''; return; }
 
   function remRow(label, badgeColor, borderClr, bgClr, d, val){
     if(!d) return '';
@@ -2602,10 +2616,11 @@ function smCallout(data,rows){
     '</div>';
   }
 
-  var remHtml=(mostDam||mostQual)?
+  var remHtml=(mostDam||mostQual||mostDonate)?
     '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">'+
       '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">📦 Removal Highlights</div>'+
       '<div style="display:flex;flex-direction:column;gap:8px;">'+
+        (mostDonate ? remRow('Expiry Donation', '#8B5CF6', 'rgba(139,92,246,0.40)', 'rgba(139,92,246,0.05)', mostDonate, mostDonate.donate||0) : '')+
         remRow('Most Damaged Removal', '#EF4444', 'rgba(239,68,68,0.40)', 'rgba(239,68,68,0.05)', mostDam, mostDam?(mostDam.damRem||0):0)+
         remRow('Most Quality Removal',  '#2563EB', 'rgba(37,99,235,0.40)',  'rgba(37,99,235,0.05)',  mostQual, mostQual?(mostQual.qualRem||0):0)+
       '</div>'+
