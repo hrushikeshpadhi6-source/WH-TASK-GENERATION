@@ -2401,7 +2401,9 @@ function smLeaderboard(rows){
     var utr    = smUtrCount(s);
     var utrRate= orders>0?(utr/orders*100):0;
 
-    var d = {store:s, sla:sla, pts:pts, ibTph:ibTph, voc:voc, utr:utr, utrRate:utrRate,
+    var slaTRib = avg(sr.map(function(r){return gNum(r,['IB SLA TRANS','IB SLA Trans','R']);}));
+    var ibSlaTrans = toP(slaTRib);
+    var d = {store:s, sla:sla, pts:pts, ibTph:ibTph, ibSlaTrans:ibSlaTrans, voc:voc, utr:utr, utrRate:utrRate,
       lsV2:lsV2, lsV2Pct:lsV2Pct,
       inbound:sum(sr.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);})),
       transs: sum(sr.map(function(r){return gNum(r,['TRANSS','Transs','E']);})),
@@ -2462,6 +2464,9 @@ function smLeaderboard(rows){
     var utrC   = d.utrRate<=VOC_UTR_TARGET?'#10B981':d.utrRate<=VOC_UTR_TARGET*2?'#F59E0B':'#EF4444';
     var lowVol = d.orders<100;
     var medal  = lowVol ? '<span style="font-size:13px;opacity:.6;">▫︎</span>' : (medals[i]||'#'+(i+1));
+    var lsPctV2 = d.orders>0?(d.ls/d.orders*100):0;
+    var isSafe = !lowVol && d.ibSlaTrans>=90 && d.ibTph>=140 && lsPctV2<=1;
+    var safeBadge = isSafe ? ' <span title="All KPIs in safe zone" style="font-family:\'Inter\',monospace;font-size:9px;font-weight:800;letter-spacing:.3px;color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:6px;padding:2px 7px;margin-left:7px;vertical-align:middle;white-space:nowrap;">✓ SAFE</span>' : '';
     return '<div class="lb-row" style="--sc:'+col+';'+(lowVol?'opacity:.92;':'')+'">'+
       '<div class="lb-head">'+
         '<div class="lb-medal">'+medal+'</div>'+
@@ -2593,7 +2598,7 @@ function smCallout(data,rows){
 
   // Removal highlights
   var remValid=data.filter(function(d){ return d.orders>0 && d.store!=='QAA1'; });
-  var mostDam=remValid.length?remValid.reduce(function(a,b){ return (b.damRem||0)>(a.damRem||0)?b:a; }):null;
+  var mostDam=remValid.filter(function(d){ return (d.damRem||0)>=2; }).length ? remValid.filter(function(d){ return (d.damRem||0)>=2; }).reduce(function(a,b){ return (b.damRem||0)>(a.damRem||0)?b:a; }) : null;
   var mostQual=remValid.length?remValid.reduce(function(a,b){ return (b.qualRem||0)>(a.qualRem||0)?b:a; }):null;
 
   // Expiry donation > 0
@@ -2601,6 +2606,12 @@ function smCallout(data,rows){
   var mostDonate=donateStores.length?donateStores.reduce(function(a,b){ return (b.donate||0)>(a.donate||0)?b:a; }):null;
 
   if(!flagged.length && !mostDam && !mostQual && !mostDonate){ el.innerHTML=''; return; }
+
+  // Safe zone stores — pass all thresholds
+  var safeStores=data.filter(function(d){
+    var lp=d.orders>0?(d.ls/d.orders*100):0;
+    return d.orders>=100 && d.store!=='QAA1' && (d.ibSlaTrans||0)>=90 && d.ibTph>=140 && lp<=1 && (d.damRem||0)===0 && (d.donate||0)===0;
+  });
 
   function remRow(label, badgeColor, borderClr, bgClr, d, val){
     if(!d) return '';
@@ -2637,6 +2648,19 @@ function smCallout(data,rows){
         '<div class="callout-rows">'+rowsHtml+'</div>'
         : '')+
       remHtml+
+      (safeStores.length?
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">'+
+          '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#10B981;margin-bottom:8px;">✅ Safe Zone Stores</div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;">'+
+            safeStores.map(function(d){
+              var c=SC[d.store]||'#10B981';
+              return '<div style="display:flex;align-items:center;gap:6px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.30);border-left:4px solid '+c+';border-radius:10px;padding:7px 14px;">'+
+                '<span style="font-size:14px;font-weight:800;font-family:\'Inter\',monospace;color:'+c+';">'+d.store+'</span>'+
+                '<span style="font-size:9px;font-weight:800;color:#10B981;letter-spacing:.5px;">✓ SAFE</span>'+
+              '</div>';
+            }).join('')+
+          '</div>'+
+        '</div>' : '')+
     '</div>';
 }
 
