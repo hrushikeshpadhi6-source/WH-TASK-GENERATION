@@ -792,9 +792,9 @@ to{width:65%;} }
 /* Colored wrapper: left + center share the color */
 .bql-label-colored,.bql-pl-colored { display:flex; flex:1; }
 /* Left: rack top, bin bottom — white text on color */
-.bql-label-left,.bql-pl-left { display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:4px 8px 10px 8px; min-width:96px; max-width:96px; }
-.bql-label-left .bql-rack,.bql-pl-left .bql-pl-rack { font-size:22px; font-weight:900; line-height:1; margin-top:14px; text-align:center; width:100%; color:#fff; }
-.bql-label-left .bql-bin,.bql-pl-left .bql-pl-bin   { font-size:52px; font-weight:900; line-height:1; margin-bottom:10px; text-align:center; width:100%; color:#fff; }
+.bql-label-left,.bql-pl-left { display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:4px 6px 10px 6px; min-width:96px; max-width:96px; }
+.bql-label-left .bql-rack,.bql-pl-left .bql-pl-rack { font-size:18px; font-weight:900; line-height:1.1; margin-top:10px; text-align:center; width:100%; word-break:break-word; overflow-wrap:break-word; white-space:normal; }
+.bql-label-left .bql-bin,.bql-pl-left .bql-pl-bin   { font-size:44px; font-weight:900; line-height:1; margin-bottom:10px; text-align:center; width:100%; }
 /* Center: locid white, barcode on white bg */
 .bql-label-center,.bql-pl-center { flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:6px 0 4px 2px; overflow:hidden; border-left:2px solid rgba(255,255,255,0.35); }
 .bql-label-center .bql-locid,.bql-pl-center .bql-pl-locid { font-size:46px; font-weight:900; color:#fff; line-height:1; text-align:center; letter-spacing:2px; text-shadow:0 1px 4px rgba(0,0,0,0.2); }
@@ -4049,6 +4049,12 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
           <span style="font-size:12px;font-weight:700;color:#3d3a6b;">Text Color:</span>
           <button id="bql-txt-black" onclick="bqlSetTextColor('black')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #1a1a1a;background:#1a1a1a;color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬛ Black</button>
           <button id="bql-txt-white" onclick="bqlSetTextColor('white')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #ccc;background:#fff;color:#555;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬜ White</button>
+        </div>
+        <!-- Color mode -->
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:12px;font-weight:700;color:#3d3a6b;">Label Style:</span>
+          <button id="bql-mode-color" onclick="bqlSetColorMode('color')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #4f46e5;background:#4f46e5;color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🎨 Multicolor</button>
+          <button id="bql-mode-mono" onclick="bqlSetColorMode('mono')" style="padding:7px 16px;border-radius:6px;border:1.5px solid #ccc;background:#fff;color:#555;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">⬜ Monochrome</button>
         </div>
         <span style="font-size:11px;color:#9ca3af;">Columns: Rack, Location, Bin (header optional)</span>
       </div>
@@ -9901,6 +9907,15 @@ function bqlLoadLibs(cb) {
   s2.onload = done; s2.onerror = done; document.head.appendChild(s2);
 }
 var bqlTextColor = '#000';
+var bqlColorMode = 'color';
+function bqlSetColorMode(mode) {
+  bqlColorMode = mode;
+  var cBtn = document.getElementById('bql-mode-color');
+  var mBtn = document.getElementById('bql-mode-mono');
+  if (cBtn) { cBtn.style.background=mode==='color'?'#4f46e5':'#fff'; cBtn.style.color=mode==='color'?'#fff':'#555'; cBtn.style.borderColor=mode==='color'?'#4f46e5':'#ccc'; }
+  if (mBtn) { mBtn.style.background=mode==='mono'?'#4f46e5':'#fff'; mBtn.style.color=mode==='mono'?'#fff':'#555'; mBtn.style.borderColor=mode==='mono'?'#4f46e5':'#ccc'; }
+  bqlBulkPreview();
+}
 function bqlSetTextColor(c) {
   bqlTextColor = c === 'white' ? '#fff' : '#000';
   var bBtn = document.getElementById('bql-txt-black');
@@ -9934,7 +9949,10 @@ function bqlParseLine(line) {
   if (!line.trim()) return null;
   var raw = line.trim();
   var up  = raw.toUpperCase();
-  // Format 1: Direct — P-1-A116F182 → encode original string exactly
+  // Format 1a: HAZ/HRV prefix — HAZ-A106A110, HRV-A205C320, HRVA106A110 etc.
+  var mHaz = up.match(/^((HAZ|HRV)-?[A-Z]+)(\d+)([A-Z]\d+)$/);
+  if (mHaz) return { rack:mHaz[1], bin:mHaz[3], loc:mHaz[4], full:up };
+  // Format 1b: Standard P-1-A116F182 (unchanged)
   var m = up.match(/^([A-Z]+-\d+-[A-Z]+)(\d+)([A-Z]\d+)$/);
   if (m) return { rack:m[1], bin:m[2], loc:m[3], full:up };
   // Format 2: Comma/tab/pipe separated — RACK, LOC, BIN
@@ -9948,15 +9966,24 @@ function bqlBuildLabel(v, full, forPrint) {
   var color = bqlGetColor(v.loc);
   var outer = document.createElement('div');
   outer.className = forPrint ? 'bql-print-label' : 'bql-label';
-  // COLORED WRAPPER — left + center both sit on color bg
+  // COLORED WRAPPER — left + center both sit on color bg (or white in mono mode)
   var colored = document.createElement('div');
   colored.className = forPrint ? 'bql-pl-colored' : 'bql-label-colored';
-  colored.style.background = color.bg;
+  var isMono = (typeof bqlColorMode !== 'undefined' && bqlColorMode === 'mono');
+  colored.style.background = isMono ? '#fff' : color.bg;
+  if (isMono) colored.style.border = '1px solid #ddd';
 
   // LEFT: rack top, bin bottom — white text
   var left = document.createElement('div'); left.className = forPrint ? 'bql-pl-left' : 'bql-label-left';
   var rack = document.createElement('span'); rack.className = forPrint ? 'bql-pl-rack' : 'bql-rack'; rack.textContent = v.rack; rack.style.color = bqlTextColor;
   var bin  = document.createElement('span'); bin.className  = forPrint ? 'bql-pl-bin'  : 'bql-bin';  bin.textContent  = v.bin;  bin.style.color  = bqlTextColor;
+  // AUTO-FIT rack font size based on text length
+  var rackLen = (v.rack || '').length;
+  var rackFs = rackLen <= 5 ? 18 : rackLen <= 7 ? 15 : rackLen <= 9 ? 12 : 10;
+  rack.style.fontSize = rackFs + 'px';
+  var binLen = (v.bin || '').length;
+  var binFs = binLen <= 2 ? 44 : binLen <= 3 ? 40 : binLen <= 4 ? 32 : 26;
+  bin.style.fontSize = binFs + 'px';
   left.appendChild(rack); left.appendChild(bin); colored.appendChild(left);
 
   // CENTER: locid (white) + barcode (white bg strip, full width)
