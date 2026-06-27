@@ -943,12 +943,13 @@ tbody tr:hover{background:var(--row-hover);}
     <div class="score-rubric">
         <div class="sr-head">Weighted Scorecard <span>— 6 KPIs. Final Score = total points out of <b>100</b>. WHL/WHD excluded from score (separate dashboard).</span></div>
       <div class="sr-grid">
-        <div class="sr-item"><span class="sr-w" style="color:#F59E0B;">20</span><div class="sr-tx"><b>Late Slam v2</b><i>&lt;1% →20 · ≤1.5% →10 · else 0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#7C3AED;">20</span><div class="sr-tx"><b>VOC / UTR</b><i>≤0.010% →20 · ≤0.020% →10 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#F59E0B;">20</span><div class="sr-tx"><b>Late Slam v2</b><i>≤3% →20 · ≤4% →10 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#7C3AED;">10</span><div class="sr-tx"><b>VOC / UTR</b><i>≤0.010% →10 · ≤0.020% →5 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#EF4444;">10</span><div class="sr-tx"><b>Damage Removal</b><i>0–2 →10 · 3–7 →5 · 8–15 →2.5 · &gt;15 →0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#0EA5E9;">15</span><div class="sr-tx"><b>IB TPH</b><i>&gt;140 →15 · ≥126 →7.5 · else 0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#c79a4b;">15</span><div class="sr-tx"><b>Skip</b><i>0 →15 · 1–3 →7.5 · &gt;3 →0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#EF4444;">15</span><div class="sr-tx"><b>Short</b><i>0 →15 · 1–3 →7.5 · &gt;3 →0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#10B981;">15</span><div class="sr-tx"><b>SLA</b><i>≥99% →15 · ≥98% →7.5 · ≥97% →3.75 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#10B981;">15</span><div class="sr-tx"><b>SLA</b><i>≥95% →15 · ≥90% →7.5 · else 0</i></div></div>
         <div class="sr-item sr-perfect"><span class="sr-w" style="color:#10B981;">/100</span><div class="sr-tx"><b>Final Score</b><i>sum of all 6 KPIs</i></div></div>
       </div>
       <div class="sr-note"><b>Final Score = sum of the 6 KPIs (max 100).</b> WHL/WHD are tracked in the Warehouse Loss section — not part of this score. Stores with <b>no orders aren't ranked</b>; under <b>100 orders</b> can't take a top spot.</div>
@@ -1695,7 +1696,7 @@ function smKPI(rows){
     {icon:'⚡',lbl:'IB TPH',         val:ibTph.toFixed(1),    sub:'inbound/hr avg',     col:'#0EA5E9'},
     {icon:'🚀',lbl:'OB TPH',         val:obTph.toFixed(1),    sub:'outbound/hr avg',    col:'#2563EB'},
     {icon:'🚨',lbl:'Late Slams',     val:fmt(lateSlam),       sub:'LS Rate: '+lsRate,   col:lsCol},
-    {icon:'⚡',lbl:'LS V2',     val:fmt(lsV2),           sub:'Rate: '+lsV2Rate.toFixed(2)+'%  ·  tgt ≤1%', col:lsV2Col},
+    {icon:'⚡',lbl:'LS V2',     val:fmt(lsV2),           sub:'Rate: '+lsV2Rate.toFixed(2)+'%  ·  tgt ≤3%', col:lsV2Col},
     {icon:'✅',lbl:'Avg SLA %',      val:avgSla.toFixed(2)+'%',sub:avgSla>=99?'✅ On Target':'⚠️ Below Target',col:slaCol},
     {icon:'⏭️',lbl:'Skip',          val:fmt(skip),           sub:'skipped orders',     col:skipCol},
     {icon:'📭',lbl:'Short',          val:fmt(short),          sub:'short orders',       col:shortCol},
@@ -2049,24 +2050,24 @@ function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return v.
 //   Skip           15    0 →15 · 1–3 →7.5 · >3 →0
 //   Short          15    0 →15 · 1–3 →7.5 · >3 →0
 //   SLA            15    ≥99% →15 · ≥98% →7.5 · ≥97% →3.75 · else 0
-var SCORE_MAX = 20 + 20 + 15 + 15 + 15 + 15; // 100 pts — WHL/WHD removed; redistributed to IB TPH/Skip/Short/SLA
-function lsV2Points(pct){ if(pct<1) return 20; if(pct<=1.5) return 10; return 0; }
+var SCORE_MAX = 20 + 10 + 10 + 15 + 15 + 15 + 15; // 100 pts — LSV2:20 VOC:10 DAM:10 TPH:15 Skip:15 Short:15 SLA:15
+function lsV2Points(pct){ if(pct<=3) return 20; if(pct<=4) return 10; return 0; }
 function tphPoints(t){ if(t>140) return 15; if(t>=126) return 7.5; return 0; }
-function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 20; if(rate<=VOC_UTR_TARGET*2) return 10; return 0; }
+function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 10; if(rate<=VOC_UTR_TARGET*2) return 5; return 0; }
 function skipPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
 function shortPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
-function slaPoints(p){ if(p>=99) return 15; if(p>=98) return 7.5; if(p>=97) return 3.75; return 0; }
-function whlPoints(v){ if(v===null||v===undefined) return 0; if(v<0.1) return 10; if(v<0.5) return 2.5; return 0; }  // kept for NL colour bands only
-function whPoints(v){ if(v===null||v===undefined) return 0; if(v>-0.1) return 10; if(v>-0.5) return 2.5; return 0; }  // kept for NL colour bands only
+function slaPoints(p){ if(p>=95) return 15; if(p>=90) return 7.5; return 0; }
+function damPoints(n){ if(n<=2) return 10; if(n<=7) return 5; if(n<=15) return 2.5; return 0; }
 // Weighted point breakdown for a store data row
 function smScoreParts(d){
   return [
-    {k:'Late Slam v2', max:20, pts:lsV2Points(d.lsV2Pct||0), detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt <1%)'},
-    {k:'VOC / UTR',    max:20, pts:vocPoints(d.utrRate||0),  detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
-    {k:'IB TPH',       max:15, pts:tphPoints(d.ibTph||0),    detail:(d.ibTph||0).toFixed(0)+' (>140 =15)'},
-    {k:'Skip',         max:15, pts:skipPoints(d.skip||0),    detail:(d.skip||0)+' (0 =15)'},
-    {k:'Short',        max:15, pts:shortPoints(d.short||0),  detail:(d.short||0)+' (0 =15)'},
-    {k:'SLA',          max:15, pts:slaPoints(d.sla||0),      detail:(d.sla||0).toFixed(2)+'% (≥99% =15)'}
+    {k:'Late Slam v2',    max:20, pts:lsV2Points(d.lsV2Pct||0),  detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
+    {k:'VOC / UTR',       max:10, pts:vocPoints(d.utrRate||0),   detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
+    {k:'Damage Removal',  max:10, pts:damPoints(d.damRem||0),    detail:(d.damRem||0)+' (0–2 =10, 3–7 =5, 8–15 =2.5, >15 =0)'},
+    {k:'IB TPH',          max:15, pts:tphPoints(d.ibTph||0),     detail:(d.ibTph||0).toFixed(0)+' (>140 =15)'},
+    {k:'Skip',            max:15, pts:skipPoints(d.skip||0),     detail:(d.skip||0)+' (0 =15)'},
+    {k:'Short',           max:15, pts:shortPoints(d.short||0),   detail:(d.short||0)+' (0 =15)'},
+    {k:'SLA',             max:15, pts:slaPoints(d.sla||0),       detail:(d.sla||0).toFixed(2)+'% (≥95% =15)'}
   ];
 }
 function smScore(d){
@@ -2434,11 +2435,17 @@ function smLeaderboard(rows){
     // Show all stores with data rows (0-order stores appear ranked last)
     return true;
   }).sort(function(a,b){
-    // Low-volume stores (<100 orders) are never eligible for the top spots —
-    // they always sort below any store that meets the 100-order minimum.
+    // Low-volume stores (<100 orders) always rank below qualifying stores
     var qa=a.orders>=100?1:0, qb=b.orders>=100?1:0;
     if(qa!==qb) return qb-qa;
-    return b.score-a.score;
+    // Tied score? Apply tiebreaker chain:
+    // 1. Higher SLA  2. Lower LS V2%  3. Higher IB TPH  4. Lower UTR rate
+    if(b.score!==a.score) return b.score-a.score;
+    if(b.sla!==a.sla) return b.sla-a.sla;
+    var aLs=a.lsV2Pct||0, bLs=b.lsV2Pct||0;
+    if(aLs!==bLs) return aLs-bLs;
+    if(b.ibTph!==a.ibTph) return b.ibTph-a.ibTph;
+    return (a.utrRate||0)-(b.utrRate||0);
   });
 
   var medals=['🥇','🥈','🥉'];
@@ -2524,7 +2531,7 @@ function smCallout(data,rows){
     if(!d.orders) return false;
     if(d.store==='QAA1') return false;
     var lsPct=d.orders>0?(d.ls/d.orders*100):0;
-    return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1;
+    return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1 || d.lsV2Pct>3;
   });
 
 
@@ -2570,12 +2577,12 @@ function smCallout(data,rows){
       chips+=chip('LateSLAM', d.ls+' ('+lsPctRow.toFixed(1)+'%)', lsC2, lsBg2, lsBd2, 'Late Slam — tgt <1%');
     }
 
-    // LS v2 — only if > 1%
-    if(d.lsV2Pct>1){
-      var ls2C=d.lsV2Pct<=1.5?'#F59E0B':'#EF4444';
-      var ls2Bg=d.lsV2Pct<=1.5?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
-      var ls2Bd=d.lsV2Pct<=1.5?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
-      chips+=chip('LS v2', d.lsV2+' ('+d.lsV2Pct.toFixed(2)+'%)', ls2C, ls2Bg, ls2Bd, 'Late Slam v2 — tgt <1%');
+    // LS v2 — flag if > 3%
+    if(d.lsV2Pct>3){
+      var ls2C=d.lsV2Pct<=4?'#F59E0B':'#EF4444';
+      var ls2Bg=d.lsV2Pct<=4?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
+      var ls2Bd=d.lsV2Pct<=4?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
+      chips+=chip('LS v2', d.lsV2+' ('+d.lsV2Pct.toFixed(2)+'%)', ls2C, ls2Bg, ls2Bd, 'Late Slam v2 — tgt ≤3%');
     }
 
     // Skip / Short — only if > 0
@@ -2834,9 +2841,17 @@ function smRenderUTR(rows){
       sIbTph:sIbTph,sObTph:sObTph,sSla:sSla,hasOrders:hasOrders,sLsPct:sLsPct,sLsV2Pct:sLsV2Pct,
       rate:rate,score:score};
   });
-  // Rank stores that have orders — best score first, tiebreak on lower UTR rate.
+  // Rank stores — best score first. Tiebreaker chain (all at same score):
+  // 1. Higher SLA  2. Lower LS V2 %  3. Higher IB TPH  4. Lower UTR rate
   var ranked=sdata.filter(function(d){return d.hasOrders;}).slice()
-    .sort(function(a,b){return (b.score-a.score)||(a.rate-b.rate);});
+    .sort(function(a,b){
+      if(b.score!==a.score) return b.score-a.score;
+      if(b.sla!==a.sla)    return b.sla-a.sla;
+      var aLs=a.lsV2Pct||0, bLs=b.lsV2Pct||0;
+      if(aLs!==bLs)        return aLs-bLs;
+      if(b.ibTph!==a.ibTph) return b.ibTph-a.ibTph;
+      return a.rate-b.rate;
+    });
   ranked.forEach(function(d,i){ d.rank=i+1; });
   var totRanked=ranked.length;
   // Display best→worst, no-order stores last.
