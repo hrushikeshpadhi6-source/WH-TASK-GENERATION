@@ -1944,7 +1944,7 @@ function markDuplicates(rows) {
 }
 
 /* Records that count toward metrics = current view minus flagged duplicates. */
-function activeView() { return S.view.filter(r => !r._dup); }
+function activeView() { return S.view.filter(r => !r._dup && r._cat !== 'cancelled'); }
 
 /* ── derive Category→Description map from actual data (keeps dropdown true to sheet) ── */
 function rebuildCatDescMap(rows) {
@@ -2192,14 +2192,13 @@ function trendChip(deltaPct, invert) {
 
 function renderKpis() {
   const view = activeView();
-  const cancelled = view.filter(r => (r._cat || D.complaintCat(r)) === 'cancelled').length;
   const k = computeKpis(view);
-  const vocTotal = k.total - cancelled;
+  const cancelledInView = S.view.filter(r => !r._dup && r._cat === 'cancelled').length;
   const cards = [
     { cls: 'is-neutral', label: 'Total VOC',
-      val: vocTotal,
-      foot: cancelled ? num(k.total) + ' − ' + num(cancelled) + ' cancelled = ' + num(vocTotal) + ' VOC' : 'Records in current view',
-      sub: cancelled ? num(cancelled) + ' cancelled orders excluded' : '' },
+      val: k.total,
+      foot: cancelledInView ? num(k.total + cancelledInView) + ' − ' + num(cancelledInView) + ' cancelled = ' + num(k.total) + ' VOC' : 'Records in current view',
+      sub: cancelledInView ? num(cancelledInView) + ' cancelled orders excluded' : '' },
     { cls: 'is-danger',  label: 'UTR Ops Controllable', val: k.utr,  foot: 'QC · Picker · Expiry misses' },
     { cls: 'is-warning', label: 'OTR Ops Controllable', val: k.otr,  foot: 'Delivery / on-road' },
     { cls: 'is-danger',  label: 'Picker Mistakes',  val: k.picker,   foot: 'Ops Controllable · Picker' },
@@ -2250,7 +2249,7 @@ function renderActiveFilterBar() {
     '<span class="afb-period' + (active ? ' hot' : '') + '">' + esc(period) + '</span>' +
     extras.map(e => '<span class="afb-chip"><b>' + esc(e[0]) + '</b> ' + esc(e[1]) + '</span>').join('') +
     '<span class="afb-spacer"></span>' +
-    '<span class="afb-count"><b>' + num(count) + '</b> VOC · duplicates excluded</span>' +
+    '<span class="afb-count"><b>' + num(count) + '</b> VOC · duplicates &amp; cancelled excluded</span>' +
     (active || extras.length ? '<button id="afbClear" class="afb-clear" type="button">Clear all</button>' : '');
   const cb = document.getElementById('afbClear'); if (cb) cb.onclick = () => clearFilters();
 }
@@ -3938,7 +3937,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const catOf = r => r._cat || D.complaintCat(r);
   const rcaOf = r => (String(r.issueDesc || '').trim() || 'Untriaged / No RCA');
-  function rows() { return V.activeView ? V.activeView() : (V.S ? V.S.view : []); }
+  function rows() {
+    const base = V.activeView ? V.activeView() : (V.S ? V.S.view.filter(r => !r._dup) : []);
+    const cancelled = V.S ? V.S.view.filter(r => !r._dup && r._cat === 'cancelled') : [];
+    return [...base, ...cancelled];
+  }
   // Active period label for the header (Week 24 / month / date range / All periods).
   function periodLabel() {
     const f = (V.S && V.S.filters) || {};
