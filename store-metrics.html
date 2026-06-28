@@ -2793,7 +2793,7 @@ function smRenderUTR(rows){
   var hasVoc=!!(smVocRaw&&smVocRaw.length);
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   if(!stores.length){ el.innerHTML='<div class="empty">No data</div>'; if(totalsEl) totalsEl.textContent=''; return; }
-  var totVoc=0, totUtr=0, totLs=0, totSkip=0, totShort=0;
+  var totVoc=0, totUtr=0, totLs=0, totSkip=0, totShort=0, totOrders=0, totLsV1=0, totIbTphArr=[], totDonate=0, totDamRem=0, totQualRem=0;
   function fld(l,v){ return '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:'+mut+';">'+l+'</span><span style="font-weight:800;color:'+txt+';">'+v+'</span></div>'; }
   var rowBd=isLight?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.06)';
   var divC=isLight?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.07)';
@@ -2827,9 +2827,14 @@ function smRenderUTR(rows){
     var sLsV2  = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
     var sSkip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
     var sShort = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
-    totLs+=sLsV2; totSkip+=sSkip; totShort+=sShort;
+    totLs+=sLsV2; totSkip+=sSkip; totShort+=sShort; totOrders+=orders;
     var sLs    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var sIbTph = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
+    totLsV1+=sLs; if(sIbTph>0) totIbTphArr.push(sIbTph);
+    var sDonate=sum(sr.map(function(r){return gNum(r,['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H']);}));
+    var sDamRem=sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
+    var sQualRem=sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
+    totDonate+=sDonate; totDamRem+=sDamRem; totQualRem+=sQualRem;
     var sObTph = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
     var sSla   = toP(avg(sr.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);})));
     var hasOrders=orders>0;
@@ -2937,7 +2942,10 @@ function smRenderUTR(rows){
   }).join('');
   el.innerHTML=html;
   if(totalsEl){
-    var _ls='Total LS v2: <b style="color:#F59E0B;">'+totLs+'</b> &nbsp;·&nbsp; Total Skip: <b style="color:#2563EB;">'+totSkip+'</b> &nbsp;·&nbsp; Total Short: <b style="color:#EF4444;">'+totShort+'</b>';
+    var netLsV2Pct=totOrders>0?(totLs/totOrders*100).toFixed(2)+'%':'N/A';
+    var netLsV1Pct=totOrders>0?(totLsV1/totOrders*100).toFixed(2)+'%':'N/A';
+    var avgIbTph=totIbTphArr.length?(totIbTphArr.reduce(function(a,b){return a+b;},0)/totIbTphArr.length).toFixed(0):'N/A';
+    var _ls='LS V2: <b style="color:#F59E0B;">'+totLs+'</b> (<b>'+netLsV2Pct+'</b> network) &nbsp;·&nbsp; LS V1: <b style="color:#F59E0B;">'+totLsV1+'</b> (<b>'+netLsV1Pct+'</b> network) &nbsp;·&nbsp; Skip: <b style="color:#2563EB;">'+totSkip+'</b> &nbsp;·&nbsp; Short: <b style="color:#EF4444;">'+totShort+'</b> &nbsp;·&nbsp; IB TPH Avg: <b style="color:#0EA5E9;">'+avgIbTph+'</b> &nbsp;·&nbsp; Donated: <b style="color:#10B981;">'+totDonate+'</b> &nbsp;·&nbsp; Damages: <b style="color:#EF4444;">'+totDamRem+'</b> &nbsp;·&nbsp; Culling: <b style="color:#7C3AED;">'+totQualRem+'</b>';
     totalsEl.innerHTML = hasVoc
       ? 'Total VOC: <b style="color:#7C3AED;">'+totVoc+'</b> &nbsp;·&nbsp; Total UTR: <b style="color:#EF4444;">'+totUtr+'</b> &nbsp;·&nbsp; '+_ls
       : _ls+' &nbsp;·&nbsp; <span style="opacity:.65;">Fetch VOC for VOC/UTR</span>';
@@ -3347,7 +3355,7 @@ function copySummary(){
   }
   var nlPeriod=(smPeriod==='week'||smPeriod==='month');
 
-  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0};
+  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0,lsV1:0,ibTphArr:[],donate:0,damRem:0,qualRem:0};
   stores.forEach(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders  = sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
@@ -3413,6 +3421,7 @@ function copySummary(){
     T.ls+=ls; T.lsv2+=lsV2cnt; T.skip+=skip; T.short+=short;
     if(vocCnt!==null) T.voc+=vocCnt;
     try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s):0); }catch(e){}
+    T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
   });
 
   lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -3425,6 +3434,15 @@ function copySummary(){
   lines.push('⏭️ Total Skips/Shorts: '+T.skip+'/'+T.short);
   lines.push('🎙️ Total VOC: '+(smVocRaw&&smVocRaw.length?fmt(T.voc):'Fetch VOC'));
   lines.push('🎯 Total UTR: '+(smVocRaw&&smVocRaw.length?fmt(T.utr):'Fetch VOC'));
+  var tNetLsV2=T.orders>0?(T.lsv2/T.orders*100).toFixed(2)+'%':'N/A';
+  var tNetLsV1=T.orders>0?(T.lsV1/T.orders*100).toFixed(2)+'%':'N/A';
+  var tAvgIbTph=T.ibTphArr.length?(T.ibTphArr.reduce(function(a,b){return a+b;},0)/T.ibTphArr.length).toFixed(0):'N/A';
+  lines.push('📊 Network LS V2 %: '+tNetLsV2+' ('+fmt(T.lsv2)+' of '+fmt(T.orders)+' orders)');
+  lines.push('📊 Network LS V1 %: '+tNetLsV1+' ('+fmt(T.lsV1)+' of '+fmt(T.orders)+' orders)');
+  lines.push('⚡ IB TPH Avg (Network): '+tAvgIbTph+'  · tgt ≥'+IB_TPH_TARGET);
+  lines.push('🤝 Total Donated Marked: '+fmt(T.donate));
+  lines.push('🔴 Total Damages: '+fmt(T.damRem));
+  lines.push('🔵 Total Culling Removals: '+fmt(T.qualRem));
   if(nlPeriod && T.nlGms>0){
     lines.push('🏭 Avg WHL (Warehouse Loss): '+(T.nlWhlW/T.nlGms).toFixed(2)+'%');
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');

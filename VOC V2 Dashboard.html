@@ -1496,6 +1496,7 @@ const COMPLAINT_CATS = [
   { key: 'defective', label: 'Defective & Quality',     short: 'Defective', color: '#146EB4', tint: '#EAF3FA' },
   { key: 'quality',   label: 'Quality',                 short: 'Quality',   color: '#0E8A6E', tint: '#E5F5F0' },
   { key: 'unwanted',  label: 'Unwanted',                short: 'Unwanted',  color: '#16A34A', tint: '#ECFDF3' },
+  { key: 'cancelled', label: 'Cancelled Order',         short: 'Cancelled', color: '#6366F1', tint: '#EEF2FF' },
   { key: 'other',     label: 'Other / Unclassified',    short: 'Other',     color: '#94A0AE', tint: '#EEF1F5' }
 ];
 const COMPLAINT_CAT_META = {};
@@ -1546,9 +1547,11 @@ function complaintCat(rec) {
   return ck;
 }
 function rawComplaintCat(rec) {
+  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
+  // undeliverable_return = cancelled order, not a customer complaint — bucket separately
+  if (conc === 'undeliverable_return') return 'cancelled';
   const txt = String(rec && rec.comment || '').toLowerCase();
   if (txt) for (const pair of TEXT_CAT_RULES) if (pair[0].test(txt)) return pair[1];
-  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
   for (const pair of CONC_CAT_RULES) if (pair[0].test(conc)) return pair[1];
   return 'other';
 }
@@ -1559,9 +1562,10 @@ function isFreshFood(rec) {
 }
 /* how the bucket was decided — powers the transparency pills. */
 function complaintCatSource(rec) {
+  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (conc === 'undeliverable_return') return 'concession';
   const txt = String(rec && rec.comment || '').toLowerCase();
   if (txt) for (const pair of TEXT_CAT_RULES) if (pair[0].test(txt)) return 'comment';
-  const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
   for (const pair of CONC_CAT_RULES) if (pair[0].test(conc)) return 'concession';
   return 'none';
 }
@@ -2187,9 +2191,15 @@ function trendChip(deltaPct, invert) {
 }
 
 function renderKpis() {
-  const k = computeKpis(activeView());
+  const view = activeView();
+  const cancelled = view.filter(r => (r._cat || D.complaintCat(r)) === 'cancelled').length;
+  const k = computeKpis(view);
+  const vocTotal = k.total - cancelled;
   const cards = [
-    { cls: 'is-neutral', label: 'Total VOC',        val: k.total,    foot: 'Records in current view' },
+    { cls: 'is-neutral', label: 'Total VOC',
+      val: vocTotal,
+      foot: cancelled ? num(k.total) + ' − ' + num(cancelled) + ' cancelled = ' + num(vocTotal) + ' VOC' : 'Records in current view',
+      sub: cancelled ? num(cancelled) + ' cancelled orders excluded' : '' },
     { cls: 'is-danger',  label: 'UTR Ops Controllable', val: k.utr,  foot: 'QC · Picker · Expiry misses' },
     { cls: 'is-warning', label: 'OTR Ops Controllable', val: k.otr,  foot: 'Delivery / on-road' },
     { cls: 'is-danger',  label: 'Picker Mistakes',  val: k.picker,   foot: 'Ops Controllable · Picker' },
@@ -2208,6 +2218,7 @@ function renderKpis() {
       </div>
       <div class="k-val">${c.raw ? c.val : num(c.val)}</div>
       <div class="k-foot">${c.trend || ''}<span>${c.foot}</span></div>
+      ${c.sub ? `<div style="font-size:11px;color:#4338CA;font-weight:600;margin-top:5px;padding:2px 7px;background:#EEF2FF;border-radius:4px;display:inline-block">${c.sub}</div>` : ''}
     </div>`).join('');
 }
 
@@ -3709,7 +3720,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function rowsForPeriod(p) {
     const store = C.store;
     return V.S.all.filter(r => {
-      if (r._dup) return false;            // exclude duplicates from compare
+      if (r._dup) return false;                                              // exclude duplicates from compare
+      if ((r._cat || D.complaintCat(r)) === 'cancelled') return false;      // exclude cancelled orders — not an ops error
       if (store && r.storeCode !== store) return false;
       if (C.by === 'month') {
         if (!r._month) return false;
@@ -4020,8 +4032,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!panel) return;
     wire();
     const rs = rows();
-    const total = rs.length;
-    if (!total) {
+    // Cancelled orders (undeliverable_return) are excluded from VOC totals
+    const cancelledRs = rs.filter(r => catOf(r) === 'cancelled');
+    const vocRs = rs.filter(r => catOf(r) !== 'cancelled');
+    const total = vocRs.length;
+    if (!rs.length) {
       panel.innerHTML = '<div class="card cc-card"><div class="state"><h4>No records in view</h4><p>Adjust the filters above to see the complaint classification.</p></div></div>';
       return;
     }
@@ -4031,7 +4046,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rcaMap = {};
     const storeAgg = {};
     let srcConc = 0, srcComment = 0;
-    rs.forEach(r => {
+    vocRs.forEach(r => {
       const ck = catOf(r), b = byCat[ck] || byCat.other;
       b.count++;
       const st = String(r.storeCode || '').trim();
@@ -4049,7 +4064,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rcaMap[rk].total++; rcaMap[rk].cats[ck]++;
     });
 
-    const present = CATS.filter(c => byCat[c.key].count > 0);
+    const present = CATS.filter(c => c.key !== 'cancelled' && byCat[c.key].count > 0);
 
     /* donut */
     let acc = 0; const segs = [];
@@ -4092,6 +4107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '<span class="cc-pill"><b>' + num(srcConc) + '</b> from concession</span>' +
             '<span class="cc-pill"><b>' + num(srcComment) + '</b> inferred from comment</span>' +
             '<span class="cc-pill"><b>' + num(byCat.other.count) + '</b> unclassified</span>' +
+            (cancelledRs.length ? '<span class="cc-pill" style="background:#EEF2FF;color:#4338CA"><b>' + num(cancelledRs.length) + '</b> cancelled (excluded)</span>' : '') +
           '</div>' +
         '</div>' +
         '<div class="cc-overview">' +
@@ -4149,7 +4165,47 @@ document.addEventListener('DOMContentLoaded', () => {
         '<div class="cc-matrix-wrap"><table class="cc-matrix">' + thead + '<tbody>' + tbody + totRow + '</tbody></table></div>' +
       '</div>';
 
-    panel.innerHTML = overview + cardsCard + matrixCard;
+    // ── Cancelled Orders card (excluded from VOC total) ──
+    const cancelledUniqueOrders = new Set(cancelledRs.map(r => String(r.orderId || '').trim()).filter(Boolean)).size;
+    const cancelledByStore = {};
+    cancelledRs.forEach(r => {
+      const st = String(r.storeCode || '').trim();
+      if (!st) return;
+      if (!cancelledByStore[st]) cancelledByStore[st] = { count: 0, orders: new Set() };
+      cancelledByStore[st].count++;
+      const oid = String(r.orderId || '').trim();
+      if (oid) cancelledByStore[st].orders.add(oid);
+    });
+    const cancelledStoreKeys = Object.keys(cancelledByStore).sort((a, b) => cancelledByStore[b].orders.size - cancelledByStore[a].orders.size);
+    const maxCancelOrd = cancelledStoreKeys.length ? cancelledByStore[cancelledStoreKeys[0]].orders.size : 1;
+    const cancelledStoreRows = cancelledStoreKeys.map((s, i) => {
+      const o = cancelledByStore[s];
+      return '<div class="cc-store-row" style="cursor:default">' +
+        '<span class="cc-store-rank">' + (i + 1) + '</span>' +
+        '<span class="cc-store-name">' + esc(s) + '</span>' +
+        '<span class="cc-store-track"><i style="width:' + Math.round(o.orders.size / maxCancelOrd * 100) + '%;background:#6366F1"></i></span>' +
+        '<span class="cc-store-val"><b>' + num(o.orders.size) + '</b> orders · ' + num(o.count) + ' records</span>' +
+      '</div>';
+    }).join('');
+    const cancelledCard = cancelledRs.length ?
+      '<div class="card cc-card" style="border-top:3px solid #6366F1">' +
+        '<div class="cc-head">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+            '<span style="width:12px;height:12px;border-radius:50%;background:#6366F1;flex-shrink:0;display:inline-block"></span>' +
+            '<h3>Cancelled Orders</h3>' +
+            '<span class="cc-period hot">Excluded from VOC total · Concession: undeliverable_return</span>' +
+          '</div>' +
+          '<div class="cc-pills">' +
+            '<span class="cc-pill" style="background:#EEF2FF;color:#4338CA"><b>' + num(cancelledUniqueOrders) + '</b> unique order IDs</span>' +
+            '<span class="cc-pill"><b>' + num(cancelledRs.length) + '</b> total records</span>' +
+            '<span class="cc-pill"><b>' + num(cancelledStoreKeys.length) + '</b> stations affected</span>' +
+          '</div>' +
+        '</div>' +
+        (cancelledStoreRows ?
+          '<div class="cc-stores-sec"><div class="cc-mini-h">Station-wise breakdown — cancelled orders &amp; records</div><div class="cc-stores">' + cancelledStoreRows + '</div></div>' :
+          '<div style="padding:12px 0;color:var(--ink-3);font-size:13px">No station data available.</div>') +
+      '</div>' : '';
+    panel.innerHTML = (total ? overview + cardsCard + matrixCard : '<div class="card cc-card"><div class="state"><h4>No VOC complaints in current view</h4><p>All records are cancelled orders — see the section below.</p></div></div>') + cancelledCard;
   }
 
   window.VOCCategories = { render };
@@ -4177,7 +4233,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selWeek = null;
 
   const pnfOf = r => !D.rcaPending(r) && !(r.pickerId && String(r.pickerId).trim());
-  const live  = () => V.S.all.filter(r => !r._dup);
+  const live  = () => V.S.all.filter(r => !r._dup && (r._cat || D.complaintCat(r)) !== 'cancelled');
   const weeksAvail = () => [...new Set(live().map(r => r._week).filter(w => w != null))].sort((a,b)=>a-b);
   const prevWeekOf = w => [...weeksAvail()].reverse().find(x => x < w);
   const rowsForWeek = w => (w==null ? [] : live().filter(r => r._week === w));
