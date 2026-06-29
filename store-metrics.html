@@ -1385,7 +1385,12 @@ function smNlForStore(s){
   return { gms:g, whl:g?wl/g:0, whd:g?wd/g:0 };
 }
 
-function nlPct(v){ return (Math.round(v*100)/100).toFixed(2)+'%'; }
+function nlPct(v){
+  var a=Math.abs(v);
+  if(a<1e-9) return '0.00%';
+  if(a<0.01)  return v.toFixed(3)+'%';
+  return v.toFixed(2)+'%';
+}
 function whlPoints(v){ return v<=0?10:v<=1?10:v<=3?2.5:0; }   // WHL % score band
 function whPoints(v){  return v<=0?10:v<=0.5?10:v<=1.5?2.5:0; } // WHD % score band
 function nlWhlCol(v){ var p=whlPoints(v); return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }
@@ -1413,6 +1418,11 @@ function nlNumCell(usd, mode, bold){
     if(v<0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:var(--text);">'+txt+'</td>';
     return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(239,68,68,0.10);">'+txt+'</td>';
   }
+  // WHL: negative = red, positive = neutral (no red for positive warehouse loss)
+  if(mode==='whl'){
+    if(v<0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(239,68,68,0.10);">'+txt+'</td>';
+    return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:600)+';color:var(--text);">'+txt+'</td>';
+  }
   if(mode==='good')  return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:#10B981!important;">'+txt+'</td>';
   // Warehouse Damage — always flagged (damage arrives negative): red text on an orange wash = orange/red combo.
   if(mode==='damage') return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(249,115,22,0.16);">'+txt+'</td>';
@@ -1420,7 +1430,11 @@ function nlNumCell(usd, mode, bold){
   return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:600)+';color:var(--text);">'+txt+'</td>';
 }
 // Band colour for the % columns — never red when the percentage is negative.
-function nlBandCol(v, isWhd){ var c=isWhd?nlWhdCol(v):nlWhlCol(v); if(v<0 && c==='#EF4444') return 'var(--text)'; return c; }
+function nlBandCol(v, isWhd){
+  if(v >= 0) return '#10B981';            // any positive → green
+  var a=Math.abs(v);
+  return a<=0.5?'#F59E0B':'#EF4444';     // small negative → amber, large negative → red
+}
 
 function smNetworkLoss(){
   var card=document.getElementById('nl-card'); if(!card) return;
@@ -1447,8 +1461,8 @@ function smNetworkLoss(){
     o.whd    +=Number(r.whdVal)||0;
     o.grand  +=Number(r.grandTotal)||0;
     o.gms    +=w;
-    o.wWhl   +=(Number(r.whl)||0)*w;   // r.whl = % to GMS (WHL)
-    o.wWhd   +=(Number(r.whd)||0)*w;   // r.whd = % to GMS (WHD)
+    o.wWhl   +=(Number(r.whl)||0)*w;   // r.whl = fraction (e.g. 0.075 = 7.5%)
+    o.wWhd   +=(Number(r.whd)||0)*w;   // r.whd = fraction (e.g. -0.0026 = -0.26%)
     o.n++;
   });
   var list=Object.keys(g).map(function(k){ var o=g[k]; var w=o.gms||0;
@@ -1492,7 +1506,7 @@ function smNetworkLoss(){
         nlNumCell(o.found,'good')+
         nlNumCell(o.missing,'loss')+
         nlNumCell(o.trans,'neutral')+
-        nlNumCell(o.whl,'loss')+
+        nlNumCell(o.whl,'whl')+
         nlNumCell(o.whd,'damage')+
         nlNumCell(o.grand,'signed')+
         nlNumCell(o.gms,'neutral')+
@@ -1505,7 +1519,7 @@ function smNetworkLoss(){
       nlNumCell(T.found,'good',true)+
       nlNumCell(T.missing,'loss',true)+
       nlNumCell(T.trans,'neutral',true)+
-      nlNumCell(T.whl,'loss',true)+
+      nlNumCell(T.whl,'whl',true)+
       nlNumCell(T.whd,'damage',true)+
       nlNumCell(T.grand,'signed',true)+
       nlNumCell(T.gms,'neutral',true)+
