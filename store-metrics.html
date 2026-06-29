@@ -826,7 +826,7 @@ tbody tr:hover{background:var(--row-hover);}
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <span>🏭 Warehouse Loss &amp; Damage <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— full detail per store · <span style="color:#EF4444;font-weight:800;">positive loss flagged in red</span> · follows the date / store filter ↑</span></span>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span id="nl-label" style="font-family:'Inter',monospace;font-size:11px;font-weight:800;letter-spacing:0.3px;color:var(--accent);background:var(--note-bg);border:1px solid var(--chip-border);border-radius:7px;padding:4px 11px;white-space:nowrap;"></span>
+        <div id="nl-period-badge" style="display:none;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;font-family:'Inter',monospace;color:var(--text);white-space:nowrap;">📅 —</div>
         <div style="display:flex;align-items:center;gap:6px;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:3px 6px 3px 10px;">
           <span style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">💱 Currency</span>
           <select id="nl-cur" onchange="nlSetCur(this.value)" class="fsel" style="padding:4px 8px;font-size:11px;font-weight:700;" title="All figures are USD — pick a currency to convert">
@@ -847,27 +847,14 @@ tbody tr:hover{background:var(--row-hover);}
         <button onclick="smFetchNetworkLoss()" id="nl-btn" style="background:linear-gradient(135deg,#2563EB,#1D4ED8);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(37,99,235,0.3);">↻ Network Loss</button>
       </div>
     </div>
-    <!-- NL Period Filter Row -->
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:var(--filter-bg);border:1px solid var(--border);border-radius:10px;">
-      <span class="f-label">Filter</span>
-      <div style="display:flex;gap:4px;">
-        <button class="pb" id="nl-pb-week" onclick="nlSetPeriod('week',this)">Week</button>
-        <button class="pb" id="nl-pb-month" onclick="nlSetPeriod('month',this)">Month</button>
-        <button class="pb" id="nl-pb-all" onclick="nlSetPeriod('all',this)">All</button>
-      </div>
-      <select id="nl-pval" class="fsel" onchange="nlSetPVal(this.value)" style="display:none;min-width:130px;"><option value="">— Select —</option></select>
-    </div>
-    <!-- NL Data (shown only when a period is selected) -->
-    <div id="nl-data-wrap" style="display:none;">
+    <!-- NL Data -->
+    <div id="nl-data-wrap">
       <div class="kpi-grid" id="nl-kpis" style="margin-bottom:14px;"></div>
       <div class="tbl-scroll" style="max-height:360px;border:1px solid var(--border);border-radius:10px;">
         <table><thead id="nl-th"></thead><tbody id="nl-tb"></tbody></table>
       </div>
     </div>
-    <!-- Placeholder when no period chosen -->
-    <div id="nl-no-period" style="text-align:center;padding:36px 20px;color:var(--muted);font-size:13px;font-weight:500;">
-      ☝️ Select <strong style="color:var(--text);">Week</strong> or <strong style="color:var(--text);">Month</strong> above to view Warehouse Loss &amp; Damage data
-    </div>
+    <div id="nl-no-period" style="display:none;"></div>
   </div>
 
   <!-- FC METERS -->
@@ -1136,7 +1123,7 @@ function smAutoSelectLatest(){
 
   // Set period to Day and select latest date
   smPeriod = 'day';
-  document.querySelectorAll('.pb').forEach(function(b){ b.classList.remove('on'); });
+  document.querySelectorAll('.pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
   var dayBtn = document.querySelector('.pb:nth-child(2)');
   if(dayBtn) dayBtn.classList.add('on');
 
@@ -1236,7 +1223,7 @@ function smBuildPeriodDrop(){
 }
 function smSetPeriod(p,btn){
   smPeriod=p;
-  document.querySelectorAll('.pb').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
   btn.classList.add('on');
   var rw=document.getElementById('sm-range-wrap');
   var pv=document.getElementById('sm-pval');
@@ -1319,18 +1306,38 @@ function smFetchNetworkLoss(){
   document.head.appendChild(s);
 }
 
-// Filter network-loss rows by the SAME store + period the dashboard uses.
+// Filter network-loss rows by store only; period highlighting is visual, not a hard filter.
 function smNlFilter(){
-  if(nlActivePeriod==='none') return [];
-  var store=document.getElementById('sm-store').value;
-  var rows=nlData.filter(function(r){ return store==='all'||String(r.store)===store; });
-  if(nlActivePeriod==='week'){
-    if(nlActivePVal){ var fw=String(nlActivePVal).replace(/\D/g,''); rows=rows.filter(function(r){ return String(r.week).replace(/\D/g,'')===fw; }); }
-  } else if(nlActivePeriod==='month'){
-    if(nlActivePVal){ var mn=String(nlActivePVal).toLowerCase(); rows=rows.filter(function(r){ return String(r.month).toLowerCase()===mn||String(r.month).toLowerCase().indexOf(mn)===0; }); }
+  var store=document.getElementById('sm-store')?document.getElementById('sm-store').value:'all';
+  var rows=nlData.filter(function(r){ var rs=String(r.store||r.Store||r.STORE||r.storeCode||''); return store==='all'||rs===store; });
+  // Soft period filter: if smPeriod is week/month and a specific value is chosen,
+  // try filtering — but fall back to ALL rows if nothing matches.
+  var pv=document.getElementById('sm-pval')?document.getElementById('sm-pval').value:'';
+  var filtered=rows;
+  if(smPeriod==='week' && pv && pv!=='all'){
+    var fw=String(pv).replace(/\D/g,'');
+    if(fw){ var wf=rows.filter(function(r){ return String(r.week||'').replace(/\D/g,'')===fw; }); if(wf.length) filtered=wf; }
+  } else if(smPeriod==='month' && pv && pv!=='all'){
+    var mn=String(pv).toLowerCase();
+    var pvMonthNames=['january','february','march','april','may','june','july','august','september','october','november','december'];
+    var mmMatch=mn.match(/^\d{4}-(\d{1,2})$/);
+    if(mmMatch){ var midx=parseInt(mmMatch[1],10)-1; if(midx>=0&&midx<12) mn=pvMonthNames[midx]; }
+    var mf=rows.filter(function(r){ var m=String(r.month||'').toLowerCase(); return m.indexOf(mn)===0||m===mn; });
+    if(mf.length) filtered=mf;
   }
-  // 'all' → no additional period filter
-  return rows;
+  return filtered;
+}
+// Build period badge text from main dashboard state
+function smNlPeriodBadge(){
+  var badge=document.getElementById('nl-period-badge'); if(!badge) return;
+  var pv=document.getElementById('sm-pval')?document.getElementById('sm-pval').value:'';
+  var txt='';
+  if(smPeriod==='week' && pv) txt='📅 '+pv;
+  else if(smPeriod==='month' && pv) txt='📅 '+pv;
+  else if(smPeriod==='day'){ var d=document.getElementById('sm-day')?document.getElementById('sm-day').value:''; txt=d?'📅 '+d:'📅 Day'; }
+  else txt='📅 All';
+  badge.textContent=txt;
+  badge.style.display='';
 }
 function nlSetPeriod(p,btn){
   nlActivePeriod=p; nlActivePVal='';
@@ -1340,6 +1347,7 @@ function nlSetPeriod(p,btn){
     if(p==='week'||p==='month'){ sel.style.display=''; nlBuildPValOpts(p); nlActivePVal=sel.value; }
     else { sel.style.display='none'; nlActivePVal=''; }
   }
+  if(!nlData.length){ smFetchNetworkLoss(); return; }
   smNetworkLoss();
 }
 function nlSetPVal(v){ nlActivePVal=v; smNetworkLoss(); }
@@ -1378,8 +1386,10 @@ function smNlForStore(s){
 }
 
 function nlPct(v){ return (Math.round(v*100)/100).toFixed(2)+'%'; }
-function nlWhlCol(v){ var p=whlPoints(v); return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }   // colour by WHL score band (10/2.5/0)
-function nlWhdCol(v){ var p=whPoints(v);  return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }   // colour by WHD score band (10/2.5/0)
+function whlPoints(v){ return v<=0?10:v<=1?10:v<=3?2.5:0; }   // WHL % score band
+function whPoints(v){  return v<=0?10:v<=0.5?10:v<=1.5?2.5:0; } // WHD % score band
+function nlWhlCol(v){ var p=whlPoints(v); return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }
+function nlWhdCol(v){ var p=whPoints(v);  return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }
 
 // ── CURRENCY — base data is USD; convert by an editable rate ──────────
 var NL_CUR   = { code:'USD', sym:'$', rate:1 };
@@ -1414,23 +1424,16 @@ function nlBandCol(v, isWhd){ var c=isWhd?nlWhdCol(v):nlWhlCol(v); if(v<0 && c==
 
 function smNetworkLoss(){
   var card=document.getElementById('nl-card'); if(!card) return;
-  var lbl=document.getElementById('nl-label'); if(lbl) lbl.textContent='📅 '+smActivePeriodText();
   var kpis=document.getElementById('nl-kpis');
   var th=document.getElementById('nl-th'), tb=document.getElementById('nl-tb');
   var dataWrap=document.getElementById('nl-data-wrap');
   var noPeriodEl=document.getElementById('nl-no-period');
   // Show placeholder if no period chosen
-  if(nlActivePeriod==='none'){
-    if(dataWrap) dataWrap.style.display='none';
-    if(noPeriodEl) noPeriodEl.style.display='';
-    if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='';
-    return;
-  }
-  if(dataWrap) dataWrap.style.display='';
-  if(noPeriodEl) noPeriodEl.style.display='none';
-  if(!nlData.length){ if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='<tr><td class="empty">Fetch Network Loss to load WHL &amp; WHD…</td></tr>'; return; }
+  // Update period badge to reflect main dashboard state
+  smNlPeriodBadge();
+  if(!nlData.length){ if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='<tr><td class="empty">Click ↻ Network Loss to load WHL &amp; WHD data…</td></tr>'; return; }
   var rows=smNlFilter();
-  if(!rows.length){ if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='<tr><td class="empty">No data for this period — try a different Week / Month</td></tr>'; return; }
+  if(!rows.length){ if(kpis)kpis.innerHTML=''; if(th)th.innerHTML=''; if(tb)tb.innerHTML='<tr><td class="empty">No data for this period — try a different date / store filter</td></tr>'; return; }
 
   // group by store — sum the value columns, GMS-weight the percentages
   var g={};
@@ -2526,10 +2529,9 @@ function smCallout(data,rows){
     return Object.assign({},d,{ibSlaTrans:ibSlaTrans,dateStr:dateStr});
   });
 
-  // Flag stores: IB SLA TRANS < 99% OR IB TPH < 140 OR LateSLAM rate > 1%. Exclude QAA1.
+  // Flag stores: IB SLA TRANS < 99% OR IB TPH < 140 OR LateSLAM rate > 1%.
   var flagged=enriched.filter(function(d){
     if(!d.orders) return false;
-    if(d.store==='QAA1') return false;
     var lsPct=d.orders>0?(d.ls/d.orders*100):0;
     return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1 || d.lsV2Pct>3;
   });
