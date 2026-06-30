@@ -3376,8 +3376,8 @@ document.addEventListener('DOMContentLoaded', () => {
           y: { grid: { display: false }, ticks: { color: C.ink, font: { size: 11 } }, border: { display: false } } } }
     });
 
-    /* 5 — VOC by Station */
-    const byStation = [...countBy(rows, r => r.storeCode).entries()].sort((a, b) => b[1] - a[1]);
+    /* 5 — VOC by Station (cancelled excluded, non-ops included) */
+    const byStation = [...countBy(rows.filter(r => !r._dup && r._cat !== 'cancelled'), r => r.storeCode).entries()].sort((a, b) => b[1] - a[1]);
     make('chStation', {
       type: 'bar',
       data: { labels: byStation.map(s => s[0]), datasets: [{ data: byStation.map(s => s[1]), backgroundColor: C.mid, borderRadius: 4, barThickness: 26 }] },
@@ -3938,9 +3938,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const catOf = r => r._cat || D.complaintCat(r);
   const rcaOf = r => (String(r.issueDesc || '').trim() || 'Untriaged / No RCA');
   function rows() {
-    const base = V.activeView ? V.activeView() : (V.S ? V.S.view.filter(r => !r._dup) : []);
-    const cancelled = V.S ? V.S.view.filter(r => !r._dup && r._cat === 'cancelled') : [];
-    return [...base, ...cancelled];
+    // Cancelled orders excluded from all counts and charts
+    const base = V.activeView ? V.activeView() : (V.S ? V.S.view.filter(r => !r._dup && r._cat !== 'cancelled') : []);
+    return base;
   }
   // Active period label for the header (Week 24 / month / date range / All periods).
   function periodLabel() {
@@ -4035,9 +4035,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!panel) return;
     wire();
     const rs = rows();
-    // Cancelled orders (undeliverable_return) are excluded from VOC totals
-    const cancelledRs = rs.filter(r => catOf(r) === 'cancelled');
-    const vocRs = rs.filter(r => catOf(r) !== 'cancelled');
+    // Cancelled orders fetched separately — excluded from VOC totals/charts but shown in their own card
+    const cancelledRs = V.S ? V.S.view.filter(r => !r._dup && (r._cat || D.complaintCat(r)) === 'cancelled') : [];
+    const vocRs = rs; // rs already excludes cancelled
     const total = vocRs.length;
     if (!rs.length) {
       panel.innerHTML = '<div class="card cc-card"><div class="state"><h4>No records in view</h4><p>Adjust the filters above to see the complaint classification.</p></div></div>';
