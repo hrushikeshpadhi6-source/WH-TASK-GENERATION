@@ -2838,7 +2838,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Use the deduplicated, filter-aware view so counts match the scorecard
     // exactly (re-raised VOCs are excluded — they were the source of phantom
     // "pending" rows whose original record already had RCA filled & triggered).
-    const period = activeView(), all = S.all.filter(r => !r._dup);
+    const period = activeView(), all = S.all.filter(r => !r._dup && (r._cat || D.complaintCat(r)) !== 'cancelled');
     const pPend = period.filter(D.rcaPending).length;
     const pFnt  = period.filter(D.rcaFilledNotTriggered).length;   // filled, not triggered
     const pDone = period.length - pPend - pFnt;                    // filled AND triggered
