@@ -2079,7 +2079,7 @@ function damPoints(n){ if(n<=2) return 10; if(n<=7) return 5; if(n<=15) return 2
 function smScoreParts(d){
   return [
     {k:'Late Slam v2',    max:20, pts:lsV2Points(d.lsV2Pct||0),  detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
-    {k:'VOC / UTR',       max:10, pts:vocPoints(d.utrRate||0),   detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (tgt ≤0.010%)'},
+    {k:'VOC / UTR',       max:10, pts:vocPoints(d.utrRate||0),   detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (≤0.010%=10 · each +0.001% −1pt)'},
     {k:'Damage Removal',  max:10, pts:damPoints(d.damRem||0),    detail:(d.damRem||0)+' (0–2 =10, 3–7 =5, 8–15 =2.5, >15 =0)'},
     {k:'IB TPH',          max:15, pts:tphPoints(d.ibTph||0),     detail:(d.ibTph||0).toFixed(0)+' (>140 =15)'},
     {k:'Skip',            max:15, pts:skipPoints(d.skip||0),     detail:(d.skip||0)+' (0 =15)'},
@@ -2466,6 +2466,14 @@ function smLeaderboard(rows){
   });
 
   var medals=['🥇','🥈','🥉'];
+  // Dense ranking: same score → same rank; next distinct score → next rank (no gaps)
+  var qualData=data.filter(function(d){return d.orders>=100;});
+  var uniqScores=[...new Set(qualData.map(function(d){return d.score;}))].sort(function(a,b){return b-a;});
+  var rankMap={};
+  data.forEach(function(d){
+    if(d.orders<100){rankMap[d.store]=null;return;}
+    rankMap[d.store]=uniqScores.findIndex(function(s){return s===d.score;})+1;
+  });
   smLbData=data;
   try{ smCallout(data,rows); }catch(e){ console.warn('callout skipped:',e); }
 
@@ -2487,7 +2495,8 @@ function smLeaderboard(rows){
     var scoreC = d.score>=90?'#10B981':d.score>=70?'#F59E0B':'#EF4444';
     var utrC   = d.utrRate<=VOC_UTR_TARGET?'#10B981':d.utrRate<=VOC_UTR_TARGET*2?'#F59E0B':'#EF4444';
     var lowVol = d.orders<100;
-    var medal  = lowVol ? '<span style="font-size:13px;opacity:.6;">▫︎</span>' : (medals[i]||'#'+(i+1));
+    var rank   = rankMap[d.store];
+    var medal  = lowVol ? '<span style="font-size:13px;opacity:.6;">▫︎</span>' : (rank===1?medals[0]:rank===2?medals[1]:rank===3?medals[2]:'<span style="font-size:12px;font-weight:900;">#'+rank+'</span>');
     var lsPctV2 = d.orders>0?(d.ls/d.orders*100):0;
     var isSafe = !lowVol && d.ibSlaTrans>=90 && d.ibTph>=140 && lsPctV2<=1;
     var safeBadge = isSafe ? ' <span title="All KPIs in safe zone" style="font-family:\'Inter\',monospace;font-size:9px;font-weight:800;letter-spacing:.3px;color:#10B981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:6px;padding:2px 7px;margin-left:7px;vertical-align:middle;white-space:nowrap;">✓ SAFE</span>' : '';
@@ -2513,7 +2522,8 @@ function smLeaderboard(rows){
         ch('VOC',d.voc,vocC)+
         ch('UTR',d.utr+' ('+d.utrRate.toFixed(3)+'%)',utrC,'UTR ops-controllable mistakes · target 0.010%')+
         ch('Sh.Pts',d.pts>0?d.pts.toFixed(1)+'%':'0%','#0EA5E9')+
-        ch('Score',d.score.toFixed(1)+'%',scoreC)+
+        ch('Score',d.score.toFixed(2)+'%',scoreC)+
+        ch('Rank',lowVol?'—':(rank?'#'+rank:'—'),lowVol?'#64748B':rank===1?'#F59E0B':rank===2?'#94A3B8':rank===3?'#CD7F32':'#64748B','Ties share same rank number')+
       '</div></div>';
   }).join('');
   try{ smRenderUTR(rows); }catch(e){ console.warn('UTR render skipped:', e); }
@@ -3573,7 +3583,8 @@ function smOpenQS(){
   var rows=data.map(function(d,i){
     var col=SC_QS[d.store]||'#64748B';
     var lowVol=d.orders<100;
-    var medal=lowVol?'▫':'<span style="font-size:13px;">'+(medals[i]||('#'+(i+1)))+'</span>';
+    var medal=lowVol?'▫':'<span style="font-size:13px;font-weight:900;">'+(medals[i]||('#'+(i+1)))+'</span>';
+    var rankLabel='#'+(i+1);
     var slaC=d.sla>=99?'#10B981':d.sla>=95?'#F59E0B':'#EF4444';
     var lsOldPctN=d.orders>0?(d.ls/d.orders*100):0;
     var lsOldC=lsOldPctN<1?'#10B981':lsOldPctN<=1.5?'#F59E0B':'#EF4444';
