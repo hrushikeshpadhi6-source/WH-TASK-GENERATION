@@ -1945,9 +1945,20 @@ function smFetchVOC(){
       var store   = String(r.storeCode||r.store||r.Store||'').trim();
       var orderId = String(r.orderId||r.order_id||r.orderid||'').trim();
       var asin    = String(r.asin||r.ASIN||'').trim();
-      // V2 date: prefer Date_1, fall back to Date of Issued / Order Timestamp.
-      var rawDate = String(r.date1||r.dateIssued||r.orderTimestamp||r.date||'').trim();
-      var date    = rawDate.split('T')[0].split(' ')[0].trim();
+      // Normalise date to YYYY-MM-DD — same field priority & parsing as VOC V2 rowDayKey:
+      // prefer orderTimestamp (ISO), fall back to date1 (DD/MM/YYYY from sheet).
+      var normD=function(raw){
+        raw=String(raw||'').trim(); if(!raw) return '';
+        if(/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.substring(0,10);        // ISO YYYY-MM-DD
+        var m=raw.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/);          // DD/MM/YYYY
+        if(m) return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+        var d=new Date(raw);
+        if(!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        return '';
+      };
+      // orderTimestamp first (ISO, robust), then date1 (DD/MM/YYYY) — mirrors VOC V2
+      var rawDate = String(r.orderTimestamp||r.date1||r.dateIssued||r.date||'').trim();
+      var date    = normD(rawDate);
       // V2 classification
       var issueCat= String(r.issueCategory||'').trim().toLowerCase();
       var desc    = String(r.issueDesc||'').trim();
@@ -2096,40 +2107,50 @@ function vocMonthKey(s){
   var d=new Date(s); if(!isNaN(d.getTime())) return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
   return '';
 }
-// Deduped VOC V2 rows for a store, narrowed to the SAME window as the main period
-// filter so the data always matches what the user picked (day / week / month /
-// year / custom range). "— All —" within any period = no date narrowing.
-function smVocFilteredRows(s){
+// VOC filter: period-based, using the same main filter (smPeriod + sm-pval).
+// rows param accepted for API compatibility but period logic is used directly
+// so VOC covers the full selected period, not just dates in the store sheet.
+function smVocFilteredRows(s, rows){
   if(!smVocRaw||!smVocRaw.length) return [];
   var pv=(document.getElementById('sm-pval')||{}).value||'';
-  var noVal=(!pv || pv==='all');
-  var mKey=(smPeriod==='month' && !noVal) ? vocMonthKey(pv) : '';
-  var wKey=(smPeriod==='week'  && !noVal) ? String(pv).replace(/\D/g,'') : '';
-  var rFrom='', rTo='';
+  var noVal=(!pv||pv==='all');
+  // Robust month key: handles full names, abbreviated names and YYYY-MM.
+  var mKey='';
+  if(smPeriod==='month'&&!noVal){
+    mKey=vocMonthKey(pv);
+    // Fallback: try abbreviated month names (Jun, Jul, etc.)
+    if(!mKey){
+      var abbr=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      var mn=pv.trim().toLowerCase(); var yr=pv.match(/(\d{4})/);
+      if(yr){ var ai=abbr.findIndex(function(a){return mn.indexOf(a)===0;}); if(ai>=0) mKey=yr[1]+'-'+String(ai+1).padStart(2,'0'); }
+    }
+  }
+  var wKey=(smPeriod==='week'&&!noVal)?String(pv).replace(/\D/g,''):'';
+  var rFrom='',rTo='';
   if(smPeriod==='range'){
-    var rf=document.getElementById('sm-range-from'), rt=document.getElementById('sm-range-to');
+    var rf=document.getElementById('sm-range-from'),rt=document.getElementById('sm-range-to');
     rFrom=rf?rf.value:''; rTo=rt?rt.value:'';
-    if(rFrom&&rTo&&rFrom>rTo){ var t=rFrom; rFrom=rTo; rTo=t; }
+    if(rFrom&&rTo&&rFrom>rTo){var tmp=rFrom;rFrom=rTo;rTo=tmp;}
   }
   var seen={},out=[];
   smVocRaw.forEach(function(v){
     if(v.store!==s) return;
-    if(smPeriod==='day'   && !noVal && v.date!==pv) return;
-    if(smPeriod==='month' && !noVal && (!mKey || (v.date||'').substring(0,7)!==mKey)) return;
-    if(smPeriod==='year'  && !noVal && (v.date||'').substring(0,4)!==String(pv)) return;
-    if(smPeriod==='week'  && !noVal && (!wKey || v.week!==wKey)) return;
+    if(v.isCancel) return;
+    if(smPeriod==='day'  &&!noVal&&v.date!==pv) return;
+    if(smPeriod==='month'&&!noVal&&(!mKey||(v.date||'').substring(0,7)!==mKey)) return;
+    if(smPeriod==='year' &&!noVal&&(v.date||'').substring(0,4)!==String(pv)) return;
+    if(smPeriod==='week' &&!noVal&&(!wKey||v.week!==wKey)) return;
     if(smPeriod==='range'){
-      if(rFrom && (!v.date || v.date<rFrom)) return;
-      if(rTo   && (!v.date || v.date>rTo))   return;
+      if(rFrom&&(!v.date||v.date<rFrom)) return;
+      if(rTo  &&(!v.date||v.date>rTo))   return;
     }
-    if(v.isCancel) return;              // exclude cancelled orders (concession = undeliverable_return)
-    var k=v.orderId+'|'+v.asin;         // deduplicate by Order ID + ASIN (mirrors VOC V2 _dup logic)
-    if(!seen[k]){ seen[k]=true; out.push(v); }
+    var k=v.orderId+'|'+v.asin;
+    if(!seen[k]){seen[k]=true;out.push(v);}
   });
   return out;
 }
-function smVocCount(s){ return smVocFilteredRows(s).length; }
-function smUtrCount(s){ return smVocFilteredRows(s).filter(function(v){return v.isUtr;}).length; }
+function smVocCount(s, rows){ return smVocFilteredRows(s, rows).length; }
+function smUtrCount(s, rows){ return smVocFilteredRows(s, rows).filter(function(v){return v.isUtr;}).length; }
 
 // ════════ SCORING & TARGET LOGIC ════════════════════════════
 // ON-TARGET thresholds (binary "healthy" markers):
@@ -2493,7 +2514,7 @@ function smLeaderboard(rows){
     var ls    = sum(sr.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
     var sla   = toP(slaR);
     var pts   = toP(sr.length>0?ptsR/sr.length:0);
-    var voc   = smVocCount(s);
+    var voc   = smVocCount(s, rows);
     var skip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
     var short = sum(sr.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
 
@@ -2501,7 +2522,7 @@ function smLeaderboard(rows){
     // Late Slam v2 count = column Z; rate = count ÷ orders.
     var lsV2   = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
     var lsV2Pct= orders>0?(lsV2/orders*100):0;
-    var utr    = smUtrCount(s);
+    var utr    = smUtrCount(s, rows);
     var utrRate= orders>0?(utr/orders*100):0;
 
     var slaTRib = avg(sr.map(function(r){return gNum(r,['IB SLA TRANS','IB SLA Trans','R']);}));
@@ -2933,7 +2954,7 @@ function smRenderUTR(rows){
   var sdata=stores.map(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders=sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
-    var voc=smVocCount(s), utr=smUtrCount(s);
+    var voc=smVocCount(s, rows), utr=smUtrCount(s, rows);
     totVoc+=voc; totUtr+=utr;
     var sLsV2  = sum(sr.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
     var sSkip  = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','skip','U']);}));
@@ -3444,7 +3465,7 @@ function copySummary(){
     if(!smVocRaw||!smVocRaw.length) return null; // VOC not fetched yet
     // Use the same period-aware, V2-aware filter the leaderboard uses so the
     // VOC count always matches the active day/week/month/year/range selection.
-    return smVocFilteredRows(s).length;
+    return smVocFilteredRows(s, rows).length;
   }
 
   // Per-store Warehouse Loss / Damage (GMS-weighted) for the active week/month.
@@ -3531,7 +3552,7 @@ function copySummary(){
     T.inbound+=inbound; T.orders+=orders; T.units+=obUnits;
     T.ls+=ls; T.lsv2+=lsV2cnt; T.skip+=skip; T.short+=short;
     if(vocCnt!==null) T.voc+=vocCnt;
-    try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s):0); }catch(e){}
+    try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s,rows):0); }catch(e){}
     T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
   });
 
