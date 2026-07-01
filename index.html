@@ -1891,40 +1891,6 @@ to{width:65%;} }
 </div>
 
 
-<!-- ── TASK GRANT POPUP ────────────────────────────────────── -->
-<div id="task-grant-overlay" style="display:none;position:fixed;inset:0;z-index:999999;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.85);backdrop-filter:blur(7px);">
-  <div style="position:relative;width:100%;max-width:500px;background:rgba(18,17,30,0.99);border:1px solid rgba(124,58,237,0.38);border-radius:24px;box-shadow:0 32px 96px rgba(0,0,0,0.75);font-family:'Syne',sans-serif;animation:dmsWelcomePop 0.4s cubic-bezier(0.22,1,0.36,1);">
-    <div style="padding:24px 28px 16px;">
-      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px;">🔑 Task Access for <span id="task-grant-username" style="color:#a78bfa;"></span></div>
-      <div style="font-size:12px;color:#8b88b8;">Tick the tasks this user can open. Untick to remove access.</div>
-    </div>
-    <div id="task-grant-checks" style="padding:0 28px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="consolidation" style="accent-color:#7c3aed;"> 📦 Consolidation</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="slow-moving" style="accent-color:#7c3aed;"> 🐢 Slow Moving</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="audit-loc" style="accent-color:#7c3aed;"> 📍 Audit by Location</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="audit-asin" style="accent-color:#7c3aed;"> 🔎 Audit by ASIN</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="report" style="accent-color:#7c3aed;"> 📊 Inventory Report</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="ysm" style="accent-color:#7c3aed;"> 🏷️ YSM Barcode</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="catalog-issue" style="accent-color:#7c3aed;"> 📋 Catalog Issue</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="scanning-issue" style="accent-color:#7c3aed;"> 🔬 Scanning Issue</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="locid" style="accent-color:#7c3aed;"> 🏷️ Location ID</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="lateslam" style="accent-color:#7c3aed;"> ⏱️ Late SLAM</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="ls-deepdive" style="accent-color:#7c3aed;"> 🔬 Late Slam Deep Dive</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="voc" style="accent-color:#7c3aed;"> 📊 VOC Analysis</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="deliverynote" style="accent-color:#7c3aed;"> 🚚 Reverse Transshipment</label>
-      <label style="display:flex;align-items:center;gap:8px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;color:#d4d1f0;"><input type="checkbox" value="gatepass" style="accent-color:#7c3aed;"> 🚪 Gate Pass</label>
-    </div>
-    <div style="padding:0 28px 12px;display:flex;gap:8px;justify-content:space-between;">
-      <button onclick="document.querySelectorAll('#task-grant-checks input').forEach(function(c){c.checked=true;})" style="font-size:11px;padding:6px 12px;border:1px solid rgba(124,58,237,0.3);border-radius:8px;background:transparent;color:#a78bfa;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;">Select All</button>
-      <button onclick="document.querySelectorAll('#task-grant-checks input').forEach(function(c){c.checked=false;})" style="font-size:11px;padding:6px 12px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:transparent;color:#8b88b8;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;">Clear All</button>
-    </div>
-    <div style="padding:0 28px 28px;display:flex;gap:10px;">
-      <button onclick="window.dmsGrantSelectedTasks()" style="flex:1;padding:13px;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#7c3aed,#2563EB);box-shadow:0 5px 18px rgba(124,58,237,0.38);">Save Access</button>
-      <button onclick="document.getElementById('task-grant-overlay').style.display='none'" style="padding:13px 18px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:#8b88b8;background:transparent;">Cancel</button>
-    </div>
-    <input type="hidden" id="task-grant-uid" value="">
-  </div>
-</div>
 <!-- ── WELCOME TO DMS PRO POPUP ─────────────────────────────── -->
 <div id="welcome-overlay" style="display:none;position:fixed;inset:0;z-index:10050;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.82);backdrop-filter:blur(7px);">
   <div style="position:relative;width:100%;max-width:460px;background:rgba(18,17,30,0.99);border:1px solid rgba(37,99,235,0.38);border-radius:24px;box-shadow:0 32px 96px rgba(0,0,0,0.75);overflow:hidden;font-family:'Syne',sans-serif;animation:dmsWelcomePop 0.45s cubic-bezier(0.22,1,0.36,1);">
@@ -2023,226 +1989,14 @@ function showVocPrimeBar() {}
 function hideVocPrimeBar() {}
 </script>
 
-<!-- ── REQUEST ACCESS POPUP ────────────────────────────────────── -->
-<div id="task-req-overlay" style="display:none;position:fixed;inset:0;z-index:10052;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.85);backdrop-filter:blur(7px);">
-  <div style="position:relative;width:100%;max-width:420px;background:rgba(18,17,30,0.99);border:1px solid rgba(37,99,235,0.38);border-radius:24px;box-shadow:0 32px 96px rgba(0,0,0,0.75);font-family:'Syne',sans-serif;animation:dmsWelcomePop 0.4s cubic-bezier(0.22,1,0.36,1);">
-    <div style="padding:30px 30px 20px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:10px;">🔐</div>
-      <div style="font-size:19px;font-weight:800;color:#fff;margin-bottom:8px;">Access Required</div>
-      <p style="font-size:13px;color:#8b88b8;line-height:1.65;margin:0 0 18px;">You don't have permission to use <b style="color:#d4d1f0;" id="task-req-name">this tool</b>. Submit a request and the admin will review it.</p>
-      <input type="hidden" id="task-req-taskid" value="">
-      <div id="task-req-msg" style="display:none;font-size:13px;font-weight:600;padding:10px 14px;border-radius:10px;margin-bottom:4px;"></div>
-    </div>
-    <div style="padding:0 30px 28px;display:flex;gap:10px;">
-      <button id="task-req-btn" onclick="window.submitTaskRequest()" style="flex:1;padding:13px;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#2563EB,#0288d1);box-shadow:0 5px 18px rgba(37,99,235,0.38);transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Request Access</button>
-      <button onclick="closeTaskRequestOverlay()" style="padding:13px 18px;border:1px solid rgba(255,255,255,0.12);border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:#8b88b8;background:transparent;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8b88b8'">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <script>
-/* ── TASK PERMISSION SYSTEM ────────────────────────────────────── */
-var TASK_NAMES = {
-  'consolidation':'Consolidation','slow-moving':'Slow Moving Items',
-  'audit-loc':'Audit by Location','audit-asin':'Audit by ASIN',
-  'report':'Inventory Report','ysm':'YSM Barcode Task',
-  'catalog-issue':'Catalog Issue','scanning-issue':'Scanning Issue',
-  'locid':'Location ID Maker','lateslam':'Late SLAM Calculator',
-  'ls-deepdive':'Late Slam Deep Dive','voc':'VOC Analysis',
-  'deliverynote':'Reverse Transshipment','gatepass':'Gate Pass',
-  'feedback':'Report & Suggest','contact':'Support Desk'
-};
-var PUBLIC_TASKS = ['feedback','contact'];
-var _userAllowedTasks = null;
-
-function _isCurrentUserAdmin() {
-  try {
-    if (window.FIREBASE_READY && window.fbAuth) {
-      var u = fbAuth.currentUser;
-      return !!(u && (u.email||'').toLowerCase() === (window.ADMIN_EMAIL||'').toLowerCase());
-    }
-  } catch(e){} return false;
-}
-async function _fetchUserAllowedTasks() {
-  if (_isCurrentUserAdmin()) return 'all';
-  if (window.FIREBASE_READY && window.fbAuth) {
-    var cu = fbAuth.currentUser;
-    if (cu) {
-      try { var doc = await fbDB.collection('users').doc(cu.uid).get();
-        if (doc.exists) return doc.data().allowedTasks || []; } catch(e){}
-    }
-  }
-  return [];
-}
-async function _checkTaskPermission(taskId) {
-  if (_isCurrentUserAdmin() || PUBLIC_TASKS.indexOf(taskId) !== -1) return true;
-  if (_userAllowedTasks === null) _userAllowedTasks = await _fetchUserAllowedTasks();
-  if (_userAllowedTasks === 'all') return true;
-  if (Array.isArray(_userAllowedTasks))
-    return _userAllowedTasks.indexOf(taskId) !== -1 || _userAllowedTasks.indexOf('all') !== -1;
-  return false;
-}
-function showTaskRequestOverlay(taskId) {
-  var el = document.getElementById('task-req-name'); if (el) el.textContent = TASK_NAMES[taskId]||taskId;
-  var inp = document.getElementById('task-req-taskid'); if (inp) inp.value = taskId;
-  var msg = document.getElementById('task-req-msg'); if (msg){msg.style.display='none';msg.textContent='';}
-  var btn = document.getElementById('task-req-btn'); if (btn){btn.disabled=false;btn.textContent='Request Access';}
-  var ov = document.getElementById('task-req-overlay'); if (ov) ov.style.display='flex';
-}
-function closeTaskRequestOverlay() {
-  var ov = document.getElementById('task-req-overlay'); if (ov) ov.style.display='none';
-}
-window.submitTaskRequest = async function() {
-  var taskId = (document.getElementById('task-req-taskid')||{}).value||'';
-  var taskName = TASK_NAMES[taskId]||taskId;
-  var msgEl = document.getElementById('task-req-msg');
-  var btn = document.getElementById('task-req-btn');
-  if (btn){btn.disabled=true;btn.textContent='Submitting…';}
-  try {
-    var cu = window.FIREBASE_READY && window.fbAuth ? fbAuth.currentUser : null;
-    var rec = { userId:cu?cu.uid:'', userName:cu?(cu.displayName||''):'',
-      userEmail:cu?(cu.email||''):'', taskId:taskId, taskName:taskName, status:'pending',
-      requestedAt: window.FIREBASE_READY ? firebase.firestore.FieldValue.serverTimestamp() : Date.now() };
-    if (window.FIREBASE_READY && window.fbDB && cu) {
-      var ex = await fbDB.collection('task_requests')
-        .where('userId','==',cu.uid).where('taskId','==',taskId).where('status','==','pending').get();
-      if (!ex.empty) {
-        if (msgEl){msgEl.style.display='block';msgEl.style.color='#ffd60a';msgEl.textContent='⏳ Request already pending for this tool.';}
-        if (btn){btn.disabled=false;btn.textContent='Request Access';} return;
-      }
-      await fbDB.collection('task_requests').add(rec);
-    } else {
-      var reqs = JSON.parse(localStorage.getItem('dms_task_requests')||'[]');
-      reqs.push(Object.assign({},rec,{id:Date.now().toString(),requestedAt:Date.now()}));
-      localStorage.setItem('dms_task_requests',JSON.stringify(reqs));
-    }
-    if (msgEl){msgEl.style.display='block';msgEl.style.color='#10B981';msgEl.textContent='✅ Request sent! Admin will review and approve your access.';}
-    setTimeout(closeTaskRequestOverlay, 2600);
-  } catch(e) {
-    if (msgEl){msgEl.style.display='block';msgEl.style.color='#f72585';msgEl.textContent='❌ Error: '+e.message;}
-    if (btn){btn.disabled=false;btn.textContent='Request Access';}
-  }
-};
-
-/* ── ADMIN: TASK ACCESS REQUESTS ─────────────────────────────── */
-var _taskReqTab='pending', _taskReqCache=[];
-window.taskReqSetTab=function(tab){
-  _taskReqTab=tab;
-  document.querySelectorAll('#task-req-admin-tabs .tr-atab').forEach(function(b){
-    b.classList.toggle('active',b.getAttribute('data-tab')===tab);
-  });
-  _taskReqPaint();
-};
-function _trEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function _taskReqPaint(){
-  var box=document.getElementById('task-req-admin-list'); if(!box) return;
-  var counts={pending:0,approved:0,rejected:0};
-  _taskReqCache.forEach(function(r){var s=r.status||'pending';if(counts[s]!=null)counts[s]++;});
-  document.querySelectorAll('#task-req-admin-tabs .tr-atab-n').forEach(function(n){
-    n.textContent=counts[n.getAttribute('data-n')]||0;
-  });
-  var list=_taskReqCache.filter(function(r){return(r.status||'pending')===_taskReqTab;});
-  list.sort(function(a,b){
-    var at=a.requestedAt&&a.requestedAt.toMillis?a.requestedAt.toMillis():(a.requestedAt||0);
-    var bt=b.requestedAt&&b.requestedAt.toMillis?b.requestedAt.toMillis():(b.requestedAt||0);
-    return bt-at;
-  });
-  if(!list.length){box.innerHTML='<div style="color:#8b8aad;font-size:13px;">No '+_taskReqTab+' requests.</div>';return;}
-  box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">'+
-    list.map(function(r){
-      var stColor=r.status==='approved'?'#10B981':r.status==='rejected'?'#f72585':'#ffd60a';
-      var ts=r.requestedAt&&r.requestedAt.toMillis?r.requestedAt.toMillis():(r.requestedAt||0);
-      var when=ts?new Date(ts).toLocaleString():'';
-      var actions='';
-      if(r.status==='pending'){
-        actions='<button class="voc-abtn" style="border-color:#10B981;color:#10B981;" onclick="window.taskReqApprove(\''+_trEsc(r.id)+'\')">✅ Approve</button>'+
-                '<button class="voc-abtn" style="border-color:#f72585;color:#f72585;" onclick="window.taskReqReject(\''+_trEsc(r.id)+'\'">❌ Reject</button>';
-      } else if(r.status==='approved'){
-        actions='<button class="voc-abtn" style="border-color:#f72585;color:#f72585;" onclick="window.taskReqReject(\''+_trEsc(r.id)+'\'">❌ Revoke</button>';
-      } else {
-        actions='<button class="voc-abtn" style="border-color:#10B981;color:#10B981;" onclick="window.taskReqApprove(\''+_trEsc(r.id)+'\')">✅ Approve</button>';
-      }
-      return '<div class="voc-acard">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
-          '<div style="font-size:14px;font-weight:800;color:#fff;">'+_trEsc(r.userName||r.userEmail||'—')+'</div>'+
-          '<span style="font-size:10px;font-weight:700;color:'+stColor+';border:1px solid '+stColor+';border-radius:20px;padding:2px 9px;text-transform:uppercase;">'+_trEsc(r.status)+'</span>'+
-        '</div>'+
-        '<div style="font-size:12px;color:#10B981;margin-bottom:3px;">📋 '+_trEsc(r.taskName)+'</div>'+
-        '<div style="font-size:11px;color:#b8b6d9;margin-bottom:3px;">✉ '+_trEsc(r.userEmail||'—')+'</div>'+
-        (when?'<div style="font-size:10.5px;color:#8b8aad;margin-bottom:10px;">'+when+'</div>':'<div style="margin-bottom:10px;"></div>')+
-        '<div style="display:flex;gap:8px;">'+actions+'</div>'+
-        '</div>';
-    }).join('')+'</div>';
-}
-window.taskReqRender=async function(){
-  var box=document.getElementById('task-req-admin-list'); if(!box) return;
-  box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
-  if(window.FIREBASE_READY && window.fbAuth){
-    var cu=fbAuth.currentUser;
-    if(!cu||(cu.email||'').toLowerCase()!==ADMIN_EMAIL){
-      box.innerHTML='<div style="color:#ffd60a;font-size:13px;">⚠️ Admin only.</div>'; return;
-    }
-    try{
-      var snap=await fbDB.collection('task_requests').get();
-      _taskReqCache=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
-    }catch(e){
-      var msg=e.code==='permission-denied'||/permission/i.test(e.message)
-        ?'<div style="color:#ffd60a;font-size:12px;line-height:1.7;padding:4px 0;">⚠️ Firestore rules need updating.<br>In Firebase Console → Firestore → Rules, add:<br><code style="font-family:monospace;font-size:11px;color:#10B981;">match /task_requests/{id} { allow read, write: if isAdmin(); }</code></div>'
-        :'<div style="color:#f72585;font-size:13px;">Error: '+e.message+'</div>';
-      box.innerHTML=msg; return;
-    }
-  } else {
-    _taskReqCache=JSON.parse(localStorage.getItem('dms_task_requests')||'[]');
-  }
-  _taskReqPaint();
-};
-window.taskReqApprove=async function(reqId){
-  var req=_taskReqCache.find(function(r){return r.id===reqId;}); if(!req) return;
-  try{
-    if(window.FIREBASE_READY && window.fbDB && req.userId){
-      await fbDB.collection('users').doc(req.userId).update({
-        allowedTasks: firebase.firestore.FieldValue.arrayUnion(req.taskId)
-      });
-      await fbDB.collection('task_requests').doc(reqId).update({status:'approved'});
-    } else {
-      var reqs=JSON.parse(localStorage.getItem('dms_task_requests')||'[]');
-      var r=reqs.find(function(x){return x.id===reqId;}); if(r) r.status='approved';
-      localStorage.setItem('dms_task_requests',JSON.stringify(reqs));
-    }
-    req.status='approved'; _userAllowedTasks=null; _taskReqPaint();
-    if(typeof showToast==='function') showToast('✅ Access granted: '+req.taskName);
-  }catch(e){alert('Error: '+e.message);}
-};
-window.taskReqReject=async function(reqId){
-  var req=_taskReqCache.find(function(r){return r.id===reqId;}); if(!req) return;
-  try{
-    if(window.FIREBASE_READY && window.fbDB){
-      if(req.status==='approved' && req.userId){
-        await fbDB.collection('users').doc(req.userId).update({
-          allowedTasks: firebase.firestore.FieldValue.arrayRemove(req.taskId)
-        });
-      }
-      await fbDB.collection('task_requests').doc(reqId).update({status:'rejected'});
-    } else {
-      var reqs=JSON.parse(localStorage.getItem('dms_task_requests')||'[]');
-      var r=reqs.find(function(x){return x.id===reqId;}); if(r) r.status='rejected';
-      localStorage.setItem('dms_task_requests',JSON.stringify(reqs));
-    }
-    req.status='rejected'; _taskReqPaint();
-    if(typeof showToast==='function') showToast('❌ Rejected: '+req.taskName);
-  }catch(e){alert('Error: '+e.message);}
-};
-
-/* ── ADMIN: FEEDBACK VIEWER ──────────────────────────────────── */
 var _feedbackCache=[];
 window.feedbackAdminRender=async function(){
   var box=document.getElementById('admin-feedback-list'); if(!box) return;
-  box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+  box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Loading\u2026</div>';
   if(window.FIREBASE_READY && window.fbAuth){
     var cu=fbAuth.currentUser;
-    if(!cu||(cu.email||'').toLowerCase()!==ADMIN_EMAIL){
-      box.innerHTML='<div style="color:#ffd60a;font-size:13px;">⚠️ Admin only.</div>'; return;
-    }
+    if(!cu||(cu.email||'').toLowerCase()!==ADMIN_EMAIL){box.innerHTML='<div style="color:#ffd60a;font-size:13px;">\u26a0\ufe0f Admin only.</div>';return;}
     try{
       var snap=await fbDB.collection('dms_feedback').get();
       _feedbackCache=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
@@ -2252,66 +2006,29 @@ window.feedbackAdminRender=async function(){
         return bt-at;
       });
     }catch(e){
-      var msg=e.code==='permission-denied'||/permission/i.test(e.message)
-        ?'<div style="color:#ffd60a;font-size:12px;line-height:1.7;padding:4px 0;">⚠️ Firestore rules need updating.<br>In Firebase Console → Firestore → Rules, add:<br><code style="font-family:monospace;font-size:11px;color:#10B981;">match /dms_feedback/{id} { allow read, write: if isAdmin(); allow create: if true; }</code></div>'
+      var perm=e.code==='permission-denied'||/permission/i.test(e.message);
+      box.innerHTML=perm
+        ?'<div style="color:#ffd60a;font-size:12px;line-height:1.7;">\u26a0\ufe0f Add to Firestore rules:<br><code style="font-family:monospace;font-size:11px;color:#10B981;">match /dms_feedback/{id} { allow read, write: if isAdmin(); allow create: if true; }</code></div>'
         :'<div style="color:#f72585;font-size:13px;">Error: '+e.message+'</div>';
-      box.innerHTML=msg; return;
+      return;
     }
   } else {
     _feedbackCache=JSON.parse(localStorage.getItem('dms_feedback_store')||'[]');
   }
   var cnt=document.getElementById('admin-feedback-count');
-  if(cnt) cnt.textContent=_feedbackCache.length?'· '+_feedbackCache.length+' entr'+(_feedbackCache.length===1?'y':'ies'):'';
+  if(cnt) cnt.textContent=_feedbackCache.length?'\u00b7 '+_feedbackCache.length+' entr'+(_feedbackCache.length===1?'y':'ies'):'';
   if(!_feedbackCache.length){box.innerHTML='<div style="color:#8b8aad;font-size:13px;">No feedback yet.</div>';return;}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">'+
     _feedbackCache.map(function(f){
       var ts=f.submittedAt&&f.submittedAt.toMillis?f.submittedAt.toMillis():(f.submittedAt||0);
       var when=ts?new Date(ts).toLocaleString():'';
-      return '<div class="voc-acard">'+
-        '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:6px;">⭐ '+_trEsc(f.feature||'Not selected')+'</div>'+
-        (f.notes?'<div style="font-size:12px;color:#b8b6d9;line-height:1.6;margin-bottom:6px;font-style:italic;">&ldquo;'+_trEsc(f.notes)+'&rdquo;</div>':'')+
-        '<div style="font-size:10.5px;color:#8b8aad;">'+_trEsc(f.submittedBy||'Anonymous')+' · '+when+'</div>'+
+      return '<div style="background:rgba(15,14,23,0.6);border:1px solid #2e2c45;border-radius:12px;padding:16px;">'+
+        '<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:6px;">\u2b50 '+esc(f.feature||'Not selected')+'</div>'+
+        (f.notes?'<div style="font-size:12px;color:#b8b6d9;line-height:1.6;margin-bottom:6px;font-style:italic;">&ldquo;'+esc(f.notes)+'&rdquo;</div>':'')+
+        '<div style="font-size:10.5px;color:#8b8aad;">'+esc(f.submittedBy||'Anonymous')+' \u00b7 '+when+'</div>'+
         '</div>';
     }).join('')+'</div>';
-};
-window.taskPermRender=async function(){
-  var box=document.getElementById('task-perm-list'); if(!box) return;
-  box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
-  if(window.FIREBASE_READY && window.fbAuth){
-    var cu=fbAuth.currentUser;
-    if(!cu||(cu.email||'').toLowerCase()!==ADMIN_EMAIL){box.innerHTML='<div style="color:#ffd60a;font-size:13px;">⚠️ Admin only.</div>';return;}
-    try{
-      var snap=await fbDB.collection('users').get();
-      var users=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());})
-        .filter(function(u){return u.allowedTasks&&u.allowedTasks.length>0;});
-      if(!users.length){box.innerHTML='<div style="color:#8b8aad;font-size:13px;">No task permissions granted yet.</div>';return;}
-      box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">'+
-        users.map(function(u){
-          var chips=(u.allowedTasks||[]).map(function(t){
-            return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.3);border-radius:20px;padding:4px 8px 4px 11px;font-size:11px;color:#d4d1f0;font-weight:600;">'+
-              _trEsc(TASK_NAMES[t]||t)+
-              '<button onclick="window.taskPermRevoke(\''+_trEsc(u.id)+'\',\''+_trEsc(t)+'\')" style="background:none;border:none;color:#f72585;cursor:pointer;font-size:15px;padding:0;line-height:1;" title="Remove access">×</button></span>';
-          }).join(' ');
-          return '<div class="voc-acard">'+
-            '<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;">'+_trEsc(u.name||u.email||'—')+'</div>'+
-            '<div style="font-size:11px;color:#8b8aad;margin-bottom:10px;">'+_trEsc(u.email||'')+'</div>'+
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;">'+chips+'</div></div>';
-        }).join('')+'</div>';
-    }catch(e){box.innerHTML='<div style="color:#f72585;font-size:13px;">Error: '+e.message+'</div>';}
-  } else {box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Firebase mode only.</div>';}
-};
-window.taskPermRevoke=async function(userId,taskId){
-  if(!confirm('Remove '+(TASK_NAMES[taskId]||taskId)+' access from this user?')) return;
-  try{
-    if(window.FIREBASE_READY && window.fbDB){
-      await fbDB.collection('users').doc(userId).update({
-        allowedTasks:firebase.firestore.FieldValue.arrayRemove(taskId)
-      });
-      _userAllowedTasks=null;
-    }
-    if(typeof showToast==='function') showToast('✅ Removed: '+(TASK_NAMES[taskId]||taskId));
-    window.taskPermRender();
-  }catch(e){alert('Error: '+e.message);}
 };
 window.feedbackAdminClear=async function(){
   if(!confirm('Clear ALL feedback? Cannot be undone.')) return;
@@ -5097,22 +4814,11 @@ const state = {
 let slowMovingRows = [];
 
 // NAVIGATION
-function _doOpenTask(id) {
+function openTask(id) {
+  if (id === 'voc') { return openVocVersionChooser(); }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   window.scrollTo(0, 0);
-}
-function openTask(id) {
-  if (id === 'voc') { return openVocVersionChooser(); }
-  var pub = (typeof PUBLIC_TASKS !== 'undefined') ? PUBLIC_TASKS : ['feedback','contact'];
-  if (typeof _isCurrentUserAdmin === 'function' && (_isCurrentUserAdmin() || pub.indexOf(id) !== -1)) {
-    _doOpenTask(id); return;
-  }
-  if (typeof _checkTaskPermission === 'function') {
-    _checkTaskPermission(id).then(function(ok) {
-      if (ok) { _doOpenTask(id); } else { showTaskRequestOverlay(id); }
-    }).catch(function(){ _doOpenTask(id); });
-  } else { _doOpenTask(id); }
 }
 
 // ── VOC Analysis V1 / V2 chooser ──────────────────────────────────
@@ -16112,7 +15818,7 @@ function _dmsUserCard(u){
     + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+'</div>'
     + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>'
     + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>'
-        + '<button onclick="window.dmsManageTasks(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(124,58,237,0.45);border-radius:8px;background:rgba(124,58,237,0.1);color:#a78bfa;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Manage Task Access</button>'
+
         + '<button onclick="window.dmsCreateLoginUser(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(37,99,235,0.45);border-radius:8px;background:rgba(37,99,235,0.1);color:#2563EB;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Set / create password</button>'
         + '<button onclick="window.dmsUserRemove(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(247,37,133,0.4);border-radius:8px;background:rgba(247,37,133,0.08);color:#f72585;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\uddd1 Remove user</button>') + '</div>';
 }
@@ -16256,51 +15962,6 @@ async function _dmsCreateLoginFor(info){
 window.dmsCreateLoginReq = function(id){
   var r = (_dmsReqCache || []).find(function(x){ return x.id === id; });
   if (r) _dmsCreateLoginFor({ name:r.name, email:r.email, store:r.store, reqId:r.id });
-};
-window.dmsManageTasks = async function(id) {
-  var u = (_dmsUsersCache||[]).find(function(x){return x.id===id;}); if(!u) return;
-  var current = u.allowedTasks||[];
-  document.getElementById('task-grant-username').textContent = u.name||u.email||'User';
-  document.getElementById('task-grant-uid').value = id;
-  document.querySelectorAll('#task-grant-checks input[type="checkbox"]').forEach(function(cb){
-    cb.checked = current.indexOf(cb.value)!==-1;
-  });
-  document.getElementById('task-grant-overlay').style.display='flex';
-};
-window.dmsGrantSelectedTasks = async function(){
-  var uid=(document.getElementById('task-grant-uid')||{}).value||'';
-  var selected=[];
-  document.querySelectorAll('#task-grant-checks input[type="checkbox"]:checked').forEach(function(cb){selected.push(cb.value);});
-  var u=(_dmsUsersCache||[]).find(function(x){return x.id===uid;});
-  var who=u?(u.name||u.email):'user';
-  try{
-    if(window.FIREBASE_READY && window.fbDB){
-      await fbDB.collection('users').doc(uid).update({allowedTasks:selected});
-    }
-    if(u) u.allowedTasks=selected;
-    _userAllowedTasks=null;
-    if(typeof showToast==='function') showToast('✅ Task access updated for '+who);
-    document.getElementById('task-grant-overlay').style.display='none';
-    if(window.taskPermRender) window.taskPermRender();
-  }catch(e){alert('Error: '+e.message);}
-};
-window.dmsGrantAllTasks = async function(id) {
-  var u = (_dmsUsersCache || []).find(function(x){ return x.id === id; });
-  var who = u ? (u.name || u.email) : 'this user';
-  var allTaskIds = Object.keys(typeof TASK_NAMES !== 'undefined' ? TASK_NAMES : {});
-  if (!confirm('Grant access to ALL tasks for ' + who + '?\n\nThis will allow them to open every tool.')) return;
-  try {
-    if (window.FIREBASE_READY && window.fbDB) {
-      await fbDB.collection('users').doc(id).update({ allowedTasks: allTaskIds });
-    } else {
-      var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY)||'[]');
-      var usr = users.find(function(x){ return x.email === id; });
-      if (usr) { usr.allowedTasks = allTaskIds; localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users)); }
-    }
-    if (typeof _userAllowedTasks !== 'undefined') _userAllowedTasks = null;
-    if (typeof showToast === 'function') showToast('🔓 All tasks granted to ' + who);
-    if (window.taskPermRender) window.taskPermRender();
-  } catch(e) { alert('Error: ' + e.message); }
 };
 window.dmsCreateLoginUser = function(id){
   var u = (_dmsUsersCache || []).find(function(x){ return x.id === id; });
@@ -17001,36 +16662,6 @@ function handleScanningASIN(e) {
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
-    <!-- ── TASK ACCESS REQUESTS ──────────────────────────────── -->
-    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
-      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:14px;font-weight:700;color:#fff;">🔐 Task Access Requests</div>
-          <div style="font-size:11px;color:#8b8aad;">Users who requested access to a locked tool. Approve to grant, reject to deny.</div>
-        </div>
-        <button onclick="window.taskReqRender&&window.taskReqRender()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1D4ED8,#2f4bd4);color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
-      </div>
-      <div style="display:flex;gap:6px;padding:14px 24px 0;flex-wrap:wrap;" id="task-req-admin-tabs">
-        <button class="tr-atab active" data-tab="pending" onclick="window.taskReqSetTab('pending')">⏳ Pending <span class="tr-atab-n" data-n="pending">0</span></button>
-        <button class="tr-atab" data-tab="approved" onclick="window.taskReqSetTab('approved')">✅ Approved <span class="tr-atab-n" data-n="approved">0</span></button>
-        <button class="tr-atab" data-tab="rejected" onclick="window.taskReqSetTab('rejected')">❌ Rejected <span class="tr-atab-n" data-n="rejected">0</span></button>
-      </div>
-      <style>.tr-atab{padding:8px 14px;border:1px solid #2e2c45;background:rgba(15,14,23,0.6);color:#8b8aad;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border-radius:9px 9px 0 0;cursor:pointer;transition:all .15s;}.tr-atab:hover{color:#e8e6ff;border-color:#2563EB;}.tr-atab.active{background:linear-gradient(135deg,#2563EB,#0288d1);color:#fff;border-color:transparent;}.tr-atab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;font-family:'DM Mono',monospace;font-size:11px;background:rgba(0,0,0,0.3);border-radius:9px;}</style>
-      <div id="task-req-admin-list" style="padding:18px 24px;"><div style="color:#8b8aad;font-size:13px;">Loading…</div></div>
-    </div>
-
-    <!-- ── USER TASK PERMISSIONS ──────────────────────────────── -->
-    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
-      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:14px;font-weight:700;color:#fff;">🛡️ User Task Permissions</div>
-          <div style="font-size:11px;color:#8b8aad;">See which tasks each user can access. Click × on any chip to remove that task's access instantly.</div>
-        </div>
-        <button onclick="window.taskPermRender&&window.taskPermRender()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#7c3aed,#2563EB);color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
-      </div>
-      <div id="task-perm-list" style="padding:18px 24px;"><div style="color:#8b8aad;font-size:13px;">Loading…</div></div>
-    </div>
-
     <!-- ── USER FEEDBACK ─────────────────────────────────────── -->
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -17708,8 +17339,6 @@ var DSTPRO = (function() {
       if(window.dmsRenderCodes)window.dmsRenderCodes();
       if(window.vocAdminRender)window.vocAdminRender();
       if(window.dmsRenderUsers)window.dmsRenderUsers();
-      if(window.taskReqRender)window.taskReqRender();
-      if(window.taskPermRender)window.taskPermRender();
       if(window.feedbackAdminRender)window.feedbackAdminRender();
       syncLogs();
     }
