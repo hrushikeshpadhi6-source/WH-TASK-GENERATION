@@ -2122,8 +2122,8 @@ function smVocFilteredRows(s){
       if(rFrom && (!v.date || v.date<rFrom)) return;
       if(rTo   && (!v.date || v.date>rTo))   return;
     }
-    if(v.isCancel) return;              // exclude cancelled orders
-    var k=v.orderId;                     // deduplicate by Order ID only
+    if(v.isCancel) return;              // exclude cancelled orders (concession = undeliverable_return)
+    var k=v.orderId+'|'+v.asin;         // deduplicate by Order ID + ASIN (mirrors VOC V2 _dup logic)
     if(!seen[k]){ seen[k]=true; out.push(v); }
   });
   return out;
