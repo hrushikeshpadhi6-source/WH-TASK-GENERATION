@@ -1220,6 +1220,7 @@ body.qs-printing .qs-overlay { position: static; }
           <div class="grow"></div>
           <button id="exportCsv" class="btn sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> CSV</button>
           <button id="exportXls" class="btn sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Excel</button>
+          <button id="exportStoreSummary" class="btn sm" style="background:var(--success);color:#fff;border-color:var(--success)" title="Store-wise summary: Total VOC, Duplicates, Cancelled, Ops, Non-Ops, UTR, OTR, Picker, QC, RCA Pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg> Store Summary</button>
         </div>
         <div class="table-scroll">
           <table class="voc" id="vocTable"></table>
@@ -1335,6 +1336,10 @@ body.qs-printing .qs-overlay { position: static; }
         </span>
       </div>
       <span id="qsRefreshed" class="qs-refreshed">—</span>
+      <button id="qsXlsSummary" class="btn sm ghost" title="Export month-wise VOC summary to Excel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        <span>Excel Summary</span>
+      </button>
       <button id="qsShot" class="btn sm ghost" title="Download the whole report as one crisp HD screenshot (PNG)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
         <span>HD Screenshot</span>
@@ -1802,6 +1807,8 @@ window.VOCData = {
    │  Leave blank to run on built-in sample data.                 │
    └──────────────────────────────────────────────────────────────┘ */
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+/* ── VOC V1 URL: same Apps Script, action='voc' fetches the old sheet ─ */
+const WEB_APP_URL_V1 = WEB_APP_URL; // same endpoint, different action
 
 const D = window.VOCData;
 const $  = (s, r = document) => r.querySelector(s);
@@ -1904,6 +1911,71 @@ function normalize(rec) {
   return r;
 }
 
+/* ── VOC V1 normalizer: maps old sheet keys → V2 schema ─────────────
+   V1 rows from action='voc': store, date, orderId, asin, issue,
+   rcaCategory, rca, picker, product, productType, week, comment.
+   V1 rcaCategory format: "Ops Controllable - Picker Mistake" — split it. */
+function normalizeV1(rec) {
+  const r = {};
+  r.date1           = rec.date || '';
+  r.orderTimestamp  = rec.date || '';
+  r.dateIssued      = '';
+  r.storeCode       = rec.store || '';
+  r.orderId         = rec.orderId || '';
+  r.asin            = rec.asin || '';
+  r.productTitle    = rec.product || '';
+  r.concession      = '';
+  r.comment         = rec.comment || '';
+  r.customerId      = '';
+  r.productCategory = rec.productType || '';
+  r.productSub      = '';
+  r.pickerId        = rec.picker || '';
+  r.rcaCap          = rec.rca || '';
+  r.oeRemark        = '';
+  r.week            = rec.week || '';
+  r._source         = 'v1';
+
+  const rcat  = String(rec.rcaCategory || '').trim();
+  const issue = String(rec.issue || '').trim();
+
+  if (rcat) {
+    const sep = rcat.indexOf(' - ');
+    if (sep > -1) {
+      r.issueCategory = rcat.slice(0, sep).trim();
+      r.issueDesc     = rcat.slice(sep + 3).trim();
+    } else if (/^non.?ops/i.test(rcat)) {
+      r.issueCategory = 'Non Ops Controllable'; r.issueDesc = issue;
+    } else if (/^ops.?cont/i.test(rcat)) {
+      r.issueCategory = 'Ops Controllable'; r.issueDesc = issue;
+    } else {
+      r.issueDesc     = rcat;
+      r.issueCategory = /non.?ops/i.test(issue) ? 'Non Ops Controllable'
+                      : /ops/i.test(issue)       ? 'Ops Controllable' : issue;
+    }
+  } else {
+    r.issueCategory = /non.?ops/i.test(issue) ? 'Non Ops Controllable'
+                    : /ops/i.test(issue)       ? 'Ops Controllable' : '';
+    r.issueDesc     = /ops.?cont|non.?ops/i.test(issue) ? '' : issue;
+  }
+
+  // Normalize V1 issueDesc → V2 standard values (exact string match needed by classify())
+  const d = (r.issueDesc || '').toLowerCase();
+  if      (/\botr\b|on.?the.?road|on.?time.?rep/i.test(r.issueDesc))          r.issueDesc = 'Verified OTR Issue';
+  else if (/qc.?miss|qc.?issue|quality.*check|check.*quality/i.test(r.issueDesc)) r.issueDesc = 'UTR QC Miss';
+  else if (/picker/i.test(r.issueDesc))                                        r.issueDesc = 'Picker Mistake';
+  else if (/expiry|expired/i.test(r.issueDesc))                                r.issueDesc = 'UTR Expiry Miss';
+  else if (/vendor|internal.*dev/i.test(r.issueDesc))                         r.issueDesc = 'Internal Deviation (Vendor)';
+  else if (/catalogu?e/i.test(r.issueDesc))                                    r.issueDesc = 'Verified Catalogue Issue';
+  else if (/pad|within.*pad/i.test(r.issueDesc))                               r.issueDesc = 'Delivered within PAD Time';
+  else if (/change.*mind|mind.*change/i.test(r.issueDesc))                     r.issueDesc = 'Customer Change of Mind';
+
+  // Normalize issueCategory to exact V2 values
+  if      (/non.?ops/i.test(r.issueCategory)) r.issueCategory = 'Non Ops Controllable';
+  else if (/ops/i.test(r.issueCategory))      r.issueCategory = 'Ops Controllable';
+
+  return normalize(r);
+}
+
 /* ── DUPLICATE VOC DETECTION ──────────────────────────────────────────
    A VOC is a duplicate when the SAME Order ID + ASIN appears more than
    once. The earliest record (by date) is kept as the "original"; every
@@ -1982,6 +2054,9 @@ function jsonp(url, params) {
 async function loadData() {
   showLoading(true);
   let rows = null;
+  let v1rows = [];
+  S.v1Count = 0; S.v2Count = 0;
+
   if (WEB_APP_URL) {
     try {
       const res = await jsonp(WEB_APP_URL, { action: 'vocv2' });
@@ -1990,15 +2065,34 @@ async function loadData() {
         S.live = true;
         S.lastModified = res.sheetLastModified || '';
       } else {
-        toast('Live load failed: ' + ((res && res.message) || 'unknown') + ' — showing sample data');
+        toast('Live V2 load failed: ' + ((res && res.message) || 'unknown') + ' — showing sample data');
       }
     } catch (e) {
-      toast('Could not reach Apps Script (' + e.message + ') — showing sample data');
+      toast('Could not reach Apps Script for V2 (' + e.message + ') — showing sample data');
     }
   }
   if (!rows) { rows = D.buildSampleData(); S.live = false; }
 
-  S.all = rows.map(normalize);
+  // ── Load V1 data (old sheet, till May) ───────────────────────────
+  if (WEB_APP_URL_V1) {
+    try {
+      const r1 = await jsonp(WEB_APP_URL_V1, { action: 'voc' });
+      if (r1 && r1.status === 'ok' && Array.isArray(r1.rows)) {
+        v1rows = r1.rows;
+        toast('V1 data loaded · ' + v1rows.length + ' old records merged');
+      } else if (r1 && r1.status === 'ok' && Array.isArray(r1.data)) {
+        v1rows = r1.data;
+      }
+    } catch (e) {
+      // V1 fetch failed silently — V2-only mode
+    }
+  }
+
+  const v2Normalized = rows.map(r => { const n = normalize(r); n._source = 'v2'; return n; });
+  const v1Normalized = v1rows.map(normalizeV1);
+  S.v2Count = v2Normalized.length;
+  S.v1Count = v1Normalized.length;
+  S.all = [...v2Normalized, ...v1Normalized];
   S.lastRefreshed = new Date().toISOString();
   markDuplicates(S.all);
   S.catDescMap = rebuildCatDescMap(S.all);
@@ -2011,7 +2105,8 @@ async function loadData() {
 function showLoading(on) { $('#loaderBar').classList.toggle('hidden', !on); }
 function setLiveBadge() {
   const b = $('#livePill');
-  if (S.live) { b.className = 'pill-live'; b.innerHTML = '<i></i> Live · ' + S.all.length + ' records'; }
+  const v1tag = S.v1Count ? ' · V1: ' + S.v1Count + ' · V2: ' + S.v2Count : '';
+  if (S.live) { b.className = 'pill-live'; b.innerHTML = '<i></i> Live · ' + S.all.length + ' records' + v1tag; }
   else { b.className = 'pill-live demo'; b.innerHTML = '<i></i> Sample data · paste Web App URL to go live'; }
 }
 
@@ -2620,10 +2715,96 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
     $('#exportCsv').onclick = exportCSV;
     $('#exportXls').onclick = exportXLS;
+    $('#exportStoreSummary').onclick = exportStoreSummary;
     $('#pageSize').onchange = e => { S.pageSize = +e.target.value; S.page = 1; render(); };
   }
 
-  window.VOCTable = { render, wire, exportCSV, exportXLS };
+  /* ─── SUMMARY EXPORT: month-wise (no filter) or store-wise (filtered) ─── */
+  function exportStoreSummary() {
+    const all = S.all;
+    if (!all.length) { toast('No data to export', ICON.warn); return; }
+
+    const f = S.filters;
+    const hasFilter = !!(f.month || f.week || f.store || f.dateFrom || f.dateTo);
+
+    const th = s => '<th style="background:#232F3E;color:#fff;padding:6px 10px;font-size:12px;white-space:nowrap;border:1px solid #888">' + s + '</th>';
+    const td = (v, bold) => '<td style="padding:5px 10px;font-size:12px;border:1px solid #ccc;' + (bold ? 'font-weight:700;' : '') + '">' + (v == null ? '' : v) + '</td>';
+    const tdn = (n, warn) => '<td style="padding:5px 10px;font-size:12px;border:1px solid #ccc;text-align:right;' + (warn && n > 0 ? 'color:#B91C1C;font-weight:700;' : '') + '">' + n + '</td>';
+
+    const headers = ['Period / Store','Total VOC','Duplicate VOC','Cancelled Orders','Unique VOC',
+      'Ops Controllable','Non-Ops Controllable','UTR (Ops)','OTR (Ops)',
+      'Picker Mistake','QC Issue','RCA Pending','Picker Not Filled'];
+
+    function metricsRow(label, rows, bold) {
+      const total  = rows.length;
+      const dups   = rows.filter(r => r._dup).length;
+      const cancel = rows.filter(r => !r._dup && (r._cat || D.complaintCat(r)) === 'cancelled').length;
+      const unique = rows.filter(r => !r._dup && (r._cat || D.complaintCat(r)) !== 'cancelled').length;
+      const ops    = rows.filter(r => !r._dup && D.catKind(r) === 'ops').length;
+      const nonops = rows.filter(r => !r._dup && D.catKind(r) === 'nonops').length;
+      const utr    = rows.filter(r => !r._dup && D.classify(r).isUTR).length;
+      const otr    = rows.filter(r => !r._dup && D.classify(r).isOTR).length;
+      const picker = rows.filter(r => !r._dup && D.classify(r).isPicker).length;
+      const qc     = rows.filter(r => !r._dup && D.classify(r).isQC).length;
+      const rcap   = rows.filter(r => !r._dup && D.rcaPending(r)).length;
+      const pnf    = rows.filter(r => !r._dup && !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim())).length;
+      return '<tr' + (bold ? ' style="font-weight:700;background:#F0F4F8"' : '') + '>' +
+        td(label, bold) + tdn(total) + tdn(dups,true) + tdn(cancel) + tdn(unique) +
+        tdn(ops) + tdn(nonops,true) + tdn(utr,true) + tdn(otr,true) +
+        tdn(picker,true) + tdn(qc,true) + tdn(rcap,true) + tdn(pnf,true) + '</tr>';
+    }
+
+    let bodyHtml = '', filterNote = '', filename = '';
+    const stamp = new Date().toISOString().slice(0,10);
+
+    if (!hasFilter) {
+      const months = [...new Set(all.map(r => r._month).filter(Boolean))].sort();
+      months.forEach(m => {
+        const mRows = all.filter(r => r._month === m);
+        const [yr, mn] = m.split('-');
+        const mLabel = new Date(yr, parseInt(mn)-1, 1).toLocaleString('en-GB', {month:'short', year:'numeric'});
+        bodyHtml += metricsRow(mLabel, mRows, true);
+        const storeList = [...new Set(mRows.map(r => r.storeCode).filter(Boolean))].sort();
+        storeList.forEach(s => {
+          bodyHtml += metricsRow('    ' + s, mRows.filter(r => r.storeCode === s), false);
+        });
+      });
+      bodyHtml += metricsRow('GRAND TOTAL', all, true);
+      filterNote = 'All data — month-wise with store breakdown';
+      filename = 'VOC_Monthly_Store_Summary_' + stamp + '.xls';
+    } else {
+      const storeList = [...new Set(all.map(r => r.storeCode).filter(Boolean))].sort();
+      storeList.forEach(s => { bodyHtml += metricsRow(s, all.filter(r => r.storeCode === s), false); });
+      bodyHtml += metricsRow('TOTAL', all, true);
+      const parts = [];
+      if (f.month)    parts.push('Month: ' + f.month);
+      if (f.week)     parts.push('Week: ' + f.week);
+      if (f.store)    parts.push('Store: ' + f.store);
+      if (f.dateFrom) parts.push('From: ' + f.dateFrom);
+      if (f.dateTo)   parts.push('To: ' + f.dateTo);
+      filterNote = parts.join(' | ');
+      filename = 'VOC_Store_Summary_' + stamp + '.xls';
+    }
+
+    const generated = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    const xhtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<head><meta charset="utf-8"></head><body>' +
+      '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Export</h2>' +
+      '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 4px">Generated: ' + generated + ' · Total records: ' + all.length + '</p>' +
+      '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Filter: ' + filterNote + '</p>' +
+      '<table border="1" style="border-collapse:collapse;font-family:Arial">' +
+      '<thead><tr>' + headers.map(th).join('') + '</tr></thead>' +
+      '<tbody>' + bodyHtml + '</tbody></table>' +
+      '</body></html>';
+
+    const a = document.createElement('a');
+    a.href = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(xhtml);
+    a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Summary exported to Excel', ICON.check);
+  }
+
+  window.VOCTable = { render, wire, exportCSV, exportXLS, exportStoreSummary };
   document.addEventListener('DOMContentLoaded', wire);
 })();
 
@@ -4822,6 +5003,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => document.body.classList.remove('qs-printing'), 500);
     };
     const sh = document.getElementById('qsShot');      if (sh) sh.onclick = saveImage;
+    const xb = document.getElementById('qsXlsSummary'); if (xb) xb.onclick = exportExcelSummary;
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('qsOverlay').classList.contains('hidden')) close(); });
     // toggle PNF popovers
     document.getElementById('qsBody').addEventListener('click', e => {
@@ -4830,7 +5012,112 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  window.VOCSummary = { open, close, render };
+  /* ═══════════ EXCEL MONTH-WISE SUMMARY EXPORT ═══════════ */
+  function exportExcelSummary() {
+    const allRows = V.S.all; // includes V1 + V2, with _dup flags
+    if (!allRows.length) { V.toast('No data to export'); return; }
+
+    // Gather all months sorted
+    const months = [...new Set(allRows.map(r => r._month).filter(Boolean))].sort();
+
+    const th = s => '<th style="background:#232F3E;color:#fff;padding:6px 10px;font-size:12px;white-space:nowrap;border:1px solid #ccc">' + s + '</th>';
+    const td = (s, bold) => '<td style="padding:5px 10px;font-size:12px;border:1px solid #ccc;' + (bold ? 'font-weight:700;' : '') + '">' + (s == null ? '' : s) + '</td>';
+    const tdn = (n, warn) => '<td style="padding:5px 10px;font-size:12px;border:1px solid #ccc;text-align:right;' + (warn && n > 0 ? 'color:#B91C1C;font-weight:700;' : '') + '">' + (n == null ? '—' : n) + '</td>';
+
+    // ── Sheet 1: Month-wise overall summary ──────────────────────────
+    const mRows = months.map(m => {
+      const cur = allRows.filter(r => r._month === m);
+      const dups = cur.filter(r => r._dup).length;
+      const active = cur.filter(r => !r._dup);
+      const ops = active.filter(r => String(r.issueCategory||'').toLowerCase().includes('ops controllable') && !String(r.issueCategory||'').toLowerCase().includes('non'));
+      const nonops = active.filter(r => String(r.issueCategory||'').toLowerCase().includes('non ops'));
+      const picker = active.filter(r => /picker/i.test(r.issueDesc||''));
+      const qc = active.filter(r => /qc|quality/i.test(r.issueDesc||''));
+      const utr = active.filter(r => /utr/i.test(r.issueDesc||''));
+      const otr = active.filter(r => /otr/i.test(r.issueDesc||''));
+      const rcaPending = active.filter(r => D.rcaPending(r));
+      const v1c = cur.filter(r => r._source === 'v1').length;
+      const v2c = cur.filter(r => r._source !== 'v1').length;
+      const stores = [...new Set(active.map(r => r.storeCode).filter(Boolean))].length;
+      const [yr, mn] = m.split('-');
+      const label = new Date(yr, parseInt(mn)-1, 1).toLocaleString('en-GB', { month:'short', year:'numeric' });
+      return '<tr>' +
+        td(label, true) +
+        tdn(cur.length) + tdn(v1c) + tdn(v2c) +
+        tdn(dups, true) + tdn(active.length) +
+        tdn(ops.length) + tdn(nonops.length, true) +
+        tdn(picker.length, true) + tdn(qc.length, true) +
+        tdn(utr.length) + tdn(otr.length) +
+        tdn(rcaPending.length, true) + tdn(stores) +
+      '</tr>';
+    });
+
+    // totals row
+    const tot = (fn) => months.reduce((s, m) => { const cur = allRows.filter(r => r._month === m); return s + fn(cur, allRows.filter(r => r._month === m && !r._dup)); }, 0);
+    const totalRow = '<tr style="font-weight:700;background:#f0f4f8">' +
+      td('TOTAL', true) +
+      tdn(allRows.length) +
+      tdn(allRows.filter(r=>r._source==='v1').length) +
+      tdn(allRows.filter(r=>r._source!=='v1').length) +
+      tdn(allRows.filter(r=>r._dup).length) +
+      tdn(allRows.filter(r=>!r._dup).length) +
+      tdn(allRows.filter(r=>!r._dup&&/ops controllable/i.test(r.issueCategory||'')&&!/non/i.test(r.issueCategory||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&/non ops/i.test(r.issueCategory||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&/picker/i.test(r.issueDesc||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&/qc|quality/i.test(r.issueDesc||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&/utr/i.test(r.issueDesc||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&/otr/i.test(r.issueDesc||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&D.rcaPending(r)).length) +
+      tdn([...new Set(allRows.filter(r=>!r._dup).map(r=>r.storeCode).filter(Boolean))].length) +
+    '</tr>';
+
+    const summaryTable = '<table border="1" style="border-collapse:collapse;font-family:Arial;margin-bottom:24px">'+
+      '<thead><tr>' + ['Month','Total VOC','V1 (Old)','V2 (New)','Duplicates','Unique VOC',
+        'Ops Controllable','Non-Ops Controllable','Picker Mistake','QC Issue',
+        'UTR (Ops)','OTR (Ops)','RCA Pending','Stores Affected'].map(th).join('') + '</tr></thead>'+
+      '<tbody>' + mRows.join('') + totalRow + '</tbody></table>';
+
+    // ── Sheet 2: Store-wise monthly breakdown ───────────────────────
+    const stores = [...new Set(allRows.filter(r=>!r._dup).map(r=>r.storeCode).filter(Boolean))].sort();
+    const storeHeader = ['Store', ...months.map(m => {
+      const [yr, mn] = m.split('-');
+      return new Date(yr, parseInt(mn)-1, 1).toLocaleString('en-GB', { month:'short', year:'numeric' });
+    }), 'Total'].map(th).join('');
+    const storeRows = stores.map(s => {
+      const cells = months.map(m => {
+        const n = allRows.filter(r => !r._dup && r.storeCode === s && r._month === m).length;
+        return tdn(n || 0);
+      });
+      const tot2 = allRows.filter(r => !r._dup && r.storeCode === s).length;
+      return '<tr>' + td(s, true) + cells.join('') + tdn(tot2) + '</tr>';
+    }).join('');
+    const storeTotRow = '<tr style="font-weight:700;background:#f0f4f8">' + td('TOTAL', true) +
+      months.map(m => tdn(allRows.filter(r=>!r._dup&&r._month===m).length)).join('') +
+      tdn(allRows.filter(r=>!r._dup).length) + '</tr>';
+    const storeTable = '<table border="1" style="border-collapse:collapse;font-family:Arial;margin-bottom:24px">'+
+      '<thead><tr>' + storeHeader + '</tr></thead>'+
+      '<tbody>' + storeRows + storeTotRow + '</tbody></table>';
+
+    // ── Assemble & download ─────────────────────────────────────────
+    const title = s => '<h3 style="font-family:Arial;font-size:14px;margin:20px 0 6px;color:#232F3E">' + s + '</h3>';
+    const generated = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<head><meta charset="utf-8"><style>body{font-family:Arial}</style></head><body>' +
+      '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Report (V1 + V2 Combined)</h2>' +
+      '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Generated: ' + generated + ' · Total records: ' + allRows.length + ' (V1: ' + (V.S.v1Count||0) + ' · V2: ' + (V.S.v2Count||0) + ')</p>' +
+      title('Month-wise Summary') + summaryTable +
+      title('Store-wise Monthly Breakdown (Unique VOC, excl. duplicates)') + storeTable +
+      '</body></html>';
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+    a.download = 'VOC_Summary_V1_V2_' + stamp + '.xls';
+    document.body.appendChild(a); a.click(); a.remove();
+    V.toast('Excel summary exported · ' + months.length + ' months');
+  }
+
+  window.VOCSummary = { open, close, render, exportExcelSummary };
 })();
 
 </script>
