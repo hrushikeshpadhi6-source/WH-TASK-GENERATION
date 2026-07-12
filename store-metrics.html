@@ -3708,6 +3708,7 @@ var ANA_METRICS = [
   {key:'skip',      label:'Skip',                   keys:['SKIP','Skip','skip','U'],                                       agg:'sum', goodUp:false},
   {key:'short',     label:'Short',                  keys:['SHORT','Short','short','V'],                                    agg:'sum', goodUp:false},
   {key:'avgSla',    label:'Avg SLA %',              keys:['AVG SLA','Avg SLA','S'],                                        agg:'avgpct', goodUp:true},
+  {key:'avgUpo',    label:'Avg UPO',                keys:['AVG UPO','Avg UPO','T'],                                        agg:'avg', goodUp:null},
   {key:'ibTph',     label:'IB TPH',                 keys:['IB TPH','O'],                                                   agg:'avg', goodUp:true},
   {key:'obTph',     label:'OB TPH',                 keys:['OB TPH','P'],                                                   agg:'avg', goodUp:true},
   {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:true}
@@ -3967,7 +3968,7 @@ function anaDrawFullTable(curRows,prevRows){
     '<tbody>'+rowsHtml+'</tbody></table>';
 }
 
-var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamV2','avgSla','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
+var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamV2','avgSla','avgUpo','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
 function anaDrawScorecards(curRows,prevRows){
   var el=document.getElementById('ana-scorecards'); if(!el) return;
   var stores=[...new Set(curRows.map(gStore))].filter(Boolean).sort();
