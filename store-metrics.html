@@ -98,6 +98,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   font-family:'Inter',sans-serif;transition:all 0.15s;}
 .pb:hover{border-color:var(--accent);color:var(--accent);}
 .pb.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.sm-tabbtn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:all 0.15s;}
+.sm-tabbtn:hover{border-color:var(--accent);color:var(--accent);}
+.sm-tabbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
 .fsel{background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;
   color:var(--text);padding:6px 12px;font-family:'Inter',sans-serif;font-size:12px;outline:none;cursor:pointer;transition:all 0.15s;}
 .fsel:focus{border-color:var(--accent);}
@@ -613,7 +618,13 @@ tbody tr:hover{background:var(--row-hover);}
   </div>
 </div>
 
-<div class="main">
+<!-- MAIN / ANALYTICS TAB SWITCH -->
+<div style="max-width:1400px;margin:16px auto 0;padding:0 24px;display:flex;gap:8px;" id="sm-tabbar">
+  <button class="sm-tabbtn on" id="sm-tab-dash" onclick="smShowTab('dash')">📊 Dashboard</button>
+  <button class="sm-tabbtn" id="sm-tab-ana" onclick="smShowTab('ana')">📈 Analytics</button>
+</div>
+
+<div class="main" id="sm-main">
 
   <!-- DIGITAL CLOCK + TIPS -->
   <!-- Clock + Delivery Journey -->
@@ -862,11 +873,11 @@ tbody tr:hover{background:var(--row-hover);}
     <div class="sec-hdr" style="justify-content:space-between;">
       <span>FC Target Achievement — Orders</span>
       <div style="display:flex;align-items:center;gap:8px;">
-        <input type="date" id="fc-date" style="background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:5px 9px;font-size:11px;font-family:'Inter',monospace;outline:none;">
+        <div id="fc-range-badge" style="font-size:10px;font-weight:700;color:var(--muted);font-family:'Inter',monospace;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:5px 9px;white-space:nowrap;">📅 pick a period above</div>
         <button onclick="smFetchFC()" id="fc-btn" style="background:linear-gradient(135deg,#0EA5E9,#2563EB);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:6px 12px;cursor:pointer;font-family:'Inter',sans-serif;">☁️ Fetch FC</button>
       </div>
     </div>
-    <div id="sm-meters"><div class="empty">Load data then pick a date → ☁️ Fetch FC to see achievement meters</div></div>
+    <div id="sm-meters"><div class="empty">Load data, pick a period (Day/Week/Month/Year/Range) above, then ☁️ Fetch FC to see achievement meters</div></div>
   </div>
 
   <!-- CHARTS -->
@@ -983,6 +994,57 @@ tbody tr:hover{background:var(--row-hover);}
     </div>
   </div>
 
+</div>
+
+<!-- ANALYTICS / COMPARE VIEW -->
+<div class="main" id="sm-analytics" style="display:none;">
+  <div class="chart-card ani2" style="margin-bottom:14px;">
+    <div class="sec-hdr" style="border-bottom:none;padding-bottom:0;">📈 Analytics — Period Comparison</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;">
+      <div>
+        <div class="f-label" style="margin-bottom:6px;">Compare by</div>
+        <div style="display:inline-flex;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:3px;" id="ana-by">
+          <button class="sm-tabbtn on" data-by="week" style="border:none;padding:5px 14px;">Week</button>
+          <button class="sm-tabbtn" data-by="month" style="border:none;padding:5px 14px;">Month</button>
+          <button class="sm-tabbtn" data-by="range" style="border:none;padding:5px 14px;">Custom Range</button>
+        </div>
+      </div>
+      <div id="ana-period-picks" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;"></div>
+      <div>
+        <div class="f-label" style="margin-bottom:6px;">Station</div>
+        <select id="ana-store" class="fsel"></select>
+      </div>
+      <div>
+        <div class="f-label" style="margin-bottom:6px;">Focus metric (trend + per-store)</div>
+        <select id="ana-focus" class="fsel"></select>
+      </div>
+      <button class="load-btn" onclick="anaFetchForecast()" id="ana-fc-btn">☁️ Fetch Forecast</button>
+    </div>
+    <div id="ana-note" style="margin-top:10px;font-size:11px;color:var(--muted);font-family:'Inter',monospace;"></div>
+  </div>
+
+  <div id="ana-kpis" class="kpi-grid ani2"></div>
+
+  <div class="charts-2" style="grid-template-columns:1.3fr 1fr;">
+    <div class="chart-card ani2">
+      <div class="sec-hdr">📉 Trend — <span id="ana-trend-lbl">Orders</span> across recent periods</div>
+      <canvas id="ana-trend-chart" style="max-height:260px;"></canvas>
+    </div>
+    <div class="chart-card ani2">
+      <div class="sec-hdr">🏬 Per-Store — <span id="ana-store-lbl">Orders</span></div>
+      <div id="ana-store-table" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+
+  <div class="chart-card ani2">
+    <div class="sec-hdr">📋 Full Metric Comparison</div>
+    <div id="ana-table" style="overflow-x:auto;"></div>
+  </div>
+
+  <div class="chart-card ani2">
+    <div class="sec-hdr">🏬 Store Scorecards — Current Period</div>
+    <div id="ana-scorecards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;"></div>
+  </div>
 </div>
 
 <!-- FOOTER -->
@@ -1137,8 +1199,8 @@ function smAutoSelectLatest(){
 
   // Set period to Day and select latest date
   smPeriod = 'day';
-  document.querySelectorAll('.pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
-  var dayBtn = document.querySelector('.pb:nth-child(2)');
+  document.querySelectorAll('.filters .pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
+  var dayBtn = document.querySelector('.filters .pb:nth-child(2)');
   if(dayBtn) dayBtn.classList.add('on');
 
   smBuildPeriodDrop();
@@ -1149,8 +1211,7 @@ function smAutoSelectLatest(){
   }
   smRender();
 
-  // Auto set FC date and fetch
-  document.getElementById('fc-date').value = latest;
+  // Auto-fetch FC for the auto-selected latest day
   setTimeout(function(){ smFetchFC(true); }, 800);
 }
 
@@ -1241,7 +1302,7 @@ function smBuildPeriodDrop(){
 }
 function smSetPeriod(p,btn){
   smPeriod=p;
-  document.querySelectorAll('.pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
+  document.querySelectorAll('.filters .pb').forEach(function(b){ if(!b.id||b.id.indexOf('nl-pb-')!==0) b.classList.remove('on'); });
   btn.classList.add('on');
   var rw=document.getElementById('sm-range-wrap');
   var pv=document.getElementById('sm-pval');
@@ -1585,12 +1646,13 @@ function smBuildSummary(rows,mode){
     if(!groups[gk]) groups[gk]={period:key,store:store,rows:[]};
     groups[gk].rows.push(r);
   });
-  var hdr=['Period','Store','Records','Total Inbound','Vendor','Transs','Orders','Outbound Units','Late Slam','LS Rate %','Avg UPO','Avg SLA %','IB TPH','OB TPH'];
+  var hdr=['Period','Store','Records','Total Inbound','Vendor','Transs','Orders','Outbound Units','Late Slam','LS Rate %','Late Slam V2','LS V2 Rate %','Avg UPO','Avg SLA %','IB TPH','OB TPH'];
   var out=[hdr];
   Object.keys(groups).sort().forEach(function(gk){
     var rs=groups[gk].rows;
     var orders=sum(rs.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
     var ls=sum(rs.map(function(r){return gNum(r,['LATE SLAM','Late Slam','N']);}));
+    var lsV2=sum(rs.map(function(r){return gNum(r,['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z']);}));
     out.push([
       groups[gk].period, groups[gk].store, rs.length,
       Math.round(sum(rs.map(function(r){return gNum(r,['TOTAL INBOUND','Total Inbound','C']);}))),
@@ -1600,6 +1662,8 @@ function smBuildSummary(rows,mode){
       Math.round(sum(rs.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}))),
       Math.round(ls),
       orders>0?+(ls/orders*100).toFixed(2):0,
+      Math.round(lsV2),
+      orders>0?+(lsV2/orders*100).toFixed(2):0,
       +avg(rs.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})).toFixed(2),
       +toP(avg(rs.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}))).toFixed(2),
       +avg(rs.map(function(r){return gNum(r,['IB TPH','O']);})).toFixed(1),
@@ -1646,10 +1710,10 @@ function smExecSummary(rows){
   var lb = (window.smLbData||[]);
   var best = lb[0], worst = lb.length>1?lb[lb.length-1]:null;
 
-  // Daily achievement: actual orders vs forecast (if FC loaded), else SLA attainment
-  var fcDate=(document.getElementById('fc-date')||{}).value||'';
+  // Daily achievement: actual orders vs forecast (if FC loaded for this period's date range), else SLA attainment
+  var fcRange=smDateRangeOfRows(rows);
   var totAct=0, totFc=0;
-  if(fcDate){ lb.forEach(function(d){ var f=smFcData[d.store]?(smFcData[d.store][fcDate]||0):0; if(f>0){ totFc+=f; totAct+=d.orders; } }); }
+  if(fcRange.min){ lb.forEach(function(d){ var f=smFcData[d.store]?smFcSumRange(d.store,fcRange,false):0; if(f>0){ totFc+=f; totAct+=d.orders; } }); }
   var achVal, achSub;
   if(totFc>0){ achVal=(totAct/totFc*100).toFixed(1)+'%'; achSub='Actual '+fmt(totAct)+' vs FC '+fmt(totFc); }
   else { achVal=(netSla/99*100).toFixed(1)+'%'; achSub='SLA attainment vs 99% target'; }
@@ -1744,40 +1808,80 @@ function smKPI(rows){
 // ═══════════════════════════════════════════════
 // FC FETCH + METERS
 // ═══════════════════════════════════════════════
+function smDateRangeOfRows(rows){
+  var ds=rows.map(gDate).filter(Boolean).sort();
+  return ds.length?{min:ds[0],max:ds[ds.length-1]}:{min:'',max:''};
+}
+function smEachDate(from,to){
+  var out=[]; if(!from||!to) return out;
+  var d=new Date(from+'T00:00:00'), end=new Date(to+'T00:00:00');
+  while(d<=end){ out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')); d.setDate(d.getDate()+1); }
+  return out;
+}
+// Sums cached FC (smFcData) for one store across every date in [range.min, range.max].
+function smFcSumRange(store, range, wantUnits){
+  if(!smFcData[store]||!range.min) return 0;
+  var tot=0;
+  Object.keys(smFcData[store]).forEach(function(k){
+    var isUnits=k.endsWith('_units');
+    if(wantUnits!==isUnits) return;
+    var dateKey=isUnits?k.slice(0,-'_units'.length):k;
+    if(dateKey>=range.min&&dateKey<=range.max) tot+=smFcData[store][k]||0;
+  });
+  return tot;
+}
 function smFetchFC(auto){
-  var dateVal = document.getElementById('fc-date').value;
-  if(!dateVal){ if(!auto) alert('Pick a date first'); return; }
+  var rows=smFilter();
+  var range=smDateRangeOfRows(rows);
+  if(!range.min){ if(!auto) alert('No data for the selected period — pick a period with data first.'); return; }
+  var dates=smEachDate(range.min, range.max);
+  var badge=document.getElementById('fc-range-badge');
+  if(badge) badge.textContent='📅 '+range.min+' → '+range.max;
   var btn = document.getElementById('fc-btn');
-  btn.textContent='⏳'; btn.disabled=true;
-
-  var cb='fcCb_'+Date.now();
-  var t=setTimeout(function(){cleanup();btn.textContent='☁️ Fetch FC';btn.disabled=false;},20000);
-  function cleanup(){clearTimeout(t);delete window[cb];var s=document.getElementById('j-'+cb);if(s)s.remove();}
-
-  window[cb]=function(data){
-    cleanup(); btn.textContent='☁️ Fetch FC'; btn.disabled=false;
-    if(!data||!data.orders){btn.textContent='❌ FC Error';return;}
-    Object.keys(data.orders).forEach(function(store){
-      var slots=data.orders[store];
-      var total=Object.values(slots).reduce(function(s,v){return s+Math.round(v||0);},0);
-      if(!smFcData[store])smFcData[store]={};
-      smFcData[store][dateVal]=total;
-    });
-    // Also get FC units
-    if(data.units){
-      Object.keys(data.units).forEach(function(store){
-        var slots=data.units[store];
-        var total=Object.values(slots).reduce(function(s,v){return s+Math.round(v||0);},0);
-        if(!smFcData[store])smFcData[store]={};
-        smFcData[store][dateVal+'_units']=total;
-      });
+  btn.textContent='⏳ 0/'+dates.length; btn.disabled=true;
+  var done=0;
+  function fetchOne(dateVal, cb){
+    if(dateVal in (smFcData.__fetched||{})){ /* not used, cache check below instead */ }
+    var already=Object.keys(smFcData).some(function(st){return smFcData[st]&&(dateVal in smFcData[st]);});
+    if(already){ cb(); return; }
+    var cbName='fcCb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    var t=setTimeout(function(){cleanup();cb();},15000);
+    function cleanup(){clearTimeout(t);delete window[cbName];var s=document.getElementById('j-'+cbName);if(s)s.remove();}
+    window[cbName]=function(data){
+      cleanup();
+      if(data&&data.orders){
+        Object.keys(data.orders).forEach(function(store){
+          var slots=data.orders[store];
+          var total=Object.values(slots).reduce(function(s,v){return s+Math.round(v||0);},0);
+          if(!smFcData[store])smFcData[store]={};
+          smFcData[store][dateVal]=total;
+        });
+      }
+      if(data&&data.units){
+        Object.keys(data.units).forEach(function(store){
+          var slots=data.units[store];
+          var total=Object.values(slots).reduce(function(s,v){return s+Math.round(v||0);},0);
+          if(!smFcData[store])smFcData[store]={};
+          smFcData[store][dateVal+'_units']=total;
+        });
+      }
+      cb();
+    };
+    var s=document.createElement('script');s.id='j-'+cbName;
+    s.src=APPS_URL+'?action=forecast&date='+dateVal+'&callback='+cbName;
+    document.head.appendChild(s);
+  }
+  var i=0;
+  function next(){
+    if(i>=dates.length){
+      btn.textContent='☁️ Fetch FC'; btn.disabled=false;
+      smDrawMeters(smFilter());
+      return;
     }
-    var rows=smFilter();
-    smDrawMeters(rows);
-  };
-  var s=document.createElement('script');s.id='j-'+cb;
-  s.src=APPS_URL+'?action=forecast&date='+dateVal+'&callback='+cb;
-  document.head.appendChild(s);
+    var dv=dates[i++];
+    fetchOne(dv, function(){ done++; btn.textContent='⏳ '+done+'/'+dates.length; next(); });
+  }
+  next();
 }
 
 function smDrawMeters(rows){
@@ -1786,13 +1890,15 @@ function smDrawMeters(rows){
   if(!stores.length){container.innerHTML='<div class="empty">No store data</div>';return;}
 
   var hasFc=Object.keys(smFcData).length>0;
+  var periodRange=smDateRangeOfRows(rows);
+  var badge=document.getElementById('fc-range-badge');
+  if(badge) badge.textContent=periodRange.min?'📅 '+periodRange.min+' → '+periodRange.max:'📅 pick a period above';
   var storeCards=stores.map(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var actual=sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
     var actualUnits=sum(sr.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}));
-    var fcDate=document.getElementById('fc-date').value;
-    var fcOrders=hasFc&&smFcData[s]?smFcData[s][fcDate]||0:0;
-    var fcUnits=hasFc&&smFcData[s]?smFcData[s][fcDate+'_units']||0:0;
+    var fcOrders=hasFc?smFcSumRange(s,periodRange,false):0;
+    var fcUnits=hasFc?smFcSumRange(s,periodRange,true):0;
     var col=SC[s]||'#94A3B8';
     var pct=fcOrders>0?Math.min((actual/fcOrders)*100,120):0;
     var pctU=fcUnits>0?Math.min((actualUnits/fcUnits)*100,120):0;
@@ -1852,30 +1958,16 @@ function smDrawMeters(rows){
   }).join('');
 
   // ── Network total summary (period-aware FC totals across all stores) ──
-  var fcInPeriod=function(d){
-    if(smPeriod==='all') return true;
-    var pv=(document.getElementById('sm-pval')||{}).value||'';
-    if(!pv||pv==='all') return true;
-    if(smPeriod==='day') return d===pv;
-    if(smPeriod==='month'){ var mk=vocMonthKey(pv); return !!(mk&&d.substring(0,7)===mk); }
-    if(smPeriod==='year') return d.substring(0,4)===String(pv);
-    if(smPeriod==='range'){
-      var rf=document.getElementById('sm-range-from'),rt=document.getElementById('sm-range-to');
-      var rF=rf?rf.value:'',rT=rt?rt.value:'';
-      return (!rF||d>=rF)&&(!rT||d<=rT);
-    }
-    return true;
-  };
+  // Uses the SAME date range as the active filtered rows (periodRange, computed above) —
+  // correct for day/week/month/year/range/all without special-casing each type.
   var netActOrd=0,netActUnits=0,netFcOrd=0,netFcUnits=0;
   stores.forEach(function(s2){
     var sr2=rows.filter(function(r){return gStore(r)===s2;});
     netActOrd+=sum(sr2.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
     netActUnits+=sum(sr2.map(function(r){return gNum(r,['OUTBOUND UNITS','Outbound Units','J']);}));
     if(hasFc&&smFcData[s2]){
-      Object.keys(smFcData[s2]).forEach(function(k){
-        if(k.endsWith('_units')) return;
-        if(fcInPeriod(k)){ netFcOrd+=smFcData[s2][k]||0; netFcUnits+=smFcData[s2][k+'_units']||0; }
-      });
+      netFcOrd+=smFcSumRange(s2,periodRange,false);
+      netFcUnits+=smFcSumRange(s2,periodRange,true);
     }
   });
   var netSummary='';
@@ -3588,6 +3680,417 @@ function copySummary(){
     setTimeout(function(){btn.textContent='📋 Copy Summary';btn.style.color='';btn.style.borderColor='';},2000);
   });
 }
+/* ═══════════════════════════════════════════════════════════════
+   ANALYTICS — Week vs Week / Month vs Month / Range vs Range
+   Reuses smData, gNum/gStore/gWeek/gMonth/gDate, sum/avg/toP/fmt, APPS_URL.
+   ═══════════════════════════════════════════════════════════════ */
+var ANA = {
+  by:'week',            // 'week' | 'month' | 'range'
+  curKey:'', prevKey:'', // for week/month
+  curFrom:'', curTo:'', prevFrom:'', prevTo:'', // for range
+  store:'all',
+  focus:'orders',
+  built:false,
+  fc:{} // per-store per-date forecast cache, mirrors smFcData shape
+};
+
+var ANA_METRICS = [
+  {key:'orders',    label:'Orders',                keys:['ORDERS','Orders','I'],                                          agg:'sum', goodUp:true},
+  {key:'obUnits',   label:'Outbound Units',         keys:['OUTBOUND UNITS','Outbound Units','J'],                          agg:'sum', goodUp:true},
+  {key:'inbound',   label:'Total Inbound',          keys:['TOTAL INBOUND','Total Inbound','C'],                            agg:'sum', goodUp:null},
+  {key:'vendor',    label:'Vendor',                 keys:['VENDOR','Vendor','D'],                                          agg:'sum', goodUp:null},
+  {key:'transs',    label:'Transhipment',           keys:['TRANSS','Transs','E'],                                          agg:'sum', goodUp:null},
+  {key:'qualRem',   label:'Quality Removal',        keys:['QUALITY REMOVAL','Quality Removal','K'],                        agg:'sum', goodUp:false},
+  {key:'damRem',    label:'Damaged Removal',        keys:['DAMAGED REMOVAL','Damaged Removal','L'],                        agg:'sum', goodUp:false},
+  {key:'expRem',    label:'Expired Removal',        keys:['EXPIRED REMOVAL','Expired Removal','M'],                        agg:'sum', goodUp:false},
+  {key:'lateSlam',  label:'Late Slam',              keys:['LATE SLAM','Late Slam','N'],                                    agg:'sum', goodUp:false},
+  {key:'lateSlamV2',label:'Late Slam V2',           keys:['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z'],agg:'sum', goodUp:false},
+  {key:'skip',      label:'Skip',                   keys:['SKIP','Skip','skip','U'],                                       agg:'sum', goodUp:false},
+  {key:'short',     label:'Short',                  keys:['SHORT','Short','short','V'],                                    agg:'sum', goodUp:false},
+  {key:'avgSla',    label:'Avg SLA %',              keys:['AVG SLA','Avg SLA','S'],                                        agg:'avgpct', goodUp:true},
+  {key:'ibTph',     label:'IB TPH',                 keys:['IB TPH','O'],                                                   agg:'avg', goodUp:true},
+  {key:'obTph',     label:'OB TPH',                 keys:['OB TPH','P'],                                                   agg:'avg', goodUp:true},
+  {key:'lateSlamPct',label:'Late Slam %',           numKeys:['LATE SLAM','Late Slam','N'], denKeys:['ORDERS','Orders','I'],      agg:'ratio', goodUp:false},
+  {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:true}
+];
+
+function anaMetricVal(m, rows){
+  if(!rows.length) return 0;
+  if(m.agg==='sum') return sum(rows.map(function(r){return gNum(r,m.keys);}));
+  if(m.agg==='avg') return avg(rows.map(function(r){return gNum(r,m.keys);}));
+  if(m.agg==='avgpct') return toP(avg(rows.map(function(r){return gNum(r,m.keys);})));
+  if(m.agg==='ratio'){
+    var num=sum(rows.map(function(r){return gNum(r,m.numKeys);}));
+    var den=sum(rows.map(function(r){return gNum(r,m.denKeys);}));
+    return den>0?(num/den*100):0;
+  }
+  return 0;
+}
+
+function anaFmtVal(m,v){
+  if(v==null||isNaN(v)) return '—';
+  if(m.agg==='avgpct'||m.agg==='ratio') return v.toFixed(2)+'%';
+  if(m.agg==='avg') return v.toFixed(1);
+  return fmt(v);
+}
+function anaStoreScopeRows(rows){
+  if(ANA.store==='all') return rows;
+  return rows.filter(function(r){return gStore(r)===ANA.store;});
+}
+
+function anaWeekOptions(){
+  var seen={};
+  smData.forEach(function(r){
+    var w=String(gWeek(r)).replace(/\D/g,'');
+    var d=gDate(r);
+    if(!w||!d) return;
+    if(!seen[w]||d<seen[w].min) { seen[w]=seen[w]||{}; seen[w].min=d; }
+    if(!seen[w].max||d>seen[w].max) seen[w].max=d;
+  });
+  return Object.keys(seen).map(function(w){return {value:w,label:'Week '+w+' ('+seen[w].min+' → '+seen[w].max+')',min:seen[w].min,max:seen[w].max};})
+    .sort(function(a,b){return b.min.localeCompare(a.min);});
+}
+var ANA_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function anaMonthLabel(m){
+  var s=String(m).trim();
+  var mt=s.match(/^(\d{4})-(\d{1,2})$/); if(mt) return ANA_MONTHS[parseInt(mt[2],10)-1]+' '+mt[1];
+  mt=s.match(/^(\d{1,2})[\/\-](\d{4})$/); if(mt) return ANA_MONTHS[parseInt(mt[1],10)-1]+' '+mt[2];
+  var d=new Date(s); if(!isNaN(d.getTime())) return ANA_MONTHS[d.getMonth()]+' '+d.getFullYear();
+  return s;
+}
+function anaMonthOptions(){
+  var seen={};
+  smData.forEach(function(r){
+    var m=gMonth(r); var d=gDate(r);
+    if(!m||!d) return;
+    if(!seen[m]) seen[m]={min:d,max:d}; else { if(d<seen[m].min)seen[m].min=d; if(d>seen[m].max)seen[m].max=d; }
+  });
+  return Object.keys(seen).map(function(m){return {value:m,label:anaMonthLabel(m)+' ('+seen[m].min+' → '+seen[m].max+')',min:seen[m].min,max:seen[m].max};})
+    .sort(function(a,b){return b.min.localeCompare(a.min);});
+}
+function anaPeriodOptions(){ return ANA.by==='week'?anaWeekOptions():ANA.by==='month'?anaMonthOptions():[]; }
+
+function anaRowsForKey(key, by){
+  by=by||ANA.by;
+  if(by==='week') return anaStoreScopeRows(smData.filter(function(r){return String(gWeek(r)).replace(/\D/g,'')===String(key).replace(/\D/g,'');}));
+  if(by==='month') return anaStoreScopeRows(smData.filter(function(r){return gMonth(r)===key;}));
+  return [];
+}
+function anaRowsForRange(from,to){
+  if(!from||!to) return [];
+  return anaStoreScopeRows(smData.filter(function(r){var d=gDate(r);return d&&d>=from&&d<=to;}));
+}
+function anaDateRange(rows){
+  var ds=rows.map(gDate).filter(Boolean).sort();
+  return ds.length?{min:ds[0],max:ds[ds.length-1]}:{min:'',max:''};
+}
+function anaEachDate(from,to){
+  var out=[]; if(!from||!to) return out;
+  var d=new Date(from+'T00:00:00'), end=new Date(to+'T00:00:00');
+  while(d<=end){ out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')); d.setDate(d.getDate()+1); }
+  return out;
+}
+
+function anaCurRows(){
+  if(ANA.by==='range') return anaRowsForRange(ANA.curFrom, ANA.curTo);
+  return anaRowsForKey(ANA.curKey);
+}
+function anaPrevRows(){
+  if(ANA.by==='range') return anaRowsForRange(ANA.prevFrom, ANA.prevTo);
+  return anaRowsForKey(ANA.prevKey);
+}
+
+function anaBuildControls(){
+  var storeSel=document.getElementById('ana-store');
+  var stores=[...new Set(smData.map(gStore))].filter(Boolean).sort();
+  storeSel.innerHTML='<option value="all">All Stores</option>'+stores.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+  storeSel.value=ANA.store;
+  storeSel.onchange=function(e){ANA.store=e.target.value;ANA.fc={};anaRender();};
+
+  var focusSel=document.getElementById('ana-focus');
+  focusSel.innerHTML=ANA_METRICS.map(function(m){return '<option value="'+m.key+'">'+m.label+'</option>';}).join('')+'<option value="forecast">Forecast Orders</option>';
+  focusSel.value=ANA.focus;
+  focusSel.onchange=function(e){ANA.focus=e.target.value;anaDrawTrend();anaDrawStoreTable();};
+
+  document.querySelectorAll('#ana-by button').forEach(function(b){
+    b.onclick=function(){
+      ANA.by=b.dataset.by; ANA.curKey='';ANA.prevKey='';
+      document.querySelectorAll('#ana-by button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      anaBuildPeriodPicks(); anaRender();
+    };
+  });
+
+  anaBuildPeriodPicks();
+  ANA.built=true;
+}
+
+function anaBuildPeriodPicks(){
+  var wrap=document.getElementById('ana-period-picks');
+  if(ANA.by==='range'){
+    var lastDate=[...new Set(smData.map(gDate))].filter(Boolean).sort().pop()||'';
+    if(!ANA.curTo) ANA.curTo=lastDate;
+    if(!ANA.curFrom && ANA.curTo){var d=new Date(ANA.curTo+'T00:00:00');d.setDate(d.getDate()-6);ANA.curFrom=d.toISOString().slice(0,10);}
+    if(!ANA.prevTo && ANA.curFrom){var d2=new Date(ANA.curFrom+'T00:00:00');d2.setDate(d2.getDate()-1);ANA.prevTo=d2.toISOString().slice(0,10);}
+    if(!ANA.prevFrom && ANA.prevTo){var d3=new Date(ANA.prevTo+'T00:00:00');d3.setDate(d3.getDate()-6);ANA.prevFrom=d3.toISOString().slice(0,10);}
+    wrap.innerHTML=
+      '<div><div class="f-label" style="margin-bottom:6px;">Current: From</div><input type="date" id="ana-cf" class="fsel" value="'+ANA.curFrom+'"></div>'+
+      '<div><div class="f-label" style="margin-bottom:6px;">To</div><input type="date" id="ana-ct" class="fsel" value="'+ANA.curTo+'"></div>'+
+      '<div><div class="f-label" style="margin-bottom:6px;">Compare: From</div><input type="date" id="ana-pf" class="fsel" value="'+ANA.prevFrom+'"></div>'+
+      '<div><div class="f-label" style="margin-bottom:6px;">To</div><input type="date" id="ana-pt" class="fsel" value="'+ANA.prevTo+'"></div>';
+    ['ana-cf','ana-ct','ana-pf','ana-pt'].forEach(function(id){
+      document.getElementById(id).onchange=function(e){
+        var map={'ana-cf':'curFrom','ana-ct':'curTo','ana-pf':'prevFrom','ana-pt':'prevTo'};
+        ANA[map[id]]=e.target.value; ANA.fc={}; anaRender();
+      };
+    });
+  } else {
+    var opts=anaPeriodOptions();
+    if(!opts.length){ wrap.innerHTML='<div style="font-size:12px;color:var(--muted);">No '+ANA.by+' data loaded yet.</div>'; return; }
+    if(!ANA.curKey || !opts.some(function(o){return o.value===ANA.curKey;})) ANA.curKey=opts[0].value;
+    var curIdx=opts.findIndex(function(o){return o.value===ANA.curKey;});
+    if(!ANA.prevKey || !opts.some(function(o){return o.value===ANA.prevKey;})) ANA.prevKey=opts[curIdx+1]?opts[curIdx+1].value:'';
+    var optsHtml=opts.map(function(o){return '<option value="'+o.value+'">'+o.label+'</option>';}).join('');
+    wrap.innerHTML=
+      '<div><div class="f-label" style="margin-bottom:6px;">Current period</div><select id="ana-cur" class="fsel">'+optsHtml+'</select></div>'+
+      '<div><div class="f-label" style="margin-bottom:6px;">Compare against</div><select id="ana-prev" class="fsel"><option value="">— none —</option>'+optsHtml+'</select></div>';
+    document.getElementById('ana-cur').value=ANA.curKey;
+    document.getElementById('ana-prev').value=ANA.prevKey;
+    document.getElementById('ana-cur').onchange=function(e){ANA.curKey=e.target.value;ANA.fc={};anaRender();};
+    document.getElementById('ana-prev').onchange=function(e){ANA.prevKey=e.target.value;ANA.fc={};anaRender();};
+  }
+}
+
+function anaVarPill(delta,deltaPct,goodUp){
+  if(delta==null||isNaN(delta)) return '';
+  var up=delta>0;
+  var neutral=goodUp===null;
+  var good=neutral?false:(goodUp?up:!up);
+  var col=delta===0?'#94A3B8':(neutral?'#2563EB':(good?'#10B981':'#EF4444'));
+  var arrow=delta===0?'—':(up?'▲ +':'▼ ');
+  var pctTxt=isFinite(deltaPct)?Math.abs(deltaPct).toFixed(1)+'%':'—';
+  return '<span class="var-pill" style="color:'+col+';border-color:'+col+'55;background:'+col+'14;">'+arrow+pctTxt+'</span>';
+}
+
+function anaRender(){
+  if(!ANA.built) anaBuildControls();
+  var curRows=anaCurRows(), prevRows=anaPrevRows();
+  var note=document.getElementById('ana-note');
+  var curR=anaDateRange(curRows), prevR=anaDateRange(prevRows);
+  note.innerHTML='Current: <b>'+(curR.min?curR.min+' → '+curR.max:'no rows')+'</b> ('+curRows.length+' rows)'
+    +'  ·  Compare: <b>'+(prevR.min?prevR.min+' → '+prevR.max:'no rows')+'</b> ('+prevRows.length+' rows)'
+    +(ANA.store!=='all'?'  ·  Station: <b>'+ANA.store+'</b>':'  ·  All stations');
+
+  // KPI cards
+  var kpiEl=document.getElementById('ana-kpis');
+  if(!curRows.length){
+    kpiEl.innerHTML='<div class="kpi" style="grid-column:1/-1;"><div class="empty">No data for the current period/scope selected.</div></div>';
+  } else {
+    kpiEl.innerHTML=ANA_METRICS.map(function(m){
+      var cv=anaMetricVal(m,curRows), pv=prevRows.length?anaMetricVal(m,prevRows):null;
+      var delta=pv!=null?cv-pv:null, deltaPct=(pv&&pv!==0)?(delta/pv*100):(delta===0?0:null);
+      var valTxt=anaFmtVal(m,cv);
+      return '<div class="kpi" style="--kc:'+(m.goodUp===false?'#EF4444':m.goodUp===true?'#2563EB':'#64748B')+';">'+
+        '<div class="kpi-lbl">'+m.label+'</div>'+
+        '<div class="kpi-val">'+valTxt+'</div>'+
+        '<div class="kpi-sub">'+(pv!=null?'Prev '+anaFmtVal(m,pv)+' '+anaVarPill(delta,deltaPct,m.goodUp):'No comparison period')+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  anaDrawTrend();
+  anaDrawStoreTable();
+  anaDrawFullTable(curRows,prevRows);
+  anaDrawScorecards(curRows,prevRows);
+  anaRenderForecastCard(curRows,prevRows);
+}
+
+var anaTrendChartObj=null;
+function anaDrawTrend(){
+  var canvas=document.getElementById('ana-trend-chart'); if(!canvas) return;
+  var m=ANA_METRICS.find(function(x){return x.key===ANA.focus;});
+  document.getElementById('ana-trend-lbl').textContent=m?m.label:'Forecast Orders';
+  var opts=anaPeriodOptions();
+  var last8=opts.slice(0,8).reverse();
+  var labels, values;
+  if(ANA.by==='range' || !last8.length){
+    labels=['Compare','Current'];
+    var pr=anaPrevRows(), cr=anaCurRows();
+    values=[m?anaMetricVal(m,pr):0, m?anaMetricVal(m,cr):0];
+  } else {
+    labels=last8.map(function(o){return ANA.by==='week'?'Wk '+o.value:anaMonthLabel(o.value);});
+    values=last8.map(function(o){var rows=anaRowsForKey(o.value);return m?anaMetricVal(m,rows):0;});
+  }
+  if(anaTrendChartObj) anaTrendChartObj.destroy();
+  anaTrendChartObj=new Chart(canvas,{type:'bar',
+    data:{labels:labels,datasets:[{label:m?m.label:'Forecast',data:values,backgroundColor:'rgba(37,99,235,0.75)',borderRadius:5}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}},
+    plugins:[barValueLabels]});
+}
+
+function anaDrawStoreTable(){
+  var el=document.getElementById('ana-store-table'); if(!el) return;
+  var m=ANA_METRICS.find(function(x){return x.key===ANA.focus;});
+  document.getElementById('ana-store-lbl').textContent=m?m.label:'Forecast Orders';
+  var curRows=anaCurRows(), prevRows=anaPrevRows();
+  var stores=[...new Set([...curRows,...prevRows].map(gStore))].filter(Boolean).sort();
+  if(!stores.length){ el.innerHTML='<div class="empty">No stores in range.</div>'; return; }
+  var rowsHtml=stores.map(function(s){
+    var cr=curRows.filter(function(r){return gStore(r)===s;});
+    var pr=prevRows.filter(function(r){return gStore(r)===s;});
+    var cv=m?anaMetricVal(m,cr):0, pv=m?anaMetricVal(m,pr):0;
+    var delta=cv-pv, deltaPct=pv?delta/pv*100:(delta===0?0:null);
+    var fmtV=function(v){return m?anaFmtVal(m,v):fmt(v);};
+    return '<tr><td style="font-weight:700;">'+s+'</td><td>'+fmtV(cv)+'</td><td style="color:var(--muted);">'+fmtV(pv)+'</td><td>'+anaVarPill(delta,deltaPct,m?m.goodUp:true)+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
+    '<thead><tr style="color:var(--muted);text-align:left;"><th style="padding:6px 8px;">Store</th><th style="padding:6px 8px;">Current</th><th style="padding:6px 8px;">Prior</th><th style="padding:6px 8px;">Δ</th></tr></thead>'+
+    '<tbody>'+rowsHtml+'</tbody></table>';
+}
+
+function anaDrawFullTable(curRows,prevRows){
+  var el=document.getElementById('ana-table'); if(!el) return;
+  var rowsHtml=ANA_METRICS.map(function(m){
+    var cv=anaMetricVal(m,curRows), pv=prevRows.length?anaMetricVal(m,prevRows):null;
+    var delta=pv!=null?cv-pv:null, deltaPct=(pv&&pv!==0)?(delta/pv*100):(delta===0?0:null);
+    var fmtV=function(v){return anaFmtVal(m,v);};
+    return '<tr><td style="font-weight:700;">'+m.label+'</td><td>'+fmtV(cv)+'</td><td style="color:var(--muted);">'+fmtV(pv)+'</td><td>'+anaVarPill(delta,deltaPct,m.goodUp)+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
+    '<thead><tr style="color:var(--muted);text-align:left;"><th style="padding:7px 8px;">Metric</th><th style="padding:7px 8px;">Current</th><th style="padding:7px 8px;">Prior</th><th style="padding:7px 8px;">Change</th></tr></thead>'+
+    '<tbody>'+rowsHtml+'</tbody></table>';
+}
+
+var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamPct','lateSlamV2','avgSla','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
+function anaDrawScorecards(curRows,prevRows){
+  var el=document.getElementById('ana-scorecards'); if(!el) return;
+  var stores=[...new Set(curRows.map(gStore))].filter(Boolean).sort();
+  if(!stores.length){ el.innerHTML='<div class="empty">No stores in the current period/scope.</div>'; return; }
+  var ordersM=ANA_METRICS.find(function(m){return m.key==='orders';});
+  el.innerHTML=stores.map(function(s){
+    var sc=SC[s]||'#94A3B8';
+    var cr=curRows.filter(function(r){return gStore(r)===s;});
+    var pr=prevRows.filter(function(r){return gStore(r)===s;});
+    var bigVal=anaMetricVal(ordersM,cr);
+    var bigPrev=pr.length?anaMetricVal(ordersM,pr):null;
+    var bigDelta=bigPrev!=null?bigVal-bigPrev:null, bigDeltaPct=(bigPrev&&bigPrev!==0)?(bigDelta/bigPrev*100):null;
+    var rows=ANA_CARD_ROWS.map(function(key){
+      var m=ANA_METRICS.find(function(x){return x.key===key;});
+      var cv=anaMetricVal(m,cr), pv=pr.length?anaMetricVal(m,pr):null;
+      var valTxt=anaFmtVal(m,cv);
+      var bad=m.goodUp===false?cv>0:((m.agg==='avgpct'||m.agg==='ratio')&&m.goodUp===true?cv<99:false);
+      var warn=bad?' <span style="color:#EF4444;">⚠</span>':'';
+      var prevTxt='', deltaTxt='';
+      if(pv!=null){
+        var d=cv-pv;
+        prevTxt=' <span style="font-size:10px;font-weight:600;color:var(--muted);" title="Previous period">↺ '+anaFmtVal(m,pv)+'</span>';
+        if(d!==0) deltaTxt=' <span style="font-size:9px;color:'+(d>0?(m.goodUp===false?'#EF4444':'#10B981'):(m.goodUp===false?'#10B981':'#EF4444'))+';">'+(d>0?'▲':'▼')+'</span>';
+      }
+      var col=bad?'#DC2626':'var(--text)';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px;gap:8px;">'+
+        '<span style="color:var(--muted);white-space:nowrap;">'+m.label+'</span>'+
+        '<span style="text-align:right;">'+
+          '<span style="font-weight:700;color:'+col+';font-family:\'Inter\',monospace;">'+valTxt+warn+deltaTxt+'</span>'+
+          prevTxt+
+        '</span>'+
+      '</div>';
+    }).join('');
+    return '<div style="background:var(--card);border:2px solid '+sc+';border-radius:16px;padding:18px 20px;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'+
+        '<div style="font-size:17px;font-weight:900;color:var(--text);">'+s+'</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:26px;font-weight:800;color:'+sc+';font-family:\'Inter\',monospace;line-height:1;">'+fmt(bigVal)+'</div>'+
+          '<div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;">Orders'+(bigPrev!=null?' <span style="opacity:.6;">↺ '+fmt(bigPrev)+'</span>':'')+(bigDelta!=null?' '+anaVarPill(bigDelta,bigDeltaPct,true):'')+'</div>'+
+        '</div>'+
+      '</div>'+
+      rows+
+    '</div>';
+  }).join('');
+}
+
+// ── Forecast: fetch per-day JSONP forecast for every date in a range, cached in ANA.fc ──
+function anaFetchDatesSeq(dates, onDone){
+  var i=0;
+  function next(){
+    if(i>=dates.length){ onDone(); return; }
+    var dateVal=dates[i++];
+    if(ANA.fc[dateVal]){ next(); return; } // cached
+    var cb='anaFcCb_'+Date.now()+'_'+i;
+    var t=setTimeout(function(){cleanup();next();},8000);
+    function cleanup(){clearTimeout(t);delete window[cb];var s=document.getElementById('j-'+cb);if(s)s.remove();}
+    window[cb]=function(data){
+      cleanup();
+      var perStore={};
+      if(data&&data.orders){
+        Object.keys(data.orders).forEach(function(store){
+          var slots=data.orders[store];
+          perStore[store]=Object.values(slots).reduce(function(s,v){return s+Math.round(v||0);},0);
+        });
+      }
+      ANA.fc[dateVal]=perStore;
+      next();
+    };
+    var s=document.createElement('script');s.id='j-'+cb;
+    s.src=APPS_URL+'?action=forecast&date='+dateVal+'&callback='+cb;
+    document.head.appendChild(s);
+  }
+  next();
+}
+
+function anaForecastTotal(dates){
+  var tot=0;
+  dates.forEach(function(d){
+    var perStore=ANA.fc[d]; if(!perStore) return;
+    if(ANA.store==='all'){ Object.keys(perStore).forEach(function(s){tot+=perStore[s]||0;}); }
+    else { tot+=perStore[ANA.store]||0; }
+  });
+  return tot;
+}
+
+function anaFetchForecast(){
+  var curR=anaDateRange(anaCurRows()), prevR=anaDateRange(anaPrevRows());
+  var curDates=anaEachDate(curR.min,curR.max), prevDates=anaEachDate(prevR.min,prevR.max);
+  var allDates=[...new Set([...curDates,...prevDates])];
+  if(!allDates.length){ document.getElementById('ana-note').innerHTML+='  ·  <span style="color:#EF4444;">No dates to fetch forecast for.</span>'; return; }
+  var btn=document.getElementById('ana-fc-btn'); btn.textContent='⏳ Fetching…'; btn.disabled=true;
+  anaFetchDatesSeq(allDates, function(){
+    btn.textContent='☁️ Fetch Forecast'; btn.disabled=false;
+    anaRenderForecastCard(anaCurRows(),anaPrevRows());
+  });
+}
+
+function anaRenderForecastCard(curRows,prevRows){
+  var kpiEl=document.getElementById('ana-kpis'); if(!kpiEl) return;
+  var curR=anaDateRange(curRows), prevR=anaDateRange(prevRows);
+  var curDates=anaEachDate(curR.min,curR.max), prevDates=anaEachDate(prevR.min,prevR.max);
+  var haveAny=curDates.some(function(d){return ANA.fc[d];})||prevDates.some(function(d){return ANA.fc[d];});
+  if(!haveAny) return; // nothing fetched yet — leave KPI grid as-is
+  var fcCur=anaForecastTotal(curDates), fcPrev=anaForecastTotal(prevDates);
+  var ordersMetric=ANA_METRICS.find(function(m){return m.key==='orders';});
+  var actCur=anaMetricVal(ordersMetric,curRows), actPrev=prevRows.length?anaMetricVal(ordersMetric,prevRows):null;
+  var achCur=fcCur>0?(actCur/fcCur*100):null, achPrev=(fcPrev>0&&actPrev!=null)?(actPrev/fcPrev*100):null;
+  var delta=(achPrev!=null&&achCur!=null)?achCur-achPrev:null;
+  var card='<div class="kpi" style="--kc:#7C3AED;grid-column:span 2;">'+
+    '<div class="kpi-lbl">Forecast Achievement (Orders)</div>'+
+    '<div class="kpi-val">'+(achCur!=null?achCur.toFixed(1)+'%':'—')+'</div>'+
+    '<div class="kpi-sub">Actual '+fmt(actCur)+' vs FC '+fmt(fcCur)+(achPrev!=null?'  ·  Prev '+achPrev.toFixed(1)+'% '+anaVarPill(delta,delta,true):'')+'</div>'+
+  '</div>';
+  kpiEl.innerHTML+=card;
+}
+
+function smShowTab(tab){
+  document.getElementById('sm-main').style.display = tab==='dash'?'':'none';
+  document.getElementById('sm-analytics').style.display = tab==='ana'?'':'none';
+  document.getElementById('sm-tab-dash').classList.toggle('on', tab==='dash');
+  document.getElementById('sm-tab-ana').classList.toggle('on', tab==='ana');
+  if(tab==='ana'){
+    if(!smData || !smData.length){
+      document.getElementById('ana-kpis').innerHTML='<div class="kpi" style="grid-column:1/-1;"><div class="empty">Load data on the Dashboard tab first.</div></div>';
+      return;
+    }
+    anaRender();
+  }
+}
 </script>
 
 <!-- QUICK SUMMARY OVERLAY -->
@@ -3750,8 +4253,8 @@ function smOpenQS(){
   document.getElementById('qs-rows').innerHTML=rows||'<div class="empty">No data loaded.</div>';
 
   // Key highlights + Forecast vs Actual
-  var fcDate=(document.getElementById('fc-date')||{}).value||'';
-  var hasFc=fcDate&&Object.keys(smFcData).length>0;
+  var qsFcRange=smDateRangeOfRows(smFilter());
+  var hasFc=qsFcRange.min&&Object.keys(smFcData).length>0;
   var ordTop=data.slice().sort(function(a,b){return b.orders-a.orders;})[0];
   var lsTop=data.filter(function(d){return d.lsV2>0;}).sort(function(a,b){return b.lsV2Pct-a.lsV2Pct;})[0];
   var damTop=data.filter(function(d){return (d.damRem||0)>0;}).sort(function(a,b){return (b.damRem||0)-(a.damRem||0);})[0];
@@ -3768,8 +4271,8 @@ function smOpenQS(){
   }
   function fcStoreCard(d){
     var c=SC_QS[d.store]||'#64748B';
-    var fc=hasFc&&smFcData[d.store]?smFcData[d.store][fcDate]||0:0;
-    var fcU=hasFc&&smFcData[d.store]?smFcData[d.store][fcDate+'_units']||0:0;
+    var fc=hasFc?smFcSumRange(d.store,qsFcRange,false):0;
+    var fcU=hasFc?smFcSumRange(d.store,qsFcRange,true):0;
     var actU=d.obUnits||0;
     var ach=fc>0?Math.min((d.orders/fc)*100,200):0;
     var achC=ach>=100?'#10B981':ach>=80?'#F59E0B':ach>=50?'#2563EB':'#EF4444';
@@ -3807,7 +4310,7 @@ function smOpenQS(){
       hlBadge('🔵','Most Quality Rem',qualTop?qualTop.store:null,qualTop?(qualTop.qualRem||0)+' removals':'')+
       hlBadge('📦','Most Shrink',shrinkTop?shrinkTop.store:null,shrinkTop?(shrinkTop.shrinkQty||0)+' units':'')+
     '</div>'+
-    '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 FORECAST vs ACTUAL — '+(fcDate||'Fetch FC for comparison')+'</div>'+
+    '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">📊 FORECAST vs ACTUAL — '+(qsFcRange.min?(qsFcRange.min+' → '+qsFcRange.max):'Fetch FC for comparison')+'</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:10px;">'+
       data.map(fcStoreCard).join('')+
     '</div>';

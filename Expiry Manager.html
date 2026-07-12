@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Expiry Manager — DMS PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --blue:#146EB4;--blue-d:#0F5A95;--blue-bg:#EAF3FA;
+  --green:#16A34A;--green-bg:#ECFDF3;
+  --yellow:#D97706;--yellow-bg:#FFFBEB;
+  --red:#DC2626;--red-bg:#FEF2F2;
+  --purple:#7C3AED;--purple-bg:#F5F3FF;
+  --orange:#EA580C;--orange-bg:#FFF7ED;
+  --bg:#F8FAFC;--white:#fff;
+  --border:#E5E7EB;--border-s:#EEF1F5;
+  --ink:#1B2430;--ink2:#475467;--ink3:#6B7686;--ink4:#94A0AE;
+  --r:9px;--rl:14px;
+  --sh:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.05);
+  --sh-sm:0 1px 2px rgba(16,24,40,.06);
+  --font:"IBM Plex Sans",-apple-system,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.hidden{display:none!important;}
+.mono{font-family:var(--mono);font-feature-settings:"tnum" 1;}
+
+/* App bar */
+.bar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:50;box-shadow:var(--sh-sm);}
+.bar-title{font-weight:700;font-size:15px;}
+.bar-sub{font-size:11.5px;color:var(--ink3);}
+.bar-right{margin-left:auto;display:flex;gap:8px;}
+.btn{display:inline-flex;align-items:center;gap:5px;border:0;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font);transition:.15s;}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:var(--blue-d);}
+.btn-out{background:var(--white);border:1px solid var(--border);color:var(--ink2);}.btn-out:hover{border-color:var(--blue);color:var(--blue);}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{background:#138c3e;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.back-btn{display:flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--white);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;font-family:var(--font);}.back-btn:hover{border-color:var(--blue);color:var(--blue);}
+
+/* Page */
+.page{max-width:1380px;margin:0 auto;padding:24px 20px 80px;}
+.sec-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:10px;}
+
+/* Upload section */
+.upload-row{display:grid;grid-template-columns:1fr 1fr 300px;gap:16px;margin-bottom:20px;}
+.upload-card{background:var(--white);border:2px dashed var(--border);border-radius:var(--rl);padding:24px 20px;text-align:center;transition:.2s;position:relative;}
+.upload-card.ok{border-style:solid;border-color:var(--green);background:var(--green-bg);}
+.upload-card.drag{border-color:var(--blue);background:var(--blue-bg);}
+.upload-card h3{font-size:14px;font-weight:700;margin:8px 0 5px;}
+.upload-card p{font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:14px;}
+/* KEY: label wraps hidden input — most reliable cross-browser */
+.file-label{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.file-label:hover{background:var(--blue-d);}
+.file-label input[type=file]{position:absolute;left:-9999px;opacity:0;width:1px;height:1px;}
+.f-badge{display:inline-block;margin-top:9px;font-size:11.5px;font-family:var(--mono);color:var(--ink3);background:var(--border-s);border-radius:5px;padding:2px 9px;}
+.upload-card.ok .f-badge{background:#D1FAE5;color:var(--green);}
+.f-name{font-size:11px;color:var(--green);font-weight:600;margin-top:4px;}
+.f-fmt{font-size:10.5px;color:var(--ink4);margin-top:5px;}
+
+/* ASIN panel */
+.asin-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px;box-shadow:var(--sh-sm);display:flex;flex-direction:column;gap:10px;}
+.asin-card h4{font-size:13px;font-weight:700;}
+.asin-card p{font-size:11.5px;color:var(--ink3);line-height:1.5;}
+.frow{display:flex;flex-direction:column;gap:3px;}
+.frow label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);}
+.frow input{border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12.5px;font-family:var(--font);color:var(--ink);outline:none;width:100%;}
+.frow input:focus{border-color:var(--blue);}
+.calc-lbl{font-size:12px;font-weight:600;color:var(--green);background:var(--green-bg);border-radius:6px;padding:4px 8px;}
+.db-list{max-height:130px;overflow-y:auto;border:1px solid var(--border-s);border-radius:7px;}
+.db-item{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;border-bottom:1px solid var(--border-s);font-size:11.5px;}
+.db-item:last-child{border-bottom:0;}
+.db-asin{font-family:var(--mono);font-size:10.5px;color:var(--ink3);}
+.db-days{font-family:var(--mono);font-weight:700;color:var(--blue);font-size:12px;}
+.del-x{border:0;background:0;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;}
+
+/* Run bar */
+.run-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.fmt-sel{border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;font-family:var(--font);background:var(--white);}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:18px;}
+.sc{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh-sm);}
+.sc .l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:4px;}
+.sc .v{font-size:24px;font-weight:700;font-family:var(--mono);line-height:1;}
+.sc .s{font-size:10.5px;color:var(--ink3);margin-top:2px;}
+.c-blue .v{color:var(--blue);}.c-red .v{color:var(--red);}
+.c-ora .v{color:var(--orange);}.c-yel .v{color:var(--yellow);}
+.c-grn .v{color:var(--green);}.c-pur .v{color:var(--purple);}
+
+/* Filters */
+.filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+.ft{border:1px solid var(--border);background:var(--white);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:4px;transition:.15s;}
+.ft.on{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.ft .n{background:rgba(0,0,0,.08);border-radius:20px;padding:1px 6px;font-size:10px;}
+.ft.on .n{background:var(--blue);color:#fff;}
+.search{border:1px solid var(--border);border-radius:7px;padding:5px 11px;font-size:12.5px;font-family:var(--font);width:210px;outline:none;margin-left:auto;}
+.search:focus{border-color:var(--blue);}
+
+/* Table */
+.tbl{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh-sm);}
+.tbl table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tbl thead th{background:#F8FAFC;border-bottom:1px solid var(--border);padding:8px 11px;font-size:10.5px;font-weight:700;color:var(--ink3);text-align:left;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+.tbl tbody tr{border-bottom:1px solid var(--border-s);transition:.1s;}
+.tbl tbody tr:last-child{border-bottom:0;}
+.tbl tbody tr:hover{background:#F8FAFC;}
+.tbl tbody tr.wr{background:#FFF5F5;}.tbl tbody tr.wr:hover{background:#FEE2E2;}
+.tbl td{padding:8px 11px;color:var(--ink2);vertical-align:middle;}
+
+/* Badges */
+.bg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+.bg-wrong{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;}
+.bg-exp{background:var(--red-bg);color:var(--red);}
+.bg-crit{background:var(--orange-bg);color:var(--orange);}
+.bg-warn{background:var(--yellow-bg);color:var(--yellow);}
+.bg-ok{background:var(--green-bg);color:var(--green);}
+.bg-nd{background:var(--border-s);color:var(--ink3);}
+.bg-shelf{background:#FFF0F0;color:#C2410C;border:1px solid #FECACA;}
+
+/* Empty */
+.empty{text-align:center;padding:50px 20px;color:var(--ink3);}
+.empty .ei{font-size:36px;display:block;margin-bottom:10px;}
+
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--white);border-radius:14px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);}
+.m-hdr{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.m-hdr h3{font-size:15px;font-weight:700;}
+.m-x{border:0;background:0;font-size:20px;color:var(--ink3);cursor:pointer;}
+.m-body{padding:20px 22px;}
+.m-foot{padding:13px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.rt{margin-bottom:18px;}
+.rt h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px;}
+.rt table{width:100%;border-collapse:collapse;font-size:12px;}
+.rt table th{background:#F8FAFC;border:1px solid var(--border);padding:6px 9px;text-align:left;font-weight:700;color:var(--ink3);}
+.rt table td{border:1px solid var(--border);padding:6px 9px;color:var(--ink2);}
+
+@media(max-width:900px){.upload-row{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}}
+@media print{.bar,.upload-row,.run-bar,.filters,.asin-card,.bar-right{display:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <button class="back-btn" onclick="window.close()">← Back</button>
+  <div>
+    <div class="bar-title">📦 Expiry Manager</div>
+    <div class="bar-sub">Upload Inbound + Expiry → Match by ASIN & Location → Flag wrong expiry</div>
+  </div>
+  <div class="bar-right">
+    <button class="btn btn-out btn-sm" onclick="resetAll()">✕ Reset</button>
+    <button class="btn btn-out btn-sm" onclick="doExport()">⬇ Export Excel</button>
+    <button class="btn btn-blue btn-sm" onclick="openRpt()">📋 Daily Report</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="upload-row">
+
+    <!-- Inbound -->
+    <div class="upload-card" id="boxIn" ondrop="drop(event,'in')" ondragover="dov(event,'in')" ondragleave="dlv('in')">
+      <div style="font-size:34px">📥</div>
+      <h3>Inbound (Stow) File</h3>
+      <p>Report when items are stowed.<br>Has: Warehouse · Timestamp (production/stow date) · Location · ASIN · Title · User · Qty · Reference</p>
+      <label class="file-label">
+        📂 Choose Inbound File
+        <input type="file" id="inFile" accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods" onchange="pick(event,'in')"/>
+      </label>
+      <div><span class="f-badge" id="inBadge">No file chosen</span></div>
+      <div class="f-name hidden" id="inName"></div>
+      <div class="f-fmt">.xlsx · .xls · .csv · .ods</div>
+    </div>
+
+    <!-- Expiry -->
+    <div class="upload-card" id="boxEx" ondrop="drop(event,'ex')" ondragover="dov(event,'ex')" ondragleave="dlv('ex')">
+      <div style="font-size:34px">📅</div>
+      <h3>Expiry File</h3>
+      <p>Report with bin locations, ASINs, expiry dates and remaining quantities entered by staff.</p>
+      <label class="file-label">
+        📂 Choose Expiry File
+        <input type="file" id="exFile" accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods" onchange="pick(event,'ex')"/>
+      </label>
+      <div><span class="f-badge" id="exBadge">No file chosen</span></div>
+      <div class="f-name hidden" id="exName"></div>
+      <div class="f-fmt">.xlsx · .xls · .csv · .ods</div>
+    </div>
+
+    <!-- ASIN panel -->
+    <div>
+      <div class="sec-lbl">Add New ASIN Shelf Life</div>
+      <div class="asin-card">
+        <h4>➕ New ASIN Rule</h4>
+        <p>Enter production date + expiry date example → shelf life auto-calculated.</p>
+        <div class="frow"><label>ASIN</label><input id="nA" placeholder="B0ABC123DE" oninput="cp()"/></div>
+        <div class="frow"><label>Product Name</label><input id="nT" placeholder="Fresh Milk 500ml"/></div>
+        <div class="frow"><label>Production Date</label><input type="date" id="nP" onchange="cp()"/></div>
+        <div class="frow"><label>Expiry Date</label><input type="date" id="nE" onchange="cp()"/></div>
+        <div id="cpv" class="calc-lbl hidden"></div>
+        <button class="btn btn-green" onclick="addA()" style="width:100%;justify-content:center;">➕ Add to DB</button>
+        <button class="btn btn-out btn-sm" onclick="toggleBulk()" style="width:100%;justify-content:center;">📋 Bulk Paste ASINs</button>
+        <div class="hidden" id="bulkPanel" style="display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--border-s);border-radius:8px;padding:10px;">
+          <p style="font-size:11px;color:var(--ink3);line-height:1.5;">One per line, comma or tab separated. Either:<br>
+            <span class="mono">ASIN, ShelfLifeDays</span> — e.g. <span class="mono">B0ABC123DE, 6</span><br>
+            <span class="mono">ASIN, ProductionDate, ExpiryDate</span> — e.g. <span class="mono">B0ABC123DE, 2026-07-11, 2026-07-17</span><br>
+            <span class="mono">ASIN, Title, ProductionDate, ExpiryDate</span> also works.</p>
+          <textarea id="bulkTxt" rows="6" placeholder="B0ABC123DE, 6&#10;B0XYZ987GH, Fresh Milk, 2026-07-11, 2026-07-16" style="border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;font-family:var(--mono);width:100%;resize:vertical;outline:none;"></textarea>
+          <button class="btn btn-blue btn-sm" onclick="bulkAdd()" style="width:100%;justify-content:center;">➕ Add All</button>
+          <div id="bulkResult" class="hidden" style="font-size:11px;color:var(--ink3);white-space:pre-wrap;"></div>
+        </div>
+        <div style="border-top:1px solid var(--border-s);padding-top:8px;">
+          <div class="sec-lbl" style="margin-bottom:5px;">Saved ASINs (<span id="dbCnt">0</span>)</div>
+          <div class="db-list" id="dbList"><div style="padding:14px;text-align:center;color:var(--ink4);font-size:12px;">None yet</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <div class="run-bar hidden" id="runBar">
+    <button class="btn btn-green" onclick="run()">▶ Match &amp; Analyse</button>
+    <label style="font-size:12px;color:var(--ink3);font-weight:600;">Expiry date format:</label>
+    <select class="fmt-sel" id="dFmt">
+      <option value="MDY" selected>MM/DD/YYYY (Amazon/US)</option>
+      <option value="DMY">DD/MM/YYYY (UK/EU)</option>
+      <option value="YMD">YYYY-MM-DD (ISO)</option>
+    </select>
+    <button class="btn btn-out btn-sm" onclick="toggleMapper()">⚙ Column Mapping</button>
+  </div>
+
+  <!-- Notice banner (replaces alert() so it's visible even where popups are blocked) -->
+  <div class="hidden" id="notice" style="background:var(--red-bg);border:1px solid #FECACA;color:#991B1B;border-radius:var(--rl);padding:16px 20px;margin-bottom:18px;white-space:pre-wrap;font-size:12.5px;line-height:1.6;position:relative;">
+    <button onclick="hide('notice')" style="position:absolute;top:10px;right:12px;border:0;background:0;font-size:16px;color:#991B1B;cursor:pointer;">×</button>
+    <div id="noticeBody"></div>
+  </div>
+
+  <!-- Column mapper (collapsible) -->
+  <div class="hidden" id="mapperPanel" style="background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;margin-bottom:18px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div class="sec-lbl">Inbound File Columns</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="mapIn"></div>
+      </div>
+      <div>
+        <div class="sec-lbl">Expiry File Columns</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="mapEx"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats hidden" id="statRow">
+    <div class="sc c-blue"><div class="l">In-Bin Items</div><div class="v" id="sT">—</div><div class="s">qty &gt; 0 only</div></div>
+    <div class="sc c-red"><div class="l">Wrong Expiry</div><div class="v" id="sW">—</div><div class="s">flagged by VBA</div></div>
+    <div class="sc c-ora"><div class="l">Wrong Shelf</div><div class="v" id="sWS">—</div><div class="s">vs ASIN DB</div></div>
+    <div class="sc c-red"><div class="l">Expired</div><div class="v" id="sE">—</div><div class="s">past today</div></div>
+    <div class="sc c-ora"><div class="l">Critical</div><div class="v" id="sC">—</div><div class="s">≤1 day</div></div>
+    <div class="sc c-yel"><div class="l">Warning</div><div class="v" id="sWr">—</div><div class="s">≤7 days</div></div>
+    <div class="sc c-grn"><div class="l">OK</div><div class="v" id="sO">—</div><div class="s">safe items</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters hidden" id="ftRow">
+    <button class="ft on" onclick="flt('all',this)">All <span class="n" id="cA">0</span></button>
+    <button class="ft" onclick="flt('wrong',this)">🔴 Wrong Expiry <span class="n" id="cW">0</span></button>
+    <button class="ft" onclick="flt('wrongshelf',this)">🔶 Wrong Shelf <span class="n" id="cWS">0</span></button>
+    <button class="ft" onclick="flt('expired',this)">⚫ Expired <span class="n" id="cE">0</span></button>
+    <button class="ft" onclick="flt('critical',this)">🟠 Critical <span class="n" id="cC">0</span></button>
+    <button class="ft" onclick="flt('warning',this)">🟡 Warning <span class="n" id="cW2">0</span></button>
+    <button class="ft" onclick="flt('ok',this)">🟢 OK <span class="n" id="cO">0</span></button>
+    <button class="ft" onclick="flt('nodate',this)">⬜ No Date <span class="n" id="cN">0</span></button>
+    <input class="search" type="text" placeholder="Search ASIN, location, title…" oninput="srch(this.value)"/>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl hidden" id="tblWrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Warehouse</th><th>Timestamp</th><th>Location</th>
+        <th>ASIN</th><th>Title</th><th>User</th>
+        <th>Stowed Qty</th><th>Rem Qty</th>
+        <th>Expiry Date</th><th>Days Left</th><th>Status</th>
+      </tr></thead>
+      <tbody id="tBody"></tbody>
+    </table>
+  </div>
+
+  <div class="empty hidden" id="emptyDiv">
+    <span class="ei">🔍</span>
+    <h4 style="font-size:15px;font-weight:700;color:var(--ink2);margin-bottom:5px;">No records match</h4>
+    <p>Try a different filter or clear the search.</p>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div class="ov hidden" id="rptOv" onclick="if(event.target===this)closeRpt()">
+  <div class="modal">
+    <div class="m-hdr">
+      <h3>📋 Daily Expiry Report — <span id="rptD"></span></h3>
+      <button class="m-x" onclick="closeRpt()">×</button>
+    </div>
+    <div class="m-body" id="rptB"></div>
+    <div class="m-foot">
+      <button class="btn btn-out btn-sm" onclick="cpRpt()">📋 Copy</button>
+      <button class="btn btn-blue btn-sm" onclick="window.print()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Shelf Life DB ────────────────────────────────────────────────────────────
+const BSL={
+  'B0DT9WNZ3H':7,'B0DK6YP6HJ':7,'B0DZNRMH1B':7,'B0H4ZSWMD3':7,
+  'B0GLYPBG9N':3,'B0GSR2NRMJ':3,'B0G5PH9GH4':3,'B0G49DFBH3':3,
+  'B0DP2L7SLS':4,'B09MK8XSMH':4,'B09MK8LJQX':4,'B0DP2N4FDQ':4,
+  'B09MK8QDCF':4,'B0FZTWZ4GF':8,'B0FMKCVVL7':4,'B09MK7C973':4,
+  'B09N297STH':4,'B0DP2LZ9KF':22,'B09MK89914':4,'B09MK82B3V':4,
+  'B0GTRJPSXK':6,'B0DK7D8D97':7,'B0F7HLXSDJ':7,'B0H4H89V9G':7,
+  'B0G2WSW96S':7,'B0DK7DPZHN':7,'B0F7HLYYPJ':7,'B0DK7DNHVJ':7,
+  'B0DK7CS642':7,'B0DK7FW6W1':7,'B0DK7C9NPB':7,'B0DK7CLC4V':7,
+  'B0DKFYSB5S':7,'B0DK7DC2ML':7,'B0DK7D1ZS5':7,'B0FP2XJ89V':7,
+  'B0F7LQ29K7':7,'B0DK7CTRSP':7,'B0F48RMPMB':7,'B0F48T7HLH':7,
+  'B0F7M4X5F3':7,'B0DK7DGQVF':7,'B0F7M4DF8Q':7,'B0DK7DTSBT':7,
+  'B0H71XKG7D':7,'B0DK7CXHJY':7,'B0DK7DXWBX':7,'B0H4HBSTM8':7,
+  'B0DR2B7FFS':7,'B0GWD44MMR':7,'B0GPXMJL2W':7,'B0DR29ZXT3':7,
+  'B0DK7DFGXQ':7,'B0DK7DQS6T':7,'B0H4HH6KJG':7,'B0H4H3CW3H':7,
+  'B0DK7F393Z':7,'B0H4HK6HD7':7,'B0H4H4F1Y4':7,'B0DK7C7TFN':7,
+  'B0F7LPGDVV':7,'B0DK7B7B8K':9,'B0F7M62HSH':7,'B0DK7F25SV':7,
+  'B0DK7F96ML':7,'B0DK7BYHRH':7,'B0DR8B4NJW':7,'B0DK7CZLBL':7,
+  'B0DK7GCYLF':7,'B0DK78WQWS':7,'B0DR29DH9L':7,'B0DK7DDVSQ':7,
+  'B0DK7D5YK1':7,'B0DK7C6KCS':7,'B0DK7DGYSY':7,'B0DK7C2NWT':7,
+  'B0DKFY3Z4C':7,'B0DK7D2TGP':7,'B0FB3WTLPR':7,'B0DRP7J5C9':3,
+  'B0F19DZ5CZ':3,'B0F7HRQRD6':7,'B0GXW5PYGN':4,'B09MK8W2SJ':5,
+  'B0B97QYYQS':9,'B0DXZS9FPH':9,'B0DXZQWKYZ':9,'B0DSQ2FZFF':9,
+  'B0BQ36D73H':15,'B089B66Q95':6,'B089B4YM6X':5,'B0896ZD1ZY':5,
+  'B089B2XQNK':6,'B0B8J8LWCY':6,'B0BWZ11CM3':6,'B0GWXZ7X88':25,
+  'B0GQTLPPQ1':5,'B0GQTJ223Y':5,'B0GQTR1BG5':5,'B0GMQGFXVS':54,
+  'B0GWRBLDQB':29,'B0H3PBSZ8G':29,'B089B62W42':14,'B089B88868':5,
+  'B087PQDKVZ':6,'B089B84NVM':14,'B089B69PYN':6,'B0FTSK7H57':28,
+  'B0BQ33S4Q1':6,'B0B9GK1BNM':14,'B0BQ397TYL':15,'B0FTSM69XD':54,
+  'B0BQ3513FV':15,'B0BTTD5PNF':6,'B0BWZ1TFK9':6,'B088YDTDP8':6,
+  'B088YDD1ZW':6,'B088YNL55Y':6,'B0G2BKTLJV':15,'B088YK91TC':6,
+  'B088Y2N7FX':6,'B0DLBHTJVB':6,'B088XZH12C':6,'B088Y6BDGB':6,
+  'B0894B2FBQ':6,'B08949P1MN':6,'B0894BJJ4W':10,'B08948W8V4':6,
+  'B0BG5V6T37':13,'B0F19CHZ4C':7,'B0DK7F68SC':7,'B089MDHX9T':14,
+  'B089MCFHL8':14,'B089MBZG8G':15,'B07VV5WSDZ':16,'B089T6791L':30,
+  'B009E9BB92':7,'B0859ZQ6BW':4,'B08NC77J2D':6,'B08NCMN172':6,
+  'B0B94NJ7D9':7,'B01B6Z1M18':8,'B0B94QMHH3':6,'B0BDRRTRH6':4,
+  'B0C5DWNGM1':6,'B0DKP2VWTJ':6,'B0DKP39H4B':4,'B0FJLRHN8W':4,
+  'B0FJM46K1G':4,'B0F5X39DGF':7,'B0DKP383QG':6,'B0DKP4FZVC':11,
+  'B0B97D1H2H':8,'B0DKJXPKCR':7,'B08PZ4MCCZ':15,'B0B97DJZ62':6,
+  'B0B97KMJ9D':11,'B0FVVMPKGJ':22,'B0BNF2YC11':5,'B0BNF7G63M':5,
+  'B0CT2W4P4R':4,'B0BNF3KZBJ':4,'B0CT2XPMQN':4,'B0BNF5P6SN':4,
+  'B0CT2Z2296':4,'B0H1QR8P9B':4,'B0DM5ZH6Z2':9,'B0CBBMWT2V':9,
+  'B0CBBJNF21':5,'B0FK5XJC51':10,'B0B78F1JFX':10,'B01468O5AW':10,
+  'B0FK5Z3YBH':10,'B01LY9T489':10,'B01468OHAK':10,'B0H25TV24Q':5,
+  'B0H25SCTM4':5,'B0H25QMKF9':5,'B0B97P6Y9H':5,'B0H25WV5R2':5,
+  'B0H25PMNKX':5,'B0993RK4WC':4,'B0DLPCD95R':9,'B0DLPCTL97':9,
+  'B0DLWC7FQK':13,'B0DLWB4ZYH':13,'B0DLWD8PW4':13,'B0DLPF11R7':9,
+  'B0C5DQP1S9':9,'B0C5DT7MNG':9,'B0DLWDB5HF':30,'B0DLPBCQYP':9,
+  'B0DLWF51QQ':33,'B0DLWGX6H6':30,'B0DKJGNKTX':6,'B0B97LVRS5':7,
+  'B0BG5PCDK1':7,'B0BG5Q8PDD':7,'B0BG5RGYHW':7,'B0B97F7CVZ':7,
+  'B0FVFD3J3F':6,'B0B94R3CZB':3,'B0DH89ZYJY':3,'B0DH87PWBX':3,
+  'B0DH882PSP':3,'B0DKNZT5DY':3,'B0DKNS7FY4':3,'B0DZCSS4TV':3,
+  'B0DKNQ2XD9':3,'B0DV5PRDFZ':3,'B0DKNRCD6K':3,'B0DKNTF3BQ':20,
+  'B0DKNS1P3Y':18,'B08PZ65ZGF':3,'B0DZCRTJZH':3,'B08PZ9M2R3':3,
+  'B0DV5R3QRK':3,'B0DV5PP3DM':3,'B0DV5RY5GV':3,'B0B94PS8XL':3,
+  'B0B94NB3CX':3,'B0DKNT7MCL':3,'B0B94Q3FZF':3,'B0DZCWVQCD':3,
+  'B0DKP1VBKY':3,'B0DKP1K9P8':3,'B0B94MXJPT':7,'B0DH8G1HQ6':3,
+  'B0B9H2FHDS':3,'B0DH8FFRLD':7,'B0DKNRW8BW':3,'B0DZCS9YLN':2,
+  'B0DV5NTQ8Y':7,'B0GY1PPL18':5,'B0GFVZNMRM':5,'B0GY1X1FNZ':5,
+  'B0GFW7MPJJ':5,'B0GFVRP2JK':5,'B0GFWC2WGJ':5,'B0GY1TRHC4':5,'B0GY1Z9L5S':5,
+};
+let CSL = JSON.parse(localStorage.getItem('emCSL')||'{}');
+function getSL(a){return CSL[a]?.days||BSL[a]||null;}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const D={in:{r:[],h:[]},ex:{r:[],h:[]}};
+let results=[],af='all',sq='';
+
+// ─── File handling ────────────────────────────────────────────────────────────
+function pick(e,t){const f=e.target.files[0];if(f)load(f,t);}
+function drop(e,t){e.preventDefault();dlv(t);const f=e.dataTransfer.files[0];if(f)load(f,t);}
+function dov(e,t){e.preventDefault();document.getElementById(t==='in'?'boxIn':'boxEx').classList.add('drag');}
+function dlv(t){document.getElementById(t==='in'?'boxIn':'boxEx').classList.remove('drag');}
+
+function load(file,t){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const r=new FileReader();
+  if(ext==='csv'){
+    r.onload=ev=>apply(csv(ev.target.result),file.name,t);
+    r.readAsText(file);
+  } else {
+    r.onload=ev=>{
+      try{
+        if(typeof XLSX==='undefined')throw new Error('SheetJS not loaded — check internet connection');
+        const wb=XLSX.read(ev.target.result,{type:'array',cellDates:false});
+        let sn=wb.SheetNames[0];
+        if(wb.SheetNames.length>1){
+          const c=prompt('Sheets: '+wb.SheetNames.map((s,i)=>i+1+'. '+s).join(' | ')+'\nEnter number (default 1):','1');
+          sn=wb.SheetNames[Math.max(0,parseInt(c||'1')-1)];
+        }
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:'',raw:true});
+        apply({h:rows.length?Object.keys(rows[0]):[],r:rows},file.name+'['+sn+']',t);
+      }catch(err){showNotice('⚠ Cannot read file: '+file.name+'\n\n'+err.message);}
+    };
+    r.readAsArrayBuffer(file);
+  }
+}
+
+function csv(text){
+  const lines=text.trim().split(/\r?\n/);
+  if(lines.length<2)return{h:[],r:[]};
+  const h=sl(lines[0]).map(x=>x.trim().replace(/^"|"$/g,''));
+  const rows=[];
+  for(let i=1;i<lines.length;i++){const v=sl(lines[i]);const o={};h.forEach((k,j)=>o[k]=(v[j]||'').trim().replace(/^"|"$/g,''));if(Object.values(o).some(x=>x))rows.push(o);}
+  return{h,r:rows};
+}
+function sl(l){const r=[];let c='',q=false;for(const ch of l){if(ch==='"'){q=!q;}else if(ch===','&&!q){r.push(c);c='';}else c+=ch;}r.push(c);return r;}
+
+function apply(parsed,fname,t){
+  D[t]={r:parsed.r||parsed.rows||[],h:parsed.h||parsed.headers||[]};
+  const box=document.getElementById(t==='in'?'boxIn':'boxEx');
+  box.classList.add('ok');
+  const badge=document.getElementById(t==='in'?'inBadge':'exBadge');
+  badge.textContent='✓ '+D[t].r.length+' rows';
+  const name=document.getElementById(t==='in'?'inName':'exName');
+  name.textContent=fname;name.classList.remove('hidden');
+  if(D.in.r.length&&D.ex.r.length)show('runBar');
+}
+
+// ─── Column auto-detect ───────────────────────────────────────────────────────
+function acol(headers,hints,fallbackIdx){
+  for(const h of hints){const i=headers.findIndex(x=>x.toLowerCase().replace(/[^a-z]/g,'').includes(h));if(i>=0)return headers[i];}
+  return headers[fallbackIdx]||'';
+}
+
+// ─── Date parsing ─────────────────────────────────────────────────────────────
+function pd(val){
+  if(val===null||val===undefined||val==='')return null;
+  const n=parseFloat(val);
+  if(!isNaN(n)&&n>40000&&n<60000){const d=new Date(1899,11,30);d.setDate(d.getDate()+Math.floor(n));return d;}
+  const s=String(val).trim();if(!s)return null;
+  let m;
+  m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+  if(m){let y=+m[3];if(y<100)y+=2000;const f=(document.getElementById('dFmt')||{}).value||'MDY';return f==='DMY'?new Date(y,+m[2]-1,+m[1]):new Date(y,+m[1]-1,+m[2]);}
+  const d=new Date(s);return isNaN(d.getTime())?null:d;
+}
+function fd(d){if(!d)return'';return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function gs(s){if(s===null||s===undefined)return'';return String(s).trim();}
+function nk(s){if(s===null||s===undefined)return'';return String(s).trim().toUpperCase().replace(/\s+/g,' ');}
+
+function toggleMapper(){
+  const p=document.getElementById('mapperPanel');
+  if(p.classList.contains('hidden')){
+    buildMapperUI();
+    p.classList.remove('hidden');
+  } else {
+    p.classList.add('hidden');
+  }
+}
+
+function buildMapperUI(){
+  const IN_FIELDS=[
+    {id:'iWH', label:'Warehouse', hints:['warehouse','wh'], pos:0},
+    {id:'iTS', label:'Timestamp', hints:['timestamp','time','stamp'], pos:1},
+    {id:'iLOC',label:'Location',  hints:['location','loc'], pos:2},
+    {id:'iASIN',label:'ASIN',     hints:['asin'], pos:3},
+    {id:'iTIT',label:'Title',     hints:['title','product','desc','name'], pos:4},
+    {id:'iUSR',label:'User',      hints:['user','aa','staff'], pos:5},
+    {id:'iQTY',label:'Stowed Qty',hints:['stow','qty','quantity'], pos:6},
+    {id:'iREF',label:'Reference', hints:['ref','reference'], pos:7},
+    {id:'iRMK',label:'Remarks',   hints:['remark','remarks','comment'], pos:10},
+  ];
+  const EX_FIELDS=[
+    {id:'eBIN', label:'Bin/Location',hints:['bin','location','loc'], pos:0},
+    {id:'eASIN',label:'ASIN',        hints:['asin'], pos:7},
+    {id:'eEXP', label:'Expiry Date', hints:['expiry','expire','exp','best','bb','date'], pos:3},
+    {id:'eREM', label:'Remaining Qty',hints:['remain','rem'], pos:5},
+  ];
+  function buildGrid(fields, headers, gridId){
+    const g=document.getElementById(gridId);g.innerHTML='';
+    fields.forEach(f=>{
+      const auto=acol(headers,f.hints,f.pos);
+      const d=document.createElement('div');
+      d.innerHTML=`<label style="font-size:10.5px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px">${f.label}</label>
+        <select id="sel_${f.id}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;font-family:var(--font);background:var(--white);">
+          <option value="">— skip —</option>
+          ${headers.map(h=>`<option value="${e(h)}"${h===auto?' selected':''}>${e(h)}</option>`).join('')}
+        </select>`;
+      g.appendChild(d);
+    });
+  }
+  buildGrid(IN_FIELDS, D.in.h, 'mapIn');
+  buildGrid(EX_FIELDS, D.ex.h, 'mapEx');
+}
+
+function getColSel(id, hints, pos, headers){
+  const sel=document.getElementById('sel_'+id);
+  if(sel&&sel.value) return sel.value;
+  return acol(headers,hints,pos);
+}
+
+// ─── Main match & analyse ─────────────────────────────────────────────────────
+function run(){
+  hide('notice');
+  try{ runInner(); }
+  catch(err){
+    console.error('Match & Analyse failed:',err);
+    showNotice('⚠ Something went wrong during matching:\n\n'+err.message+'\n\nOpen browser console (F12) for details, or share this message.');
+  }
+}
+function runInner(){
+  const ih=D.in.h, eh=D.ex.h;
+  // Map inbound cols
+  const iWH =getColSel('iWH', ['warehouse','wh'],0,ih);
+  const iTS =getColSel('iTS', ['timestamp','time','stamp'],1,ih);
+  const iLOC=getColSel('iLOC',['location','loc'],2,ih);
+  const iASIN=getColSel('iASIN',['asin'],3,ih);
+  const iTIT=getColSel('iTIT', ['title','product','desc','name'],4,ih);
+  const iUSR=getColSel('iUSR', ['user','aa','staff'],5,ih);
+  const iQTY=getColSel('iQTY', ['stow','qty','quantity'],6,ih);
+  const iREF=getColSel('iREF', ['ref','reference'],7,ih);
+  const iRMK=getColSel('iRMK', ['remark','remarks','comment'],10,ih);
+
+  // Map expiry cols
+  const eBIN =getColSel('eBIN', ['bin','location','loc'],0,eh);
+  const eASIN=getColSel('eASIN',['asin'],7,eh);
+  const eEXP =getColSel('eEXP', ['expiry','expire','exp','best','bb','date'],3,eh);
+  const eREM =getColSel('eREM', ['remain','rem'],5,eh);
+
+  if(!iLOC||!iASIN){showNotice('⚠ Cannot detect Location or ASIN in Inbound file. Check column names, or use ⚙ Column Mapping to set them manually.');return;}
+  if(!eBIN||!eASIN){showNotice('⚠ Cannot detect Bin or ASIN in Expiry file. Check column names, or use ⚙ Column Mapping to set them manually.');return;}
+
+  // Debug: show detected columns
+  console.log('Inbound cols detected:', {iWH,iTS,iLOC,iASIN,iTIT,iUSR,iQTY,iREF,iRMK});
+  console.log('Expiry cols detected:', {eBIN,eASIN,eEXP,eREM});
+  console.log('Sample inbound row:', D.in.r[0]);
+  console.log('Sample expiry row:', D.ex.r[0]);
+
+  // Build expiry dict: ASIN|BinLoc → {expDate,expRaw,remQty}
+  const ED={};
+  let exSkippedNoBinAsin=0, exSkippedNoDate=0;
+  D.ex.r.forEach(row=>{
+    let bin=gs(row[eBIN]||'');
+    if(bin.toLowerCase().startsWith('bin:'))bin=bin.substring(4).trim();
+    const asin=gs(row[eASIN]||'');
+    const expRaw=String(row[eEXP]||'');
+    const remQty=parseFloat(String(row[eREM]||'0').replace(/,/g,''))||0;
+    if(!bin||!asin){exSkippedNoBinAsin++;return;}
+    const expDate=pd(expRaw);
+    if(!expDate){exSkippedNoDate++;return;}
+    const k=nk(asin)+'|'+nk(bin);
+    if(!ED[k])ED[k]={expDate,expRaw,remQty};
+  });
+
+  const today=new Date();today.setHours(0,0,0,0);
+  const yr=today.getFullYear();
+  results=[];
+  let skipped0=0,skippedRmk=0,matched=0;
+  const unmatchedSample=[];
+
+  D.in.r.forEach((row,idx)=>{
+    const asin=gs(row[iASIN]||'');
+    if(!asin)return;
+
+    // Clean location (VBA: if comma, take after comma)
+    let rawLoc=gs(row[iLOC]||'');
+    const loc=rawLoc.includes(',')?rawLoc.substring(rawLoc.indexOf(',')+1).trim():rawLoc;
+
+    const k=nk(asin)+'|'+nk(loc);
+    const match=ED[k];
+    const remQty=match?match.remQty:0;
+
+    // Skip: no remaining qty OR outbound pick / receive rejection / stowed multiple
+    if(remQty===0){skipped0++;if(!match)unmatchedSample.push(nk(asin)+'|'+nk(loc));return;}
+    const rmk=gs(row[iRMK]||'').toLowerCase();
+    if(rmk==='outbound pick'||rmk==='receive rejection'){skippedRmk++;return;}
+    if(rmk.startsWith('stowed')){skippedRmk++;return;}
+    if(match)matched++; // "Stowed N times"
+
+    const warehouse=gs(row[iWH]||'');
+    const timestamp=gs(row[iTS]||'');
+    const title    =gs(row[iTIT]||'');
+    const user     =gs(row[iUSR]||'');
+    const stowedQty=gs(row[iQTY]||'');
+    let   reference=gs(row[iREF]||'');if(!reference)reference='Transhipment';
+    const remarks  =gs(row[iRMK]||'');
+
+    const expiryDate=match?match.expDate:null;
+    const expiryRaw =match?String(match.expRaw):'';
+    const isWrong   =remarks.toLowerCase()==='wrong expiry';
+
+    let status='nodate',daysLeft=null;
+
+    if(expiryDate){
+      const diff=Math.floor((expiryDate-today)/86400000);
+      daysLeft=diff;
+      const ey=expiryDate.getFullYear();
+      if(ey<yr-1||ey>yr+3||(diff<-180)){status='expired';}
+      else if(diff<0){status='expired';}
+      else if(diff<=1){status='critical';}
+      else if(diff<=7){status='warning';}
+      else{status='ok';}
+    }
+
+    // Override with VBA flag
+    if(isWrong){status='wrong';}
+
+    // Shelf life DB check — flag if the entered expiry OVERSTATES the correct
+    // shelf life (i.e. staff wrote a later expiry than production date + DB shelf life allows).
+    // Example: production 11th, DB shelf life 6 days → correct expiry is 17th.
+    // If someone enters 18th or later, that's flagged regardless of current status,
+    // because it can mask a genuinely soon-to-expire item as "OK"/"Warning".
+    let shelfNote=null;
+    const sl=getSL(asin);
+    if(sl&&expiryDate&&!isWrong){
+      const tsD=pd(timestamp);
+      if(tsD){
+        const act=Math.round((expiryDate-tsD)/86400000);
+        if(act>sl){
+          status='wrongshelf';
+          shelfNote={exp:sl,act};
+        }
+      }
+    }
+
+    results.push({i:idx+1,warehouse,timestamp,loc,asin,title,user,stowedQty,reference,expiryDate,expiryRaw,remQty,remarks,status,daysLeft,isWrong,shelfNote});
+  });
+
+  console.log(`Results: ${results.length} in-bin | Skipped zero-qty: ${skipped0} | Skipped remarks: ${skippedRmk} | Matched expiry: ${matched} | Expiry dict size: ${Object.keys(ED).length} | Expiry rows skipped (no bin/asin): ${exSkippedNoBinAsin} | Expiry rows skipped (bad date): ${exSkippedNoDate}`);
+
+  if(results.length===0){
+    const sample=unmatchedSample.slice(0,5).map(k=>'  '+k.replace('|',' @ ')).join('\n');
+    showNotice(`⚠ No in-bin items found after filtering.\n\nProcessed: ${D.in.r.length} inbound rows\nSkipped (qty=0 / no ASIN+Location match): ${skipped0}\nSkipped (Outbound Pick / Rejection / Stowed): ${skippedRmk}\nExpiry file: ${Object.keys(ED).length} unique ASIN+Bin combos loaded (${exSkippedNoBinAsin} rows skipped for missing bin/asin, ${exSkippedNoDate} for unparseable date).\n\nSample inbound ASIN+Location that found NO match in expiry file:\n${sample||'  (none)'}\n\nMost likely cause: the Location/Bin values in the two files don't match exactly, or the wrong columns were auto-detected. Open ⚙ Column Mapping to fix, and check the Location/Bin format in both files.`);
+    return;
+  }
+
+  updStats();render();
+  hide('notice');
+  show('statRow');show('ftRow');show('tblWrap');
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function updStats(){
+  const c={wrong:0,wrongshelf:0,expired:0,critical:0,warning:0,ok:0,nodate:0};
+  results.forEach(r=>c[r.status]=(c[r.status]||0)+1);
+  document.getElementById('sT').textContent =results.length;
+  document.getElementById('sW').textContent =c.wrong;
+  document.getElementById('sWS').textContent=c.wrongshelf;
+  document.getElementById('sE').textContent =c.expired;
+  document.getElementById('sC').textContent =c.critical;
+  document.getElementById('sWr').textContent=c.warning;
+  document.getElementById('sO').textContent =c.ok;
+  document.getElementById('cA').textContent =results.length;
+  document.getElementById('cW').textContent =c.wrong;
+  document.getElementById('cWS').textContent=c.wrongshelf;
+  document.getElementById('cE').textContent =c.expired;
+  document.getElementById('cC').textContent =c.critical;
+  document.getElementById('cW2').textContent=c.warning;
+  document.getElementById('cO').textContent =c.ok;
+  document.getElementById('cN').textContent =c.nodate;
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render(){
+  let rows=results;
+  if(af!=='all')rows=rows.filter(r=>r.status===af);
+  if(sq){const q=sq.toLowerCase();rows=rows.filter(r=>[r.asin,r.loc,r.user,r.title].some(v=>(v||'').toLowerCase().includes(q)));}
+  const tb=document.getElementById('tBody');
+  if(!rows.length){tb.innerHTML='';show('emptyDiv');hide('tblWrap');return;}
+  hide('emptyDiv');show('tblWrap');
+  const BG={
+    wrong:     '<span class="bg bg-wrong">⚠ WRONG EXPIRY</span>',
+    wrongshelf:'<span class="bg bg-shelf">WRONG SHELF LIFE</span>',
+    expired:   '<span class="bg bg-exp">EXPIRED</span>',
+    critical:  '<span class="bg bg-crit">CRITICAL</span>',
+    warning:   '<span class="bg bg-warn">WARNING</span>',
+    ok:        '<span class="bg bg-ok">OK</span>',
+    nodate:    '<span class="bg bg-nd">NO DATE</span>',
+  };
+  tb.innerHTML=rows.map(r=>{
+    const dl=r.daysLeft===null?'—':r.daysLeft<0?`<span class="mono" style="color:var(--red);font-weight:700">${r.daysLeft}d</span>`:r.daysLeft<=1?`<span class="mono" style="color:var(--orange);font-weight:700">${r.daysLeft}d</span>`:r.daysLeft<=7?`<span class="mono" style="color:var(--yellow);font-weight:600">${r.daysLeft}d</span>`:`<span class="mono">${r.daysLeft}d</span>`;
+    const sn=r.shelfNote?`<br><span style="font-size:10px;color:var(--orange)">Should be ${r.shelfNote.exp}d, entered as ${r.shelfNote.act}d</span>`:'';
+    return`<tr class="${r.status==='wrong'?'wr':''}">
+      <td class="mono" style="color:var(--ink4)">${r.i}</td>
+      <td>${e(r.warehouse)||'—'}</td>
+      <td class="mono" style="font-size:11px">${e(r.timestamp)||'—'}</td>
+      <td style="font-weight:600">${e(r.loc)||'—'}</td>
+      <td class="mono" style="font-size:11px">${e(r.asin)||'—'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e(r.title)}">${e(r.title)||'—'}</td>
+      <td>${e(r.user)||'—'}</td>
+      <td class="mono">${e(r.stowedQty)||'—'}</td>
+      <td class="mono" style="font-weight:700;color:var(--green)">${r.remQty}</td>
+      <td class="mono" style="${r.status==='wrong'?'color:var(--red);font-weight:700':''};white-space:nowrap">${e(r.expiryRaw)||'—'}</td>
+      <td>${dl}</td>
+      <td>${BG[r.status]||''}${sn}</td>
+    </tr>`;
+  }).join('');
+}
+
+function flt(f,el){af=f;document.querySelectorAll('.ft').forEach(t=>t.classList.remove('on'));el.classList.add('on');render();}
+function srch(v){sq=v;render();}
+
+// ─── Report ───────────────────────────────────────────────────────────────────
+function openRpt(){
+  if(!results.length){alert('Run analysis first.');return;}
+  document.getElementById('rptD').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const c={wrong:0,wrongshelf:0,expired:0,critical:0,warning:0,ok:0,nodate:0};
+  results.forEach(r=>c[r.status]=(c[r.status]||0)+1);
+  const wRows=results.filter(r=>r.status==='wrong');
+  const uRows=results.filter(r=>r.status==='expired'||r.status==='critical');
+  const wRow2=results.filter(r=>r.status==='warning');
+  let h=`<div class="rt"><h4>Summary</h4><table>
+    <tr><th>Category</th><th>Count</th><th>Action</th></tr>
+    <tr><td>⚠ Wrong Expiry (VBA flagged)</td><td style="color:#991B1B;font-weight:700">${c.wrong}</td><td>Correct immediately</td></tr>
+    <tr><td>🔶 Wrong Shelf Life (DB)</td><td>${c.wrongshelf}</td><td>Verify with staff</td></tr>
+    <tr><td>🔴 Expired</td><td>${c.expired}</td><td>Remove from bin</td></tr>
+    <tr><td>🟠 Critical (≤1 day)</td><td>${c.critical}</td><td>Act today</td></tr>
+    <tr><td>🟡 Warning (≤7 days)</td><td>${c.warning}</td><td>Monitor</td></tr>
+    <tr><td>🟢 OK</td><td>${c.ok}</td><td>—</td></tr>
+  </table></div>`;
+  if(wRows.length)h+=`<div class="rt"><h4>⚠ Wrong Expiry — VBA Flagged</h4><table>
+    <tr><th>#</th><th>ASIN</th><th>Title</th><th>Location</th><th>Expiry Entered</th><th>Rem Qty</th><th>Staff</th></tr>
+    ${wRows.map(r=>`<tr><td>${r.i}</td><td style="font-family:var(--mono);font-size:11px">${e(r.asin)}</td><td>${e(r.title)||'—'}</td><td>${e(r.loc)}</td><td style="font-family:var(--mono);color:#991B1B;font-weight:700">${e(r.expiryRaw)}</td><td>${r.remQty}</td><td>${e(r.user)||'—'}</td></tr>`).join('')}
+  </table></div>`;
+  if(uRows.length)h+=`<div class="rt"><h4>🔴 Expired / Critical</h4><table>
+    <tr><th>#</th><th>ASIN</th><th>Location</th><th>Expiry</th><th>Days</th><th>Qty</th></tr>
+    ${uRows.map(r=>`<tr><td>${r.i}</td><td style="font-family:var(--mono);font-size:11px">${e(r.asin)}</td><td>${e(r.loc)}</td><td style="font-family:var(--mono)">${e(r.expiryRaw)}</td><td style="font-weight:700;color:var(--red)">${r.daysLeft!==null?r.daysLeft+'d':'—'}</td><td>${r.remQty}</td></tr>`).join('')}
+  </table></div>`;
+  h+=`<div style="font-size:11px;color:var(--ink4);text-align:center;margin-top:14px;">GWC Report By — HRUSHIKESH PADHI (HP world)</div>`;
+  document.getElementById('rptB').innerHTML=h;
+  show('rptOv');
+}
+function closeRpt(){hide('rptOv');}
+function cpRpt(){
+  const lines=['DAILY EXPIRY REPORT — '+new Date().toLocaleDateString(),'='.repeat(50)];
+  const wr=results.filter(r=>r.status==='wrong');
+  const ur=results.filter(r=>r.status==='expired'||r.status==='critical');
+  lines.push(`Wrong Expiry:${wr.length} | Expired/Critical:${ur.length} | Total In-Bin:${results.length}`,'');
+  if(wr.length){lines.push('WRONG EXPIRY (VBA Flagged):');wr.forEach(r=>lines.push(`  ${r.asin} | ${r.loc} | Expiry:${r.expiryRaw} | Qty:${r.remQty} | Staff:${r.user}`));}
+  if(ur.length){lines.push('','EXPIRED/CRITICAL:');ur.forEach(r=>lines.push(`  ${r.asin} | ${r.loc} | Expiry:${r.expiryRaw} | ${r.daysLeft}d | Qty:${r.remQty}`));}
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>alert('Copied!'));
+}
+
+const STATUS_LABEL={wrong:'WRONG EXPIRY',wrongshelf:'WRONG SHELF LIFE',expired:'EXPIRED',critical:'CRITICAL',warning:'WARNING',ok:'OK',nodate:'NO DATE'};
+
+async function doExport(){
+  if(!results.length){showNotice('No results. Run Match & Analyse first.');return;}
+  if(typeof ExcelJS==='undefined'){showNotice('⚠ Excel export library failed to load — check your internet connection and try again.');return;}
+
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('Expiry Report');
+  ws.columns=[
+    {header:'WAREHOUSE',key:'wh',width:11},
+    {header:'TIME STAMP',key:'ts',width:18},
+    {header:'LOCATION',key:'loc',width:16},
+    {header:'ASIN',key:'asin',width:14},
+    {header:'PRODUCT TITLE',key:'title',width:36},
+    {header:'USER',key:'user',width:12},
+    {header:'STOWED QTY',key:'sq',width:11},
+    {header:'REFERENCE VALUE',key:'ref',width:17},
+    {header:'EXPIRY DATE',key:'exp',width:18},
+    {header:'REMAINING QTY',key:'rq',width:13},
+    {header:'REMARKS',key:'rmk',width:20},
+    {header:'STATUS',key:'status',width:16},
+    {header:'DAYS LEFT',key:'days',width:10},
+  ];
+
+  results.forEach(r=>{
+    const tsDate=pd(r.timestamp);
+    const expDate=r.expiryDate?new Date(r.expiryDate.getFullYear(),r.expiryDate.getMonth(),r.expiryDate.getDate(),23,59,0):null;
+    ws.addRow({
+      wh:r.warehouse,
+      ts:tsDate||r.timestamp,
+      loc:r.loc,
+      asin:r.asin,
+      title:r.title,
+      user:r.user,
+      sq:r.stowedQty!==''&&!isNaN(+r.stowedQty)?+r.stowedQty:r.stowedQty,
+      ref:r.reference,
+      exp:expDate||r.expiryRaw,
+      rq:r.remQty,
+      rmk:r.remarks,
+      status:STATUS_LABEL[r.status]||r.status,
+      days:r.daysLeft,
+    });
+  });
+
+  ws.getColumn('ts').numFmt='mm/dd/yyyy hh:mm';
+  ws.getColumn('exp').numFmt='mm/dd/yyyy hh:mm';
+  ws.getColumn('sq').numFmt='0';
+  ws.getColumn('rq').numFmt='0';
+  ws.getColumn('days').numFmt='0';
+
+  const headerRow=ws.getRow(1);
+  headerRow.height=20;
+  headerRow.eachCell((cell,colNumber)=>{
+    const extra=colNumber>11; // Status/Days Left are computed extras, styled differently
+    cell.font={bold:true,color:{argb:extra?'FF1B2430':'FFFF0000'},size:11};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:extra?'FFEEF1F5':'FFFFFF00'}};
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+    cell.border={bottom:{style:'thin',color:{argb:'FF999999'}}};
+  });
+  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:13}};
+  ws.views=[{state:'frozen',ySplit:1}];
+
+  results.forEach((r,i)=>{
+    const row=ws.getRow(i+2);
+    if(r.status==='wrong'||r.status==='expired'){
+      row.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFEE2E2'}};});
+    }
+    row.eachCell(c=>{c.border={bottom:{style:'thin',color:{argb:'FFE5E7EB'}}};});
+  });
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='Expiry_'+new Date().toISOString().slice(0,10)+'.xlsx';a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Custom ASIN ──────────────────────────────────────────────────────────────
+function cp(){
+  const p=document.getElementById('nP').value,ex=document.getElementById('nE').value,pv=document.getElementById('cpv');
+  if(p&&ex){const d=Math.round((new Date(ex)-new Date(p))/86400000);pv.textContent=d>0?`✓ Shelf life = ${d} days`:'⚠ Expiry must be after production';pv.classList.remove('hidden');}
+  else pv.classList.add('hidden');
+}
+function addA(){
+  const a=(document.getElementById('nA').value||'').trim().toUpperCase();
+  const t=(document.getElementById('nT').value||'').trim();
+  const p=document.getElementById('nP').value,ex=document.getElementById('nE').value;
+  if(!a){alert('Enter ASIN.');return;}if(!p||!ex){alert('Enter both dates.');return;}
+  const days=Math.round((new Date(ex)-new Date(p))/86400000);
+  if(days<=0){alert('Expiry must be after production.');return;}
+  CSL[a]={title:t,days};localStorage.setItem('emCSL',JSON.stringify(CSL));
+  document.getElementById('nA').value='';document.getElementById('nT').value='';
+  document.getElementById('nP').value='';document.getElementById('nE').value='';
+  document.getElementById('cpv').classList.add('hidden');
+  rdrDB();
+}
+function rmA(a){delete CSL[a];localStorage.setItem('emCSL',JSON.stringify(CSL));rdrDB();}
+
+function toggleBulk(){
+  const p=document.getElementById('bulkPanel');
+  p.classList.toggle('hidden');
+  if(!p.classList.contains('hidden'))document.getElementById('bulkTxt').focus();
+}
+
+function bulkAdd(){
+  const raw=document.getElementById('bulkTxt').value;
+  const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){return;}
+  let added=0,updated=0;const errors=[];
+  lines.forEach((line,li)=>{
+    const parts=line.split(/\t|,/).map(p=>p.trim()).filter(p=>p!=='');
+    if(parts.length<2){errors.push(`Line ${li+1}: need at least ASIN + days (or dates)`);return;}
+    const asin=parts[0].toUpperCase();
+    if(!asin){errors.push(`Line ${li+1}: missing ASIN`);return;}
+
+    let title='',days=null;
+    if(parts.length===2){
+      // ASIN, Days
+      const d=parseFloat(parts[1]);
+      if(isNaN(d)||d<=0){errors.push(`Line ${li+1}: "${parts[1]}" is not a valid day count`);return;}
+      days=Math.round(d);
+    } else if(parts.length===3){
+      // ASIN, ProductionDate, ExpiryDate
+      const p=new Date(parts[1]),ex=new Date(parts[2]);
+      if(isNaN(p.getTime())||isNaN(ex.getTime())){errors.push(`Line ${li+1}: could not parse dates`);return;}
+      days=Math.round((ex-p)/86400000);
+      if(days<=0){errors.push(`Line ${li+1}: expiry must be after production`);return;}
+    } else {
+      // ASIN, Title, ProductionDate, ExpiryDate (+ ignore extra columns)
+      title=parts[1];
+      const p=new Date(parts[2]),ex=new Date(parts[3]);
+      if(isNaN(p.getTime())||isNaN(ex.getTime())){errors.push(`Line ${li+1}: could not parse dates`);return;}
+      days=Math.round((ex-p)/86400000);
+      if(days<=0){errors.push(`Line ${li+1}: expiry must be after production`);return;}
+    }
+
+    if(CSL[asin])updated++;else added++;
+    CSL[asin]={title:title||CSL[asin]?.title||'',days};
+  });
+
+  localStorage.setItem('emCSL',JSON.stringify(CSL));
+  rdrDB();
+  const rb=document.getElementById('bulkResult');
+  rb.classList.remove('hidden');
+  rb.innerHTML=`✓ Added ${added}, updated ${updated}.`+(errors.length?`<br><span style="color:var(--red)">${errors.length} error(s):<br>${errors.join('<br>')}</span>`:'');
+  if(!errors.length)document.getElementById('bulkTxt').value='';
+}
+function rdrDB(){
+  const entries=Object.entries(CSL);
+  document.getElementById('dbCnt').textContent=entries.length;
+  const l=document.getElementById('dbList');
+  if(!entries.length){l.innerHTML='<div style="padding:14px;text-align:center;color:var(--ink4);font-size:12px;">None yet</div>';return;}
+  l.innerHTML=entries.map(([a,v])=>`<div class="db-item"><div><div class="db-asin">${e(a)}</div><div style="font-size:11px;color:var(--ink3)">${e(v.title||'')}</div></div><div style="display:flex;align-items:center;gap:6px;"><span class="db-days">${v.days}d</span><button class="del-x" onclick="rmA('${e(a)}')">✕</button></div></div>`).join('');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function resetAll(){
+  D.in={r:[],h:[]};D.ex={r:[],h:[]};results=[];
+  ['In','Ex'].forEach(t=>{
+    document.getElementById('box'+t).classList.remove('ok','drag');
+    document.getElementById((t==='In'?'in':'ex')+'Badge').textContent='No file chosen';
+    document.getElementById((t==='In'?'in':'ex')+'Name').classList.add('hidden');
+    document.getElementById((t==='In'?'in':'ex')+'File').value='';
+  });
+  hide('runBar');hide('statRow');hide('ftRow');hide('tblWrap');hide('emptyDiv');
+  af='all';sq='';
+}
+function show(id){const el=document.getElementById(id);if(el)el.classList.remove('hidden');}
+function hide(id){const el=document.getElementById(id);if(el)el.classList.add('hidden');}
+function showNotice(msg){
+  const b=document.getElementById('noticeBody');if(b)b.textContent=msg;
+  show('notice');
+  const n=document.getElementById('notice');if(n)n.scrollIntoView({block:'nearest'});
+  console.warn(msg);
+}
+function e(s){if(s===null||s===undefined)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+rdrDB();
+</script>
+</body>
+</html>
