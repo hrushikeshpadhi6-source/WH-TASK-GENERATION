@@ -3703,14 +3703,13 @@ var ANA_METRICS = [
   {key:'qualRem',   label:'Quality Removal',        keys:['QUALITY REMOVAL','Quality Removal','K'],                        agg:'sum', goodUp:false},
   {key:'damRem',    label:'Damaged Removal',        keys:['DAMAGED REMOVAL','Damaged Removal','L'],                        agg:'sum', goodUp:false},
   {key:'expRem',    label:'Expired Removal',        keys:['EXPIRED REMOVAL','Expired Removal','M'],                        agg:'sum', goodUp:false},
-  {key:'lateSlam',  label:'Late Slam',              keys:['LATE SLAM','Late Slam','N'],                                    agg:'sum', goodUp:false},
-  {key:'lateSlamV2',label:'Late Slam V2',           keys:['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z'],agg:'sum', goodUp:false},
+  {key:'lateSlam',  label:'Late Slam',              keys:['LATE SLAM','Late Slam','N'],                                    denKeys:['ORDERS','Orders','I'], agg:'sum', goodUp:false},
+  {key:'lateSlamV2',label:'Late Slam V2',           keys:['LATE SLAM V.2','LATE SLAM V2','Late Slam V.2','Late Slam V2','Z'],denKeys:['ORDERS','Orders','I'], agg:'sum', goodUp:false},
   {key:'skip',      label:'Skip',                   keys:['SKIP','Skip','skip','U'],                                       agg:'sum', goodUp:false},
   {key:'short',     label:'Short',                  keys:['SHORT','Short','short','V'],                                    agg:'sum', goodUp:false},
   {key:'avgSla',    label:'Avg SLA %',              keys:['AVG SLA','Avg SLA','S'],                                        agg:'avgpct', goodUp:true},
   {key:'ibTph',     label:'IB TPH',                 keys:['IB TPH','O'],                                                   agg:'avg', goodUp:true},
   {key:'obTph',     label:'OB TPH',                 keys:['OB TPH','P'],                                                   agg:'avg', goodUp:true},
-  {key:'lateSlamPct',label:'Late Slam %',           numKeys:['LATE SLAM','Late Slam','N'], denKeys:['ORDERS','Orders','I'],      agg:'ratio', goodUp:false},
   {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:true}
 ];
 
@@ -3727,11 +3726,18 @@ function anaMetricVal(m, rows){
   return 0;
 }
 
-function anaFmtVal(m,v){
+function anaFmtVal(m,v,rows){
   if(v==null||isNaN(v)) return '—';
-  if(m.agg==='avgpct'||m.agg==='ratio') return v.toFixed(2)+'%';
-  if(m.agg==='avg') return v.toFixed(1);
-  return fmt(v);
+  var base;
+  if(m.agg==='avgpct'||m.agg==='ratio') base=v.toFixed(2)+'%';
+  else if(m.agg==='avg') base=v.toFixed(1);
+  else base=fmt(v);
+  if(m.denKeys && rows && rows.length){
+    var den=sum(rows.map(function(r){return gNum(r,m.denKeys);}));
+    var pct=den>0?(v/den*100):0;
+    base+=' ('+pct.toFixed(2)+'%)';
+  }
+  return base;
 }
 function anaStoreScopeRows(rows){
   if(ANA.store==='all') return rows;
@@ -3889,11 +3895,11 @@ function anaRender(){
     kpiEl.innerHTML=ANA_METRICS.map(function(m){
       var cv=anaMetricVal(m,curRows), pv=prevRows.length?anaMetricVal(m,prevRows):null;
       var delta=pv!=null?cv-pv:null, deltaPct=(pv&&pv!==0)?(delta/pv*100):(delta===0?0:null);
-      var valTxt=anaFmtVal(m,cv);
+      var valTxt=anaFmtVal(m,cv,curRows);
       return '<div class="kpi" style="--kc:'+(m.goodUp===false?'#EF4444':m.goodUp===true?'#2563EB':'#64748B')+';">'+
         '<div class="kpi-lbl">'+m.label+'</div>'+
         '<div class="kpi-val">'+valTxt+'</div>'+
-        '<div class="kpi-sub">'+(pv!=null?'Prev '+anaFmtVal(m,pv)+' '+anaVarPill(delta,deltaPct,m.goodUp):'No comparison period')+'</div>'+
+        '<div class="kpi-sub">'+(pv!=null?'Prev '+anaFmtVal(m,pv,prevRows)+' '+anaVarPill(delta,deltaPct,m.goodUp):'No comparison period')+'</div>'+
       '</div>';
     }).join('');
   }
@@ -3940,8 +3946,8 @@ function anaDrawStoreTable(){
     var pr=prevRows.filter(function(r){return gStore(r)===s;});
     var cv=m?anaMetricVal(m,cr):0, pv=m?anaMetricVal(m,pr):0;
     var delta=cv-pv, deltaPct=pv?delta/pv*100:(delta===0?0:null);
-    var fmtV=function(v){return m?anaFmtVal(m,v):fmt(v);};
-    return '<tr><td style="font-weight:700;">'+s+'</td><td>'+fmtV(cv)+'</td><td style="color:var(--muted);">'+fmtV(pv)+'</td><td>'+anaVarPill(delta,deltaPct,m?m.goodUp:true)+'</td></tr>';
+    var fmtV=function(v,rs){return m?anaFmtVal(m,v,rs):fmt(v);};
+    return '<tr><td style="font-weight:700;">'+s+'</td><td>'+fmtV(cv,cr)+'</td><td style="color:var(--muted);">'+fmtV(pv,pr)+'</td><td>'+anaVarPill(delta,deltaPct,m?m.goodUp:true)+'</td></tr>';
   }).join('');
   el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
     '<thead><tr style="color:var(--muted);text-align:left;"><th style="padding:6px 8px;">Store</th><th style="padding:6px 8px;">Current</th><th style="padding:6px 8px;">Prior</th><th style="padding:6px 8px;">Δ</th></tr></thead>'+
@@ -3953,15 +3959,15 @@ function anaDrawFullTable(curRows,prevRows){
   var rowsHtml=ANA_METRICS.map(function(m){
     var cv=anaMetricVal(m,curRows), pv=prevRows.length?anaMetricVal(m,prevRows):null;
     var delta=pv!=null?cv-pv:null, deltaPct=(pv&&pv!==0)?(delta/pv*100):(delta===0?0:null);
-    var fmtV=function(v){return anaFmtVal(m,v);};
-    return '<tr><td style="font-weight:700;">'+m.label+'</td><td>'+fmtV(cv)+'</td><td style="color:var(--muted);">'+fmtV(pv)+'</td><td>'+anaVarPill(delta,deltaPct,m.goodUp)+'</td></tr>';
+    var fmtV=function(v,rs){return anaFmtVal(m,v,rs);};
+    return '<tr><td style="font-weight:700;">'+m.label+'</td><td>'+fmtV(cv,curRows)+'</td><td style="color:var(--muted);">'+fmtV(pv,prevRows)+'</td><td>'+anaVarPill(delta,deltaPct,m.goodUp)+'</td></tr>';
   }).join('');
   el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
     '<thead><tr style="color:var(--muted);text-align:left;"><th style="padding:7px 8px;">Metric</th><th style="padding:7px 8px;">Current</th><th style="padding:7px 8px;">Prior</th><th style="padding:7px 8px;">Change</th></tr></thead>'+
     '<tbody>'+rowsHtml+'</tbody></table>';
 }
 
-var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamPct','lateSlamV2','avgSla','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
+var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamV2','avgSla','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
 function anaDrawScorecards(curRows,prevRows){
   var el=document.getElementById('ana-scorecards'); if(!el) return;
   var stores=[...new Set(curRows.map(gStore))].filter(Boolean).sort();
@@ -3977,13 +3983,13 @@ function anaDrawScorecards(curRows,prevRows){
     var rows=ANA_CARD_ROWS.map(function(key){
       var m=ANA_METRICS.find(function(x){return x.key===key;});
       var cv=anaMetricVal(m,cr), pv=pr.length?anaMetricVal(m,pr):null;
-      var valTxt=anaFmtVal(m,cv);
+      var valTxt=anaFmtVal(m,cv,cr);
       var bad=m.goodUp===false?cv>0:((m.agg==='avgpct'||m.agg==='ratio')&&m.goodUp===true?cv<99:false);
       var warn=bad?' <span style="color:#EF4444;">⚠</span>':'';
       var prevTxt='', deltaTxt='';
       if(pv!=null){
         var d=cv-pv;
-        prevTxt=' <span style="font-size:10px;font-weight:600;color:var(--muted);" title="Previous period">↺ '+anaFmtVal(m,pv)+'</span>';
+        prevTxt=' <span style="font-size:10px;font-weight:600;color:var(--muted);" title="Previous period">↺ '+anaFmtVal(m,pv,pr)+'</span>';
         if(d!==0) deltaTxt=' <span style="font-size:9px;color:'+(d>0?(m.goodUp===false?'#EF4444':'#10B981'):(m.goodUp===false?'#10B981':'#EF4444'))+';">'+(d>0?'▲':'▼')+'</span>';
       }
       var col=bad?'#DC2626':'var(--text)';
