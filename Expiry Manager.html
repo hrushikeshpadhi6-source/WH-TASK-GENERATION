@@ -250,27 +250,61 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--font);font-siz
     </div>
   </div>
 
+  <!-- Aged Fresh Items -->
+  <div class="upload-row" style="grid-template-columns:1fr 300px;">
+    <div class="upload-card" id="boxAge" ondrop="drop(event,'age')" ondragover="dov(event,'age')" ondragleave="dlv('age')">
+      <div style="font-size:34px">⏳</div>
+      <h3>Inventory Age Report (optional)</h3>
+      <p>Flags vegetables, fresh milk & fresh chicken sitting in a bin ≥4 days.<br>Has: WarehouseId · LocationId · ProductTitle · ASIN · AgeInDays</p>
+      <label class="file-label">
+        📂 Choose Age Report
+        <input type="file" id="ageFile" accept=".csv,.xlsx,.xls,.xlsm,.xlsb,.ods" onchange="pick(event,'age')"/>
+      </label>
+      <div><span class="f-badge" id="ageBadge">No file chosen</span></div>
+      <div class="f-name hidden" id="ageName"></div>
+      <div class="f-fmt">.xlsx · .xls · .csv · .ods</div>
+    </div>
+    <div class="asin-card" style="justify-content:center;">
+      <h4>⏳ Aged Fresh Threshold</h4>
+      <p>Flag when AgeInDays is at or above:</p>
+      <div class="frow"><input type="number" id="ageThresh" value="4" min="1" step="1"/></div>
+      <div class="frow"><label>Section</label>
+        <select id="ageSection" onchange="runAge()">
+          <option value="">All Sections</option>
+        </select>
+      </div>
+      <button class="btn btn-blue" onclick="runAge()" style="width:100%;justify-content:center;">▶ Check Aged Items</button>
+    </div>
+  </div>
+
+  <div class="stats hidden" id="ageStatRow">
+    <div class="sc c-blue"><div class="l">Fresh Items Scanned</div><div class="v" id="ageT">—</div><div class="s">veg · fresh milk · fresh chicken</div></div>
+    <div class="sc c-red"><div class="l">Aged ≥ Threshold</div><div class="v" id="ageW">—</div><div class="s">flag for removal/rotation</div></div>
+  </div>
+  <div class="tbl hidden" id="ageTblWrap">
+    <table id="ageTbl">
+      <thead><tr><th>#</th><th>Store</th><th>Location</th><th>ASIN</th><th>Item Title</th><th>Category</th><th>Age (days)</th></tr></thead>
+      <tbody id="ageTBody"></tbody>
+    </table>
+  </div>
+  <div class="empty hidden" id="ageEmptyDiv">
+    <span class="ei">✅</span>
+    <h4 style="font-size:15px;font-weight:700;color:var(--ink2);margin-bottom:5px;">No aged fresh items found</h4>
+  </div>
+
   <!-- Stats -->
   <div class="stats hidden" id="statRow">
     <div class="sc c-blue"><div class="l">In-Bin Items</div><div class="v" id="sT">—</div><div class="s">qty &gt; 0 only</div></div>
-    <div class="sc c-red"><div class="l">Wrong Expiry</div><div class="v" id="sW">—</div><div class="s">flagged by VBA</div></div>
-    <div class="sc c-ora"><div class="l">Wrong Shelf</div><div class="v" id="sWS">—</div><div class="s">vs ASIN DB</div></div>
-    <div class="sc c-red"><div class="l">Expired</div><div class="v" id="sE">—</div><div class="s">past today</div></div>
-    <div class="sc c-ora"><div class="l">Critical</div><div class="v" id="sC">—</div><div class="s">≤1 day</div></div>
-    <div class="sc c-yel"><div class="l">Warning</div><div class="v" id="sWr">—</div><div class="s">≤7 days</div></div>
-    <div class="sc c-grn"><div class="l">OK</div><div class="v" id="sO">—</div><div class="s">safe items</div></div>
+    <div class="sc c-red"><div class="l">Wrong Expiry</div><div class="v" id="sW">—</div><div class="s">per master file remarks</div></div>
+    <div class="sc c-grn"><div class="l">Correct</div><div class="v" id="sO">—</div><div class="s">blank remarks</div></div>
   </div>
 
   <!-- Filters -->
   <div class="filters hidden" id="ftRow">
     <button class="ft on" onclick="flt('all',this)">All <span class="n" id="cA">0</span></button>
     <button class="ft" onclick="flt('wrong',this)">🔴 Wrong Expiry <span class="n" id="cW">0</span></button>
-    <button class="ft" onclick="flt('wrongshelf',this)">🔶 Wrong Shelf <span class="n" id="cWS">0</span></button>
-    <button class="ft" onclick="flt('expired',this)">⚫ Expired <span class="n" id="cE">0</span></button>
-    <button class="ft" onclick="flt('critical',this)">🟠 Critical <span class="n" id="cC">0</span></button>
-    <button class="ft" onclick="flt('warning',this)">🟡 Warning <span class="n" id="cW2">0</span></button>
-    <button class="ft" onclick="flt('ok',this)">🟢 OK <span class="n" id="cO">0</span></button>
-    <button class="ft" onclick="flt('nodate',this)">⬜ No Date <span class="n" id="cN">0</span></button>
+    <button class="ft" onclick="flt('ok',this)">🟢 Correct <span class="n" id="cO">0</span></button>
+    <button class="ft" onclick="flt('nodate',this)">⬜ No Match <span class="n" id="cN">0</span></button>
     <input class="search" type="text" placeholder="Search ASIN, location, title…" oninput="srch(this.value)"/>
   </div>
 
@@ -281,7 +315,7 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--font);font-siz
         <th>#</th><th>Warehouse</th><th>Timestamp</th><th>Location</th>
         <th>ASIN</th><th>Title</th><th>User</th>
         <th>Stowed Qty</th><th>Rem Qty</th>
-        <th>Expiry Date</th><th>Days Left</th><th>Status</th>
+        <th>Expiry Entered</th><th>Correct Expiry</th><th>Status</th>
       </tr></thead>
       <tbody id="tBody"></tbody>
     </table>
@@ -375,16 +409,101 @@ const BSL={
 };
 let CSL = JSON.parse(localStorage.getItem('emCSL')||'{}');
 function getSL(a){return CSL[a]?.days||BSL[a]||null;}
+// Fallback: when an ASIN has no master entry, estimate keeping life from the item name itself
+// (e.g. "Fresh <vegetable>" ⇒ mfg day 1, expiry day 6 ⇒ 5-day shelf life), per category norms.
+const NAME_SL_RULES=[
+  {days:3, kws:['coriander','mint','parsley','dill','basil','spring onion','curry leaves','lettuce','spinach','arugula','herbs']},
+  {days:4, kws:['chicken','minced','mutton','beef','lamb','fish','shrimp','prawn','seafood','poultry']},
+  {days:3, kws:['bread','bun','croissant','bakery','pastry','cake']},
+  {days:6, kws:['fresh milk','milk 1l','milk 2l','yoghurt','yogurt','laban','labneh','cheese spread']},
+  {days:7, kws:['banana','apple','orange','mango','grape','papaya','watermelon','pineapple','strawberr','kiwi','pear','pomegranate','melon','plum','peach']},
+  {days:5, kws:['fresh']}, // generic fresh produce fallback (e.g. fresh vegetables): mfg day1 → expiry day6
+];
+function estimateSLFromName(title){
+  const t=String(title||'').toLowerCase();
+  for(const rule of NAME_SL_RULES){ if(rule.kws.some(k=>t.indexOf(k)!==-1)) return rule.days; }
+  return null;
+}
+function getSLFor(asin,title){
+  const known=getSL(asin);
+  if(known)return{days:known,estimated:false};
+  const est=estimateSLFromName(title);
+  return est?{days:est,estimated:true}:null;
+}
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const D={in:{r:[],h:[]},ex:{r:[],h:[]}};
+const D={in:{r:[],h:[]},ex:{r:[],h:[]},age:{r:[],h:[]}};
 let results=[],af='all',sq='';
+
+// ─── Aged Fresh Items (vegetables / fresh milk / fresh chicken sitting ≥N days) ───────────────
+const AGE_CATS=[
+  {cat:'Vegetable', require:['tomato','onion','potato','carrot','cucumber','cabbage','cauliflower','capsicum','spinach','broccoli','garlic','ginger','lettuce','pepper','okra','beans','courgette','zucchini','eggplant','brinjal','pumpkin','radish','beetroot','coriander','mint','parsley','spring onion','celery','leek'], needFresh:true, exclude:['frozen','chip','crisp','powder','sauce','paste','pickle','soup','canned','can ','dried','snack']},
+  {cat:'Fresh Milk', require:['milk'], needFresh:true, exclude:['uht','powder','condensed','evaporated','flavour','flavor','soy','almond','oat','coconut','shake','ice cream','chocolate milk','lactose free uht']},
+  {cat:'Fresh Chicken', require:['chicken'], needFresh:true, exclude:['frozen','nugget','sausage','canned','soup','stock','broth','seasoning','flavour','flavor','chips','biryani','shawarma','burger','marinated fried','popcorn','salami','luncheon']},
+];
+function classifyAgeItem(title){
+  const t=String(title||'').toLowerCase();
+  for(const c of AGE_CATS){
+    if(c.exclude.some(k=>t.indexOf(k)!==-1))continue;
+    const hasReq=c.require.some(k=>t.indexOf(k)!==-1);
+    if(!hasReq)continue;
+    if(c.needFresh && t.indexOf('fresh')===-1)continue;
+    return c.cat;
+  }
+  return null;
+}
+let ageResults=[];
+function locSection(loc){
+  // e.g. "P-1-V113B111" → "P-1-V", "P-1-C127-A110" → "P-1-C"
+  const m=String(loc||'').match(/^([A-Za-z]+-\d+-[A-Za-z]+)/);
+  return m?m[1].toUpperCase():'';
+}
+function runAge(){
+  if(!D.age.r.length){showNotice('⚠ Upload the Inventory Age Report first.');return;}
+  const h=D.age.h;
+  const cWH=acol(h,['warehouseid','warehouse'],0);
+  const cLOC=acol(h,['locationid','location'],1);
+  const cTIT=acol(h,['producttitle','title','product'],2);
+  const cASIN=acol(h,['asin'],3);
+  const cAGE=acol(h,['ageindays','age'],7);
+  const thresh=parseFloat(document.getElementById('ageThresh').value)||4;
+  const sectionFilter=document.getElementById('ageSection').value;
+  ageResults=[];
+  let scanned=0;
+  const sections=new Set();
+  D.age.r.forEach((row,idx)=>{
+    const title=gs(row[cTIT]||'');
+    const cat=classifyAgeItem(title);
+    if(!cat)return;
+    scanned++;
+    const age=parseFloat(row[cAGE]);
+    if(isNaN(age))return;
+    let loc=gs(row[cLOC]||'');
+    if(loc.toLowerCase().startsWith('bin:'))loc=loc.substring(4).trim();
+    const sec=locSection(loc);
+    if(sec)sections.add(sec);
+    if(sectionFilter && sec!==sectionFilter)return;
+    if(age>=thresh){
+      ageResults.push({i:idx+1,wh:gs(row[cWH]||''),loc,asin:gs(row[cASIN]||''),title,cat,age,sec});
+    }
+  });
+  const sel=document.getElementById('ageSection');
+  // options already populated on file upload; keep as-is
+  ageResults.sort((a,b)=>b.age-a.age);
+  document.getElementById('ageT').textContent=scanned;
+  document.getElementById('ageW').textContent=ageResults.length;
+  show('ageStatRow');
+  const tb=document.getElementById('ageTBody');
+  if(!ageResults.length){tb.innerHTML='';hide('ageTblWrap');show('ageEmptyDiv');return;}
+  hide('ageEmptyDiv');show('ageTblWrap');
+  tb.innerHTML=ageResults.map((r,i)=>`<tr class="wr"><td class="mono" style="color:var(--ink4)">${i+1}</td><td>${e(r.wh)||'—'}</td><td style="font-weight:600">${e(r.loc)||'—'}</td><td class="mono" style="font-size:11px">${e(r.asin)||'—'}</td><td>${e(r.title)||'—'}</td><td><span class="bg bg-shelf">${e(r.cat)}</span></td><td class="mono" style="font-weight:700;color:var(--red)">${r.age.toFixed(1)}d</td></tr>`).join('');
+}
 
 // ─── File handling ────────────────────────────────────────────────────────────
 function pick(e,t){const f=e.target.files[0];if(f)load(f,t);}
 function drop(e,t){e.preventDefault();dlv(t);const f=e.dataTransfer.files[0];if(f)load(f,t);}
-function dov(e,t){e.preventDefault();document.getElementById(t==='in'?'boxIn':'boxEx').classList.add('drag');}
-function dlv(t){document.getElementById(t==='in'?'boxIn':'boxEx').classList.remove('drag');}
+function dov(e,t){e.preventDefault();document.getElementById(t==='in'?'boxIn':t==='ex'?'boxEx':'boxAge').classList.add('drag');}
+function dlv(t){document.getElementById(t==='in'?'boxIn':t==='ex'?'boxEx':'boxAge').classList.remove('drag');}
 
 function load(file,t){
   const ext=file.name.split('.').pop().toLowerCase();
@@ -422,13 +541,22 @@ function sl(l){const r=[];let c='',q=false;for(const ch of l){if(ch==='"'){q=!q;
 
 function apply(parsed,fname,t){
   D[t]={r:parsed.r||parsed.rows||[],h:parsed.h||parsed.headers||[]};
-  const box=document.getElementById(t==='in'?'boxIn':'boxEx');
-  box.classList.add('ok');
-  const badge=document.getElementById(t==='in'?'inBadge':'exBadge');
-  badge.textContent='✓ '+D[t].r.length+' rows';
-  const name=document.getElementById(t==='in'?'inName':'exName');
+  const boxId=t==='in'?'boxIn':t==='ex'?'boxEx':'boxAge';
+  const badgeId=t==='in'?'inBadge':t==='ex'?'exBadge':'ageBadge';
+  const nameId=t==='in'?'inName':t==='ex'?'exName':'ageName';
+  document.getElementById(boxId).classList.add('ok');
+  document.getElementById(badgeId).textContent='✓ '+D[t].r.length+' rows';
+  const name=document.getElementById(nameId);
   name.textContent=fname;name.classList.remove('hidden');
   if(D.in.r.length&&D.ex.r.length)show('runBar');
+  if(t==='age'){
+    const h=D.age.h;
+    const cLOC=acol(h,['locationid','location'],1);
+    const sections=new Set();
+    D.age.r.forEach(row=>{let loc=gs(row[cLOC]||'');if(loc.toLowerCase().startsWith('bin:'))loc=loc.substring(4).trim();const s=locSection(loc);if(s)sections.add(s);});
+    const sel=document.getElementById('ageSection');
+    sel.innerHTML='<option value="">All Sections</option>'+Array.from(sections).sort().map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
 }
 
 // ─── Column auto-detect ───────────────────────────────────────────────────────
@@ -480,6 +608,8 @@ function buildMapperUI(){
     {id:'eASIN',label:'ASIN',        hints:['asin'], pos:7},
     {id:'eEXP', label:'Expiry Date', hints:['expiry','expire','exp','best','bb','date'], pos:3},
     {id:'eREM', label:'Remaining Qty',hints:['remain','rem'], pos:5},
+    {id:'eRMK', label:'Remarks (Wrong Expiry flag)',hints:['remark','remarks'], pos:10},
+    {id:'eCOR', label:'Correct Expiry',hints:['correctexpiry','correct'], pos:11},
   ];
   function buildGrid(fields, headers, gridId){
     const g=document.getElementById(gridId);g.innerHTML='';
@@ -531,6 +661,8 @@ function runInner(){
   const eASIN=getColSel('eASIN',['asin'],7,eh);
   const eEXP =getColSel('eEXP', ['expiry','expire','exp','best','bb','date'],3,eh);
   const eREM =getColSel('eREM', ['remain','rem'],5,eh);
+  const eRMK =getColSel('eRMK', ['remark','remarks'],10,eh);
+  const eCOR =getColSel('eCOR', ['correctexpiry','correct'],11,eh);
 
   if(!iLOC||!iASIN){showNotice('⚠ Cannot detect Location or ASIN in Inbound file. Check column names, or use ⚙ Column Mapping to set them manually.');return;}
   if(!eBIN||!eASIN){showNotice('⚠ Cannot detect Bin or ASIN in Expiry file. Check column names, or use ⚙ Column Mapping to set them manually.');return;}
@@ -550,11 +682,13 @@ function runInner(){
     const asin=gs(row[eASIN]||'');
     const expRaw=String(row[eEXP]||'');
     const remQty=parseFloat(String(row[eREM]||'0').replace(/,/g,''))||0;
+    const fileRemark=gs(row[eRMK]||'').toLowerCase();
+    const correctExp=pd(row[eCOR]||'');
     if(!bin||!asin){exSkippedNoBinAsin++;return;}
     const expDate=pd(expRaw);
     if(!expDate){exSkippedNoDate++;return;}
     const k=nk(asin)+'|'+nk(bin);
-    if(!ED[k])ED[k]={expDate,expRaw,remQty};
+    if(!ED[k])ED[k]={expDate,expRaw,remQty,fileRemark,correctExp};
   });
 
   const today=new Date();today.setHours(0,0,0,0);
@@ -587,48 +721,41 @@ function runInner(){
     const title    =gs(row[iTIT]||'');
     const user     =gs(row[iUSR]||'');
     const stowedQty=gs(row[iQTY]||'');
-    let   reference=gs(row[iREF]||'');if(!reference)reference='Transhipment';
+    let   reference=gs(row[iREF]||'');
+    const hasReference=!!reference;
+    if(!reference)reference='Transhipment';
     const remarks  =gs(row[iRMK]||'');
 
     const expiryDate=match?match.expDate:null;
     const expiryRaw =match?String(match.expRaw):'';
-    const isWrong   =remarks.toLowerCase()==='wrong expiry';
-
-    let status='nodate',daysLeft=null;
-
-    if(expiryDate){
-      const diff=Math.floor((expiryDate-today)/86400000);
-      daysLeft=diff;
-      const ey=expiryDate.getFullYear();
-      if(ey<yr-1||ey>yr+3||(diff<-180)){status='expired';}
-      else if(diff<0){status='expired';}
-      else if(diff<=1){status='critical';}
-      else if(diff<=7){status='warning';}
-      else{status='ok';}
-    }
-
-    // Override with VBA flag
-    if(isWrong){status='wrong';}
-
-    // Shelf life DB check — flag if the entered expiry OVERSTATES the correct
-    // shelf life (i.e. staff wrote a later expiry than production date + DB shelf life allows).
-    // Example: production 11th, DB shelf life 6 days → correct expiry is 17th.
-    // If someone enters 18th or later, that's flagged regardless of current status,
-    // because it can mask a genuinely soon-to-expire item as "OK"/"Warning".
-    let shelfNote=null;
-    const sl=getSL(asin);
-    if(sl&&expiryDate&&!isWrong){
+    // Ground truth: file's own REMARKS/Correct-expiry columns when present, PLUS an independent
+    // check against the ASIN master shelf-life DB (BSL/CSL) — some rows aren't pre-flagged in the
+    // file but are still off by N days vs the master keeping life, and must be caught here.
+    const fileFlag=match?match.fileRemark:'';
+    const fileWrong=fileFlag==='wrong expiry';
+    let shelfDiff=null, shelfAct=null, shelfMaster=null, computedCorrect=null;
+    const sl=hasReference?getSL(asin):null; // only check items that carry a Reference Value, and only against real master data — never a name-based guess
+    if(sl&&expiryDate){
       const tsD=pd(timestamp);
       if(tsD){
-        const act=Math.round((expiryDate-tsD)/86400000);
-        if(act>sl){
-          status='wrongshelf';
-          shelfNote={exp:sl,act};
-        }
+        const prodDate=new Date(tsD.getFullYear(),tsD.getMonth(),tsD.getDate());
+        const expDateOnly=new Date(expiryDate.getFullYear(),expiryDate.getMonth(),expiryDate.getDate());
+        shelfAct=Math.round((expDateOnly-prodDate)/86400000);
+        shelfMaster=sl;
+        shelfDiff=shelfAct-sl;
+        computedCorrect=new Date(prodDate.getFullYear(),prodDate.getMonth(),prodDate.getDate()+sl);
       }
     }
+    const shelfWrong=shelfDiff!==null&&shelfDiff>0; // only overstated expiry (entered longer than master) is an error; shorter is safe/conservative
+    const isWrong=fileWrong||shelfWrong;
+    const correctExpiry=(match&&match.correctExp)?match.correctExp:(shelfWrong?computedCorrect:null);
+    let status;
+    if(!match||!expiryDate)status='nodate';
+    else status=isWrong?'wrong':'ok';
+    let daysLeft=expiryDate?Math.floor((expiryDate-today)/86400000):null;
+    const wrongReason=isWrong?(fileWrong&&shelfWrong?`Master-flagged + shelf life off ${shelfDiff>0?'+':''}${shelfDiff}d (entered ${shelfAct}d, master ${shelfMaster}d)`:fileWrong?'Flagged in master file':`Shelf life off ${shelfDiff>0?'+':''}${shelfDiff}d (entered ${shelfAct}d, master ${shelfMaster}d)`):null;
 
-    results.push({i:idx+1,warehouse,timestamp,loc,asin,title,user,stowedQty,reference,expiryDate,expiryRaw,remQty,remarks,status,daysLeft,isWrong,shelfNote});
+    results.push({i:idx+1,warehouse,timestamp,loc,asin,title,user,stowedQty,reference,expiryDate,expiryRaw,remQty,remarks,status,daysLeft,isWrong,correctExpiry,wrongReason});
   });
 
   console.log(`Results: ${results.length} in-bin | Skipped zero-qty: ${skipped0} | Skipped remarks: ${skippedRmk} | Matched expiry: ${matched} | Expiry dict size: ${Object.keys(ED).length} | Expiry rows skipped (no bin/asin): ${exSkippedNoBinAsin} | Expiry rows skipped (bad date): ${exSkippedNoDate}`);
@@ -646,21 +773,13 @@ function runInner(){
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function updStats(){
-  const c={wrong:0,wrongshelf:0,expired:0,critical:0,warning:0,ok:0,nodate:0};
+  const c={wrong:0,ok:0,nodate:0};
   results.forEach(r=>c[r.status]=(c[r.status]||0)+1);
   document.getElementById('sT').textContent =results.length;
   document.getElementById('sW').textContent =c.wrong;
-  document.getElementById('sWS').textContent=c.wrongshelf;
-  document.getElementById('sE').textContent =c.expired;
-  document.getElementById('sC').textContent =c.critical;
-  document.getElementById('sWr').textContent=c.warning;
   document.getElementById('sO').textContent =c.ok;
   document.getElementById('cA').textContent =results.length;
   document.getElementById('cW').textContent =c.wrong;
-  document.getElementById('cWS').textContent=c.wrongshelf;
-  document.getElementById('cE').textContent =c.expired;
-  document.getElementById('cC').textContent =c.critical;
-  document.getElementById('cW2').textContent=c.warning;
   document.getElementById('cO').textContent =c.ok;
   document.getElementById('cN').textContent =c.nodate;
 }
@@ -675,16 +794,12 @@ function render(){
   hide('emptyDiv');show('tblWrap');
   const BG={
     wrong:     '<span class="bg bg-wrong">⚠ WRONG EXPIRY</span>',
-    wrongshelf:'<span class="bg bg-shelf">WRONG SHELF LIFE</span>',
-    expired:   '<span class="bg bg-exp">EXPIRED</span>',
-    critical:  '<span class="bg bg-crit">CRITICAL</span>',
-    warning:   '<span class="bg bg-warn">WARNING</span>',
-    ok:        '<span class="bg bg-ok">OK</span>',
-    nodate:    '<span class="bg bg-nd">NO DATE</span>',
+    ok:        '<span class="bg bg-ok">CORRECT</span>',
+    nodate:    '<span class="bg bg-nd">NO MATCH</span>',
   };
   tb.innerHTML=rows.map(r=>{
-    const dl=r.daysLeft===null?'—':r.daysLeft<0?`<span class="mono" style="color:var(--red);font-weight:700">${r.daysLeft}d</span>`:r.daysLeft<=1?`<span class="mono" style="color:var(--orange);font-weight:700">${r.daysLeft}d</span>`:r.daysLeft<=7?`<span class="mono" style="color:var(--yellow);font-weight:600">${r.daysLeft}d</span>`:`<span class="mono">${r.daysLeft}d</span>`;
-    const sn=r.shelfNote?`<br><span style="font-size:10px;color:var(--orange)">Should be ${r.shelfNote.exp}d, entered as ${r.shelfNote.act}d</span>`:'';
+    const ce=r.correctExpiry?`<span class="mono" style="color:var(--green);font-weight:700">${fd(r.correctExpiry)}</span>`:'—';
+    const wr=r.wrongReason?`<br><span style="font-size:10px;color:var(--red)">${e(r.wrongReason)}</span>`:'';
     return`<tr class="${r.status==='wrong'?'wr':''}">
       <td class="mono" style="color:var(--ink4)">${r.i}</td>
       <td>${e(r.warehouse)||'—'}</td>
@@ -696,8 +811,8 @@ function render(){
       <td class="mono">${e(r.stowedQty)||'—'}</td>
       <td class="mono" style="font-weight:700;color:var(--green)">${r.remQty}</td>
       <td class="mono" style="${r.status==='wrong'?'color:var(--red);font-weight:700':''};white-space:nowrap">${e(r.expiryRaw)||'—'}</td>
-      <td>${dl}</td>
-      <td>${BG[r.status]||''}${sn}</td>
+      <td style="white-space:nowrap">${ce}</td>
+      <td>${BG[r.status]||''}${wr}</td>
     </tr>`;
   }).join('');
 }
@@ -709,27 +824,18 @@ function srch(v){sq=v;render();}
 function openRpt(){
   if(!results.length){alert('Run analysis first.');return;}
   document.getElementById('rptD').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
-  const c={wrong:0,wrongshelf:0,expired:0,critical:0,warning:0,ok:0,nodate:0};
+  const c={wrong:0,ok:0,nodate:0};
   results.forEach(r=>c[r.status]=(c[r.status]||0)+1);
   const wRows=results.filter(r=>r.status==='wrong');
-  const uRows=results.filter(r=>r.status==='expired'||r.status==='critical');
-  const wRow2=results.filter(r=>r.status==='warning');
   let h=`<div class="rt"><h4>Summary</h4><table>
     <tr><th>Category</th><th>Count</th><th>Action</th></tr>
-    <tr><td>⚠ Wrong Expiry (VBA flagged)</td><td style="color:#991B1B;font-weight:700">${c.wrong}</td><td>Correct immediately</td></tr>
-    <tr><td>🔶 Wrong Shelf Life (DB)</td><td>${c.wrongshelf}</td><td>Verify with staff</td></tr>
-    <tr><td>🔴 Expired</td><td>${c.expired}</td><td>Remove from bin</td></tr>
-    <tr><td>🟠 Critical (≤1 day)</td><td>${c.critical}</td><td>Act today</td></tr>
-    <tr><td>🟡 Warning (≤7 days)</td><td>${c.warning}</td><td>Monitor</td></tr>
-    <tr><td>🟢 OK</td><td>${c.ok}</td><td>—</td></tr>
+    <tr><td>⚠ Wrong Expiry</td><td style="color:#991B1B;font-weight:700">${c.wrong}</td><td>Correct immediately</td></tr>
+    <tr><td>🟢 Correct</td><td>${c.ok}</td><td>—</td></tr>
+    <tr><td>⬜ No Match</td><td>${c.nodate}</td><td>Check location/ASIN</td></tr>
   </table></div>`;
-  if(wRows.length)h+=`<div class="rt"><h4>⚠ Wrong Expiry — VBA Flagged</h4><table>
-    <tr><th>#</th><th>ASIN</th><th>Title</th><th>Location</th><th>Expiry Entered</th><th>Rem Qty</th><th>Staff</th></tr>
-    ${wRows.map(r=>`<tr><td>${r.i}</td><td style="font-family:var(--mono);font-size:11px">${e(r.asin)}</td><td>${e(r.title)||'—'}</td><td>${e(r.loc)}</td><td style="font-family:var(--mono);color:#991B1B;font-weight:700">${e(r.expiryRaw)}</td><td>${r.remQty}</td><td>${e(r.user)||'—'}</td></tr>`).join('')}
-  </table></div>`;
-  if(uRows.length)h+=`<div class="rt"><h4>🔴 Expired / Critical</h4><table>
-    <tr><th>#</th><th>ASIN</th><th>Location</th><th>Expiry</th><th>Days</th><th>Qty</th></tr>
-    ${uRows.map(r=>`<tr><td>${r.i}</td><td style="font-family:var(--mono);font-size:11px">${e(r.asin)}</td><td>${e(r.loc)}</td><td style="font-family:var(--mono)">${e(r.expiryRaw)}</td><td style="font-weight:700;color:var(--red)">${r.daysLeft!==null?r.daysLeft+'d':'—'}</td><td>${r.remQty}</td></tr>`).join('')}
+  if(wRows.length)h+=`<div class="rt"><h4>⚠ Wrong Expiry</h4><table>
+    <tr><th>#</th><th>ASIN</th><th>Title</th><th>Location</th><th>Expiry Entered</th><th>Correct Expiry</th><th>Reason</th><th>Rem Qty</th><th>Staff</th></tr>
+    ${wRows.map(r=>`<tr><td>${r.i}</td><td style="font-family:var(--mono);font-size:11px">${e(r.asin)}</td><td>${e(r.title)||'—'}</td><td>${e(r.loc)}</td><td style="font-family:var(--mono);color:#991B1B;font-weight:700">${e(r.expiryRaw)}</td><td style="font-family:var(--mono);color:#16A34A;font-weight:700">${r.correctExpiry?fd(r.correctExpiry):'—'}</td><td style="font-size:11px">${e(r.wrongReason)||'—'}</td><td>${r.remQty}</td><td>${e(r.user)||'—'}</td></tr>`).join('')}
   </table></div>`;
   h+=`<div style="font-size:11px;color:var(--ink4);text-align:center;margin-top:14px;">GWC Report By — HRUSHIKESH PADHI (HP world)</div>`;
   document.getElementById('rptB').innerHTML=h;
@@ -739,14 +845,12 @@ function closeRpt(){hide('rptOv');}
 function cpRpt(){
   const lines=['DAILY EXPIRY REPORT — '+new Date().toLocaleDateString(),'='.repeat(50)];
   const wr=results.filter(r=>r.status==='wrong');
-  const ur=results.filter(r=>r.status==='expired'||r.status==='critical');
-  lines.push(`Wrong Expiry:${wr.length} | Expired/Critical:${ur.length} | Total In-Bin:${results.length}`,'');
-  if(wr.length){lines.push('WRONG EXPIRY (VBA Flagged):');wr.forEach(r=>lines.push(`  ${r.asin} | ${r.loc} | Expiry:${r.expiryRaw} | Qty:${r.remQty} | Staff:${r.user}`));}
-  if(ur.length){lines.push('','EXPIRED/CRITICAL:');ur.forEach(r=>lines.push(`  ${r.asin} | ${r.loc} | Expiry:${r.expiryRaw} | ${r.daysLeft}d | Qty:${r.remQty}`));}
+  lines.push(`Wrong Expiry:${wr.length} | Correct:${results.filter(r=>r.status==='ok').length} | Total In-Bin:${results.length}`,'');
+  if(wr.length){lines.push('WRONG EXPIRY:');wr.forEach(r=>lines.push(`  ${r.asin} | ${r.loc} | Entered:${r.expiryRaw} | Correct:${r.correctExpiry?fd(r.correctExpiry):'—'} | Qty:${r.remQty} | Staff:${r.user}`));}
   navigator.clipboard.writeText(lines.join('\n')).then(()=>alert('Copied!'));
 }
 
-const STATUS_LABEL={wrong:'WRONG EXPIRY',wrongshelf:'WRONG SHELF LIFE',expired:'EXPIRED',critical:'CRITICAL',warning:'WARNING',ok:'OK',nodate:'NO DATE'};
+const STATUS_LABEL={wrong:'WRONG EXPIRY',ok:'CORRECT',nodate:'NO MATCH'};
 
 async function doExport(){
   if(!results.length){showNotice('No results. Run Match & Analyse first.');return;}
@@ -767,7 +871,7 @@ async function doExport(){
     {header:'REMAINING QTY',key:'rq',width:13},
     {header:'REMARKS',key:'rmk',width:20},
     {header:'STATUS',key:'status',width:16},
-    {header:'DAYS LEFT',key:'days',width:10},
+    {header:'CORRECT EXPIRY',key:'correxp',width:18},
   ];
 
   results.forEach(r=>{
@@ -786,15 +890,15 @@ async function doExport(){
       rq:r.remQty,
       rmk:r.remarks,
       status:STATUS_LABEL[r.status]||r.status,
-      days:r.daysLeft,
+      correxp:r.correctExpiry?new Date(r.correctExpiry.getFullYear(),r.correctExpiry.getMonth(),r.correctExpiry.getDate(),23,59,0):'',
     });
   });
 
   ws.getColumn('ts').numFmt='mm/dd/yyyy hh:mm';
   ws.getColumn('exp').numFmt='mm/dd/yyyy hh:mm';
+  ws.getColumn('correxp').numFmt='mm/dd/yyyy hh:mm';
   ws.getColumn('sq').numFmt='0';
   ws.getColumn('rq').numFmt='0';
-  ws.getColumn('days').numFmt='0';
 
   const headerRow=ws.getRow(1);
   headerRow.height=20;
@@ -903,14 +1007,15 @@ function rdrDB(){
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function resetAll(){
-  D.in={r:[],h:[]};D.ex={r:[],h:[]};results=[];
-  ['In','Ex'].forEach(t=>{
+  D.in={r:[],h:[]};D.ex={r:[],h:[]};D.age={r:[],h:[]};results=[];ageResults=[];
+  ['In','Ex','Age'].forEach(t=>{
     document.getElementById('box'+t).classList.remove('ok','drag');
-    document.getElementById((t==='In'?'in':'ex')+'Badge').textContent='No file chosen';
-    document.getElementById((t==='In'?'in':'ex')+'Name').classList.add('hidden');
-    document.getElementById((t==='In'?'in':'ex')+'File').value='';
+    document.getElementById(t.toLowerCase()+'Badge').textContent='No file chosen';
+    document.getElementById(t.toLowerCase()+'Name').classList.add('hidden');
+    document.getElementById(t.toLowerCase()+'File').value='';
   });
   hide('runBar');hide('statRow');hide('ftRow');hide('tblWrap');hide('emptyDiv');
+  hide('ageStatRow');hide('ageTblWrap');hide('ageEmptyDiv');
   af='all';sq='';
 }
 function show(id){const el=document.getElementById(id);if(el)el.classList.remove('hidden');}
