@@ -1416,7 +1416,10 @@ const VOCV2_FIELDS = [
   'pickerId',       // O  Picker ID
   'rcaCap',         // P  RCA & CAP
   'oeRemark',       // Q  OE remarks  (workflow note: pending / to discuss / discussed …)
-  'week'            // R  Week  (e.g. "week22")
+  'week',           // R  Week  (e.g. "week22")
+  'rcaCategory',    // "Voc v2.1" tab (week 29+) only — e.g. "Ops Controllable - QC Miss"; split into issueCategory/issueDesc in normalize()
+  'area',           // "Voc v2.1" tab only
+  'cctv'            // "Voc v2.1" tab only
 ];
 
 /* ── OE remarks → discussion stage ───────────────────────────────────
@@ -1448,6 +1451,16 @@ const ISSUE_CATEGORIES = ['Ops Controllable', 'Non Ops Controllable'];
 const ISSUE_DESCRIPTIONS = [
   'UTR QC Miss',
   'Picker Mistake',
+  'Packing SOP Failure',
+  'UTR Temp. Abuse',
+  'OTR to check',
+  'Catalog Issue',
+  'PAD Time',
+  'Vendor to check',
+  'Change of mind',
+  'Customer confused',
+  'More details required',
+  'Promo/ Refund Issue',
   'UTR Expiry Miss',
   'Verified OTR Issue',
   'Internal Deviation (Vendor)',
@@ -1460,8 +1473,8 @@ const ISSUE_DESCRIPTIONS = [
    re-derived from the live data so it always matches the sheet; the seed only
    powers the dependent dropdown before data loads / for sample data. */
 const CATEGORY_DESCRIPTION_SEED = {
-  'Ops Controllable':     ['UTR QC Miss', 'Picker Mistake', 'UTR Expiry Miss', 'Verified OTR Issue'],
-  'Non Ops Controllable': ['Internal Deviation (Vendor)', 'Verified Catalogue Issue', 'Delivered within PAD Time', 'Customer Change of Mind']
+  'Ops Controllable':     ['UTR QC Miss', 'Picker Mistake', 'UTR Expiry Miss', 'Packing SOP Failure', 'UTR Temp. Abuse', 'OTR to check', 'Verified OTR Issue'],
+  'Non Ops Controllable': ['Catalog Issue', 'PAD Time', 'Vendor to check', 'Change of mind', 'Customer confused', 'More details required', 'Promo/ Refund Issue', 'Internal Deviation (Vendor)', 'Verified Catalogue Issue', 'Delivered within PAD Time', 'Customer Change of Mind']
 };
 
 /* Concession Reason → clean display label + higher-level group (AI-assisted grouping). */
@@ -1501,6 +1514,8 @@ const COMPLAINT_CATS = [
   { key: 'defective', label: 'Defective & Quality',     short: 'Defective', color: '#146EB4', tint: '#EAF3FA' },
   { key: 'quality',   label: 'Quality',                 short: 'Quality',   color: '#0E8A6E', tint: '#E5F5F0' },
   { key: 'unwanted',  label: 'Unwanted',                short: 'Unwanted',  color: '#16A34A', tint: '#ECFDF3' },
+  { key: 'mismatch',  label: 'Quantity Mismatch',       short: 'Mismatch',  color: '#EA580C', tint: '#FFF1EA' },
+  { key: 'expiry',    label: 'Expiry',                  short: 'Expiry',    color: '#DB2777', tint: '#FDF0F6' },
   { key: 'cancelled', label: 'Cancelled Order',         short: 'Cancelled', color: '#6366F1', tint: '#EEF2FF' },
   { key: 'other',     label: 'Other / Unclassified',    short: 'Other',     color: '#94A0AE', tint: '#EEF1F5' }
 ];
@@ -1521,6 +1536,8 @@ COMPLAINT_CATS.forEach(c => { COMPLAINT_CAT_META[c.key] = c; });
       explicit so unrelated phrases don't misfire (e.g. "wrong address" is
       a delivery issue, NOT a Wrong Item). Order = intent priority.        */
 const TEXT_CAT_RULES = [
+  // Expiry / near-expiry — checked first so it never falls into generic Defective/Quality
+  [/near.?expiry|expir|expired|shelf.?life/, 'expiry'],
   // Unwanted / change-of-mind — customer no longer wants it
   [/\b(do ?n'?t|dont|does ?n'?t|did ?n'?t) (need|want)\b|no longer (need|want)|change(d)? (of )?mind|by mistake|order(ed)?.{0,14}(by mistake|wrongly|extra|twice|double|two)|want(ed)? to (cancel|return)|cancel( my| the)? order|placed.{0,14}mistake/, 'unwanted'],
   // Damaged — physical damage in transit / on arrival
@@ -1536,6 +1553,7 @@ const TEXT_CAT_RULES = [
 /* 2) CONCESSION-REASON code → category (fallback when comment is silent).
       `missed_edd` deliberately matches NOTHING here → falls through to Other. */
 const CONC_CAT_RULES = [
+  [/near.?expiry|expir|expired|shelf.?life/, 'expiry'],
   [/unwant|change.{0,4}of.{0,4}mind|no.?longer|remorse|return.?request/, 'unwanted'],
   [/damag|broken|crush|crack|dent|leak|smash|torn|spill|thaw|defrost|melt/, 'damaged'],
   [/wrong|switch|materially.?different|not.?as.?described|mismatch|incorrect.?item|different.?item/, 'wrong'],
@@ -1543,7 +1561,28 @@ const CONC_CAT_RULES = [
   [/item.?not.?received|not.?received|undeliver|did.?not.?receive|\bdnr\b|incomplete|_missing|^missing|short|lost/, 'missing']
 ];
 
+/* "Voc v2.1" tab (week 29+): Issue Category column (E) is the ops team's
+   own tag — authoritative ground truth, checked BEFORE comment/concession
+   guessing. Values seen: Spoiled / Quality, Missing Item, Wrong Item,
+   Quantity Mismatch, Other. */
+const ISSUE_LABEL_CAT_MAP = {
+  'spoiled / quality': 'quality',
+  'spoiled/quality':   'quality',
+  'missing item':      'missing',
+  'wrong item':        'wrong',
+  'quantity mismatch': 'mismatch',
+  'expiry issue':      'expiry',
+  'expiry':            'expiry',
+  'near expiry':       'expiry',
+  'other':             'other'
+};
+function issueLabelCat(rec) {
+  const lbl = String(rec && rec.issueLabel || '').trim().toLowerCase();
+  return lbl && ISSUE_LABEL_CAT_MAP[lbl] || '';
+}
 function complaintCat(rec) {
+  const direct = issueLabelCat(rec);
+  if (direct) return direct;
   const ck = rawComplaintCat(rec);
   // Split the faulty-product bucket by product type: a fresh/food item with a
   // quality issue is a QUALITY problem (rotten, stale, not fresh); a packaged
@@ -1567,6 +1606,7 @@ function isFreshFood(rec) {
 }
 /* how the bucket was decided — powers the transparency pills. */
 function complaintCatSource(rec) {
+  if (issueLabelCat(rec)) return 'category';
   const conc = String(rec && rec.concession || '').trim().toLowerCase().replace(/\s+/g, '_');
   if (conc === 'undeliverable_return') return 'concession';
   const txt = String(rec && rec.comment || '').toLowerCase();
@@ -1703,8 +1743,8 @@ function buildSampleData() {
    ═══════════════════════════════════════════════════════════════════ */
 
 // V2 Issue-Description buckets (mirror old VOC_UTR / VOC_OTR split)
-const V2_UTR_DESCS   = ['UTR QC Miss', 'Picker Mistake', 'UTR Expiry Miss']; // under-the-roof ops
-const V2_OTR_DESCS   = ['Verified OTR Issue'];                                // on-the-road ops
+const V2_UTR_DESCS   = ['UTR QC Miss', 'Picker Mistake', 'UTR Expiry Miss', 'Packing SOP Failure', 'UTR Temp. Abuse']; // under-the-roof ops
+const V2_OTR_DESCS   = ['Verified OTR Issue', 'OTR to check'];                // on-the-road ops
 const V2_PICKER_DESC = 'Picker Mistake';
 const V2_QC_DESC     = 'UTR QC Miss';
 const VOC_UTR_TARGET = 0.10; // 0.10% of orders — same target as old system
@@ -1898,6 +1938,22 @@ window.VOC = { S, esc, fmtDate, fmtDateTime, fmtRefreshed, num, toast, dayKey };
 /* ── normalize a raw record (live or sample) → adds derived fields ── */
 function normalize(rec) {
   const r = Object.assign({}, rec);
+  // "Voc v2.1" tab (week 29+): RCA Category col carries "Ops Controllable - QC
+  // Miss" etc. — split it into issueCategory/issueDesc so classify()/catKind()
+  // work unchanged. The sheet's own "Issue Category" (generic label, e.g.
+  // "Expiry issue") is kept separately as issueLabel for display only.
+  const rcat = String(r.rcaCategory || '').trim();
+  if (rcat) {
+    r.issueLabel = r.issueCategory || '';
+    const sep = rcat.indexOf(' - ');
+    if (sep > -1) {
+      r.issueCategory = rcat.slice(0, sep).trim();
+      r.issueDesc     = rcat.slice(sep + 3).trim();
+    } else {
+      r.issueCategory = /non.?ops/i.test(rcat) ? 'Non Ops Controllable' : 'Ops Controllable';
+      r.issueDesc     = rcat;
+    }
+  }
   r._status   = D.deriveStatus(r);
   r._week      = D.weekNum(r.week);
   r._concLabel = D.concessionLabel(r.concession);
@@ -2018,6 +2074,23 @@ function markDuplicates(rows) {
 /* Records that count toward metrics = current view minus flagged duplicates. */
 function activeView() { return S.view.filter(r => !r._dup && r._cat !== 'cancelled'); }
 
+/* Week numbers repeat every year, so a bare "Week 29" is ambiguous once data
+   spans multiple years — resolve the year from the matching rows' dates. */
+function weekYearOf(w) {
+  if (w == null) return null;
+  const counts = {};
+  for (const r of S.all) {
+    if (r._week === w && r._day) { const y = r._day.slice(0, 4); counts[y] = (counts[y] || 0) + 1; }
+  }
+  const years = Object.keys(counts);
+  return years.length ? years.sort((a, b) => counts[b] - counts[a])[0] : null;
+}
+function weekYearLabel(w) {
+  if (w == null) return '—';
+  const y = weekYearOf(w);
+  return 'Week ' + w + (y ? ' ' + y : '');
+}
+
 /* ── derive Category→Description map from actual data (keeps dropdown true to sheet) ── */
 function rebuildCatDescMap(rows) {
   const m = {};
@@ -2117,7 +2190,7 @@ function populateFilters() {
   const stores = uniqueSorted(S.all, 'storeCode');
   fillSelect('#fStore', stores, 'All stations');
   const weeks = [...new Set(S.all.map(r => r._week).filter(w => w != null))].sort((a, b) => a - b);
-  fillSelect('#fWeek', weeks.map(w => ({ v: w, t: 'Week ' + w })), 'All weeks');
+  fillSelect('#fWeek', weeks.map(w => ({ v: w, t: weekYearLabel(w) })), 'All weeks');
   // Month options (YYYY-MM value, "June 2026" label), newest first — IST-anchored.
   const mSeen = {};
   S.all.forEach(r => {
@@ -2225,7 +2298,7 @@ function renderChips() {
   const f = S.filters;
   const chips = Object.keys(f).filter(k => f[k]).map(k => {
     let val = f[k];
-    if (k === 'week') val = 'Week ' + val;
+    if (k === 'week') val = weekYearLabel(Number(val));
     if (k === 'month') val = monthLabelOf(val);
     return '<span class="chip"><b>' + CHIP_LABELS[k] + ':</b> ' + esc(val) +
       ' <button data-clear="' + k + '">×</button></span>';
@@ -2271,8 +2344,8 @@ function computeKpis(rows) {
   k.curWeek = curW != null ? rows.filter(r => r._week === curW).length : 0;
   // Count prev-week from ALL data, honouring every active filter except week/date.
   k.prevWeek = prevW != null ? S.all.filter(r => !r._dup && r._week === prevW && periodNeutralMatch(r)).length : 0;
-  k.curWeekLabel = curW != null ? 'Week ' + curW : '—';
-  k.prevWeekLabel = prevW != null ? 'Week ' + prevW : '—';
+  k.curWeekLabel = curW != null ? weekYearLabel(curW) : '—';
+  k.prevWeekLabel = prevW != null ? weekYearLabel(prevW) : '—';
   k.wow = k.prevWeek ? Math.round(((k.curWeek - k.prevWeek) / k.prevWeek) * 100) : null;
   return k;
 }
@@ -2326,7 +2399,7 @@ function renderActiveFilterBar() {
   if (!bar) return;
   const f = S.filters;
   let period = 'All periods', active = false;
-  if (f.week) { period = 'Week ' + f.week; active = true; }
+  if (f.week) { period = weekYearLabel(Number(f.week)); active = true; }
   else if (f.month) { const p = String(f.month).split('-'); const dt = new Date(+p[0], (+p[1] || 1) - 1, 1); period = isNaN(dt) ? f.month : dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); active = true; }
   else if (f.dateFrom || f.dateTo) { period = (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…'); active = true; }
   const extras = [];
@@ -2384,6 +2457,7 @@ window.VOC.jsonp = jsonp;
 window.VOC.WEB_APP_URL = WEB_APP_URL;
 window.VOC.computeKpis = computeKpis;
 window.VOC.activeView = activeView;
+window.VOC.weekYearLabel = weekYearLabel;
 
 /* ── DUPLICATE VOC SUMMARY CARD (sits above the tabs) ── */
 function renderDuplicateCard() {
@@ -2995,7 +3069,7 @@ document.addEventListener('DOMContentLoaded', () => {
      filter (week / month / date range) and the data's refresh time. */
   function periodLabel() {
     const f = S.filters;
-    if (f.week) return 'Week ' + f.week;
+    if (f.week) return weekYearLabel(Number(f.week));
     if (f.month) {
       const p = String(f.month).split('-');
       const dt = new Date(+p[0], (+p[1] || 1) - 1, 1);
@@ -3155,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const prevW = [...allWeeks].reverse().find(w => w < curW);
       if (prevW != null) {
         prevRows = S.all.filter(r => !r._dup && r._week === prevW && neutral(r));
-        prevLabel = 'Week ' + prevW;
+        prevLabel = weekYearLabel(prevW);
       }
     }
     if (prevRows == null) {
@@ -3190,6 +3264,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pm  = cnt(sr, r => cls(r).isPicker), ppm  = cnt(pr, r => cls(r).isPicker);
       const qc  = cnt(sr, r => cls(r).isQC),     pqc  = cnt(pr, r => cls(r).isQC);
       const nonops = cnt(sr, r => cls(r).isNonOps), pnon = cnt(pr, r => cls(r).isNonOps);
+      const expiry = cnt(sr, r => (r._cat || D.complaintCat(r)) === 'expiry'), pexpiry = cnt(pr, r => (r._cat || D.complaintCat(r)) === 'expiry');
       const pend = cnt(sr, D.rcaPending);
       const pnfRows = sr.filter(pnfOf);
       const pnf = pnfRows.length;
@@ -3237,6 +3312,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${line('Picker Err', pm + (pm > 5 ? ' ⚠' : ''), pm > 5, delta(pm, ppm))}
           ${line('QC Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3, delta(qc, pqc))}
           ${line('Non-Ops', nonops, false, delta(nonops, pnon))}
+          ${line('Expiry', expiry, expiry > 3, delta(expiry, pexpiry))}
           ${line('RCA Pending', pend + (pend > 0 ? ' ⏳' : ''), pend > 0)}
           ${fnt ? `<div class="osc-line osc-pnf nt"><span>RCA Not Triggered</span><span class="osc-v"><span class="strong" style="color:#7C3AED">${fnt} ⚠</span></span>${fntPop}</div>` : ''}
           ${pnf ? `<div class="osc-line osc-pnf"><span>Picker Not Filled</span><span class="osc-v"><span class="warn strong">${pnf} ⚠</span></span>${pnfPop}</div>` : ''}
@@ -3621,7 +3697,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── shared: classify a row set into the operational buckets ── */
   function vocMetrics(rows) {
-    const k = { voc: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, rcaPending:0 };
+    const k = { voc: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, rcaPending:0, expiry:0, damaged:0 };
     rows.forEach(r => {
       if (r._dup) { k.voc--; return; }   // duplicates excluded from compare too
       const c = D.classify(r);
@@ -3631,6 +3707,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (c.isQC) k.qc++;
       if (c.isNonOps) k.nonops++;
       if (c.rcaPending) k.rcaPending++;
+      const cat = r._cat || D.complaintCat(r);
+      if (cat === 'expiry') k.expiry++;
+      if (cat === 'damaged') k.damaged++;
     });
     return k;
   }
@@ -3893,7 +3972,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function weekOptions() {
     const ws = [...new Set(V.S.all.map(r => r._week).filter(w => w != null))].sort((a, b) => b - a);
-    return ws.map(w => ({ key: String(w), week: w, label: 'Week ' + w }));
+    return ws.map(w => ({ key: String(w), week: w, label: V.weekYearLabel(w) }));
   }
   function periods() { return C.by === 'month' ? monthOptions() : weekOptions(); }
 
@@ -4069,6 +4148,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ['Picker Errors', cm.picker, pm.picker, false, false],
       ['QC Issues', cm.qc, pm.qc, false, false],
       ['Non-Ops Controllable', cm.nonops, pm.nonops, false, false],
+      ['Expiry', cm.expiry, pm.expiry, false, false],
+      ['Damaged', cm.damaged, pm.damaged, false, false],
       ['RCA & CAP Pending', cm.rcaPending, pm.rcaPending, false, false]
     ];
     let html = '<thead><tr><th>Metric</th><th>' + esc(cur.label) + '</th><th>' +
@@ -4126,7 +4207,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Active period label for the header (Week 24 / month / date range / All periods).
   function periodLabel() {
     const f = (V.S && V.S.filters) || {};
-    if (f.week) return 'Week ' + f.week;
+    if (f.week) return V.weekYearLabel(Number(f.week));
     if (f.month) { const p = String(f.month).split('-'); const dt = new Date(+p[0], (+p[1] || 1) - 1, 1); return isNaN(dt) ? f.month : dt.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }); }
     if (f.dateFrom || f.dateTo) return (f.dateFrom ? fmtDate(f.dateFrom) : '…') + ' – ' + (f.dateTo ? fmtDate(f.dateTo) : '…');
     return 'All periods';
@@ -4487,8 +4568,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const w = period.week, pw = prevWeekOf(w);
     selWeek = w;
     return { curRows: rowsForWeek(w), prevRows: rowsForWeek(pw),
-      curLabel: 'Week ' + w, curShort: 'W' + w,
-      prevLabel: pw != null ? 'Week ' + pw : null, prevShort: pw != null ? 'W' + pw : '–',
+      curLabel: V.weekYearLabel(w), curShort: 'W' + w,
+      prevLabel: pw != null ? V.weekYearLabel(pw) : null, prevShort: pw != null ? 'W' + pw : '–',
       hasPrev: pw != null, prevWord: 'previous week', orderWeek: w };
   }
 
@@ -4497,7 +4578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wkl = weeksAvail(), ms = monthsAvail(), ds = daysAvail();
     const md = $('#qsMode'); if (md) md.value = period.mode;
     const wsel = $('#qsWeek');
-    if (wsel) wsel.innerHTML = [...wkl].reverse().map(w => '<option value="' + w + '"' + (w === period.week ? ' selected' : '') + '>Week ' + w + '</option>').join('');
+    if (wsel) wsel.innerHTML = [...wkl].reverse().map(w => '<option value="' + w + '"' + (w === period.week ? ' selected' : '') + '>' + V.weekYearLabel(w) + '</option>').join('');
     const msel = $('#qsMonth');
     if (msel) msel.innerHTML = [...ms].reverse().map(m => '<option value="' + m + '"' + (m === period.month ? ' selected' : '') + '>' + monthLabel(m) + '</option>').join('');
     const minD = ds[0] || '', maxD = ds[ds.length - 1] || '';
@@ -4754,7 +4835,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = weekMode ? '<button id="qsUtrFetch" class="btn sm primary"' + (loading ? ' disabled' : '') + '>' +
       (loading ? 'Fetching…' : (orders ? 'Refresh orders' : 'Fetch Orders')) + '</button>' : '';
     const hint = weekMode
-      ? 'Pulls orders for Week ' + orderWeek + ' from the Store Metric sheet, then UTR ÷ Orders × 100.'
+      ? 'Pulls orders for ' + V.weekYearLabel(orderWeek) + ' from the Store Metric sheet, then UTR ÷ Orders × 100.'
       : 'Showing UTR VOC counts for ' + curLabel + '. Switch to Week view to pull order counts and compute the UTR rate (orders are keyed by week).';
     const note = (weekMode && !liveReady) ?
       '<div style="font-size:11.5px;color:var(--ink-faint);padding:10px 12px 0">Order counts need the live Apps Script connection — UTR Count is shown; rates appear once orders load.</div>' : '';

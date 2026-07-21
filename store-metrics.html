@@ -868,6 +868,19 @@ tbody tr:hover{background:var(--row-hover);}
     <div id="nl-no-period" style="display:none;"></div>
   </div>
 
+  <!-- STORE CONCESSIONS — weekly concession % per store -->
+  <div class="chart-card ani2" id="sc-card" style="margin-bottom:14px;">
+    <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span>🎟️ Store Concessions <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— weekly concession % per store · <span style="color:#EF4444;font-weight:800;">any week ≥0.5% flagged</span></span></span>
+      <button onclick="smFetchConcessions()" id="sc-btn" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(139,92,246,0.3);">↻ Concessions</button>
+    </div>
+    <div id="sc-data-wrap">
+      <div class="tbl-scroll" style="max-height:360px;border:1px solid var(--border);border-radius:10px;">
+        <table><thead id="sc-th"></thead><tbody id="sc-tb"><tr><td style="padding:16px;color:var(--muted);">Click ↻ Concessions to load</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
   <!-- FC METERS -->
   <div class="chart-card ani2" style="margin-bottom:14px;">
     <div class="sec-hdr" style="justify-content:space-between;">
@@ -1079,7 +1092,7 @@ function smGoBack(){
   if (window.history.length > 1) { history.back(); return; }
   window.location.href = 'index.html';
 }
-var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[], nlData=[];
+var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[], nlData=[], scData=[], scWeekCols=[];
 var smNewStores=new Set(JSON.parse(localStorage.getItem('smNewStores')||'[]'));
 function smSetNewStores(val){
   smNewStores=new Set(val.split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean));
@@ -1173,7 +1186,7 @@ function smLoad(isAuto){
     // Auto-select latest date
     smAutoSelectLatest();
     setProgress(100);
-    setTimeout(function(){ smFetchVOC(); smFetchNetworkLoss(); hideLoader(); done(smData.length + ' rows'); }, 400);
+    setTimeout(function(){ smFetchVOC(); smFetchNetworkLoss(); smFetchConcessions(); hideLoader(); done(smData.length + ' rows'); }, 400);
   };
 
   var s = document.createElement('script'); s.id='j-'+cb;
@@ -1364,6 +1377,53 @@ function smRender(){
 // week / month filter (no date-level data, so day/year/range/all
 // just show every network-loss row for the selected store).
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// STORE CONCESSIONS — weekly concession % per store
+// Reads the "Store Concessions" sheet (action=storeConcessions):
+// Store, Name, Owner, OE, then one column per week (Wk28, Wk29, …).
+// A store's HIGHEST filled week is flagged when it's ≥0.5%.
+// ═══════════════════════════════════════════════
+function smFetchConcessions(){
+  var btn=document.getElementById('sc-btn');
+  if(btn){ btn.textContent='⏳ Loading…'; btn.disabled=true; }
+  var cb='scCb_'+Date.now();
+  var t=setTimeout(function(){ cleanup(); fail('❌ Timeout — check connection'); },25000);
+  function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
+  function fin(){ if(btn){ btn.textContent='↻ Concessions'; btn.disabled=false; } }
+  function fail(m){ fin(); var tb=document.getElementById('sc-tb'); if(tb)tb.innerHTML='<tr><td class="empty">'+m+'</td></tr>'; }
+  window[cb]=function(data){
+    cleanup(); fin();
+    if(!data||data.status!=='ok'||!Array.isArray(data.rows)){ fail('❌ '+((data&&data.message)||'No data')); return; }
+    scData=data.rows; scWeekCols=data.weekCols||[];
+    smRenderConcessions();
+  };
+  var s=document.createElement('script'); s.id='j-'+cb;
+  s.src=APPS_URL+'?action=storeConcessions&callback='+cb;
+  s.onerror=function(){ cleanup(); fail('❌ Error'); };
+  document.head.appendChild(s);
+}
+function scRowMax(r){
+  var mx=null;
+  scWeekCols.forEach(function(w){ var v=r.weeks?r.weeks[w]:null; if(v!=null && (mx===null||v>mx)) mx=v; });
+  return mx;
+}
+function smRenderConcessions(){
+  var th=document.getElementById('sc-th'), tb=document.getElementById('sc-tb');
+  if(!th||!tb) return;
+  if(!scData.length){ tb.innerHTML='<tr><td style="padding:16px;color:var(--muted);">No concession data</td></tr>'; return; }
+  th.innerHTML='<tr>'+['Store','Name','Owner','OE'].map(function(h){return '<th>'+h+'</th>';}).join('')+
+    scWeekCols.map(function(w){return '<th>Wk'+w+'</th>';}).join('')+'</tr>';
+  tb.innerHTML=scData.map(function(r){
+    var cells=scWeekCols.map(function(w){
+      var v=r.weeks?r.weeks[w]:null;
+      if(v==null) return '<td style="color:var(--muted);">—</td>';
+      var flag=(v>=0.005);
+      return '<td style="'+(flag?'background:rgba(239,68,68,0.15);color:#EF4444;font-weight:800;':'')+'">'+(v*100).toFixed(2)+'%</td>';
+    }).join('');
+    return '<tr><td class="strong">'+(r.store||'')+'</td><td>'+(r.name||'')+'</td><td>'+(r.owner||'')+'</td><td>'+(r.oe||'')+'</td>'+cells+'</tr>';
+  }).join('');
+}
+
 function smFetchNetworkLoss(){
   var btn=document.getElementById('nl-btn');
   if(btn){ btn.textContent='⏳ Loading…'; btn.disabled=true; }
@@ -3671,6 +3731,18 @@ function copySummary(){
     lines.push('🏭 Avg WHL (Warehouse Loss): '+(T.nlWhlW/T.nlGms).toFixed(2)+'%');
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');
   }
+  if(scData&&scData.length){
+    var flagged=scData.map(function(r){ return {r:r, mx:scRowMax(r)}; }).filter(function(x){ return x.mx!=null && x.mx>=0.005; });
+    lines.push('');
+    lines.push('🎟️ Store Concessions — stores ≥0.5% (peak week):');
+    if(flagged.length){
+      flagged.sort(function(a,b){ return b.mx-a.mx; }).forEach(function(x){
+        lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.mx*100).toFixed(2)+'%');
+      });
+    } else {
+      lines.push('  • None — all stores under 0.5%');
+    }
+  }
   lines.push('');
   lines.push('Generated by Dark Store Management System (DMS PRO)');
 
@@ -3711,7 +3783,7 @@ var ANA_METRICS = [
   {key:'avgUpo',    label:'Avg UPO',                keys:['AVG UPO','Avg UPO','T'],                                        agg:'avg', goodUp:null},
   {key:'ibTph',     label:'IB TPH',                 keys:['IB TPH','O'],                                                   agg:'avg', goodUp:true},
   {key:'obTph',     label:'OB TPH',                 keys:['OB TPH','P'],                                                   agg:'avg', goodUp:true},
-  {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:true}
+  {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:false}
 ];
 
 function anaMetricVal(m, rows){
