@@ -3739,8 +3739,15 @@ function copySummary(){
       flagged.sort(function(a,b){ return b.mx-a.mx; }).forEach(function(x){
         lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.mx*100).toFixed(2)+'%');
       });
+      var avgFlagged=flagged.reduce(function(s,x){return s+x.mx;},0)/flagged.length;
+      lines.push('  Avg (flagged stores): '+(avgFlagged*100).toFixed(2)+'%');
     } else {
       lines.push('  • None — all stores under 0.5%');
+    }
+    var allPeaks=scData.map(function(r){ return scRowMax(r); }).filter(function(v){ return v!=null; });
+    if(allPeaks.length){
+      var avgAll=allPeaks.reduce(function(s,v){return s+v;},0)/allPeaks.length;
+      lines.push('  Avg (all stores): '+(avgAll*100).toFixed(2)+'%');
     }
   }
   lines.push('');
