@@ -1943,16 +1943,21 @@ function normalize(rec) {
   // work unchanged. The sheet's own "Issue Category" (generic label, e.g.
   // "Expiry issue") is kept separately as issueLabel for display only.
   const rcat = String(r.rcaCategory || '').trim();
+  r.issueLabel = r.issueCategory || '';
   if (rcat) {
-    r.issueLabel = r.issueCategory || '';
     const sep = rcat.indexOf(' - ');
     if (sep > -1) {
       r.issueCategory = rcat.slice(0, sep).trim();
       r.issueDesc     = rcat.slice(sep + 3).trim();
+    } else if (/non.?ops/i.test(rcat)) {
+      r.issueCategory = 'Non Ops Controllable'; r.issueDesc = rcat;
+    } else if (/ops/i.test(rcat)) {
+      r.issueCategory = 'Ops Controllable'; r.issueDesc = rcat;
     } else {
-      r.issueCategory = /non.?ops/i.test(rcat) ? 'Non Ops Controllable' : 'Ops Controllable';
-      r.issueDesc     = rcat;
+      r.issueCategory = ''; r.issueDesc = rcat; // RCA Category filled but not Ops/Non-Ops worded — leave untriaged
     }
+  } else {
+    r.issueCategory = ''; // RCA Category not filled yet — untriaged, not defaulted to Non-Ops
   }
   r._status   = D.deriveStatus(r);
   r._week      = D.weekNum(r.week);
@@ -2608,10 +2613,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function trunc(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s || '—'; }
   function catBadge(c) {
-    if (!c) return '<span class="badge nonops" style="opacity:.55">Untriaged</span>';
-    return c === 'Ops Controllable'
-      ? '<span class="badge ops">Ops Controllable</span>'
-      : '<span class="badge nonops">Non Ops</span>';
+    if (c === 'Ops Controllable') return '<span class="badge ops">Ops Controllable</span>';
+    if (c === 'Non Ops Controllable') return '<span class="badge nonops">Non Ops</span>';
+    return '<span class="badge nonops" style="opacity:.55">Untriaged</span>';
   }
   function statusBadge(s) {
     const m = D.STATUS_META[s] || { cls: 'open', label: s };
