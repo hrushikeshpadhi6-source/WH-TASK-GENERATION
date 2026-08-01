@@ -835,7 +835,7 @@ tbody tr:hover{background:var(--row-hover);}
   <!-- NETWORK LOSS — WAREHOUSE LOSS (WHL) + WAREHOUSE DAMAGE (WHD) -->
   <div class="chart-card ani2" id="nl-card" style="margin-bottom:14px;">
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span>🏭 Warehouse Loss &amp; Damage <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— full detail per store · <span style="color:#EF4444;font-weight:800;">positive loss flagged in red</span> · follows the date / store filter ↑</span></span>
+      <span>🏭 Warehouse Loss &amp; Damage <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— full detail per store · WHL goal ±0.30%, WHD goal &lt;0.34% · <span style="color:#F59E0B;font-weight:800;">orange</span>/<span style="color:#EF4444;font-weight:800;">red</span> = off target · follows the date / store filter ↑</span></span>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <div id="nl-period-badge" style="display:none;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;font-family:'Inter',monospace;color:var(--text);white-space:nowrap;">📅 —</div>
         <div style="display:flex;align-items:center;gap:6px;background:var(--filter-bg);border:1px solid var(--border);border-radius:8px;padding:3px 6px 3px 10px;">
@@ -871,7 +871,7 @@ tbody tr:hover{background:var(--row-hover);}
   <!-- STORE CONCESSIONS — weekly concession % per store -->
   <div class="chart-card ani2" id="sc-card" style="margin-bottom:14px;">
     <div class="sec-hdr" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-      <span>🎟️ Store Concessions <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— weekly concession % per store · <span style="color:#EF4444;font-weight:800;">any week ≥0.5% flagged</span></span></span>
+      <span>🎟️ Store Concessions <span style="font-family:'Inter',monospace;font-size:10px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;">— follows the date / store filter ↑ · <span style="color:#F59E0B;font-weight:800;">0.30–0.50% orange</span> · <span style="color:#EF4444;font-weight:800;">≥0.50% red</span></span></span>
       <button onclick="smFetchConcessions()" id="sc-btn" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:800;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;box-shadow:0 3px 10px rgba(139,92,246,0.3);">↻ Concessions</button>
     </div>
     <div id="sc-data-wrap">
@@ -1092,7 +1092,7 @@ function smGoBack(){
   if (window.history.length > 1) { history.back(); return; }
   window.location.href = 'index.html';
 }
-var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[], nlData=[], scData=[], scWeekCols=[];
+var smData=[], smPeriod='all', smCh={}, smFcData={}, smVocData={}, smVocRaw=[], smLbData=[], nlData=[], scData=[], scWeekCols=[], scWeekMonth={};
 var smNewStores=new Set(JSON.parse(localStorage.getItem('smNewStores')||'[]'));
 function smSetNewStores(val){
   smNewStores=new Set(val.split(',').map(function(s){return s.trim().toUpperCase();}).filter(Boolean));
@@ -1368,6 +1368,7 @@ function smRender(){
   smKPI(rows); smCharts(rows); smLeaderboard(rows); smTable(rows);
   smDrawMeters(rows); try{ smRankChart(); }catch(e){ console.warn('rank chart skipped:', e); }
   try{ smNetworkLoss(); }catch(e){ console.warn('network loss skipped:', e); }
+  try{ if(scData.length) smRenderConcessions(); }catch(e){ console.warn('concessions render skipped:', e); }
 }
 
 // ═══════════════════════════════════════════════
@@ -1394,7 +1395,7 @@ function smFetchConcessions(){
   window[cb]=function(data){
     cleanup(); fin();
     if(!data||data.status!=='ok'||!Array.isArray(data.rows)){ fail('❌ '+((data&&data.message)||'No data')); return; }
-    scData=data.rows; scWeekCols=data.weekCols||[];
+    scData=data.rows; scWeekCols=data.weekCols||[]; scWeekMonth=data.weekMonth||{};
     smRenderConcessions();
   };
   var s=document.createElement('script'); s.id='j-'+cb;
@@ -1407,19 +1408,88 @@ function scRowMax(r){
   scWeekCols.forEach(function(w){ var v=r.weeks?r.weeks[w]:null; if(v!=null && (mx===null||v>mx)) mx=v; });
   return mx;
 }
+// Active single week (only when the main filter is "week" AND its value matches a loaded week col).
+function scActiveWeek(){
+  if(smPeriod!=='week') return null;
+  var pv=document.getElementById('sm-pval'); if(!pv||!pv.value||pv.value==='all') return null;
+  var fw=parseInt(String(pv.value).replace(/\D/g,''),10);
+  return scWeekCols.indexOf(fw)>-1?fw:null;
+}
+// Active month name text (only when the main filter is "month" and a specific month is chosen).
+function scActiveMonth(){
+  if(smPeriod!=='month') return null;
+  var sel=document.getElementById('sm-pval'); if(!sel||!sel.value||sel.value==='all') return null;
+  var txt=sel.selectedIndex>=0?sel.options[sel.selectedIndex].text:'';
+  var mn=(String(txt).match(/[A-Za-z]+/)||[''])[0];
+  return mn||null;
+}
+function scMonthsList(){
+  var set={};
+  scWeekCols.forEach(function(w){ var m=scWeekMonth[w]; if(m) set[m]=true; });
+  return Object.keys(set);
+}
+// Average of a store's weekly %s that fall in the given month.
+function scAvgForStoreMonth(r, month){
+  var vals=[];
+  scWeekCols.forEach(function(w){
+    var m=scWeekMonth[w]||'';
+    if(m.toLowerCase()===String(month).toLowerCase()){ var v=r.weeks?r.weeks[w]:null; if(v!=null) vals.push(v); }
+  });
+  if(!vals.length) return null;
+  return vals.reduce(function(a,b){return a+b;},0)/vals.length;
+}
+// The value to show/flag for THIS store under the currently active main filter:
+// week filter → that week; month filter → avg of that month's weeks (or avg of all months if "All" is picked);
+// day/year/range/all → fall back to the store's peak week (legacy behaviour).
+function scCurrentValue(r){
+  var wk=scActiveWeek(); if(wk!=null) return r.weeks?r.weeks[wk]:null;
+  if(smPeriod==='month'){
+    var mo=scActiveMonth();
+    if(mo) return scAvgForStoreMonth(r,mo);
+    var vals=scWeekCols.map(function(w){return r.weeks?r.weeks[w]:null;}).filter(function(v){return v!=null;});
+    return vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
+  }
+  return scRowMax(r);
+}
+// Concessions colour band: red ≥0.5%, orange 0.3–0.5%, else clear.
+function scColor(v){
+  if(v==null) return null;
+  if(v>=0.005) return {bg:'rgba(239,68,68,0.15)',c:'#EF4444'};
+  if(v>=0.003) return {bg:'rgba(245,158,11,0.15)',c:'#F59E0B'};
+  return null;
+}
+function scCellHtml(v){
+  if(v==null) return '<td style="color:var(--muted);">—</td>';
+  var col=scColor(v);
+  return '<td style="'+(col?('background:'+col.bg+';color:'+col.c+';font-weight:800;'):'')+'">'+(v*100).toFixed(2)+'%</td>';
+}
 function smRenderConcessions(){
   var th=document.getElementById('sc-th'), tb=document.getElementById('sc-tb');
   if(!th||!tb) return;
   if(!scData.length){ tb.innerHTML='<tr><td style="padding:16px;color:var(--muted);">No concession data</td></tr>'; return; }
+
+  var wk=scActiveWeek(), cols, colLabel, getVal;
+  if(wk!=null){
+    cols=[wk]; colLabel=function(w){return 'Wk'+w;}; getVal=function(r,w){return r.weeks?r.weeks[w]:null;};
+  } else if(smPeriod==='month'){
+    var months=scMonthsList(), mo=scActiveMonth();
+    if(mo){
+      months=months.filter(function(m){return m.toLowerCase().indexOf(mo.toLowerCase())===0;});
+    }
+    if(months.length){
+      cols=months; colLabel=function(m){return m+' (avg)';}; getVal=function(r,m){return scAvgForStoreMonth(r,m);};
+    } else {
+      cols=[]; colLabel=function(){return '';}; getVal=function(){return null;};
+    }
+  } else {
+    cols=scWeekCols; colLabel=function(w){return 'Wk'+w;}; getVal=function(r,w){return r.weeks?r.weeks[w]:null;};
+  }
+
   th.innerHTML='<tr>'+['Store','Name','Owner','OE'].map(function(h){return '<th>'+h+'</th>';}).join('')+
-    scWeekCols.map(function(w){return '<th>Wk'+w+'</th>';}).join('')+'</tr>';
+    cols.map(function(c){return '<th>'+colLabel(c)+'</th>';}).join('')+'</tr>';
+  if(!cols.length){ tb.innerHTML='<tr><td style="padding:16px;color:var(--muted);" colspan="4">No concession data for this period</td></tr>'; return; }
   tb.innerHTML=scData.map(function(r){
-    var cells=scWeekCols.map(function(w){
-      var v=r.weeks?r.weeks[w]:null;
-      if(v==null) return '<td style="color:var(--muted);">—</td>';
-      var flag=(v>=0.005);
-      return '<td style="'+(flag?'background:rgba(239,68,68,0.15);color:#EF4444;font-weight:800;':'')+'">'+(v*100).toFixed(2)+'%</td>';
-    }).join('');
+    var cells=cols.map(function(c){ return scCellHtml(getVal(r,c)); }).join('');
     return '<tr><td class="strong">'+(r.store||'')+'</td><td>'+(r.name||'')+'</td><td>'+(r.owner||'')+'</td><td>'+(r.oe||'')+'</td>'+cells+'</tr>';
   }).join('');
 }
@@ -1449,22 +1519,20 @@ function smFetchNetworkLoss(){
 function smNlFilter(){
   var store=document.getElementById('sm-store')?document.getElementById('sm-store').value:'all';
   var rows=nlData.filter(function(r){ var rs=String(r.store||r.Store||r.STORE||r.storeCode||''); return store==='all'||rs===store; });
-  // Soft period filter: if smPeriod is week/month and a specific value is chosen,
-  // try filtering — but fall back to ALL rows if nothing matches.
+  // Hard period filter: week/month must match exactly — no fallback to unrelated periods.
   var pv=document.getElementById('sm-pval')?document.getElementById('sm-pval').value:'';
-  var filtered=rows;
   if(smPeriod==='week' && pv && pv!=='all'){
     var fw=String(pv).replace(/\D/g,'');
-    if(fw){ var wf=rows.filter(function(r){ return String(r.week||'').replace(/\D/g,'')===fw; }); if(wf.length) filtered=wf; }
+    if(fw) rows=rows.filter(function(r){ return String(r.week||'').replace(/\D/g,'')===fw; });
   } else if(smPeriod==='month' && pv && pv!=='all'){
     var mn=String(pv).toLowerCase();
     var pvMonthNames=['january','february','march','april','may','june','july','august','september','october','november','december'];
-    var mmMatch=mn.match(/^\d{4}-(\d{1,2})$/);
-    if(mmMatch){ var midx=parseInt(mmMatch[1],10)-1; if(midx>=0&&midx<12) mn=pvMonthNames[midx]; }
-    var mf=rows.filter(function(r){ var m=String(r.month||'').toLowerCase(); return m.indexOf(mn)===0||m===mn; });
-    if(mf.length) filtered=mf;
+    var mmMatch=mn.match(/(\d{4})-(\d{1,2})/);
+    if(mmMatch){ var midx=parseInt(mmMatch[2],10)-1; if(midx>=0&&midx<12) mn=pvMonthNames[midx]; }
+    else { var am=mn.match(/[a-z]+/); if(am) mn=am[0]; } // e.g. "June - 2026" → "june"
+    rows=rows.filter(function(r){ var m=String(r.month||'').toLowerCase(); return m.indexOf(mn)===0||m===mn; });
   }
-  return filtered;
+  return rows;
 }
 // Build period badge text from main dashboard state
 function smNlPeriodBadge(){
@@ -1530,10 +1598,10 @@ function nlPct(v){
   if(a<0.01)  return v.toFixed(3)+'%';
   return v.toFixed(2)+'%';
 }
-function whlPoints(v){ return v<=0?10:v<=1?10:v<=3?2.5:0; }   // WHL % score band
-function whPoints(v){  return v<=0?10:v<=0.5?10:v<=1.5?2.5:0; } // WHD % score band
-function nlWhlCol(v){ var p=whlPoints(v); return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }
-function nlWhdCol(v){ var p=whPoints(v);  return p===10?'#10B981':p===2.5?'#F59E0B':'#EF4444'; }
+function whlPoints(v){ var a=Math.abs(v); return a<=0.002?10:a<=0.003?5:0; }   // WHL % score band — goal ±0.30%
+function whPoints(v){  var a=Math.abs(v); return a<=0.002?10:a<=0.0034?5:0; } // WHD % score band — goal <0.34%
+function nlWhlCol(v){ return nlBandCol(v,false); }
+function nlWhdCol(v){ return nlBandCol(v,true); }
 
 // ── CURRENCY — base data is USD; convert by an editable rate ──────────
 var NL_CUR   = { code:'USD', sym:'$', rate:1 };
@@ -1557,22 +1625,29 @@ function nlNumCell(usd, mode, bold){
     if(v<0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:var(--text);">'+txt+'</td>';
     return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(239,68,68,0.10);">'+txt+'</td>';
   }
-  // WHL: negative = red, positive = neutral (no red for positive warehouse loss)
+  // WHL raw $ — always neutral text, no red/green (sign meaning is shown in the % column instead).
   if(mode==='whl'){
-    if(v<0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(239,68,68,0.10);">'+txt+'</td>';
     return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:600)+';color:var(--text);">'+txt+'</td>';
   }
   if(mode==='good')  return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:#10B981!important;">'+txt+'</td>';
-  // Warehouse Damage — always flagged (damage arrives negative): red text on an orange wash = orange/red combo.
-  if(mode==='damage') return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(249,115,22,0.16);">'+txt+'</td>';
-  if(mode==='signed'){ var c=v>0?'#10B981':'var(--text)'; return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:'+c+(v>0?'!important':'')+';">'+txt+'</td>'; }
+  // Warehouse Damage raw $ — 0 (no damage) is green; any nonzero damage flagged red/orange.
+  if(mode==='damage'){
+    if(v===0) return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:700)+';color:#10B981!important;">'+txt+'</td>';
+    return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:#EF4444!important;background:rgba(249,115,22,0.16);">'+txt+'</td>';
+  }
+  // Grand Total — always neutral text.
+  if(mode==='signed'){ return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+w+';color:var(--text);">'+txt+'</td>'; }
   return '<td style="text-align:right;font-family:Inter,monospace;font-weight:'+(bold?900:600)+';color:var(--text);">'+txt+'</td>';
 }
-// Band colour for the % columns — never red when the percentage is negative.
+// Band colour for the % columns.
+// WHL goal ±0.30%: negative = overage/excess found (good) → always green.
+//   positive = net loss → red if >0.30%, orange 0.20–0.30%, else green.
+// WHD goal <0.34%: 0% → green; else |v|>=0.34% red, 0.20–0.34% orange, else green.
 function nlBandCol(v, isWhd){
-  if(v >= 0) return '#10B981';            // any positive → green
   var a=Math.abs(v);
-  return a<=0.5?'#F59E0B':'#EF4444';     // small negative → amber, large negative → red
+  if(isWhd) return a===0?'#10B981':(a>=0.0034?'#EF4444':(a>=0.0020?'#F59E0B':'#10B981'));
+  if(v<0) return '#10B981';
+  return a>0.0030?'#EF4444':(a>=0.0020?'#F59E0B':'#10B981');
 }
 
 function smNetworkLoss(){
@@ -3732,21 +3807,20 @@ function copySummary(){
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');
   }
   if(scData&&scData.length){
-    var flagged=scData.map(function(r){ return {r:r, mx:scRowMax(r)}; }).filter(function(x){ return x.mx!=null && x.mx>=0.005; });
+    var scPeriodTxt=(scActiveWeek()!=null)?('Wk'+scActiveWeek()):(smPeriod==='month'?(scActiveMonth()||'this month'):'peak week');
+    var scVals=scData.map(function(r){ return {r:r, v:scCurrentValue(r)}; }).filter(function(x){ return x.v!=null; });
+    var flagged=scVals.filter(function(x){ return x.v>=0.003; });
     lines.push('');
-    lines.push('🎟️ Store Concessions — stores ≥0.5% (peak week):');
+    lines.push('🎟️ Store Concessions — '+scPeriodTxt+' · orange ≥0.30%, red ≥0.50%:');
     if(flagged.length){
-      flagged.sort(function(a,b){ return b.mx-a.mx; }).forEach(function(x){
-        lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.mx*100).toFixed(2)+'%');
+      flagged.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
+        lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.v*100).toFixed(2)+'%'+(x.v>=0.005?' 🔴':' 🟠'));
       });
-      var avgFlagged=flagged.reduce(function(s,x){return s+x.mx;},0)/flagged.length;
-      lines.push('  Avg (flagged stores): '+(avgFlagged*100).toFixed(2)+'%');
     } else {
-      lines.push('  • None — all stores under 0.5%');
+      lines.push('  • None — all stores under 0.30%');
     }
-    var allPeaks=scData.map(function(r){ return scRowMax(r); }).filter(function(v){ return v!=null; });
-    if(allPeaks.length){
-      var avgAll=allPeaks.reduce(function(s,v){return s+v;},0)/allPeaks.length;
+    if(scVals.length){
+      var avgAll=scVals.reduce(function(s,x){return s+x.v;},0)/scVals.length;
       lines.push('  Avg (all stores): '+(avgAll*100).toFixed(2)+'%');
     }
   }
