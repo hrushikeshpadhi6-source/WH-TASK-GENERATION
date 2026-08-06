@@ -239,7 +239,7 @@ function calcThroughput(){
 }
 
 function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
-function speedCol(v){ return v>=140?'#10B981':v>=100?'#F59E0B':'#EF4444'; }
+function speedCol(v){ return v>165?'#10B981':v>=155?'#F59E0B':'#EF4444'; }
 
 function render(rows, totals, unmatchedOrders, usedFallback){
   var msg = unmatchedOrders ? (unmatchedOrders+' Lateslam row(s) had no matching order in Outbound Pick Data — excluded') : '✅ Calculated';
