@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Throughput per Picking Hour — DMS PRO</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f8f7ff;color:#1a1830;font-family:'Inter',sans-serif;min-height:100vh;padding:28px 20px 60px;}
+.wrap{max-width:1160px;margin:0 auto;}
+.back-btn{background:#fff;border:1px solid #d5d2f0;color:#3d3a6b;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:20px;}
+.back-btn:hover{border-color:#7c3aed;color:#7c3aed;}
+.hdr{display:flex;align-items:center;gap:14px;border-bottom:1px solid #d5d2f0;padding-bottom:20px;margin-bottom:24px;}
+.hdr h1{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#F59E0B,#D97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hdr p{color:#7b78a8;font-size:13px;margin-top:4px;}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:720px){.upload-grid{grid-template-columns:1fr;}}
+.dz{background:#fff;border:2px dashed #d5d2f0;border-radius:14px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.dz:hover{border-color:#F59E0B;}
+.dz .ic{font-size:32px;margin-bottom:8px;}
+.dz .ti{font-weight:700;color:#1a1830;margin-bottom:4px;}
+.dz .su{font-size:12px;color:#7b78a8;}
+.dz .fn{margin-top:10px;font-size:12px;color:#D97706;font-weight:700;word-break:break-all;}
+.ctrl-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.wk-input{padding:9px 14px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;color:#1a1830;font-family:'DM Mono',monospace;font-size:13px;outline:none;width:160px;}
+.calc-btn{padding:11px 26px;border-radius:10px;border:none;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;font-weight:800;font-size:14px;cursor:pointer;font-family:'Syne',sans-serif;box-shadow:0 4px 14px rgba(245,158,11,.3);white-space:nowrap;}
+.calc-btn:disabled{opacity:.55;cursor:not-allowed;}
+#status{font-size:12px;color:#7b78a8;font-weight:600;}
+#status.err{color:#c0392b;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:22px;}
+.kpi{background:#fff;border:1px solid #d5d2f0;border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,#F59E0B);}
+.kpi .ic{font-size:20px;margin-bottom:6px;}
+.kpi .lb{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7b78a8;}
+.kpi .vl{font-family:'DM Mono',monospace;font-size:22px;font-weight:700;margin:4px 0 2px;color:var(--kc,#F59E0B);}
+.kpi .sb{font-size:11px;color:#7b78a8;}
+.tbl-wrap{background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;}
+.tbl-scroll{max-height:480px;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:#f0effe;padding:11px 14px;text-align:left;color:#1e1b4b;font-weight:800;position:sticky;top:0;white-space:nowrap;}
+tbody td{padding:10px 14px;border-bottom:1px solid #ece9fa;font-family:'DM Mono',monospace;}
+tbody tr:hover td{background:#f8f7ff;}
+.empty{padding:26px;text-align:center;color:#7b78a8;font-size:13px;}
+.note{font-size:12px;color:#7b78a8;margin-top:10px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <button class="back-btn" onclick="window.location.href='index.html'">← Back to Dashboard</button>
+  <div class="hdr">
+    <span style="font-size:34px;">⏱️</span>
+    <div>
+      <h1>Throughput per Picking Hour</h1>
+      <p>Upload Lateslam UTR Data + Outbound Pick Data — matched by order ID → units picked per hour, per picker</p>
+    </div>
+  </div>
+
+  <div class="upload-grid">
+    <div class="dz" id="dz1" onclick="document.getElementById('f1').click()">
+      <div class="ic">📋</div>
+      <div class="ti">File 1 — Lateslam UTR Data</div>
+      <div class="su">order_id · assignment_to_stage (seconds) · units_picked · week_name</div>
+      <div class="fn" id="fn1"></div>
+      <input type="file" id="f1" accept=".csv,.xls,.xlsx" style="display:none" onchange="loadFile(1,this)">
+    </div>
+    <div class="dz" id="dz2" onclick="document.getElementById('f2').click()">
+      <div class="ic">🚀</div>
+      <div class="ti">File 2 — Outbound Pick Data</div>
+      <div class="su">ReferenceIdValue (= order_id) · User (picker) · Process</div>
+      <div class="fn" id="fn2"></div>
+      <input type="file" id="f2" accept=".csv,.xls,.xlsx" style="display:none" onchange="loadFile(2,this)">
+    </div>
+  </div>
+
+  <div class="ctrl-row">
+    <input type="text" class="wk-input" id="wkFilter" placeholder="Week32 (optional)" title="Filter Lateslam rows by week_name — leave blank for all weeks">
+    <button class="calc-btn" id="calcBtn" onclick="calcThroughput()" disabled>🔍 Calculate Throughput</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="kpis" class="kpi-grid"></div>
+  <div class="tbl-wrap">
+    <div class="tbl-scroll">
+      <table>
+        <thead id="th"><tr><th>User</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
+        <tbody id="tb"><tr><td class="empty" colspan="6">Upload both files, then click Calculate</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="note">Avg Sec/Unit = total assignment-to-stage seconds ÷ total units picked, per picker. Throughput/Hr = 3600 ÷ Avg Sec/Unit. Orders whose ID has no match in the Outbound Pick file are excluded from per-picker rows (shown in status).</div>
+</div>
+
+<script>
+var TPH_ACTIVITY_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+function tphTrack(action){
+  try{
+    var u = JSON.parse(localStorage.getItem('dstpro_user_info')||'{}');
+    var name = u.name || 'Unknown';
+    var ua = navigator.userAgent;
+    var device = /iPhone|iPad/.test(ua) ? 'iOS' : (/Android/.test(ua) ? 'Android' : 'Web');
+    var img = new Image();
+    img.src = TPH_ACTIVITY_URL+'?action=trackActivity&name='+encodeURIComponent(name)+'&tool='+encodeURIComponent('Throughput per Picking Hour')+'&action='+encodeURIComponent(action)+'&ts='+encodeURIComponent(new Date().toISOString())+'&device='+encodeURIComponent(device);
+  }catch(e){}
+}
+tphTrack('Opened');
+var FILES = { 1: null, 2: null };
+
+function loadFile(slot, input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  document.getElementById('fn'+slot).textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result, { type:'binary' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+      FILES[slot] = rows;
+      setStatus('');
+    }catch(err){
+      setStatus('❌ Could not read '+file.name+': '+err.message, true);
+      FILES[slot] = null;
+    }
+    document.getElementById('calcBtn').disabled = !(FILES[1] && FILES[2]);
+  };
+  reader.readAsBinaryString(file);
+}
+
+function setStatus(msg, isErr){
+  var s = document.getElementById('status');
+  s.textContent = msg || '';
+  s.className = isErr ? 'err' : '';
+}
+
+function findCol(headers, tests){
+  for(var c=0;c<headers.length;c++){
+    var h = String(headers[c]||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    for(var t=0;t<tests.length;t++){ if(h.indexOf(tests[t])>-1) return c; }
+  }
+  return -1;
+}
+
+function calcThroughput(){
+  if(!FILES[1] || !FILES[2]){ setStatus('❌ Upload both files first', true); return; }
+  var lsData = FILES[1], obData = FILES[2];
+  if(lsData.length<2 || obData.length<2){ setStatus('❌ One of the files has no data rows', true); return; }
+
+  function normKey(v){ return String(v==null?'':v).trim().replace(/^["']|["']$/g,'').toUpperCase(); }
+
+  var obH = obData[0];
+  var iRef = findCol(obH, ['referenceidvalue','referenceid','refid']);
+  var iUser = findCol(obH, ['user']);
+  var iProc = findCol(obH, ['process']);
+  if(iRef<0 || iUser<0){ setStatus('❌ ReferenceIdValue / User column not found in Outbound Pick Data', true); return; }
+
+  // Build order->user map. First pass: only rows tagged Outbound (substring match, case-insensitive).
+  // If that yields no usable rows (e.g. an inventory-audit export has no "Outbound" Process value),
+  // fall back to using every row so a real join isn't silently dropped by the Process filter.
+  function buildOrderUser(requireOutbound){
+    var counts = {};
+    for(var i=1;i<obData.length;i++){
+      var row = obData[i];
+      var ref = normKey(row[iRef]);
+      var usr = String(row[iUser]||'').trim();
+      if(!ref || !usr) continue;
+      if(requireOutbound && iProc>=0){
+        var proc = String(row[iProc]||'').trim().toLowerCase();
+        if(proc && proc.indexOf('outbound')===-1) continue;
+      }
+      if(!counts[ref]) counts[ref]={};
+      counts[ref][usr]=(counts[ref][usr]||0)+1;
+    }
+    return counts;
+  }
+  var orderUserCounts = buildOrderUser(true);
+  var usedFallback = false;
+  if(Object.keys(orderUserCounts).length===0){
+    orderUserCounts = buildOrderUser(false);
+    usedFallback = true;
+  }
+  var orderUser = {};
+  Object.keys(orderUserCounts).forEach(function(ref){
+    var counts=orderUserCounts[ref], best='', bestN=0;
+    Object.keys(counts).forEach(function(u){ if(counts[u]>bestN){ bestN=counts[u]; best=u; } });
+    orderUser[ref]=best;
+  });
+
+  var lsH = lsData[0];
+  var iOrder = findCol(lsH, ['orderid']);
+  var iSec   = findCol(lsH, ['assignmenttostage']);
+  var iUnits = findCol(lsH, ['unitspicked']);
+  var iWeek  = findCol(lsH, ['weekname','week']);
+  if(iOrder<0 || iSec<0 || iUnits<0){ setStatus('❌ order_id / assignment_to_stage / units_picked column not found in Lateslam UTR Data', true); return; }
+
+  var fWeek = document.getElementById('wkFilter').value.trim();
+  var byUser = {}, unmatchedOrders=0, consideredOrders=0;
+  for(var j=1;j<lsData.length;j++){
+    var r = lsData[j];
+    var orderId = normKey(r[iOrder]);
+    if(!orderId) continue;
+    if(fWeek && iWeek>=0){
+      var w = String(r[iWeek]||'').replace(/\D/g,'');
+      if(w !== fWeek.replace(/\D/g,'')) continue;
+    }
+    consideredOrders++;
+    var secs = Number(r[iSec])||0;
+    var units = Number(r[iUnits])||0;
+    var user = orderUser[orderId] || '';
+    if(!user){ unmatchedOrders++; continue; }
+    if(!byUser[user]) byUser[user]={ user:user, totalSeconds:0, totalUnits:0, orders:0 };
+    byUser[user].totalSeconds += secs;
+    byUser[user].totalUnits   += units;
+    byUser[user].orders++;
+  }
+
+  if(unmatchedOrders===consideredOrders && consideredOrders>0){
+    setStatus('❌ No order_id in Lateslam matched any ReferenceIdValue in Outbound Pick Data — check the two files cover the same orders (sample ReferenceIdValue: "'+(Object.keys(orderUser)[0]||'none found')+'", sample order_id: "'+normKey(lsData[1][iOrder])+'")', true);
+    render([], {totalSeconds:0,totalUnits:0,avgSecPerUnit:0,throughputPerHour:0}, unmatchedOrders);
+    return;
+  }
+
+  var rows = Object.keys(byUser).map(function(u){
+    var o = byUser[u];
+    var avgSecPerUnit = o.totalUnits ? o.totalSeconds/o.totalUnits : 0;
+    var throughputPerHour = avgSecPerUnit ? 3600/avgSecPerUnit : 0;
+    return { user:o.user, orders:o.orders, totalSeconds:Math.round(o.totalSeconds), totalUnits:o.totalUnits,
+      avgSecPerUnit:+avgSecPerUnit.toFixed(2), throughputPerHour:+throughputPerHour.toFixed(1) };
+  }).sort(function(a,b){ return b.throughputPerHour-a.throughputPerHour; });
+
+  var grandSeconds=0, grandUnits=0;
+  rows.forEach(function(r){ grandSeconds+=r.totalSeconds; grandUnits+=r.totalUnits; });
+  var overallAvg = grandUnits ? grandSeconds/grandUnits : 0;
+  var overallTph = overallAvg ? 3600/overallAvg : 0;
+
+  render(rows, { totalSeconds:grandSeconds, totalUnits:grandUnits, avgSecPerUnit:+overallAvg.toFixed(2), throughputPerHour:+overallTph.toFixed(1) }, unmatchedOrders, usedFallback);
+  tphTrack('Calculated — '+rows.length+' pickers, '+grandUnits+' units');
+}
+
+function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
+function speedCol(v){ return v>=140?'#10B981':v>=100?'#F59E0B':'#EF4444'; }
+
+function render(rows, totals, unmatchedOrders, usedFallback){
+  var msg = unmatchedOrders ? (unmatchedOrders+' Lateslam row(s) had no matching order in Outbound Pick Data — excluded') : '✅ Calculated';
+  if(usedFallback) msg += ' (no rows tagged Process=Outbound — matched against all rows instead)';
+  setStatus(msg);
+  var kpis = document.getElementById('kpis');
+  var k = [
+    {ic:'👤',lb:'Pickers',vl:rows.length,sb:'active users',c:'#2563EB'},
+    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
+    {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
+    {ic:'🚀',lb:'Throughput/Hr',vl:totals.throughputPerHour.toFixed(1),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
+  ];
+  kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
+
+  var tb = document.getElementById('tb');
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="6">No matched rows for this filter</td></tr>'; return; }
+  tb.innerHTML = rows.map(function(r){
+    var col = speedCol(r.throughputPerHour);
+    return '<tr><td style="font-weight:700;color:#1a1830;">'+r.user+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.orders)+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
+      '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
+      '<td style="text-align:right;font-weight:800;color:'+col+';">'+r.throughputPerHour.toFixed(1)+'</td></tr>';
+  }).join('');
+}
+</script>
+</body>
+</html>
