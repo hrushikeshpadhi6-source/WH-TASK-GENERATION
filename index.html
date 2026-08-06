@@ -3764,6 +3764,29 @@ window.feedbackAdminClear=async function(){
     </div>
   </div>
 
+  <!-- Aisle Contribution Table -->
+  <div id="dd-aisle-wrap" style="display:none;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#7b78a8;">📍 Aisle Contribution — Late Slam</div>
+      <button onclick="ddExportAisleRaw()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1a7a4a,#14532d);color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:'Syne',sans-serif;">⬇ Export Aisle + Raw Data</button>
+    </div>
+    <div style="font-size:11px;color:#7b78a8;margin-bottom:10px;">Each late slam order counts once, against its primary aisle (the aisle it visited most while picking). % = count ÷ total late slams — always sums to 100%.</div>
+    <div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;">
+      <div style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead style="position:sticky;top:0;">
+            <tr style="background:#f0effe;">
+              <th style="padding:10px 14px;text-align:left;color:#1e1b4b;font-weight:800;">Aisle</th>
+              <th style="padding:10px 14px;text-align:center;color:#1e1b4b;font-weight:800;">Late Slam Count</th>
+              <th style="padding:10px 14px;text-align:center;color:#1e1b4b;font-weight:800;">% Contribution</th>
+              <th style="padding:10px 14px;text-align:left;color:#1e1b4b;font-weight:800;">Share</th>
+            </tr>
+          </thead>
+          <tbody id="dd-aisle-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 </div>
 </div>
@@ -7773,6 +7796,12 @@ function ddFileLoaded(num, input) {
   reader.readAsText(file, 'utf-8');
 }
 
+function ddGetAisle(loc) {
+  var l = (loc||'').toUpperCase().trim();
+  l = l.replace(/^P-1-/,'').replace(/-/g,'');
+  var m = l.match(/^[A-Z]+\d+/);
+  return m ? m[0] : (l || '—');
+}
 function ddGetZone(loc) {
   var l = (loc||'').toUpperCase();
   if (l.indexOf('P-1-A') !== -1) return 'Ambient';
@@ -7875,6 +7904,13 @@ function ddAnalyse() {
 
     // Unique zones
     var uniqueZones = [...new Set(zones)].join(', ');
+    // Aisles touched by this order's picks, plus ONE primary aisle (most-visited) for contribution ranking
+    var aisleLocs = picks.map(function(p){ return { loc: p['LocationId'], aisle: ddGetAisle(p['LocationId']) }; }).filter(function(al){ return al.aisle && al.aisle !== '—'; });
+    var aisles = [...new Set(aisleLocs.map(function(al){ return al.aisle; }))];
+    var aisleFreq = {};
+    aisleLocs.forEach(function(al){ aisleFreq[al.aisle] = (aisleFreq[al.aisle]||0) + 1; });
+    var primaryAisle = '';
+    Object.keys(aisleFreq).forEach(function(a){ if (!primaryAisle || aisleFreq[a] > aisleFreq[primaryAisle]) primaryAisle = a; });
 
     // Read time values directly from File 1 columns
     var assignToStage   = parseInt(r['assignment_to_stage_time_secs']) || 0; // col K
@@ -7885,7 +7921,7 @@ function ddAnalyse() {
       store: r['delivery_station_code'],
       dropTime, assignTime, stageTime,
       assignToFirstPick, pickDuration, packTime,
-      slowPicks, uniqueZones,
+      slowPicks, uniqueZones, aisles, aisleLocs, primaryAisle,
       pl_create: plCreateToStage, promise,
       hour: dropTime ? new Date(dropTime).getHours() : -1,
       delayBucket: ddDelayBucket(delay),
@@ -7936,8 +7972,19 @@ function ddAnalyse() {
     o.uniqueZones.split(', ').forEach(function(z){ if(z) hourData[o.hour].zones.push(z); });
   });
 
+  var lsOrders = orders.filter(function(o){ return o.isLS; });
+
+  // ── Aisle Contribution — how many late slams touched each aisle ──
+  // ── Aisle Contribution — each late slam order counts ONCE, against its primary (most-visited) aisle ──
+  var aisleCounts = {}, aisleRaw = [];
+  lsOrders.forEach(function(o) {
+    if (!o.primaryAisle) return;
+    aisleCounts[o.primaryAisle] = (aisleCounts[o.primaryAisle]||0) + 1;
+    aisleRaw.push({ oid: o.oid, store: o.store, picker: o.picker, location: '', aisle: o.primaryAisle, zone: ddGetZone(o.primaryAisle), dropTime: o.dropTime, delay: o.delay });
+  });
+
   _ddAnalysed = { orders, hourData, fcHourMap, upo, totalUnits, f1count: f1.length,
-    lsOrders: orders.filter(function(o){ return o.isLS; }) };
+    lsOrders, aisleCounts, aisleRaw };
 
   ddRenderAll();
   document.getElementById('dd-export-btn').style.display = 'inline-flex';
@@ -8054,8 +8101,41 @@ function ddRenderAll() {
   document.getElementById('dd-orders-body').innerHTML = obody || '<tr><td colspan="14" style="padding:20px;text-align:center;color:#1a7a4a;font-weight:700;">✅ No late slams in selected filter</td></tr>';
   document.getElementById('dd-orders-wrap').style.display = 'block';
 
-  // Breakdown charts
+  // Aisle Contribution table
+  var totalLS = d.lsOrders.length || 1;
+  var aisleRows = Object.keys(d.aisleCounts)
+    .map(function(a){ return { aisle: a, count: d.aisleCounts[a], pct: d.aisleCounts[a] / totalLS * 100 }; })
+    .sort(function(a,b){ return b.count - a.count; });
+  var abody = aisleRows.map(function(r) {
+    var col = r.pct >= 10 ? '#c0392b' : r.pct >= 5 ? '#e67e22' : '#1a7a4a';
+    return '<tr style="border-bottom:1px solid #f0effe;">' +
+      '<td style="padding:9px 14px;font-weight:800;color:#1e1b4b;font-family:monospace;">'+r.aisle+'</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:700;color:#7c3aed;">'+r.count+'</td>' +
+      '<td style="padding:9px 14px;text-align:center;font-weight:800;color:'+col+';">'+r.pct.toFixed(1)+'%</td>' +
+      '<td style="padding:9px 14px;"><div style="height:8px;border-radius:4px;background:#f0effe;overflow:hidden;max-width:220px;"><div style="height:100%;width:'+Math.min(r.pct,100)+'%;background:'+col+';"></div></div></td>' +
+      '</tr>';
+  }).join('');
+  document.getElementById('dd-aisle-body').innerHTML = abody || '<tr><td colspan="4" style="padding:20px;text-align:center;color:#1a7a4a;font-weight:700;">✅ No late slams in selected filter</td></tr>';
+  document.getElementById('dd-aisle-wrap').style.display = 'block';
+}
 
+function ddExportAisleRaw() {
+  if (!_ddAnalysed) { showToast('Run analysis first'); return; }
+  var wb = XLSX.utils.book_new();
+  var totalLS = _ddAnalysed.lsOrders.length || 1;
+  var contribRows = [['Aisle','Late Slam Count','% Contribution']];
+  Object.keys(_ddAnalysed.aisleCounts)
+    .map(function(a){ return { aisle:a, count:_ddAnalysed.aisleCounts[a] }; })
+    .sort(function(a,b){ return b.count - a.count; })
+    .forEach(function(r){ contribRows.push([r.aisle, r.count, (r.count/totalLS*100).toFixed(1)+'%']); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(contribRows), 'Aisle Contribution');
+
+  var rawRows = [['Order ID','Store','Picker','Location','Aisle','Zone','Drop Time','Delay (s)']];
+  _ddAnalysed.aisleRaw.forEach(function(r){ rawRows.push([r.oid, r.store, r.picker, r.location, r.aisle, r.zone, r.dropTime, r.delay]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rawRows), 'Aisle Raw Data');
+
+  XLSX.writeFile(wb, 'LS_AisleContribution_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('Excel exported — Aisle Contribution + Raw Data!');
 }
 
 
@@ -8116,8 +8196,22 @@ function ddExportExcel() {
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(spRows), 'Slow Picks Detail');
 
+  // Sheet 5: Aisle Contribution
+  var totalLS = d.lsOrders.length || 1;
+  var contribRows = [['Aisle','Late Slam Count','% Contribution']];
+  Object.keys(d.aisleCounts)
+    .map(function(a){ return { aisle:a, count:d.aisleCounts[a] }; })
+    .sort(function(a,b){ return b.count - a.count; })
+    .forEach(function(r){ contribRows.push([r.aisle, r.count, (r.count/totalLS*100).toFixed(1)+'%']); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(contribRows), 'Aisle Contribution');
+
+  // Sheet 6: Aisle Raw Data
+  var aisleRawRows = [['Order ID','Store','Picker','Location','Aisle','Zone','Drop Time','Delay (s)']];
+  d.aisleRaw.forEach(function(r){ aisleRawRows.push([r.oid, r.store, r.picker, r.location, r.aisle, r.zone, r.dropTime, r.delay]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aisleRawRows), 'Aisle Raw Data');
+
   XLSX.writeFile(wb, 'LS_DeepDive_' + new Date().toISOString().slice(0,10) + '.xlsx');
-  showToast('Excel exported — 4 sheets!');
+  showToast('Excel exported — 6 sheets!');
 }
 
 // ── Set default date ──────────────────────────────────────────
