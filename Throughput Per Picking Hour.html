@@ -44,6 +44,11 @@ tbody td{padding:10px 14px;border-bottom:1px solid #ece9fa;font-family:'DM Mono'
 tbody tr:hover td{background:#f8f7ff;}
 .empty{padding:26px;text-align:center;color:#7b78a8;font-size:13px;}
 .note{font-size:12px;color:#7b78a8;margin-top:10px;line-height:1.6;}
+.tabs{display:flex;gap:8px;margin-bottom:20px;}
+.tab-btn{padding:10px 20px;border-radius:10px;border:1px solid #d5d2f0;background:#fff;color:#3d3a6b;font-weight:700;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+.tab-btn.active{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border-color:transparent;}
+.panel{display:none;}
+.panel.active{display:block;}
 </style>
 </head>
 <body>
@@ -57,6 +62,12 @@ tbody tr:hover td{background:#f8f7ff;}
     </div>
   </div>
 
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBtnPicker" onclick="switchTab('picker')">👤 By Picker</button>
+    <button class="tab-btn" id="tabBtnStore" onclick="switchTab('store')">🏬 By Store</button>
+  </div>
+
+  <div class="panel active" id="panelPicker">
   <div class="upload-grid">
     <div class="dz" id="dz1" onclick="document.getElementById('f1').click()">
       <div class="ic">📋</div>
@@ -91,6 +102,37 @@ tbody tr:hover td{background:#f8f7ff;}
     </div>
   </div>
   <div class="note">Avg Sec/Unit = total assignment-to-stage seconds ÷ total units picked, per picker. Throughput/Hr = 3600 ÷ Avg Sec/Unit. Orders whose ID has no match in the Outbound Pick file are excluded from per-picker rows (shown in status).</div>
+  </div>
+
+  <div class="panel" id="panelStore">
+  <div class="upload-grid" style="grid-template-columns:1fr;">
+    <div class="dz" id="dzS" onclick="document.getElementById('fS').click()">
+      <div class="ic">📋</div>
+      <div class="ti">Lateslam UTR Data</div>
+      <div class="su">week_name (col B) · delivery_station_code (col F) · assignment_to_stage_seconds (col K) · units_picked (col N)</div>
+      <div class="fn" id="fnS"></div>
+      <input type="file" id="fS" accept=".csv,.xls,.xlsx" style="display:none" onchange="loadStoreFile(this)">
+    </div>
+  </div>
+
+  <div class="ctrl-row">
+    <input type="text" class="wk-input" id="wkFilterS" placeholder="Week32 (optional)" title="Filter rows by week_name — leave blank for all weeks">
+    <button class="calc-btn" id="calcBtnS" onclick="calcStore()" disabled>🔍 Calculate by Store</button>
+    <button class="calc-btn" id="exportBtnS" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3);" onclick="exportExcelStore()" disabled>⬇️ Export to Excel</button>
+    <span id="statusS"></span>
+  </div>
+
+  <div id="kpisS" class="kpi-grid"></div>
+  <div class="tbl-wrap">
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Store</th><th>Week</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">UPO</th><th>UPO Bucket</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
+        <tbody id="tbS"><tr><td class="empty" colspan="9">Upload Lateslam UTR Data, then click Calculate</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="note">Uses Lateslam UTR Data only — column B = week_name, F = store code, K = assignment-to-stage seconds, N = units picked. Rows grouped by store code; Avg Sec/Unit and Throughput/Hr computed the same way as the picker view.</div>
+  </div>
 </div>
 
 <script>
@@ -251,7 +293,7 @@ function exportExcel(){
       'Total Seconds': r.totalSeconds,
       'Total Units': r.totalUnits,
       'Avg Seconds/Unit': r.avgSecPerUnit,
-      'Throughput/Hr': r.throughputPerHour
+      'Throughput/Hr': Math.round(r.throughputPerHour)
     };
   });
   var ws = XLSX.utils.json_to_sheet(data);
@@ -267,6 +309,153 @@ function exportExcel(){
 function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
 function speedCol(v){ return v>165?'#10B981':v>=155?'#F59E0B':'#EF4444'; }
 
+function switchTab(t){
+  document.getElementById('panelPicker').classList.toggle('active', t==='picker');
+  document.getElementById('panelStore').classList.toggle('active', t==='store');
+  document.getElementById('tabBtnPicker').classList.toggle('active', t==='picker');
+  document.getElementById('tabBtnStore').classList.toggle('active', t==='store');
+}
+
+var STORE_FILE = null;
+function loadStoreFile(input){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  document.getElementById('fnS').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result, { type:'binary' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+      STORE_FILE = rows;
+      setStatusS('');
+    }catch(err){
+      setStatusS('❌ Could not read '+file.name+': '+err.message, true);
+      STORE_FILE = null;
+    }
+    document.getElementById('calcBtnS').disabled = !STORE_FILE;
+  };
+  reader.readAsBinaryString(file);
+}
+
+function setStatusS(msg, isErr){
+  var s = document.getElementById('statusS');
+  s.textContent = msg || '';
+  s.className = isErr ? 'err' : '';
+}
+
+function upoBucket(v){
+  if(v<=5) return '1-5';
+  if(v<=10) return '6-10';
+  if(v<=15) return '11-15';
+  if(v<=20) return '16-20';
+  if(v<=25) return '21-25';
+  return '26+';
+}
+
+var COL_WEEK_S=1, COL_STORE_S=5, COL_SEC_S=10, COL_UNITS_S=13; // B, F, K, N
+var LAST_STORE_ROWS = [];
+function calcStore(){
+  if(!STORE_FILE){ setStatusS('❌ Upload the file first', true); return; }
+  if(STORE_FILE.length<2){ setStatusS('❌ File has no data rows', true); return; }
+  var fWeek = document.getElementById('wkFilterS').value.trim();
+  var byStore = {};
+  var considered=0, skipped=0;
+  for(var i=1;i<STORE_FILE.length;i++){
+    var r = STORE_FILE[i];
+    var store = String(r[COL_STORE_S]||'').trim().toUpperCase().replace(/\s+/g,'').replace(/_SS$/,'');
+    if(!store){ skipped++; continue; }
+    if(fWeek){
+      var w = String(r[COL_WEEK_S]||'').replace(/\D/g,'');
+      if(w !== fWeek.replace(/\D/g,'')) continue;
+    }
+    considered++;
+    var wk = String(r[COL_WEEK_S]||'').trim();
+    var key = store+'|'+wk;
+    var secs = Number(r[COL_SEC_S])||0;
+    var units = Number(r[COL_UNITS_S])||0;
+    if(!byStore[key]) byStore[key]={ store:store, week:wk, totalSeconds:0, totalUnits:0, orders:0 };
+    byStore[key].totalSeconds += secs;
+    byStore[key].totalUnits   += units;
+    byStore[key].orders++;
+  }
+  if(considered===0){
+    setStatusS('❌ No rows matched'+(fWeek?' for week "'+fWeek+'"':'')+' — check column B (week) / F (store code)', true);
+    renderStore([], {totalSeconds:0,totalUnits:0,avgSecPerUnit:0,throughputPerHour:0});
+    return;
+  }
+  var rows = Object.keys(byStore).map(function(s){
+    var o = byStore[s];
+    var avgSecPerUnit = o.totalUnits ? o.totalSeconds/o.totalUnits : 0;
+    var throughputPerHour = avgSecPerUnit ? 3600/avgSecPerUnit : 0;
+    return { store:o.store, week:o.week, orders:o.orders, totalSeconds:Math.round(o.totalSeconds), totalUnits:o.totalUnits,
+      upo:+(o.orders?o.totalUnits/o.orders:0).toFixed(2),
+      avgSecPerUnit:+avgSecPerUnit.toFixed(2), throughputPerHour:+throughputPerHour.toFixed(1) };
+  }).sort(function(a,b){ return a.store.localeCompare(b.store) || a.week.localeCompare(b.week); });
+
+  var grandSeconds=0, grandUnits=0;
+  rows.forEach(function(r){ grandSeconds+=r.totalSeconds; grandUnits+=r.totalUnits; });
+  var overallAvg = grandUnits ? grandSeconds/grandUnits : 0;
+  var overallTph = overallAvg ? 3600/overallAvg : 0;
+
+  renderStore(rows, { totalSeconds:grandSeconds, totalUnits:grandUnits, avgSecPerUnit:+overallAvg.toFixed(2), throughputPerHour:+overallTph.toFixed(1) });
+  LAST_STORE_ROWS = rows;
+  document.getElementById('exportBtnS').disabled = !rows.length;
+  tphTrack('Calculated by store — '+rows.length+' stores, '+grandUnits+' units');
+}
+
+function renderStore(rows, totals){
+  setStatusS('✅ Calculated — '+rows.length+' store(s)');
+  var kpis = document.getElementById('kpisS');
+  var k = [
+    {ic:'🏬',lb:'Stores',vl:rows.length,sb:'in view',c:'#2563EB'},
+    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
+    {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
+    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
+  ];
+  kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
+
+  var tb = document.getElementById('tbS');
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="9">No matched rows for this filter</td></tr>'; return; }
+  tb.innerHTML = rows.map(function(r){
+    var col = speedCol(r.throughputPerHour);
+    return '<tr><td style="font-weight:700;color:#1a1830;">'+r.store+'</td>'+
+      '<td>'+(r.week||'—')+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.orders)+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
+      '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
+      '<td style="text-align:right;">'+r.upo.toFixed(1)+'</td>'+
+      '<td>'+upoBucket(r.upo)+'</td>'+
+      '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
+      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td></tr>';
+  }).join('');
+}
+
+function exportExcelStore(){
+  if(!LAST_STORE_ROWS.length){ setStatusS('❌ Nothing to export — calculate first', true); return; }
+  var data = LAST_STORE_ROWS.map(function(r){
+    return {
+      'Store': r.store,
+      'Week': r.week,
+      'Total Orders': r.orders,
+      'Total Seconds': r.totalSeconds,
+      'Total Units': r.totalUnits,
+      'UPO': r.upo,
+      'UPO Bucket': upoBucket(r.upo),
+      'Avg Seconds/Unit': r.avgSecPerUnit,
+      'Throughput/Hr': Math.round(r.throughputPerHour)
+    };
+  });
+  var ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:16},{wch:10},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:16},{wch:14}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Store Throughput');
+  var fWeek = document.getElementById('wkFilterS').value.trim();
+  var fname = 'Throughput_By_Store'+(fWeek?('_'+fWeek.replace(/[^a-zA-Z0-9]/g,'')):'')+'.xlsx';
+  XLSX.writeFile(wb, fname);
+  tphTrack('Exported store Excel — '+LAST_STORE_ROWS.length+' stores');
+}
+
 function render(rows, totals, unmatchedOrders, usedFallback){
   var msg = unmatchedOrders ? (unmatchedOrders+' Lateslam row(s) had no matching order in Outbound Pick Data — excluded') : '✅ Calculated';
   if(usedFallback) msg += ' (no rows tagged Process=Outbound — matched against all rows instead)';
@@ -276,7 +465,7 @@ function render(rows, totals, unmatchedOrders, usedFallback){
     {ic:'👤',lb:'Pickers',vl:rows.length,sb:'active users',c:'#2563EB'},
     {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
     {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
-    {ic:'🚀',lb:'Throughput/Hr',vl:totals.throughputPerHour.toFixed(1),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
+    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
   ];
   kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
 
@@ -289,7 +478,7 @@ function render(rows, totals, unmatchedOrders, usedFallback){
       '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
       '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
       '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
-      '<td style="text-align:right;font-weight:800;color:'+col+';">'+r.throughputPerHour.toFixed(1)+'</td></tr>';
+      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td></tr>';
   }).join('');
 }
 </script>
