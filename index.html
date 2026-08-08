@@ -3533,6 +3533,35 @@ window.feedbackAdminClear=async function(){
 
   <div id="ls-forecast-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:16px;line-height:1.6;"></div>
 
+  <!-- Forecast by Date Range -->
+  <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 24px;margin-bottom:18px;">
+    <div style="font-weight:700;font-size:14px;color:#1a1830;margin-bottom:12px;">📅 Forecast by Date Range</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
+      <div>
+        <div class="ctrl-label">Start Date</div>
+        <input class="input-field" type="date" id="ls-range-start" style="width:100%">
+      </div>
+      <div>
+        <div class="ctrl-label">End Date</div>
+        <input class="input-field" type="date" id="ls-range-end" style="width:100%">
+      </div>
+      <div>
+        <button class="btn btn-primary" style="width:100%;margin-top:2px;" onclick="lsFetchForecastRange()">☁️ Fetch Range Forecast</button>
+      </div>
+    </div>
+    <div id="ls-range-status" style="display:none;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:600;margin:14px 0 0;line-height:1.6;"></div>
+    <div id="ls-range-table-wrap" style="display:none;margin-top:16px;overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#f0effe;">
+          <th style="text-align:left;padding:9px 12px;border-bottom:2px solid #d5d2f0;">Store</th>
+          <th style="text-align:right;padding:9px 12px;border-bottom:2px solid #d5d2f0;">Total Orders</th>
+          <th style="text-align:right;padding:9px 12px;border-bottom:2px solid #d5d2f0;">Total Units</th>
+        </tr></thead>
+        <tbody id="ls-range-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Upload zone -->
   <div class="upload-zone" id="uz-lateslam" onclick="document.getElementById('f-lateslam').click()">
     <input type="file" id="f-lateslam" accept=".xlsx,.xls,.csv" style="display:none" onchange="lsHandleUpload(this)">
@@ -6675,6 +6704,60 @@ function lsParseSlot(raw) {
   return (hh < 10 ? '0' : '') + hh + ':' + (slotMn === 0 ? '00' : '30');
 }
 
+// ── Extract YYYY-MM-DD from a timestamp cell (mirrors lsParseSlot's parsing) ──
+function lsExtractDate(raw) {
+  if (raw === null || raw === undefined) return null;
+  if (raw instanceof Date) {
+    return raw.getFullYear() + '-' + String(raw.getMonth()+1).padStart(2,'0') + '-' + String(raw.getDate()).padStart(2,'0');
+  }
+  var s = String(raw).trim();
+  if (!s) return null;
+  var m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m) return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return m[3] + '-' + m[1].padStart(2,'0') + '-' + m[2].padStart(2,'0'); // assume M/D/YYYY
+  if (!isNaN(parseFloat(s)) && parseFloat(s) > 1000) {
+    var serial = Math.floor(parseFloat(s));
+    var d = new Date(Date.UTC(1899,11,30) + serial * 86400000);
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+  }
+  var nd = new Date(s);
+  if (!isNaN(nd.getTime())) return nd.getFullYear() + '-' + String(nd.getMonth()+1).padStart(2,'0') + '-' + String(nd.getDate()).padStart(2,'0');
+  return null;
+}
+
+// ── Sum forecast orders/units across every distinct date found in the uploaded data ──
+// Falls back to the single already-fetched lsFcOrders/lsFcUnits if no dates are found or all fetches fail.
+function lsSumForecastForDates(dates, callback) {
+  if (!dates.length) { callback(lsFcOrders, lsFcUnits); return; }
+  var fcO = {}, fcU = {}, idx = 0, gotAny = false;
+  function addMap(target, src) {
+    Object.keys(src || {}).forEach(function(store) {
+      if (!target[store]) target[store] = {};
+      var slots = src[store] || {};
+      Object.keys(slots).forEach(function(slot) {
+        target[store][slot] = (target[store][slot] || 0) + (Number(slots[slot]) || 0);
+      });
+    });
+  }
+  function next() {
+    if (idx >= dates.length) {
+      callback(gotAny ? fcO : lsFcOrders, gotAny ? fcU : lsFcUnits);
+      return;
+    }
+    var d = dates[idx++];
+    appsScriptJSONP(
+      { action: 'forecast', date: d },
+      function(data) {
+        if (data && data.status !== 'error') { addMap(fcO, data.orders); addMap(fcU, data.units); gotAny = true; }
+        next();
+      },
+      function() { next(); }
+    );
+  }
+  next();
+}
+
 // ── Lateslam: pl_create_to_stage > promise_utr (seconds) ────
 // These are NUMERIC columns, not timestamps
 function lsIsLateslam(plToStage, promiseUtr) {
@@ -7134,6 +7217,91 @@ function lsFetchForecast() {
 function parseGvizTable(r) { return {}; }
 function lsParseSlotFromRange(s) { return null; }
 
+// ── Fetch Forecast for a Date Range (sums orders & units per store) ──
+function lsFetchForecastRange() {
+  var statusEl = document.getElementById('ls-range-status');
+  function setRangeStatus(msg, type) {
+    statusEl.style.display = 'block';
+    statusEl.style.background  = type==='ok' ? '#f0fdf4' : type==='warn' ? '#fff3cd' : '#fff0f0';
+    statusEl.style.color       = type==='ok' ? '#166534' : type==='warn' ? '#856404' : '#c00';
+    statusEl.style.border      = '1px solid ' + (type==='ok' ? '#86efac' : type==='warn' ? '#fde68a' : '#fca5a5');
+    statusEl.style.padding = '11px 16px'; statusEl.style.borderRadius = '8px';
+    statusEl.innerHTML = msg;
+  }
+
+  var startVal = document.getElementById('ls-range-start').value;
+  var endVal   = document.getElementById('ls-range-end').value;
+  if (!startVal || !endVal) { setRangeStatus('⚠️ Select both a start and end date.', 'warn'); return; }
+  if (startVal > endVal) { setRangeStatus('⚠️ Start date must be before end date.', 'warn'); return; }
+
+  // Build list of YYYY-MM-DD strings in range (inclusive)
+  var dates = [];
+  var cur = new Date(startVal + 'T12:00:00');
+  var end = new Date(endVal + 'T12:00:00');
+  while (cur <= end) {
+    dates.push(cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0') + '-' + String(cur.getDate()).padStart(2,'0'));
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (dates.length > 31) { setRangeStatus('⚠️ Range too large — please pick 31 days or fewer.', 'warn'); return; }
+
+  document.getElementById('ls-range-table-wrap').style.display = 'none';
+  setRangeStatus('⏳ Fetching forecast for ' + dates.length + ' day(s)…', 'warn');
+
+  var totals = {}; // { store: { orders, units } }
+  var idx = 0, failed = 0;
+
+  function addDay(data) {
+    var ordersByStore = data.orders || {};
+    var unitsByStore  = data.units  || {};
+    Object.keys(ordersByStore).forEach(function(store) {
+      if (!totals[store]) totals[store] = { orders: 0, units: 0 };
+      var slots = ordersByStore[store] || {};
+      Object.keys(slots).forEach(function(slot) { totals[store].orders += Number(slots[slot]) || 0; });
+    });
+    Object.keys(unitsByStore).forEach(function(store) {
+      if (!totals[store]) totals[store] = { orders: 0, units: 0 };
+      var slots = unitsByStore[store] || {};
+      Object.keys(slots).forEach(function(slot) { totals[store].units += Number(slots[slot]) || 0; });
+    });
+  }
+
+  function next() {
+    if (idx >= dates.length) {
+      var stores = Object.keys(totals).sort();
+      if (!stores.length) {
+        setRangeStatus('⚠️ No forecast data found for ' + startVal + ' → ' + endVal + '.', 'warn');
+        return;
+      }
+      var tbody = document.getElementById('ls-range-tbody');
+      var grandOrders = 0, grandUnits = 0;
+      tbody.innerHTML = stores.map(function(s) {
+        grandOrders += totals[s].orders; grandUnits += totals[s].units;
+        return '<tr><td style="padding:9px 12px;border-bottom:1px solid #eee;font-weight:700;">' + s + '</td>' +
+          '<td style="padding:9px 12px;border-bottom:1px solid #eee;text-align:right;">' + Math.round(totals[s].orders).toLocaleString() + '</td>' +
+          '<td style="padding:9px 12px;border-bottom:1px solid #eee;text-align:right;">' + Math.round(totals[s].units).toLocaleString() + '</td></tr>';
+      }).join('') +
+      '<tr><td style="padding:9px 12px;font-weight:800;">Total</td>' +
+      '<td style="padding:9px 12px;text-align:right;font-weight:800;">' + Math.round(grandOrders).toLocaleString() + '</td>' +
+      '<td style="padding:9px 12px;text-align:right;font-weight:800;">' + Math.round(grandUnits).toLocaleString() + '</td></tr>';
+      document.getElementById('ls-range-table-wrap').style.display = 'block';
+      var msg = '✅ Loaded ' + dates.length + ' day(s) · ' + startVal + ' → ' + endVal + ' · ' + stores.length + ' store(s)';
+      if (failed) msg += ' <span style="color:#856404;">(' + failed + ' day(s) failed)</span>';
+      setRangeStatus(msg, 'ok');
+      return;
+    }
+    var d = dates[idx++];
+    appsScriptJSONP(
+      { action: 'forecast', date: d },
+      function(data) {
+        if (data && data.status !== 'error') addDay(data); else failed++;
+        next();
+      },
+      function() { failed++; next(); }
+    );
+  }
+  next();
+}
+
 // ── Generate Report ──────────────────────────────────────────
 function lsGenerate() {
   if (!lsData.length) { showToast('⚠️ Upload orders file first'); return; }
@@ -7170,6 +7338,15 @@ function lsGenerate() {
   document.getElementById('out-lateslam').innerHTML = '';
   document.getElementById('export-lateslam').style.display = 'none';
 
+  // Detect every distinct calendar day present in the uploaded data (whole-days mode)
+  var datesSeen = {};
+  lsData.forEach(function(row) {
+    var dd = lsExtractDate(row[slotCol]);
+    if (dd) datesSeen[dd] = true;
+  });
+  var wholeDays = Object.keys(datesSeen).sort();
+
+  lsSumForecastForDates(wholeDays, function(fcOrdersMap, fcUnitsMap) {
   setTimeout(function() {
     // Group rows by store
     var storeMap = {};
@@ -7261,8 +7438,8 @@ function lsGenerate() {
         }
         return {};
       }
-      var fcO = getFc(lsFcOrders);
-      var fcU = getFc(lsFcUnits);
+      var fcO = getFc(fcOrdersMap);
+      var fcU = getFc(fcUnitsMap);
 
       var result = lsBuildTable(storeId, slots, fcO, fcU, reportDate);
       allHTML += result.html;
@@ -7278,8 +7455,9 @@ function lsGenerate() {
     document.getElementById('export-lateslam').style.display = 'flex';
     setTimeout(lsRenderPeakTrend, 50); // render peak chart after DOM settles
     showLoading('lateslam', false);
-    showToast('✅ Done — ' + stores.length + ' store(s), check results!');
+    showToast('✅ Done — ' + stores.length + ' store(s)' + (wholeDays.length > 1 ? ' · FC summed across ' + wholeDays.length + ' day(s)' : '') + ', check results!');
   }, 200);
+  });
 }
 
 // ── Build one store table ─────────────────────────────────────
