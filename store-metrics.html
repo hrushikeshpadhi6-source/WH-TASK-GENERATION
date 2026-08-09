@@ -1038,6 +1038,11 @@ tbody tr:hover{background:var(--row-hover);}
 
   <div id="ana-kpis" class="kpi-grid ani2"></div>
 
+  <div class="chart-card ani2" id="ana-conc-nl-card" style="display:none;">
+    <div class="sec-hdr">🎟️ Concession &amp; 🏭 Network Loss — Prev vs Current Week</div>
+    <div id="ana-conc-nl"></div>
+  </div>
+
   <div class="charts-2" style="grid-template-columns:1.3fr 1fr;">
     <div class="chart-card ani2">
       <div class="sec-hdr">📉 Trend — <span id="ana-trend-lbl">Orders</span> across recent periods</div>
@@ -2886,6 +2891,7 @@ function smLeaderboard(rows){
 // ═══════════════════════════════════════════════
 function smCallout(data,rows){
   var el=document.getElementById('sm-callout'); if(!el) return;
+  var nlPeriod=(smPeriod==='week'||smPeriod==='month');
 
   // Build per-store raw rows lookup for IB SLA TRANS + date info
   var storeRowMap={};
@@ -2909,7 +2915,8 @@ function smCallout(data,rows){
   var flagged=enriched.filter(function(d){
     if(!d.orders) return false;
     var lsPct=d.orders>0?(d.ls/d.orders*100):0;
-    return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1 || d.lsV2Pct>3;
+    var concR=nlPeriod?scRateForStore(d.store):null;
+    return d.ibSlaTrans<90 || d.ibTph<140 || lsPct>1 || d.lsV2Pct>3 || (concR!=null && concR>=0.005);
   });
 
 
@@ -2961,6 +2968,12 @@ function smCallout(data,rows){
       var ls2Bg=d.lsV2Pct<=4?'rgba(245,158,11,0.12)':'rgba(239,68,68,0.12)';
       var ls2Bd=d.lsV2Pct<=4?'rgba(245,158,11,0.40)':'rgba(239,68,68,0.40)';
       chips+=chip('LS v2', d.lsV2+' ('+d.lsV2Pct.toFixed(2)+'%)', ls2C, ls2Bg, ls2Bd, 'Late Slam v2 — tgt ≤3%');
+    }
+
+    // Concession — only if weekly rate ≥0.5% (concession/WHL/WHD only update on week/month filters)
+    var concR=nlPeriod?scRateForStore(d.store):null;
+    if(concR!=null && concR>=0.005){
+      chips+=chip('Concession', (concR*100).toFixed(2)+'%', '#EF4444','rgba(239,68,68,0.12)','rgba(239,68,68,0.40)','Store Concession — tgt <0.5%');
     }
 
     // Skip / Short — only if > 0
@@ -3792,6 +3805,13 @@ function copySummary(){
       } else {
         lines.push('🏭 WHL / WHD: '+((!nlData||!nlData.length)?'Fetch Network Loss':'—'));
       }
+      if(scData&&scData.length){
+        var scRThis=scRateForStore(s);
+        lines.push('🎟️ Store Concession: '+(scRThis==null?'—':(scRThis*100).toFixed(2)+'%'));
+      }
+    } else {
+      lines.push('📦 WHD (Warehouse Damage): Not Updated');
+      lines.push('🎟️ Store Concession: Not Updated');
     }
     lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     lines.push('');
@@ -3812,11 +3832,7 @@ function copySummary(){
   lines.push('⏭️ Total Skips/Shorts: '+T.skip+'/'+T.short);
   lines.push('🎙️ Total VOC: '+(smVocRaw&&smVocRaw.length?fmt(T.voc):'Fetch VOC'));
   lines.push('🎯 Total UTR: '+(smVocRaw&&smVocRaw.length?fmt(T.utr):'Fetch VOC'));
-  var tNetLsV2=T.orders>0?(T.lsv2/T.orders*100).toFixed(2)+'%':'N/A';
-  var tNetLsV1=T.orders>0?(T.lsV1/T.orders*100).toFixed(2)+'%':'N/A';
   var tAvgIbTph=T.ibTphArr.length?(T.ibTphArr.reduce(function(a,b){return a+b;},0)/T.ibTphArr.length).toFixed(0):'N/A';
-  lines.push('📊 Network LS V2 %: '+tNetLsV2+' ('+fmt(T.lsv2)+' of '+fmt(T.orders)+' orders)');
-  lines.push('📊 Network LS V1 %: '+tNetLsV1+' ('+fmt(T.lsV1)+' of '+fmt(T.orders)+' orders)');
   lines.push('⚡ IB TPH Avg (Network): '+tAvgIbTph+'  · tgt ≥'+IB_TPH_TARGET);
   lines.push('🤝 Total Donated Marked: '+fmt(T.donate));
   lines.push('🔴 Total Damages: '+fmt(T.damRem));
@@ -3825,23 +3841,26 @@ function copySummary(){
     lines.push('🏭 Avg WHL (Warehouse Loss): '+(T.nlWhlW/T.nlGms).toFixed(2)+'%');
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');
   }
-  if(scData&&scData.length){
+  if(nlPeriod && scData && scData.length){
     var scPeriodTxt=(scActiveWeek()!=null)?('Wk'+scActiveWeek()):(smPeriod==='month'?(scActiveMonth()||'this month'):'peak week');
     var scVals=scData.map(function(r){ return {r:r, v:scCurrentValue(r)}; }).filter(function(x){ return x.v!=null; });
-    var flagged=scVals.filter(function(x){ return x.v>=0.003; });
     lines.push('');
-    lines.push('🎟️ Store Concessions — '+scPeriodTxt+' · orange ≥0.30%, red ≥0.50%:');
-    if(flagged.length){
-      flagged.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
-        lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.v*100).toFixed(2)+'%'+(x.v>=0.005?' 🔴':' 🟠'));
-      });
-    } else {
-      lines.push('  • None — all stores under 0.30%');
-    }
+    lines.push('🎟️ Store Concessions — '+scPeriodTxt+' · orange ≥0.30%, red ≥0.50%, green <0.20%:');
     if(scVals.length){
+      scVals.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
+        var flag=x.v>=0.005?' 🔴':x.v>=0.003?' 🟠':x.v<0.002?' 🟢':'';
+        lines.push('  • '+x.r.store+' ('+(x.r.name||'')+'): '+(x.v*100).toFixed(2)+'%'+flag);
+      });
+      var under2=scVals.filter(function(x){ return x.v<0.002; });
+      lines.push('  Under 0.20% target: '+(under2.length?under2.map(function(x){return x.r.store;}).join(', '):'None'));
       var avgAll=scVals.reduce(function(s,x){return s+x.v;},0)/scVals.length;
       lines.push('  Avg (all stores): '+(avgAll*100).toFixed(2)+'%');
+    } else {
+      lines.push('  No concession data');
     }
+  } else if(scData && scData.length){
+    lines.push('');
+    lines.push('🎟️ Store Concessions: Not Updated (day filter — switch to week/month)');
   }
   lines.push('');
   lines.push('Generated by Dark Store Management System (DMS PRO)');
@@ -4082,7 +4101,52 @@ function anaRender(){
   anaDrawFullTable(curRows,prevRows);
   anaDrawScorecards(curRows,prevRows);
   anaRenderForecastCard(curRows,prevRows);
+  anaRenderConcNl();
 }
+
+// Store Concession % (all-store avg) and WHL/WHD (GMS-weighted) for a given ANA week key.
+function anaConcForWeek(wk){
+  if(!scData||!scData.length) return null;
+  var w=parseInt(String(wk).replace(/\D/g,''),10);
+  if(scWeekCols.indexOf(w)===-1) return null;
+  var vals=scData.map(function(r){return r.weeks?r.weeks[w]:null;}).filter(function(v){return v!=null;});
+  if(!vals.length) return null;
+  return vals.reduce(function(a,b){return a+b;},0)/vals.length;
+}
+function anaNlForWeek(wk){
+  if(!nlData||!nlData.length) return null;
+  var w=String(wk).replace(/\D/g,'');
+  var rs=nlData.filter(function(r){return String(r.week).replace(/\D/g,'')===w;});
+  if(!rs.length) return null;
+  var g=0,wl=0,wd=0;
+  rs.forEach(function(r){var gw=Number(r.gms)||0; g+=gw; wl+=(Number(r.whl)||0)*gw; wd+=(Number(r.whd)||0)*gw;});
+  return {whl:g?wl/g:0, whd:g?wd/g:0};
+}
+function anaConcNlRow(label,cv,pv,color){
+  var delta=(cv!=null&&pv!=null)?cv-pv:null;
+  var fmtP=function(v){return v==null?'—':(v*100).toFixed(2)+'%';};
+  var deltaTxt=delta==null?'':' <span style="color:'+(delta>0?'#EF4444':delta<0?'#10B981':'var(--muted)')+';font-weight:800;">('+(delta>0?'+':'')+(delta*100).toFixed(2)+'pp)</span>';
+  return '<div class="kpi" style="--kc:'+color+';">'+
+    '<div class="kpi-lbl">'+label+'</div>'+
+    '<div class="kpi-val">'+fmtP(cv)+'</div>'+
+    '<div class="kpi-sub">Prev '+fmtP(pv)+deltaTxt+'</div>'+
+  '</div>';
+}
+function anaRenderConcNl(){
+  var card=document.getElementById('ana-conc-nl-card'), el=document.getElementById('ana-conc-nl');
+  if(!card||!el) return;
+  if(ANA.by!=='week'){ card.style.display='none'; return; }
+  card.style.display='block';
+  var curConc=anaConcForWeek(ANA.curKey), prevConc=ANA.prevKey?anaConcForWeek(ANA.prevKey):null;
+  var curNl=anaNlForWeek(ANA.curKey), prevNl=ANA.prevKey?anaNlForWeek(ANA.prevKey):null;
+  if(curConc==null && !curNl){ el.innerHTML='<div class="empty">Fetch Concessions / Network Loss to compare this week.</div>'; return; }
+  el.innerHTML='<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">'+
+    anaConcNlRow('Store Concession (avg all stores)', curConc, prevConc, '#7C3AED')+
+    anaConcNlRow('WHL (Warehouse Loss)', curNl?curNl.whl:null, prevNl?prevNl.whl:null, '#F59E0B')+
+    anaConcNlRow('WHD (Warehouse Damage)', curNl?curNl.whd:null, prevNl?prevNl.whd:null, '#EF4444')+
+  '</div>';
+}
+
 
 var anaTrendChartObj=null;
 function anaDrawTrend(){
