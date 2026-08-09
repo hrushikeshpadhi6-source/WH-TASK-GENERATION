@@ -1170,7 +1170,12 @@ to{width:65%;} }
 @media print {
   body * { visibility: hidden !important; }
   #locid-print-area, #locid-print-area *,
-  #bql-print-area, #bql-print-area * { visibility: visible !important; }
+  #bql-print-area, #bql-print-area * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
   #locid-print-area, #bql-print-area {
     position: fixed !important;
     top: 0; left: 0; width: 100%; height: 100%;
