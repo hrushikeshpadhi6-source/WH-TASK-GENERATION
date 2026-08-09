@@ -955,7 +955,7 @@ tbody tr:hover{background:var(--row-hover);}
         <div class="sr-head">Weighted Scorecard <span>— 6 KPIs. Final Score = total points out of <b>100</b>. WHL/WHD excluded from score (separate dashboard).</span></div>
       <div class="sr-grid">
         <div class="sr-item"><span class="sr-w" style="color:#F59E0B;">20</span><div class="sr-tx"><b>Late Slam v2</b><i>≤3% →20 · ≤4% →10 · else 0</i></div></div>
-        <div class="sr-item"><span class="sr-w" style="color:#7C3AED;">10</span><div class="sr-tx"><b>VOC / UTR</b><i>≤0.010% →10 · ≤0.020% →5 · else 0</i></div></div>
+        <div class="sr-item"><span class="sr-w" style="color:#7C3AED;">10</span><div class="sr-tx"><b>Store Concession</b><i>&lt;0.3% →10 · &lt;0.5% →5 · ≥0.5% →0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#EF4444;">10</span><div class="sr-tx"><b>Damage Removal</b><i>0–2 →10 · 3–7 →5 · 8–15 →2.5 · &gt;15 →0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#0EA5E9;">15</span><div class="sr-tx"><b>IB TPH</b><i>&gt;140 →15 · ≥126 →7.5 · else 0</i></div></div>
         <div class="sr-item"><span class="sr-w" style="color:#c79a4b;">15</span><div class="sr-tx"><b>Skip</b><i>0 →15 · 1–3 →7.5 · &gt;3 →0</i></div></div>
@@ -1081,6 +1081,16 @@ tbody tr:hover{background:var(--row-hover);}
 // CONFIG
 // ═══════════════════════════════════════════════
 var APPS_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+(function smTrackOpen(){
+  try{
+    var u = JSON.parse(localStorage.getItem('dstpro_user_info')||'{}');
+    var name = u.name || 'Unknown';
+    var ua = navigator.userAgent;
+    var device = /iPhone|iPad/.test(ua) ? 'iOS' : (/Android/.test(ua) ? 'Android' : 'Web');
+    var img = new Image();
+    img.src = APPS_URL+'?action=trackActivity&name='+encodeURIComponent(name)+'&tool='+encodeURIComponent('Store Metrics')+'&action='+encodeURIComponent('Opened')+'&ts='+encodeURIComponent(new Date().toISOString())+'&device='+encodeURIComponent(device);
+  }catch(e){}
+})();
 var SC = {QAA1:'#2563EB',QAA6:'#10B981',QAA7:'#F59E0B',QDC6:'#EC4899',QDD3:'#7C3AED',QDG5:'#0EA5E9',QDG8:'#F97316'};
 function smGoBack(){
   // Page opens in a new tab via window.open() from index.html, so history.back()
@@ -2403,7 +2413,16 @@ function smUtrCount(s, rows){ return smVocFilteredRows(s, rows).filter(function(
 var SCORE_MAX = 20 + 10 + 10 + 15 + 15 + 15 + 15; // 100 pts — LSV2:20 VOC:10 DAM:10 TPH:15 Skip:15 Short:15 SLA:15
 function lsV2Points(pct){ if(pct<=3) return 20; if(pct<=4) return 10; return 0; }
 function tphPoints(t, store){ var tgt=(store&&smNewStores.has(String(store).toUpperCase()))?60:140; if(t>tgt) return 15; if(t>=Math.round(tgt*0.9)) return 7.5; return 0; }
-function vocPoints(rate){ if(rate<=VOC_UTR_TARGET) return 10; if(rate<=VOC_UTR_TARGET*2) return 5; return 0; }
+// Store Concession points — uses the weekly Store Concessions % (scData), matched by
+// normalized store code. <0.3% weekly →10 · <0.5% weekly →5 · ≥0.5% →0.
+function scRateForStore(store){
+  if(!scData||!scData.length) return null;
+  var norm=String(store||'').replace(/\s+/g,'').toUpperCase().replace(/_SS$/,'');
+  var row=scData.filter(function(r){ return String(r.store||'').replace(/\s+/g,'').toUpperCase().replace(/_SS$/,'')===norm; })[0];
+  if(!row) return null;
+  return scCurrentValue(row);
+}
+function concPoints(rate){ if(rate==null) return 10; if(rate<0.003) return 10; if(rate<0.005) return 5; return 0; }
 function skipPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
 function shortPoints(n){ if(n<=0) return 15; if(n<=3) return 7.5; return 0; }
 function slaPoints(p){ if(p>=95) return 15; if(p>=90) return 7.5; return 0; }
@@ -2412,7 +2431,7 @@ function damPoints(n){ if(n<=2) return 10; if(n<=7) return 5; if(n<=15) return 2
 function smScoreParts(d){
   return [
     {k:'Late Slam v2',    max:20, pts:lsV2Points(d.lsV2Pct||0),  detail:(d.lsV2||0)+' · '+(d.lsV2Pct||0).toFixed(2)+'% (tgt ≤3%)'},
-    {k:'VOC / UTR',       max:10, pts:vocPoints(d.utrRate||0),   detail:(d.utr||0)+' · '+(d.utrRate||0).toFixed(3)+'% (≤0.010%=10 · each +0.001% −1pt)'},
+    {k:'Store Concession', max:10, pts:concPoints(scRateForStore(d.store)), detail:(function(){ var r=scRateForStore(d.store); return r==null?'no data (10)':(r*100).toFixed(2)+'% (<0.3%=10 · <0.5%=5 · ≥0.5%=0)'; })()},
     {k:'Damage Removal',  max:10, pts:damPoints(d.damRem||0),    detail:(d.damRem||0)+' (0–2 =10, 3–7 =5, 8–15 =2.5, >15 =0)'},
     {k:'IB TPH',          max:15, pts:tphPoints(d.ibTph||0,d.store), detail:(d.ibTph||0).toFixed(0)+(d.store&&smNewStores.has(String(d.store).toUpperCase())?' (>60 =15 · new store)':' (>140 =15)')  },
     {k:'Skip',            max:15, pts:skipPoints(d.skip||0),     detail:(d.skip||0)+' (0 =15)'},
