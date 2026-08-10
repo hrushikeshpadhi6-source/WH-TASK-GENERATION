@@ -2438,6 +2438,13 @@ window.feedbackAdminClear=async function(){
       <span class="card-arrow">→</span>
     </div>
 
+    <div class="task-card" style="--card-color:#EA580C;" onclick="openTask('smart-stow')">
+      <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🎯</span>
+      <h3 style="background:linear-gradient(135deg,#EA580C,#DC2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Smart Stowing</h3>
+      <p>Check ASIN location capacity or get automatic stow recommendations by Bay — same-ASIN matching first.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
     <div class="task-section-head" id="sec-ops"><span class="tsh-label">Ops &amp; Support</span><span class="tsh-line"></span></div>
     <div class="task-card" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
       
@@ -2473,6 +2480,92 @@ window.feedbackAdminClear=async function(){
 </footer>
 
 </div>
+
+<!-- SMART STOWING -->
+<div class="page" id="page-smart-stow" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page" style="--bg:#f8f7ff;--surface:#ffffff;--border:#d5d2f0;--text:#1a1830;--muted:#7b78a8;color:#1a1830;">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">← Back to Dashboard</button>
+  <div class="task-header">
+    <span class="task-header-icon">🎯</span>
+    <div>
+      <h2 style="background:none;-webkit-text-fill-color:#1a1830;color:#1a1830;">Smart Stowing — ASIN Location Capacity</h2>
+      <p>Upload Transshipment + Real-Time Inventory, pick a Bay and ASIN limit, then check capacity or get stow recommendations.</p>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+    <button class="ss-tab active" id="ss-tab-1" onclick="ssSwitchTab(1)">📊 Location Space Checker</button>
+    <button class="ss-tab" id="ss-tab-2" onclick="ssSwitchTab(2)">🎯 Smart Stow Recommendation</button>
+  </div>
+  <div id="ss-tab-desc" style="font-size:13px;color:#7b78a8;margin-bottom:20px;">View available ASIN capacity per location. No recommendations.</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="ss-upload-grid">
+    <div class="upload-zone" id="uz-ss-trans" onclick="triggerUpload('f-ss-trans')" style="background:#fff;border-color:#d5d2f0;">
+      <input type="file" id="f-ss-trans" accept=".xlsx,.xls,.csv" onchange="ssHandleUpload(this,'trans')">
+      <div class="u-icon">📥</div>
+      <h3 style="color:#1a1830;">Transshipment File</h3>
+      <p>Incoming ASINs &amp; quantities</p>
+      <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+    </div>
+    <div class="upload-zone" id="uz-ss-inv" onclick="triggerUpload('f-ss-inv')" style="background:#fff;border-color:#d5d2f0;">
+      <input type="file" id="f-ss-inv" accept=".xlsx,.xls,.csv" onchange="ssHandleUpload(this,'inv')">
+      <div class="u-icon">📦</div>
+      <h3 style="color:#1a1830;">Real-Time Inventory File</h3>
+      <p>Current ASINs, locations &amp; quantities</p>
+      <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+    </div>
+  </div>
+
+  <div class="file-ok" id="fo-ss-trans" style="margin-bottom:10px;">
+    <span>✅</span><div class="fi-info"><strong id="fo-ss-trans-name">—</strong><span id="fo-ss-trans-info">—</span></div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ssResetUpload('trans')">✕</button>
+  </div>
+  <div class="file-ok" id="fo-ss-inv">
+    <span>✅</span><div class="fi-info"><strong id="fo-ss-inv-name">—</strong><span id="fo-ss-inv-info">—</span></div>
+    <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ssResetUpload('inv')">✕</button>
+  </div>
+
+  <div class="ctrl-row" id="ss-ctrl-row" style="display:none;">
+    <div>
+      <div class="ctrl-label">Bay <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(Ctrl/Cmd+click for multiple)</span></div>
+      <select class="select-field" id="ss-bay" multiple style="min-width:160px;height:84px;"></select>
+    </div>
+    <div>
+      <div class="ctrl-label">ASIN Limit / Location</div>
+      <input class="input-field" type="number" id="ss-limit" value="6" min="1" style="width:110px;">
+    </div>
+    <button class="btn btn-primary" onclick="ssRun()">⚡ Generate</button>
+  </div>
+
+  <div class="loading" id="load-smart-stow">
+    <div class="loading-inner"><div class="spinner"></div><div class="loading-status-text" style="transition:opacity 0.2s;">Processing...</div>
+      <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+    </div>
+  </div>
+
+  <div id="out-smart-stow"></div>
+  <div class="btn-row" id="export-smart-stow" style="display:none;">
+    <button class="btn btn-green" onclick="ssExportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-accent" id="ss-print-btn" style="display:none;" onclick="ssPrintPlan()">🖨 Print Stow Plan</button>
+  </div>
+</div>
+</div>
+<div id="ss-print-area" style="display:none;"></div>
+<style>
+.ss-tab { padding:10px 18px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;color:#3d3a6b;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s; }
+.ss-tab.active { background:linear-gradient(135deg,#EA580C,#DC2626);color:#fff;border-color:transparent; }
+.ss-badge { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap; }
+.ss-badge-green { background:rgba(16,185,129,0.12);color:#0f766e; }
+.ss-badge-red { background:rgba(220,38,38,0.12);color:#b91c1c; }
+#page-smart-stow .results-panel { background:#fff;border-color:#d5d2f0; }
+#page-smart-stow .results-header { background:linear-gradient(135deg,#1a1830,#2d2b5e); }
+#page-smart-stow table td { color:#3d3a6b; }
+@media print {
+  body * { visibility:hidden !important; }
+  #ss-print-area, #ss-print-area * { visibility:visible !important; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  #ss-print-area { display:block !important; position:fixed !important; top:0; left:0; width:100%; }
+}
+</style>
 
 <!-- CONSOLIDATION -->
 <div class="page" id="page-consolidation">
@@ -5241,6 +5334,244 @@ function showLoading(id, show) {
 
 function findCol(headers, patterns) {
   return headers.find(h => patterns.some(p => new RegExp(p, 'i').test(h))) || '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SMART STOWING — ASIN LOCATION CAPACITY CHECKER
+// ═══════════════════════════════════════════════════════════════
+var ssData = { trans:{data:[],headers:[]}, inv:{data:[],headers:[]}, results:[], mode:1 };
+
+function ssHandleUpload(input, key) {
+  var file = input.files[0]; if (!file) return;
+  var ext = file.name.split('.').pop().toLowerCase();
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = ext === 'csv' ? XLSX.read(e.target.result, { type: 'string' }) : XLSX.read(e.target.result, { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!json.length) { showToast('⚠️ File appears empty'); return; }
+      ssData[key].data = json;
+      ssData[key].headers = Object.keys(json[0]);
+      document.getElementById('fo-ss-' + key).classList.add('show');
+      document.getElementById('fo-ss-' + key + '-name').textContent = file.name;
+      document.getElementById('fo-ss-' + key + '-info').textContent = json.length.toLocaleString() + ' rows';
+      ssMaybeReady();
+      showToast('✅ Loaded ' + json.length.toLocaleString() + ' rows');
+    } catch (err) { showToast('❌ Could not read file'); }
+  };
+  if (ext === 'csv') reader.readAsText(file); else reader.readAsArrayBuffer(file);
+}
+
+function ssResetUpload(key) {
+  ssData[key] = { data: [], headers: [] };
+  document.getElementById('fo-ss-' + key).classList.remove('show');
+  document.getElementById('f-ss-' + key).value = '';
+  document.getElementById('ss-ctrl-row').style.display = 'none';
+  document.getElementById('out-smart-stow').innerHTML = '';
+  document.getElementById('export-smart-stow').style.display = 'none';
+}
+
+function ssMaybeReady() {
+  var ready = ssData.mode === 1 ? ssData.inv.data.length : (ssData.trans.data.length && ssData.inv.data.length);
+  if (ready) {
+    ssPopulateBays();
+    document.getElementById('ss-ctrl-row').style.display = 'flex';
+  } else {
+    document.getElementById('ss-ctrl-row').style.display = 'none';
+  }
+}
+
+function ssPopulateBays() {
+  var h = ssData.inv.headers;
+  var locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
+  var bays = {};
+  ssData.inv.data.forEach(function(r) {
+    var loc = (r[locCol] || '').toString();
+    if (!loc) return;
+    var b = extractBay(loc);
+    if (b) bays[b] = true;
+  });
+  var sel = document.getElementById('ss-bay');
+  var cur = Array.from(sel.selectedOptions).map(function(o){ return o.value; });
+  sel.innerHTML = Object.keys(bays).sort().map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('');
+  Array.from(sel.options).forEach(function(o){ if (cur.indexOf(o.value) > -1) o.selected = true; });
+}
+
+function ssSwitchTab(n) {
+  ssData.mode = n;
+  document.getElementById('ss-tab-1').classList.toggle('active', n === 1);
+  document.getElementById('ss-tab-2').classList.toggle('active', n === 2);
+  document.getElementById('ss-tab-desc').textContent = n === 1
+    ? 'View available ASIN capacity per location. No recommendations.'
+    : 'Automatically find the best stowing location using existing ASIN matching and available capacity.';
+  document.getElementById('ss-upload-grid').style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
+  document.getElementById('uz-ss-trans').style.display = n === 1 ? 'none' : '';
+  document.getElementById('fo-ss-trans').style.display = n === 1 ? 'none' : '';
+  document.getElementById('out-smart-stow').innerHTML = '';
+  document.getElementById('export-smart-stow').style.display = 'none';
+  ssMaybeReady();
+}
+
+function ssBuildLocationData(bays, limit) {
+  var ih = ssData.inv.headers;
+  var locCol = findCol(ih, ['location','bin','shelf','slot','locationid']);
+  var asinCol = findCol(ih, ['asin','product.?id','item.?id','fcsku','sku']);
+  var qtyCol = findCol(ih, ['quantity','qty','units','unit.?count']);
+  if (!locCol || !asinCol) { showToast('⚠️ Location/ASIN column not found in inventory file'); return null; }
+  var locMap = {}, asinLocMap = {};
+  ssData.inv.data.forEach(function(r) {
+    var loc = (r[locCol] || '').toString().trim();
+    if (!loc) return;
+    var b = extractBay(loc);
+    if (bays && bays.length && bays.indexOf(b) === -1) return;
+    var asin = (r[asinCol] || '').toString().trim().toUpperCase();
+    if (!asin) return;
+    var qty = parseFloat(r[qtyCol]) || 0;
+    if (!locMap[loc]) locMap[loc] = { asins: {} };
+    locMap[loc].asins[asin] = (locMap[loc].asins[asin] || 0) + qty;
+    if (!asinLocMap[asin]) asinLocMap[asin] = [];
+    var existing = asinLocMap[asin].find(function(x){ return x.location === loc; });
+    if (existing) existing.qty += qty; else asinLocMap[asin].push({ location: loc, qty: qty });
+  });
+  return { locMap: locMap, asinLocMap: asinLocMap };
+}
+
+function ssRun() {
+  var bays = Array.from(document.getElementById('ss-bay').selectedOptions).map(function(o){ return o.value; });
+  var limit = parseInt(document.getElementById('ss-limit').value) || 6;
+  if (!bays.length) { showToast('⚠️ Select at least one Bay'); return; }
+  var bayLabel = bays.join(', ');
+  showLoading('smart-stow', true);
+  document.getElementById('out-smart-stow').innerHTML = '';
+  document.getElementById('export-smart-stow').style.display = 'none';
+  setTimeout(function() {
+    var ld = ssBuildLocationData(bays, limit);
+    if (!ld) { showLoading('smart-stow', false); return; }
+    if (ssData.mode === 1) ssRunOption1(ld, bayLabel, limit); else ssRunOption2(ld, bayLabel, limit);
+    showLoading('smart-stow', false);
+  }, 150);
+}
+
+function ssRunOption1(ld, bay, limit) {
+  var rows = Object.keys(ld.locMap).sort().map(function(loc) {
+    var count = Object.keys(ld.locMap[loc].asins).length;
+    var avail = limit - count;
+    return { location: loc, count: count, limit: limit, avail: avail, status: avail > 0 ? 'Available' : 'FULL' };
+  });
+  ssData.results = rows;
+  if (!rows.length) {
+    document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ No locations found in bay "' + bay + '".</div>';
+    return;
+  }
+  var full = rows.filter(function(r){ return r.status === 'FULL'; }).length;
+  var html = '<div class="results-panel"><div class="results-header"><h3>📊 Location Space Checker — Bay ' + bay + '</h3><span class="results-count">' + rows.length + ' locations · ' + full + ' full</span></div>' +
+    '<div class="results-body"><div style="margin-bottom:14px;"><input class="input-field" style="width:220px;" placeholder="🔎 Search location…" oninput="ssFilterTable(this.value)"></div>' +
+    '<div class="tbl-wrap"><table id="ss-table"><thead><tr><th>Location</th><th>Current Unique ASINs</th><th>ASIN Limit</th><th>Available Slots</th><th>Status</th></tr></thead><tbody>' +
+    rows.map(function(r) {
+      var badge = r.status === 'FULL' ? '<span class="ss-badge ss-badge-red">🔴 FULL</span>' : '<span class="ss-badge ss-badge-green">🟢 Available</span>';
+      return '<tr><td>' + r.location + '</td><td>' + r.count + '</td><td>' + r.limit + '</td><td>' + r.avail + '</td><td>' + badge + '</td></tr>';
+    }).join('') + '</tbody></table></div></div></div>';
+  document.getElementById('out-smart-stow').innerHTML = html;
+  document.getElementById('export-smart-stow').style.display = 'flex';
+  document.getElementById('ss-print-btn').style.display = 'none';
+}
+
+function ssRunOption2(ld, bay, limit) {
+  var th = ssData.trans.headers;
+  var asinCol = findCol(th, ['asin','product.?id','item.?id','fcsku','sku']);
+  var qtyCol = findCol(th, ['quantity','qty','units','unit.?count']);
+  if (!asinCol) { document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ ASIN column not found in transshipment file</div>'; return; }
+  var transMap = {};
+  ssData.trans.data.forEach(function(r) {
+    var asin = (r[asinCol] || '').toString().trim().toUpperCase();
+    if (!asin) return;
+    var qty = parseFloat(r[qtyCol]) || 0;
+    transMap[asin] = (transMap[asin] || 0) + qty;
+  });
+  var asins = Object.keys(transMap);
+  if (!asins.length) { document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ No ASINs found in transshipment file</div>'; return; }
+
+  var sameRows = [], availRows = [], noneRows = [];
+  asins.forEach(function(asin) {
+    var transQty = transMap[asin];
+    var sameLocs = (ld.asinLocMap[asin] || []).slice();
+    if (sameLocs.length) {
+      sameLocs.sort(function(a,b){ return b.qty - a.qty; });
+      var loc = sameLocs[0];
+      var count = Object.keys(ld.locMap[loc.location].asins).length;
+      var avail = limit - count;
+      sameRows.push({ asin: asin, transQty: transQty, location: loc.location, curQty: loc.qty, count: count, limit: limit, avail: avail, type: '🟢 SAME ASIN', reason: 'Same ASIN already exists in this location — will not consume an additional ASIN slot.' });
+      return;
+    }
+    var candidates = Object.keys(ld.locMap).map(function(loc) {
+      var count = Object.keys(ld.locMap[loc].asins).length;
+      return { location: loc, count: count, avail: limit - count };
+    }).filter(function(c){ return c.avail > 0; }).sort(function(a,b){ return b.avail - a.avail; });
+    if (candidates.length) {
+      var c = candidates[0];
+      availRows.push({ asin: asin, transQty: transQty, location: c.location, curQty: 0, count: c.count, limit: limit, avail: c.avail, type: '🟡 AVAILABLE SPACE', reason: 'New ASIN — location has open ASIN slots.' });
+    } else {
+      noneRows.push({ asin: asin, transQty: transQty, location: '—', curQty: 0, count: limit, limit: limit, avail: 0, type: '⚠️ NO SUITABLE LOCATION', reason: 'All locations in this bay are at the ASIN limit.' });
+    }
+  });
+  var rows = sameRows.concat(availRows).concat(noneRows).map(function(r,i){ r.priority = i + 1; return r; });
+  ssData.results = rows;
+
+  var html = '<div class="results-panel"><div class="results-header"><h3>🎯 Smart Stow Recommendation — Bay ' + bay + '</h3><span class="results-count">' + rows.length + ' ASINs · ' + sameRows.length + ' same-ASIN · ' + availRows.length + ' available · ' + noneRows.length + ' unresolved</span></div>' +
+    '<div class="results-body"><div style="margin-bottom:14px;"><input class="input-field" style="width:220px;" placeholder="🔎 Search ASIN or location…" oninput="ssFilterTable(this.value)"></div>' +
+    '<div class="tbl-wrap"><table id="ss-table"><thead><tr><th>Priority</th><th>ASIN</th><th>Trans Qty</th><th>Recommended Location</th><th>Current ASIN Qty</th><th>Unique ASINs</th><th>Limit</th><th>Available Slots</th><th>Type</th><th>Reason</th></tr></thead><tbody>' +
+    rows.map(function(r) {
+      return '<tr><td>' + r.priority + '</td><td>' + r.asin + '</td><td>' + r.transQty + '</td><td>' + r.location + '</td><td>' + r.curQty + '</td><td>' + r.count + '</td><td>' + r.limit + '</td><td>' + r.avail + '</td><td>' + r.type + '</td><td style="max-width:260px;white-space:normal;">' + r.reason + '</td></tr>';
+    }).join('') + '</tbody></table></div></div></div>';
+  document.getElementById('out-smart-stow').innerHTML = html;
+  document.getElementById('export-smart-stow').style.display = 'flex';
+  document.getElementById('ss-print-btn').style.display = 'inline-flex';
+}
+
+function ssFilterTable(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#ss-table tbody tr').forEach(function(tr) {
+    tr.style.display = tr.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+  });
+}
+
+function ssExportExcel() {
+  if (!ssData.results.length) { showToast('Generate results first'); return; }
+  var wb = XLSX.utils.book_new(), rows;
+  if (ssData.mode === 1) {
+    rows = ssData.results.map(function(r){ return { Location: r.location, 'Current Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, Status: r.status }; });
+  } else {
+    rows = ssData.results.map(function(r){ return { ASIN: r.asin, 'Trans Qty': r.transQty, 'Recommended Location': r.location, 'Current ASIN Qty': r.curQty, 'Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, 'Recommendation Type': r.type, Reason: r.reason, Priority: r.priority }; });
+  }
+  var ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, ssData.mode === 1 ? 'Location Space' : 'Smart Stow');
+  XLSX.writeFile(wb, (ssData.mode === 1 ? 'LocationSpaceChecker_' : 'SmartStowPlan_') + new Date().toISOString().split('T')[0] + '.xlsx');
+  if (typeof logActivity === 'function') logActivity('Smart Stowing', 'Exported Excel');
+}
+
+function ssPrintPlan() {
+  if (ssData.mode !== 2 || !ssData.results.length) { showToast('Generate a Smart Stow Recommendation first'); return; }
+  var bay = document.getElementById('ss-bay').value;
+  var rows = ssData.results.filter(function(r){ return r.type !== '⚠️ NO SUITABLE LOCATION'; });
+  var now = new Date().toLocaleString();
+  var html = '<div style="padding:24px;font-family:Arial,sans-serif;color:#000;">' +
+    '<h2 style="margin:0 0 4px;">DMS PRO — SMART STOW PLAN</h2>' +
+    '<div style="font-size:13px;margin-bottom:2px;">Date/Time: ' + now + '</div>' +
+    '<div style="font-size:13px;margin-bottom:16px;">Bay: ' + bay + '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr>' +
+    ['Priority','ASIN','Qty','Stow Location','Reason'].map(function(h){ return '<th style="border:1px solid #333;padding:6px 8px;text-align:left;background:#eee;">' + h + '</th>'; }).join('') +
+    '</tr></thead><tbody>' +
+    rows.map(function(r) {
+      var shortReason = r.type === '🟢 SAME ASIN' ? 'Same ASIN' : 'Available ASIN Slot';
+      return '<tr><td style="border:1px solid #333;padding:6px 8px;">' + r.priority + '</td><td style="border:1px solid #333;padding:6px 8px;">' + r.asin + '</td><td style="border:1px solid #333;padding:6px 8px;">' + r.transQty + '</td><td style="border:1px solid #333;padding:6px 8px;">' + r.location + '</td><td style="border:1px solid #333;padding:6px 8px;">' + shortReason + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+  var printEl = document.getElementById('ss-print-area');
+  printEl.innerHTML = html;
+  printEl.style.display = 'block';
+  window.print();
+  setTimeout(function(){ printEl.style.display = 'none'; }, 800);
+  if (typeof logActivity === 'function') logActivity('Smart Stowing', 'Printed Stow Plan');
 }
 function getNowString() {
   const now = new Date();
