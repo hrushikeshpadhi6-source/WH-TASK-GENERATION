@@ -2496,6 +2496,7 @@ window.feedbackAdminClear=async function(){
   <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
     <button class="ss-tab active" id="ss-tab-1" onclick="ssSwitchTab(1)">📊 Location Space Checker</button>
     <button class="ss-tab" id="ss-tab-2" onclick="ssSwitchTab(2)">🎯 Smart Stow Recommendation</button>
+    <button class="ss-tab" id="ss-tab-3" onclick="ssSwitchTab(3)">🕳️ Find Empty Locations</button>
   </div>
   <div id="ss-tab-desc" style="font-size:13px;color:#7b78a8;margin-bottom:20px;">View available ASIN capacity per location. No recommendations.</div>
 
@@ -2525,14 +2526,41 @@ window.feedbackAdminClear=async function(){
     <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ssResetUpload('inv')">✕</button>
   </div>
 
+  <div id="ss-pickpath-block" style="display:none;">
+    <div class="upload-zone" id="uz-ss-pickpath" onclick="triggerUpload('f-ss-pickpath')" style="background:#fff;border-color:#d5d2f0;">
+      <input type="file" id="f-ss-pickpath" accept=".xlsx,.xls,.csv" onchange="ssHandleUpload(this,'pickpath')">
+      <div class="u-icon">🚶</div>
+      <h3 style="color:#1a1830;">Pick Path File</h3>
+      <p>Full location walk list for the zone — defines every location that exists (occupancy is cross-checked against the Real-Time Inventory file above)</p>
+      <div class="fmts"><span class="fmt-tag">.XLSX</span><span class="fmt-tag">.XLS</span><span class="fmt-tag">.CSV</span></div>
+    </div>
+    <div class="file-ok" id="fo-ss-pickpath" style="margin-bottom:10px;">
+      <span>✅</span><div class="fi-info"><strong id="fo-ss-pickpath-name">—</strong><span id="fo-ss-pickpath-info">—</span></div>
+      <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ssResetUpload('pickpath')">✕</button>
+    </div>
+    <div style="margin-top:4px;padding:16px 18px;background:#fff;border:1.5px solid #d5d2f0;border-radius:12px;">
+      <div style="font-size:12px;font-weight:800;color:#3d3a6b;letter-spacing:.5px;margin-bottom:10px;">📋 Or Paste Pick Path <span style="font-size:10px;font-weight:500;color:#7b78a8;">&nbsp;— one location per line — just the full list of locations in the zone</span></div>
+      <textarea id="ss-pickpath-paste" placeholder="P-1-A116F182&#10;P-1-A116F183&#10;P-1-A116F184" style="width:100%;height:110px;padding:10px 12px;border:1px solid #d5d2f0;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;color:#1a1830;resize:vertical;outline:none;"></textarea>
+      <div style="margin-top:8px;"><button class="btn btn-primary" onclick="ssLoadPickPathPaste()">Load Pasted Pick Path</button></div>
+    </div>
+  </div>
+
   <div class="ctrl-row" id="ss-ctrl-row" style="display:none;">
-    <div>
+    <div id="ss-bay-wrap">
       <div class="ctrl-label">Bay <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(Ctrl/Cmd+click for multiple)</span></div>
       <select class="select-field" id="ss-bay" multiple style="min-width:160px;height:84px;"></select>
     </div>
-    <div>
+    <div id="ss-zone-wrap" style="display:none;">
+      <div class="ctrl-label">Zone <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(e.g. P-1-A, P-1-K, HAZ — Ctrl/Cmd+click for multiple)</span></div>
+      <select class="select-field" id="ss-zone" multiple style="min-width:160px;height:84px;"></select>
+    </div>
+    <div id="ss-limit-wrap">
       <div class="ctrl-label">ASIN Limit / Location</div>
       <input class="input-field" type="number" id="ss-limit" value="6" min="1" style="width:110px;">
+    </div>
+    <div id="ss-targetcount-wrap" style="display:none;">
+      <div class="ctrl-label">ASIN Count in Location <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none">(0 = empty)</span></div>
+      <input class="input-field" type="number" id="ss-target-count" value="0" min="0" style="width:110px;">
     </div>
     <button class="btn btn-primary" onclick="ssRun()">⚡ Generate</button>
   </div>
@@ -5101,7 +5129,7 @@ function handleUpload(input, task) {
 
       if (task === 'slow-moving') buildSlowMovingCols();
       if (task === 'ysm') buildYSMMapper();
-      if (task === 'consolidation') buildConBaySelect();
+      if (task === 'consolidation') { buildConBaySelect(); renderConsolidationCompliance(); }
       if (task === 'audit-loc') buildAuditLocFilters();
       showToast('✅ Loaded ' + json.length.toLocaleString() + ' records');
     } catch (err) {
@@ -5339,7 +5367,7 @@ function findCol(headers, patterns) {
 // ═══════════════════════════════════════════════════════════════
 // SMART STOWING — ASIN LOCATION CAPACITY CHECKER
 // ═══════════════════════════════════════════════════════════════
-var ssData = { trans:{data:[],headers:[]}, inv:{data:[],headers:[]}, results:[], mode:1 };
+var ssData = { trans:{data:[],headers:[]}, inv:{data:[],headers:[]}, pickpath:{data:[],headers:[]}, results:[], mode:1 };
 
 function ssHandleUpload(input, key) {
   var file = input.files[0]; if (!file) return;
@@ -5372,8 +5400,26 @@ function ssResetUpload(key) {
   document.getElementById('export-smart-stow').style.display = 'none';
 }
 
+function ssLoadPickPathPaste() {
+  var text = (document.getElementById('ss-pickpath-paste').value || '').trim();
+  if (!text) { showToast('⚠️ Paste pick path lines first'); return; }
+  var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  var delim = lines[0].indexOf('\t') > -1 ? '\t' : ',';
+  var data = lines.map(function(l) {
+    var parts = l.split(delim).map(function(p){ return p.trim(); });
+    return { Location: parts[0] || '', ASIN: parts[1] || '' };
+  });
+  ssData.pickpath.data = data;
+  ssData.pickpath.headers = ['Location', 'ASIN'];
+  document.getElementById('fo-ss-pickpath').classList.add('show');
+  document.getElementById('fo-ss-pickpath-name').textContent = 'Pasted Pick Path';
+  document.getElementById('fo-ss-pickpath-info').textContent = data.length.toLocaleString() + ' rows';
+  ssMaybeReady();
+  showToast('✅ Loaded ' + data.length.toLocaleString() + ' pick path rows');
+}
+
 function ssMaybeReady() {
-  var ready = ssData.mode === 1 ? ssData.inv.data.length : (ssData.trans.data.length && ssData.inv.data.length);
+  var ready = ssData.mode === 3 ? (ssData.pickpath.data.length && ssData.inv.data.length) : ssData.mode === 1 ? ssData.inv.data.length : (ssData.trans.data.length && ssData.inv.data.length);
   if (ready) {
     ssPopulateBays();
     document.getElementById('ss-ctrl-row').style.display = 'flex';
@@ -5396,18 +5442,42 @@ function ssPopulateBays() {
   var cur = Array.from(sel.selectedOptions).map(function(o){ return o.value; });
   sel.innerHTML = Object.keys(bays).sort().map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join('');
   Array.from(sel.options).forEach(function(o){ if (cur.indexOf(o.value) > -1) o.selected = true; });
+
+  var pph = ssData.pickpath.headers;
+  var ppLocCol = findCol(pph, ['location','bin','shelf','slot','locationid']) || 0;
+  var zones = {};
+  ssData.pickpath.data.forEach(function(r) {
+    var loc = (r[ppLocCol] || '').toString();
+    if (!loc) return;
+    var z = extractZone(loc);
+    if (z) zones[z] = true;
+  });
+  var zsel = document.getElementById('ss-zone');
+  var zcur = Array.from(zsel.selectedOptions).map(function(o){ return o.value; });
+  zsel.innerHTML = Object.keys(zones).sort().map(function(z){ return '<option value="'+z+'">'+z+'</option>'; }).join('');
+  Array.from(zsel.options).forEach(function(o){ if (zcur.indexOf(o.value) > -1) o.selected = true; });
 }
 
 function ssSwitchTab(n) {
   ssData.mode = n;
   document.getElementById('ss-tab-1').classList.toggle('active', n === 1);
   document.getElementById('ss-tab-2').classList.toggle('active', n === 2);
+  document.getElementById('ss-tab-3').classList.toggle('active', n === 3);
   document.getElementById('ss-tab-desc').textContent = n === 1
     ? 'View available ASIN capacity per location. No recommendations.'
+    : n === 3
+    ? 'Find locations by exact ASIN count in a Zone (e.g. P-1-A, P-1-K, HAZ) — Pick Path defines all locations, Real-Time Inventory supplies occupancy — choose 0 to list all empty locations.'
     : 'Automatically find the best stowing location using existing ASIN matching and available capacity.';
-  document.getElementById('ss-upload-grid').style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
-  document.getElementById('uz-ss-trans').style.display = n === 1 ? 'none' : '';
-  document.getElementById('fo-ss-trans').style.display = n === 1 ? 'none' : '';
+  document.getElementById('ss-upload-grid').style.gridTemplateColumns = n === 2 ? '1fr 1fr' : '1fr';
+  document.getElementById('uz-ss-trans').style.display = n === 2 ? '' : 'none';
+  document.getElementById('fo-ss-trans').style.display = n === 2 ? '' : 'none';
+  document.getElementById('uz-ss-inv').style.display = '';
+  document.getElementById('fo-ss-inv').style.display = '';
+  document.getElementById('ss-pickpath-block').style.display = n === 3 ? '' : 'none';
+  document.getElementById('ss-limit-wrap').style.display = n === 3 ? 'none' : '';
+  document.getElementById('ss-targetcount-wrap').style.display = n === 3 ? '' : 'none';
+  document.getElementById('ss-bay-wrap').style.display = n === 3 ? 'none' : '';
+  document.getElementById('ss-zone-wrap').style.display = n === 3 ? '' : 'none';
   document.getElementById('out-smart-stow').innerHTML = '';
   document.getElementById('export-smart-stow').style.display = 'none';
   ssMaybeReady();
@@ -5425,10 +5495,10 @@ function ssBuildLocationData(bays, limit) {
     if (!loc) return;
     var b = extractBay(loc);
     if (bays && bays.length && bays.indexOf(b) === -1) return;
+    if (!locMap[loc]) locMap[loc] = { asins: {} };
     var asin = (r[asinCol] || '').toString().trim().toUpperCase();
     if (!asin) return;
     var qty = parseFloat(r[qtyCol]) || 0;
-    if (!locMap[loc]) locMap[loc] = { asins: {} };
     locMap[loc].asins[asin] = (locMap[loc].asins[asin] || 0) + qty;
     if (!asinLocMap[asin]) asinLocMap[asin] = [];
     var existing = asinLocMap[asin].find(function(x){ return x.location === loc; });
@@ -5437,7 +5507,67 @@ function ssBuildLocationData(bays, limit) {
   return { locMap: locMap, asinLocMap: asinLocMap };
 }
 
+function ssNormLoc(loc) {
+  return String(loc || '').replace(/^(BIN:|TRANSFERTOTE:|TOTE:|RACK:)\s*/i, '').replace(/[\s\u00A0]+/g, '').toUpperCase();
+}
+
+function ssBuildLocationDataByZone(zones) {
+  var pph = ssData.pickpath.headers;
+  var ppLocCol = findCol(pph, ['location','bin','shelf','slot','locationid']) || 0;
+
+  var ih = ssData.inv.headers;
+  var invLocCol = findCol(ih, ['location','bin','shelf','slot','locationid']);
+  var invAsinCol = findCol(ih, ['asin','product.?id','item.?id','fcsku','sku']);
+  var asinsByLoc = {};
+  if (invLocCol && invAsinCol) {
+    var lastInvLoc = '';
+    ssData.inv.data.forEach(function(r) {
+      var loc = (r[invLocCol] || '').toString().trim();
+      if (loc) lastInvLoc = loc; else loc = lastInvLoc;
+      if (!loc) return;
+      var asin = (r[invAsinCol] || '').toString().trim().toUpperCase();
+      if (!asin) return;
+      var key = ssNormLoc(loc);
+      if (!asinsByLoc[key]) asinsByLoc[key] = {};
+      asinsByLoc[key][asin] = true;
+    });
+  }
+
+  var locMap = {};
+  var lastLoc = '';
+  var matchedCount = 0, totalCount = 0;
+  ssData.pickpath.data.forEach(function(r) {
+    var loc = (r[ppLocCol] || '').toString().trim();
+    if (loc) lastLoc = loc; else loc = lastLoc; // forward-fill merged/blank location cells
+    if (!loc) return;
+    var z = extractZone(loc);
+    if (zones && zones.length && zones.indexOf(z) === -1) return;
+    if (!locMap[loc]) {
+      totalCount++;
+      var matched = asinsByLoc[ssNormLoc(loc)];
+      if (matched) matchedCount++;
+      locMap[loc] = { asins: matched || {} };
+    }
+  });
+  return { locMap: locMap, matchedCount: matchedCount, totalCount: totalCount, invLocCount: Object.keys(asinsByLoc).length };
+}
+
 function ssRun() {
+  if (ssData.mode === 3) {
+    var zones = Array.from(document.getElementById('ss-zone').selectedOptions).map(function(o){ return o.value; });
+    if (!zones.length) { showToast('⚠️ Select at least one Zone'); return; }
+    var zoneLabel = zones.join(', ');
+    showLoading('smart-stow', true);
+    document.getElementById('out-smart-stow').innerHTML = '';
+    document.getElementById('export-smart-stow').style.display = 'none';
+    setTimeout(function() {
+      var ld = ssBuildLocationDataByZone(zones);
+      if (!ld) { showLoading('smart-stow', false); return; }
+      ssRunOption3(ld, zoneLabel);
+      showLoading('smart-stow', false);
+    }, 150);
+    return;
+  }
   var bays = Array.from(document.getElementById('ss-bay').selectedOptions).map(function(o){ return o.value; });
   var limit = parseInt(document.getElementById('ss-limit').value) || 6;
   if (!bays.length) { showToast('⚠️ Select at least one Bay'); return; }
@@ -5448,7 +5578,8 @@ function ssRun() {
   setTimeout(function() {
     var ld = ssBuildLocationData(bays, limit);
     if (!ld) { showLoading('smart-stow', false); return; }
-    if (ssData.mode === 1) ssRunOption1(ld, bayLabel, limit); else ssRunOption2(ld, bayLabel, limit);
+    if (ssData.mode === 1) ssRunOption1(ld, bayLabel, limit);
+    else ssRunOption2(ld, bayLabel, limit);
     showLoading('smart-stow', false);
   }, 150);
 }
@@ -5471,6 +5602,31 @@ function ssRunOption1(ld, bay, limit) {
     rows.map(function(r) {
       var badge = r.status === 'FULL' ? '<span class="ss-badge ss-badge-red">🔴 FULL</span>' : '<span class="ss-badge ss-badge-green">🟢 Available</span>';
       return '<tr><td>' + r.location + '</td><td>' + r.count + '</td><td>' + r.limit + '</td><td>' + r.avail + '</td><td>' + badge + '</td></tr>';
+    }).join('') + '</tbody></table></div></div></div>';
+  document.getElementById('out-smart-stow').innerHTML = html;
+  document.getElementById('export-smart-stow').style.display = 'flex';
+  document.getElementById('ss-print-btn').style.display = 'none';
+}
+
+function ssRunOption3(ld, bay) {
+  var targetCount = parseInt(document.getElementById('ss-target-count').value);
+  if (isNaN(targetCount) || targetCount < 0) targetCount = 0;
+  var rows = Object.keys(ld.locMap).sort().map(function(loc) {
+    return { location: loc, count: Object.keys(ld.locMap[loc].asins).length };
+  }).filter(function(r) { return r.count === targetCount; });
+  ssData.results = rows;
+  if (!rows.length) {
+    document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ No locations with exactly ' + targetCount + ' ASIN(s) found in bay "' + bay + '".</div>';
+    return;
+  }
+  var title = targetCount === 0 ? '🕳️ Empty Locations' : '🕳️ Locations with ' + targetCount + ' ASIN(s)';
+  var matchNote = '<div class="alert alert-info" style="margin:0 0 14px;font-size:12px;">📦 Inventory: ' + (ld.invLocCount || 0).toLocaleString() + ' distinct locations loaded &nbsp;·&nbsp; Matched ' + (ld.matchedCount || 0).toLocaleString() + ' of ' + (ld.totalCount || 0).toLocaleString() + ' pick-path locations against inventory' + ((ld.matchedCount || 0) === 0 && (ld.totalCount || 0) > 0 ? ' — <strong>0 matches: check the Location format matches between your Pick Path and Inventory files.</strong>' : '') + '</div>';
+  var html = '<div class="results-panel"><div class="results-header"><h3>' + title + ' — Zone ' + bay + '</h3><span class="results-count">' + rows.length + ' locations</span></div>' +
+    '<div class="results-body">' + matchNote + '<div style="margin-bottom:14px;"><input class="input-field" style="width:220px;" placeholder="🔎 Search location…" oninput="ssFilterTable(this.value)"></div>' +
+    '<div class="tbl-wrap"><table id="ss-table"><thead><tr><th>Location</th><th>Current Unique ASINs</th><th>Status</th></tr></thead><tbody>' +
+    rows.map(function(r) {
+      var badge = r.count === 0 ? '<span class="ss-badge ss-badge-green">🕳️ EMPTY</span>' : '<span class="ss-badge ss-badge-red">' + r.count + ' ASIN(s)</span>';
+      return '<tr><td>' + r.location + '</td><td>' + r.count + '</td><td>' + badge + '</td></tr>';
     }).join('') + '</tbody></table></div></div></div>';
   document.getElementById('out-smart-stow').innerHTML = html;
   document.getElementById('export-smart-stow').style.display = 'flex';
@@ -5541,12 +5697,14 @@ function ssExportExcel() {
   var wb = XLSX.utils.book_new(), rows;
   if (ssData.mode === 1) {
     rows = ssData.results.map(function(r){ return { Location: r.location, 'Current Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, Status: r.status }; });
+  } else if (ssData.mode === 3) {
+    rows = ssData.results.map(function(r){ return { Location: r.location, 'Current Unique ASINs': r.count, Status: r.count === 0 ? 'EMPTY' : (r.count + ' ASIN(s)') }; });
   } else {
     rows = ssData.results.map(function(r){ return { ASIN: r.asin, 'Trans Qty': r.transQty, 'Recommended Location': r.location, 'Current ASIN Qty': r.curQty, 'Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, 'Recommendation Type': r.type, Reason: r.reason, Priority: r.priority }; });
   }
   var ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, ssData.mode === 1 ? 'Location Space' : 'Smart Stow');
-  XLSX.writeFile(wb, (ssData.mode === 1 ? 'LocationSpaceChecker_' : 'SmartStowPlan_') + new Date().toISOString().split('T')[0] + '.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, ssData.mode === 1 ? 'Location Space' : ssData.mode === 3 ? 'Empty Locations' : 'Smart Stow');
+  XLSX.writeFile(wb, (ssData.mode === 1 ? 'LocationSpaceChecker_' : ssData.mode === 3 ? 'EmptyLocations_' : 'SmartStowPlan_') + new Date().toISOString().split('T')[0] + '.xlsx');
   if (typeof logActivity === 'function') logActivity('Smart Stowing', 'Exported Excel');
 }
 
@@ -5593,6 +5751,15 @@ function extractBay(loc) {
   return s.slice(0, 5).toUpperCase();
 }
 
+function extractZone(loc) {
+  let s = loc.replace(/^(Bin:|TransferTote:|Tote:|Rack:)/i, '').trim();
+  if (/^HAZ/i.test(s)) return 'HAZ';
+  if (/^HRV/i.test(s)) return 'HRV';
+  const m = s.match(/^(P-\d+-[A-Z])/i);
+  if (m) return m[1].toUpperCase();
+  return s.slice(0, 3).toUpperCase();
+}
+
 function buildConBaySelect() {
   const d = state['consolidation'].data;
   const h = state['consolidation'].headers;
@@ -5607,6 +5774,88 @@ function buildConBaySelect() {
     opt.value = b; opt.textContent = b;
     sel.appendChild(opt);
   });
+}
+
+function parseConsolidationExpMap(raw) {
+  var result = [];
+  if (!raw) return result;
+  var s = String(raw).trim();
+  if (!s || s === '{}') return result;
+  if (s.indexOf('=') === -1 && s.indexOf('{') === -1) {
+    var d = s.substring(0,10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d !== '0001-01-01') result.push(d);
+    return result;
+  }
+  var inner = s.replace(/^\{/,'').replace(/\}$/,'').trim();
+  if (!inner) return result;
+  inner.split(',').forEach(function(part) {
+    var eqIdx = part.lastIndexOf('=');
+    if (eqIdx === -1) return;
+    var dateOnly = part.substring(0, eqIdx).trim().substring(0,10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly) && dateOnly !== '0001-01-01') result.push(dateOnly);
+  });
+  return result;
+}
+
+function computeConsolidationMap() {
+  const d = state.consolidation.data;
+  const h = state.consolidation.headers;
+  const asinCol = findCol(h, ['asin','product.?id','item.?id','fcsku','sku']);
+  const locCol  = findCol(h, ['location','bin','shelf','slot','locationid']);
+  const expCol  = findCol(h, ['expirationdatequantitymap','expirydate','expdate','expiration.?date','best.?before']);
+  if (!asinCol || !locCol) return null;
+  const map = {};
+  d.forEach(row => {
+    const asin = String(row[asinCol] || '').trim();
+    const loc  = String(row[locCol]  || '').trim();
+    if (!asin) return;
+    if (loc && /transfertote/i.test(loc)) return;
+    const dates = expCol ? parseConsolidationExpMap(row[expCol]) : [];
+    if (dates.length === 0) {
+      const key = asin + '|NO_EXPIRY';
+      if (!map[key]) map[key] = new Set();
+      if (loc) map[key].add(loc);
+    } else {
+      dates.forEach(dt => {
+        const key = asin + '|' + dt;
+        if (!map[key]) map[key] = new Set();
+        if (loc) map[key].add(loc);
+      });
+    }
+  });
+  return map;
+}
+
+function complianceBarHTML(map) {
+  const allEntries = Object.entries(map);
+  const totalAsins = allEntries.length;
+  const consolidatedAsins = allEntries.filter(([_, locs]) => locs.size <= 1).length;
+  const needAsins = totalAsins - consolidatedAsins;
+  const compliancePct = totalAsins > 0 ? (consolidatedAsins / totalAsins * 100) : 0;
+  const unitLabel = 'ASIN×Expiry pairs';
+  const complianceColor = compliancePct >= 90 ? '#1B7A3E' : compliancePct >= 70 ? '#B8860B' : '#C00000';
+  const complianceBg = compliancePct >= 90 ? '#E8F5E9' : compliancePct >= 70 ? '#FFF8E1' : '#FDECEA';
+  const complianceNote = compliancePct >= 90 ? '✅ Excellent' : compliancePct >= 70 ? '⚠ Needs Attention' : '🔴 Action Required';
+  return '<div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:var(--radius-lg);padding:18px 22px;margin-bottom:18px;">' +
+    '<div style="font-size:13px;font-weight:700;color:#3d3a6b;margin-bottom:12px;">Consolidation Compliance</div>' +
+    '<div style="display:flex;align-items:center;gap:16px;">' +
+    '<div style="flex:1;background:#eee;border-radius:20px;height:22px;overflow:hidden;">' +
+    '<div style="height:100%;border-radius:20px;width:' + compliancePct.toFixed(1) + '%;background:' + complianceColor + ';display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:700;color:#fff;min-width:40px;transition:width 1s ease;">' + compliancePct.toFixed(1) + '%</div>' +
+    '</div><div style="font-size:12px;color:var(--muted);min-width:230px;">' + consolidatedAsins.toLocaleString() + ' consolidated / ' + needAsins.toLocaleString() + ' need action / ' + totalAsins.toLocaleString() + ' total ' + unitLabel + '</div>' +
+    '</div>' +
+    '<div style="margin-top:12px;display:flex;gap:20px;font-size:11px;align-items:center;">' +
+    '<span style="color:#1B7A3E;">■ Consolidated (1 location)</span>' +
+    '<span style="color:#C00000;">■ Needs consolidation (2+ locations)</span>' +
+    '<div style="margin-left:auto;font-size:13px;font-weight:700;color:' + complianceColor + ';background:' + complianceBg + ';padding:3px 12px;border-radius:14px;">' + complianceNote + '</div>' +
+    '</div></div>';
+}
+
+function renderConsolidationCompliance() {
+  const map = computeConsolidationMap();
+  const out = document.getElementById('out-consolidation');
+  if (!map || !out) return;
+  out.innerHTML = complianceBarHTML(map);
+  document.getElementById('export-consolidation').style.display = 'none';
 }
 
 function generateConsolidation() {
@@ -5639,9 +5888,11 @@ function generateConsolidation() {
       if (loc && !/transfertote/i.test(loc)) map[asin].add(loc);
     });
 
-    let results = Object.entries(map).map(([asin, locs]) => ({ asin, count: locs.size, locs }));
+    const complianceHTML = complianceBarHTML(map);
+
+    let results = Object.entries(map).map(([key, locs]) => ({ asin: key.split('|')[0], count: locs.size, locs }));
     if (selectedCounts.length === 0) {
-      results = results.filter(r => r.count === 2);
+      results = results.filter(r => r.count >= 2);
     } else {
       results = results.filter(r => {
         if (hasMore10 && r.count > 10) return true;
@@ -5656,22 +5907,22 @@ function generateConsolidation() {
     showLoading('consolidation', false);
 
     if (!results.length) {
-      document.getElementById('out-consolidation').innerHTML = '<div class="alert alert-warn">No ASINs matched. Try different location counts or bay filter.</div>';
+      document.getElementById('out-consolidation').innerHTML = complianceHTML + '<div class="alert alert-warn">No ASINs matched. Try different location counts or bay filter.</div>';
       return;
     }
 
-    const filterLabel = selectedCounts.length === 0 ? 'Exactly 2 locations'
+    const filterLabel = selectedCounts.length === 0 ? '2+ locations (all needing consolidation)'
       : hasMore10 && exactCounts.length === 0 ? 'More than 10 locations'
       : 'Locations: ' + selectedCounts.join(', ') + (selectedBays.length ? ' · Bay: ' + selectedBays.join(', ') : '');
 
-    const statsHTML = '<div class="stats-row"><div class="stat-card"><div class="sv">' + results.length + '</div><div class="sl">Matched ASINs</div></div><div class="stat-card"><div class="sv" style="font-size:13px">' + (selectedCounts.length ? selectedCounts.join(', ') : '2') + '</div><div class="sl">Location Count</div></div>' + (selectedBays.length > 0 ? '<div class="stat-card"><div class="sv" style="font-size:11px">' + selectedBays.join(', ') + '</div><div class="sl">Bay Filter</div></div>' : '') + '</div>';
+    const statsHTML = '<div class="stats-row"><div class="stat-card"><div class="sv">' + results.length + '</div><div class="sl">Matched ASINs</div></div><div class="stat-card"><div class="sv" style="font-size:13px">' + (selectedCounts.length ? selectedCounts.join(', ') : '2+') + '</div><div class="sl">Location Count</div></div>' + (selectedBays.length > 0 ? '<div class="stat-card"><div class="sv" style="font-size:11px">' + selectedBays.join(', ') + '</div><div class="sl">Bay Filter</div></div>' : '') + '</div>';
 
     buildQRSheet({
       container: document.getElementById('out-consolidation'),
       idPrefix: 'consolidation-qr-grid',
       title: '🔀 Consolidation Task',
       headerExtra: ' · ' + filterLabel,
-      infoHTML: statsHTML,
+      infoHTML: complianceHTML + statsHTML,
       items: results,
       qrText: item => item.asin,
       topHTML: (item) => {
