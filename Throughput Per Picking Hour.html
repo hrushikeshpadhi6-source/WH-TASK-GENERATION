@@ -38,9 +38,9 @@ body{background:#f8f7ff;color:#1a1830;font-family:'Inter',sans-serif;min-height:
 .kpi .sb{font-size:11px;color:#7b78a8;}
 .tbl-wrap{background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;}
 .tbl-scroll{max-height:480px;overflow:auto;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-thead th{background:#f0effe;padding:11px 14px;text-align:left;color:#1e1b4b;font-weight:800;position:sticky;top:0;white-space:nowrap;}
-tbody td{padding:10px 14px;border-bottom:1px solid #ece9fa;font-family:'DM Mono',monospace;}
+table{width:auto;border-collapse:collapse;font-size:15px;}
+thead th{background:#f0effe;padding:14px 20px;text-align:left;color:#1e1b4b;font-weight:800;position:sticky;top:0;white-space:nowrap;font-size:15px;}
+tbody td{padding:13px 20px;border-bottom:1px solid #ece9fa;font-family:'DM Mono',monospace;}
 tbody tr:hover td{background:#f8f7ff;}
 .empty{padding:26px;text-align:center;color:#7b78a8;font-size:13px;}
 .note{font-size:12px;color:#7b78a8;margin-top:10px;line-height:1.6;}
@@ -87,6 +87,11 @@ tbody tr:hover td{background:#f8f7ff;}
 
   <div class="ctrl-row">
     <input type="text" class="wk-input" id="wkFilter" placeholder="Week32 (optional)" title="Filter Lateslam rows by week_name — leave blank for all weeks">
+    <span style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Group by:
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeP" value="week" checked onchange="groupModeChangedP('week')">Week</label>
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeP" value="date" onchange="groupModeChangedP('date')">Date</label>
+    </span>
+    <select id="dateSelectP" style="display:none;padding:9px 12px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="calcThroughput()"><option value="">All dates</option></select>
     <button class="calc-btn" id="calcBtn" onclick="calcThroughput()" disabled>🔍 Calculate Throughput</button>
     <button class="calc-btn" id="exportBtn" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3);" onclick="exportExcel()" disabled>⬇️ Export to Excel</button>
     <span id="status"></span>
@@ -96,8 +101,8 @@ tbody tr:hover td{background:#f8f7ff;}
   <div class="tbl-wrap">
     <div class="tbl-scroll">
       <table>
-        <thead id="th"><tr><th>User</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
-        <tbody id="tb"><tr><td class="empty" colspan="6">Upload both files, then click Calculate</td></tr></tbody>
+        <thead id="th"><tr><th>User</th><th id="thPeriodP">Week</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
+        <tbody id="tb"><tr><td class="empty" colspan="7">Upload both files, then click Calculate</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -117,8 +122,16 @@ tbody tr:hover td{background:#f8f7ff;}
 
   <div class="ctrl-row">
     <input type="text" class="wk-input" id="wkFilterS" placeholder="Week32 (optional)" title="Filter rows by week_name — leave blank for all weeks">
+    <span style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Group by:
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeS" value="week" checked onchange="groupModeChangedS('week')">Week</label>
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeS" value="date" onchange="groupModeChangedS('date')">Date</label>
+    </span>
+    <select id="dateSelectS" style="display:none;padding:9px 12px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="calcStore()"><option value="">All dates</option></select>
     <button class="calc-btn" id="calcBtnS" onclick="calcStore()" disabled>🔍 Calculate by Store</button>
     <button class="calc-btn" id="exportBtnS" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3);" onclick="exportExcelStore()" disabled>⬇️ Export to Excel</button>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#1a1830;cursor:pointer;">
+      <input type="checkbox" id="showAllS" onchange="toggleStoreCols()">Show all columns
+    </label>
     <span id="statusS"></span>
   </div>
 
@@ -126,7 +139,7 @@ tbody tr:hover td{background:#f8f7ff;}
   <div class="tbl-wrap">
     <div class="tbl-scroll">
       <table>
-        <thead><tr><th>Store</th><th>Week</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">UPO</th><th>UPO Bucket</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
+        <thead><tr><th>Store</th><th id="thWeekS">Week</th><th class="colS-extra" style="text-align:right;">Total Orders</th><th class="colS-extra" style="text-align:right;">Total Seconds</th><th class="colS-extra" style="text-align:right;">Total Units</th><th class="colS-extra" style="text-align:right;">UPO</th><th class="colS-extra">UPO Bucket</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
         <tbody id="tbS"><tr><td class="empty" colspan="9">Upload Lateslam UTR Data, then click Calculate</td></tr></tbody>
       </table>
     </div>
@@ -162,6 +175,10 @@ function loadFile(slot, input){
       var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
       FILES[slot] = rows;
       setStatus('');
+      if(slot===1 && (document.querySelector('input[name="groupModeP"]:checked')||{}).value==='date'){
+        var iDateChk = findCol(rows[0], ['date']);
+        if(iDateChk>=0) fillDateSelect(document.getElementById('dateSelectP'), uniqueColValues(rows, iDateChk, formatDateVal));
+      }
     }catch(err){
       setStatus('❌ Could not read '+file.name+': '+err.message, true);
       FILES[slot] = null;
@@ -235,7 +252,13 @@ function calcThroughput(){
   var iSec   = findCol(lsH, ['assignmenttostage']);
   var iUnits = findCol(lsH, ['unitspicked']);
   var iWeek  = findCol(lsH, ['weekname','week']);
-  if(iOrder<0 || iSec<0 || iUnits<0){ setStatus('❌ order_id / assignment_to_stage / units_picked column not found in Lateslam UTR Data', true); return; }
+  var iDate  = findCol(lsH, ['date']);
+  if (iOrder<0 || iSec<0 || iUnits<0){ setStatus('❌ order_id / assignment_to_stage / units_picked column not found in Lateslam UTR Data', true); return; }
+  var groupMode = (document.querySelector('input[name="groupModeP"]:checked')||{}).value || 'week';
+  var iPeriod = groupMode==='date' ? iDate : iWeek;
+  if (iPeriod<0){ setStatus('❌ No '+groupMode+' column found in Lateslam UTR Data to group by', true); return; }
+  document.getElementById('thPeriodP').textContent = groupMode==='date' ? 'Date' : 'Week';
+  var selDateP = groupMode==='date' ? document.getElementById('dateSelectP').value : '';
 
   var fWeek = document.getElementById('wkFilter').value.trim();
   var byUser = {}, unmatchedOrders=0, consideredOrders=0;
@@ -247,15 +270,19 @@ function calcThroughput(){
       var w = String(r[iWeek]||'').replace(/\D/g,'');
       if(w !== fWeek.replace(/\D/g,'')) continue;
     }
+    var periodRaw = (groupMode==='date' ? formatDateVal(r[iPeriod]) : String(r[iPeriod]||'').trim()) || '—';
+    if(selDateP && periodRaw !== selDateP) continue;
     consideredOrders++;
     var secs = Number(r[iSec])||0;
     var units = Number(r[iUnits])||0;
     var user = orderUser[orderId] || '';
     if(!user){ unmatchedOrders++; continue; }
-    if(!byUser[user]) byUser[user]={ user:user, totalSeconds:0, totalUnits:0, orders:0 };
-    byUser[user].totalSeconds += secs;
-    byUser[user].totalUnits   += units;
-    byUser[user].orders++;
+    var period = periodRaw;
+    var key = user+'|'+period;
+    if(!byUser[key]) byUser[key]={ user:user, period:period, totalSeconds:0, totalUnits:0, orders:0 };
+    byUser[key].totalSeconds += secs;
+    byUser[key].totalUnits   += units;
+    byUser[key].orders++;
   }
 
   if(unmatchedOrders===consideredOrders && consideredOrders>0){
@@ -268,7 +295,7 @@ function calcThroughput(){
     var o = byUser[u];
     var avgSecPerUnit = o.totalUnits ? o.totalSeconds/o.totalUnits : 0;
     var throughputPerHour = avgSecPerUnit ? 3600/avgSecPerUnit : 0;
-    return { user:o.user, orders:o.orders, totalSeconds:Math.round(o.totalSeconds), totalUnits:o.totalUnits,
+    return { user:o.user, period:o.period, orders:o.orders, totalSeconds:Math.round(o.totalSeconds), totalUnits:o.totalUnits,
       avgSecPerUnit:+avgSecPerUnit.toFixed(2), throughputPerHour:+throughputPerHour.toFixed(1) };
   }).sort(function(a,b){ return b.throughputPerHour-a.throughputPerHour; });
 
@@ -289,6 +316,7 @@ function exportExcel(){
   var data = LAST_ROWS.map(function(r){
     return {
       'User': r.user,
+      'Period': r.period,
       'Total Orders': r.orders,
       'Total Seconds': r.totalSeconds,
       'Total Units': r.totalUnits,
@@ -297,7 +325,7 @@ function exportExcel(){
     };
   });
   var ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:22},{wch:14},{wch:14},{wch:12},{wch:16},{wch:14}];
+  ws['!cols'] = [{wch:22},{wch:12},{wch:14},{wch:14},{wch:12},{wch:16},{wch:14}];
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Throughput');
   var fWeek = document.getElementById('wkFilter').value.trim();
@@ -307,7 +335,50 @@ function exportExcel(){
 }
 
 function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
-function speedCol(v){ return v>165?'#10B981':v>=155?'#F59E0B':'#EF4444'; }
+function speedCol(v){ return v>=170?'#10B981':v>=165?'#F59E0B':'#EF4444'; }
+function formatDateVal(v){
+  if(v===null||v===undefined||v==='') return '';
+  var s = String(v).trim();
+  var n = Number(s);
+  if(!isNaN(n) && n>20000 && n<80000 && s.indexOf('/')===-1 && s.indexOf('-')===-1){
+    var d = new Date(Math.round((n-25569)*86400*1000));
+    var mm=String(d.getUTCMonth()+1).padStart(2,'0'), dd=String(d.getUTCDate()).padStart(2,'0'), yyyy=d.getUTCFullYear();
+    return mm+'/'+dd+'/'+yyyy;
+  }
+  return s;
+}
+function uniqueColValues(rows, colIdx, formatter){
+  var seen={}, out=[];
+  for(var i=1;i<rows.length;i++){
+    var raw = rows[i][colIdx];
+    if(raw===undefined||raw===null||raw==='') continue;
+    var v = formatter ? formatter(raw) : String(raw).trim();
+    if(v && !seen[v]){ seen[v]=1; out.push(v); }
+  }
+  out.sort();
+  return out;
+}
+function fillDateSelect(sel, vals){
+  sel.innerHTML = '<option value="">All dates</option>' + vals.map(function(v){ var esc=v.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); return '<option value="'+esc+'">'+esc+'</option>'; }).join('');
+}
+function groupModeChangedP(mode){
+  var sel = document.getElementById('dateSelectP');
+  sel.style.display = mode==='date' ? '' : 'none';
+  if(mode==='date' && FILES[1]){
+    var iDate = findCol(FILES[1][0], ['date']);
+    if(iDate>=0) fillDateSelect(sel, uniqueColValues(FILES[1], iDate, formatDateVal));
+  }
+  if(FILES[1] && FILES[2]) calcThroughput();
+}
+function groupModeChangedS(mode){
+  var sel = document.getElementById('dateSelectS');
+  sel.style.display = mode==='date' ? '' : 'none';
+  if(mode==='date' && STORE_FILE){
+    var iDateS = findCol(STORE_FILE[0], ['date']);
+    if(iDateS>=0) fillDateSelect(sel, uniqueColValues(STORE_FILE, iDateS, formatDateVal));
+  }
+  if(STORE_FILE) calcStore();
+}
 
 function switchTab(t){
   document.getElementById('panelPicker').classList.toggle('active', t==='picker');
@@ -329,6 +400,10 @@ function loadStoreFile(input){
       var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
       STORE_FILE = rows;
       setStatusS('');
+      if((document.querySelector('input[name="groupModeS"]:checked')||{}).value==='date'){
+        var iDateChkS = findCol(rows[0], ['date']);
+        if(iDateChkS>=0) fillDateSelect(document.getElementById('dateSelectS'), uniqueColValues(rows, iDateChkS, formatDateVal));
+      }
     }catch(err){
       setStatusS('❌ Could not read '+file.name+': '+err.message, true);
       STORE_FILE = null;
@@ -358,6 +433,12 @@ var LAST_STORE_ROWS = [];
 function calcStore(){
   if(!STORE_FILE){ setStatusS('❌ Upload the file first', true); return; }
   if(STORE_FILE.length<2){ setStatusS('❌ File has no data rows', true); return; }
+  var groupModeS = (document.querySelector('input[name="groupModeS"]:checked')||{}).value || 'week';
+  var iDateS = findCol(STORE_FILE[0], ['date']);
+  var colPeriodS = groupModeS==='date' ? iDateS : COL_WEEK_S;
+  if(colPeriodS<0){ setStatusS('❌ No date column found in this file to group by', true); return; }
+  document.getElementById('thWeekS').textContent = groupModeS==='date' ? 'Date' : 'Week';
+  var selDateS = groupModeS==='date' ? document.getElementById('dateSelectS').value : '';
   var fWeek = document.getElementById('wkFilterS').value.trim();
   var byStore = {};
   var considered=0, skipped=0;
@@ -369,8 +450,9 @@ function calcStore(){
       var w = String(r[COL_WEEK_S]||'').replace(/\D/g,'');
       if(w !== fWeek.replace(/\D/g,'')) continue;
     }
+    var wk = (groupModeS==='date' ? formatDateVal(r[colPeriodS]) : String(r[colPeriodS]||'').trim()) || '—';
+    if(selDateS && wk !== selDateS) continue;
     considered++;
-    var wk = String(r[COL_WEEK_S]||'').trim();
     var key = store+'|'+wk;
     var secs = Number(r[COL_SEC_S])||0;
     var units = Number(r[COL_UNITS_S])||0;
@@ -409,11 +491,11 @@ function renderStore(rows, totals){
   var kpis = document.getElementById('kpisS');
   var k = [
     {ic:'🏬',lb:'Stores',vl:rows.length,sb:'in view',c:'#2563EB'},
-    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
+    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED',extra:true},
     {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
     {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
   ];
-  kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
+  kpis.innerHTML = k.map(function(c){ return '<div class="kpi'+(c.extra?' colS-extra':'')+'" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
 
   var tb = document.getElementById('tbS');
   if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="9">No matched rows for this filter</td></tr>'; return; }
@@ -421,14 +503,20 @@ function renderStore(rows, totals){
     var col = speedCol(r.throughputPerHour);
     return '<tr><td style="font-weight:700;color:#1a1830;">'+r.store+'</td>'+
       '<td>'+(r.week||'—')+'</td>'+
-      '<td style="text-align:right;">'+fmt(r.orders)+'</td>'+
-      '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
-      '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
-      '<td style="text-align:right;">'+r.upo.toFixed(1)+'</td>'+
-      '<td>'+upoBucket(r.upo)+'</td>'+
+      '<td class="colS-extra" style="text-align:right;">'+fmt(r.orders)+'</td>'+
+      '<td class="colS-extra" style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
+      '<td class="colS-extra" style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
+      '<td class="colS-extra" style="text-align:right;">'+r.upo.toFixed(1)+'</td>'+
+      '<td class="colS-extra">'+upoBucket(r.upo)+'</td>'+
       '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
       '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td></tr>';
   }).join('');
+  toggleStoreCols();
+}
+
+function toggleStoreCols(){
+  var show = document.getElementById('showAllS').checked;
+  document.querySelectorAll('.colS-extra').forEach(function(el){ el.style.display = show ? '' : 'none'; });
 }
 
 function exportExcelStore(){
@@ -436,7 +524,7 @@ function exportExcelStore(){
   var data = LAST_STORE_ROWS.map(function(r){
     return {
       'Store': r.store,
-      'Week': r.week,
+      'Period': r.week,
       'Total Orders': r.orders,
       'Total Seconds': r.totalSeconds,
       'Total Units': r.totalUnits,
@@ -470,10 +558,11 @@ function render(rows, totals, unmatchedOrders, usedFallback){
   kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
 
   var tb = document.getElementById('tb');
-  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="6">No matched rows for this filter</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="7">No matched rows for this filter</td></tr>'; return; }
   tb.innerHTML = rows.map(function(r){
     var col = speedCol(r.throughputPerHour);
     return '<tr><td style="font-weight:700;color:#1a1830;">'+r.user+'</td>'+
+      '<td>'+r.period+'</td>'+
       '<td style="text-align:right;">'+fmt(r.orders)+'</td>'+
       '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
       '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+

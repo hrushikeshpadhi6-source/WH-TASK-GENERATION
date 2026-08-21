@@ -225,6 +225,13 @@ thead tr{background:var(--th-bg);position:sticky;top:0;z-index:2;}
 th{padding:9px 12px;text-align:left;color:var(--muted);font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
 td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text);opacity:0.85;}
 tbody tr:hover{background:var(--row-hover);}
+#sm-th th:nth-child(1),#sm-th th:nth-child(2){position:sticky;z-index:4;background:var(--th-bg);}
+#sm-th th:nth-child(1){left:0;}
+#sm-th th:nth-child(2){left:100px;}
+#sm-tb td:nth-child(1),#sm-tb td:nth-child(2){position:sticky;z-index:3;background:var(--card);box-shadow:2px 0 4px -2px rgba(0,0,0,.12);}
+#sm-tb td:nth-child(1){left:0;}
+#sm-tb td:nth-child(2){left:100px;}
+#sm-tb tr:hover td:nth-child(1),#sm-tb tr:hover td:nth-child(2){background:var(--row-hover);}
 
 /* FOOTER */
 .footer{background:var(--surface);border-top:1px solid var(--border);padding:20px 24px;
@@ -999,6 +1006,10 @@ tbody tr:hover{background:var(--row-hover);}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <div class="f-status" id="sm-rows"></div>
+        <div style="position:relative;display:inline-block;">
+          <button id="sm-col-btn" onclick="smToggleColPanel()" class="copy-btn" style="white-space:nowrap;">☰ Columns</button>
+          <div id="sm-col-panel" style="display:none;position:absolute;right:0;top:110%;background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:10px;padding:10px;max-height:280px;overflow:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:190px;"></div>
+        </div>
         <button id="sm-export-btn" onclick="smExportExcel()" class="copy-btn" style="border-color:#10B981;color:#10B981;white-space:nowrap;">⬇ Export Excel</button>
       </div>
     </div>
@@ -3347,14 +3358,36 @@ function smRenderUTR(rows){
 // ═══════════════════════════════════════════════
 // TABLE
 // ═══════════════════════════════════════════════
+var SM_COL_HIDDEN={};
+var SM_LAST_TABLE_ROWS=[];
+function smToggleColPanel(){
+  var p=document.getElementById('sm-col-panel');
+  p.style.display = p.style.display==='none'?'block':'none';
+}
+function smBuildColPanel(keys){
+  var p=document.getElementById('sm-col-panel');
+  if(!p) return;
+  p.innerHTML = keys.map(function(k){
+    var checked = !SM_COL_HIDDEN[k];
+    var esc = k.replace(/'/g,"\\'");
+    return '<label style="display:flex;align-items:center;gap:6px;padding:4px 2px;font-size:12px;cursor:pointer;white-space:nowrap;"><input type="checkbox" '+(checked?'checked':'')+' onchange="smColToggle(\''+esc+'\',this.checked)">'+k+'</label>';
+  }).join('');
+}
+function smColToggle(k, visible){
+  SM_COL_HIDDEN[k] = !visible;
+  smTable(SM_LAST_TABLE_ROWS);
+}
 function smTable(rows){
   if(!rows.length){document.getElementById('sm-tb').innerHTML='<tr><td class="empty">No rows</td></tr>';return;}
+  SM_LAST_TABLE_ROWS = rows;
   var keys=Object.keys(rows[0]);
+  smBuildColPanel(keys);
+  var visKeys = keys.filter(function(k){ return !SM_COL_HIDDEN[k]; });
 
   // Build orders lookup per row index for LS% calculation
-  document.getElementById('sm-th').innerHTML='<tr>'+keys.map(function(k){return'<th>'+k+'</th>';}).join('')+'</tr>';
+  document.getElementById('sm-th').innerHTML='<tr>'+visKeys.map(function(k){return'<th>'+k+'</th>';}).join('')+'</tr>';
   document.getElementById('sm-tb').innerHTML=rows.slice(0,500).map(function(r){
-    return'<tr>'+keys.map(function(k){
+    return'<tr>'+visKeys.map(function(k){
       var v=r[k]; var c=''; var kl=k.toLowerCase().trim(); var nv=n(v); var disp=v||'—';
 
       // SLA columns → convert decimal to % if needed
