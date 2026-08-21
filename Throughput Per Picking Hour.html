@@ -36,7 +36,8 @@ body{background:#f8f7ff;color:#1a1830;font-family:'Inter',sans-serif;min-height:
 .kpi .lb{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7b78a8;}
 .kpi .vl{font-family:'DM Mono',monospace;font-size:22px;font-weight:700;margin:4px 0 2px;color:var(--kc,#F59E0B);}
 .kpi .sb{font-size:11px;color:#7b78a8;}
-.tbl-wrap{background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;}
+.tbl-wrap{background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;width:100%;}
+.tbl-align-wrap{display:inline-flex;flex-direction:column;max-width:100%;}
 .tbl-scroll{max-height:480px;overflow:auto;}
 table{width:auto;border-collapse:collapse;font-size:15px;}
 thead th{background:#f0effe;padding:14px 20px;text-align:left;color:#1e1b4b;font-weight:800;position:sticky;top:0;white-space:nowrap;font-size:15px;}
@@ -97,6 +98,7 @@ tbody tr:hover td{background:#f8f7ff;}
     <span id="status"></span>
   </div>
 
+  <div class="tbl-align-wrap">
   <div id="kpis" class="kpi-grid"></div>
   <div class="tbl-wrap">
     <div class="tbl-scroll">
@@ -105,6 +107,7 @@ tbody tr:hover td{background:#f8f7ff;}
         <tbody id="tb"><tr><td class="empty" colspan="7">Upload both files, then click Calculate</td></tr></tbody>
       </table>
     </div>
+  </div>
   </div>
   <div class="note">Avg Sec/Unit = total assignment-to-stage seconds ÷ total units picked, per picker. Throughput/Hr = 3600 ÷ Avg Sec/Unit. Orders whose ID has no match in the Outbound Pick file are excluded from per-picker rows (shown in status).</div>
   </div>
@@ -135,6 +138,7 @@ tbody tr:hover td{background:#f8f7ff;}
     <span id="statusS"></span>
   </div>
 
+  <div class="tbl-align-wrap">
   <div id="kpisS" class="kpi-grid"></div>
   <div class="tbl-wrap">
     <div class="tbl-scroll">
@@ -143,6 +147,7 @@ tbody tr:hover td{background:#f8f7ff;}
         <tbody id="tbS"><tr><td class="empty" colspan="9">Upload Lateslam UTR Data, then click Calculate</td></tr></tbody>
       </table>
     </div>
+  </div>
   </div>
   <div class="note">Uses Lateslam UTR Data only — column B = week_name, F = store code, K = assignment-to-stage seconds, N = units picked. Rows grouped by store code; Avg Sec/Unit and Throughput/Hr computed the same way as the picker view.</div>
   </div>
@@ -491,7 +496,7 @@ function renderStore(rows, totals){
   var kpis = document.getElementById('kpisS');
   var k = [
     {ic:'🏬',lb:'Stores',vl:rows.length,sb:'in view',c:'#2563EB'},
-    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED',extra:true},
+    {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
     {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
     {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
   ];
