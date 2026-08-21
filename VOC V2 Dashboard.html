@@ -1573,8 +1573,9 @@ const ISSUE_LABEL_CAT_MAP = {
   'quantity mismatch': 'mismatch',
   'expiry issue':      'expiry',
   'expiry':            'expiry',
-  'near expiry':       'expiry',
-  'other':             'other'
+  'near expiry':       'expiry'
+  // 'Other' is deliberately NOT mapped — it's the sheet's generic catch-all,
+  // not a specific signal, so it must fall through to comment/concession detection.
 };
 function issueLabelCat(rec) {
   const lbl = String(rec && rec.issueLabel || '').trim().toLowerCase();
