@@ -3653,6 +3653,10 @@ window.feedbackAdminClear=async function(){
       </select>
     </div>
     <div>
+      <div class="ctrl-label">Throughput Target /Hr</div>
+      <input class="input-field" type="number" id="ls-tph-target" value="170" min="1" step="1" style="width:100%">
+    </div>
+    <div>
       <button class="btn btn-primary" style="width:100%;margin-top:2px;" onclick="lsFetchForecast()">☁️ Fetch Forecast</button>
     </div>
   </div>
@@ -7327,22 +7331,26 @@ function lsSumForecastForDates(dates, callback) {
       });
     });
   }
-  function next() {
-    if (idx >= dates.length) {
-      callback(gotAny ? fcO : lsFcOrders, gotAny ? fcU : lsFcUnits);
-      return;
-    }
-    var d = dates[idx++];
+  window._lsFcCache = window._lsFcCache || {};
+  var pending = dates.length, done = false;
+  function finish() {
+    if (done) return;
+    done = true;
+    callback(gotAny ? fcO : lsFcOrders, gotAny ? fcU : lsFcUnits);
+  }
+  function absorb(data) {
+    if (data && data.status !== 'error') { addMap(fcO, data.orders); addMap(fcU, data.units); gotAny = true; }
+    if (--pending <= 0) finish();
+  }
+  dates.forEach(function(d) {
+    var cached = window._lsFcCache[d];
+    if (cached) { setTimeout(function(){ absorb(cached); }, 0); return; }
     appsScriptJSONP(
       { action: 'forecast', date: d },
-      function(data) {
-        if (data && data.status !== 'error') { addMap(fcO, data.orders); addMap(fcU, data.units); gotAny = true; }
-        next();
-      },
-      function() { next(); }
+      function(data) { if (data && data.status !== 'error') window._lsFcCache[d] = data; absorb(data); },
+      function() { absorb(null); }
     );
-  }
-  next();
+  });
 }
 
 // ── Lateslam: pl_create_to_stage > promise_utr (seconds) ────
@@ -7889,6 +7897,20 @@ function lsFetchForecastRange() {
   next();
 }
 
+// ── Throughput helpers ───────────────────────────────────────
+function lsTphTarget(){ var el=document.getElementById('ls-tph-target'); var v=el?Number(el.value):170; return v>0?v:170; }
+function lsTphColor(v){ var t=lsTphTarget(); return v>=t?'#059669':v>=t-5?'#ea580c':'#e11d48'; }
+// Finds the assignment_to_stage_seconds column in the uploaded lateslam file
+function lsFindSecCol(row){
+  if(!row) return '';
+  var keys=Object.keys(row);
+  for(var i=0;i<keys.length;i++){
+    var n=String(keys[i]).toLowerCase().replace(/[^a-z]/g,'');
+    if(n.indexOf('assignmenttostage')>=0) return keys[i];
+  }
+  return '';
+}
+
 // ── Generate Report ──────────────────────────────────────────
 function lsGenerate() {
   if (!lsData.length) { showToast('⚠️ Upload orders file first'); return; }
@@ -7921,16 +7943,18 @@ function lsGenerate() {
       'LS check: <b>' + JSON.stringify(sampleRow[stageCol]) + ' &gt; ' + JSON.stringify(sampleRow[promCol]) + '</b>';
   }
 
+  var tphSecCol = lsFindSecCol(lsData[0]);
+
   showLoading('lateslam', true);
   document.getElementById('out-lateslam').innerHTML = '';
   document.getElementById('export-lateslam').style.display = 'none';
 
   // Detect every distinct calendar day present in the uploaded data (whole-days mode)
   var datesSeen = {};
-  lsData.forEach(function(row) {
-    var dd = lsExtractDate(row[slotCol]);
-    if (dd) datesSeen[dd] = true;
-  });
+  for (var _di = 0; _di < lsData.length; _di++) {
+    var dd = lsExtractDate(lsData[_di][slotCol]);
+    if (dd) datesSeen[dd] = 1;
+  }
   var wholeDays = Object.keys(datesSeen).sort();
 
   lsSumForecastForDates(wholeDays, function(fcOrdersMap, fcUnitsMap) {
@@ -7946,6 +7970,33 @@ function lsGenerate() {
     });
 
     var stores = Object.keys(storeMap).sort();
+
+    // Throughput per store, computed up front so satellite (_SS) volume can roll
+    // into its parent store — the _SS row itself then shows blank.
+    var tphRaw = {};
+    Object.keys(storeMap).forEach(function(sid){
+      var secs=0, units=0;
+      if (tphSecCol) storeMap[sid].forEach(function(row){
+        var sc = parseFloat(row[tphSecCol]); if(!isFinite(sc)) return;
+        var un = parseFloat(row[unitsCol]);  if(!isFinite(un) || un<=0) return;
+        secs += sc; units += un;
+      });
+      tphRaw[sid] = { secs:secs, units:units };
+    });
+    var tphByStore = {};
+    Object.keys(tphRaw).forEach(function(sid){
+      var base = sid.replace(/[_\s-]*SS$/i, '');
+      if (base !== sid && tphRaw[base]) {
+        tphByStore[sid] = { ok:false, perHour:0, avgSec:0, secs:0, units:0, merged:base };
+        tphRaw[base].secs  += tphRaw[sid].secs;
+        tphRaw[base].units += tphRaw[sid].units;
+      }
+    });
+    Object.keys(tphRaw).forEach(function(sid){
+      if (tphByStore[sid]) return;
+      var t = tphRaw[sid], avg = t.units ? t.secs/t.units : 0;
+      tphByStore[sid] = { avgSec:avg, perHour: avg ? 3600/avg : 0, secs:Math.round(t.secs), units:t.units, ok: !!tphSecCol && t.units>0 };
+    });
     if (!stores.length) {
       showLoading('lateslam', false);
       showToast('No data for selected store');
@@ -7966,7 +8017,7 @@ function lsGenerate() {
 
       // Init all 48 slots
       var slots = {};
-      LS_SLOTS.forEach(function(s) { slots[s] = { orders:0, units:0, lateslam:0 }; });
+      LS_SLOTS.forEach(function(s) { slots[s] = { orders:0, units:0, lateslam:0, elig:0 }; });
 
       // Fill slots
       rows.forEach(function(row) {
@@ -7975,15 +8026,6 @@ function lsGenerate() {
         // pl_create_to_stage (actual seconds) and promise_utr (SLA seconds)
         var plToStage = row[stageCol];
         var promUtr   = row[promCol];
-        // Debug first 3 rows (check browser console F12)
-        if (!slots['__debugCount']) slots['__debugCount'] = 0;
-        if (slots['__debugCount'] < 3) {
-          console.log('[LS] Row', slots['__debugCount'],
-            '| slotCol:', slotCol, '→', slotTime,
-            '| stageCol:', stageCol, '→', plToStage,
-            '| promCol:', promCol, '→', promUtr);
-          slots['__debugCount']++;
-        }
         var unitVal   = parseFloat(row[unitsCol]) || 1;
 
         // Parse timestamp to 30-min slot key
@@ -8006,13 +8048,10 @@ function lsGenerate() {
           var _pr = promUtr   === undefined || promUtr   === null || promUtr   === '' ? '' : String(promUtr).trim();
           var actualSecs  = _ps === '' ? NaN : parseFloat(_ps);
           var promiseSecs = _pr === '' ? NaN : parseFloat(_pr);
-          var isLS = isFinite(actualSecs) && isFinite(promiseSecs) && promiseSecs > 0 && actualSecs > promiseSecs;
+          var hasPromise = isFinite(promiseSecs) && promiseSecs > 0;
+          if (hasPromise) slots[slot].elig++;   // only these orders count in LS %
+          var isLS = isFinite(actualSecs) && hasPromise && actualSecs > promiseSecs;
           if (isLS) slots[slot].lateslam++;
-          // Debug: log first lateslam found
-          if (isLS && !slots['__lsDebug']) {
-            slots['__lsDebug'] = true;
-            console.log('[LS] First lateslam found → actual=' + actualSecs + 's, promise=' + promiseSecs + 's, slot=' + slot);
-          }
         }
       });
 
@@ -8028,11 +8067,13 @@ function lsGenerate() {
       var fcO = getFc(fcOrdersMap);
       var fcU = getFc(fcUnitsMap);
 
-      var result = lsBuildTable(storeId, slots, fcO, fcU, reportDate);
+      var tph = tphByStore[storeId] || { ok:false, perHour:0, avgSec:0, secs:0, units:0 };
+
+      var result = lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph);
       allHTML += result.html;
-      summaryArr.push({ storeId: storeId, t: result.totals });
+      summaryArr.push({ storeId: storeId, t: result.totals, tph: tph });
       window._lsExportData.stores[storeId] = {
-        slots: slots, fcO: fcO, fcU: fcU, rows: result.exportRows
+        slots: slots, fcO: fcO, fcU: fcU, rows: result.exportRows, tph: tph
       };
     });
 
@@ -8048,22 +8089,23 @@ function lsGenerate() {
 }
 
 // ── Build one store table ─────────────────────────────────────
-function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
-  var totalAO=0, totalAU=0, totalLS=0, totalFO=0, totalFU=0;
+function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
+  tph = tph || { ok:false, perHour:0, avgSec:0 };
+  var totalAO=0, totalAU=0, totalLS=0, totalFO=0, totalFU=0, totalEL=0;
   var exportRows = [];
   var tableBody  = '';
   var prevHr     = '';
 
   // Collect all data first
   LS_SLOTS.forEach(function(slot) {
-    var s  = slots[slot] || { orders:0, units:0, lateslam:0 };
+    var s  = slots[slot] || { orders:0, units:0, lateslam:0, elig:0 };
     var fo = Math.round(fcO[slot] || 0);
     var fu = Math.round(fcU[slot] || 0);
-    var ao = s.orders, au = Math.round(s.units), ls = s.lateslam;
-    var lsPct = ao > 0 ? ls/ao*100 : 0;
+    var ao = s.orders, au = Math.round(s.units), ls = s.lateslam, el = s.elig || 0;
+    var lsPct = el > 0 ? ls/el*100 : 0;   // orders without promise_utr excluded
     var fcVar = fo > 0 ? (ao-fo)/fo*100 : (ao > 0 ? 100 : 0);
-    totalAO+=ao; totalAU+=au; totalLS+=ls; totalFO+=fo; totalFU+=fu;
-    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, lsPct:lsPct, fcVar:fcVar });
+    totalAO+=ao; totalAU+=au; totalLS+=ls; totalFO+=fo; totalFU+=fu; totalEL+=el;
+    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, el:el, lsPct:lsPct, fcVar:fcVar });
   });
 
   // Only render slots that have ACTUAL orders (not empty FC-only rows)
@@ -8095,7 +8137,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
                    r.fcVar < -20 ? 'color:#1d4ed8;font-weight:700;' :
                    r.fcVar < 0   ? 'color:#2563eb;font-weight:600;' : 'color:#6b7280;';
 
-    var lsPctStr = r.ao > 0 ? r.lsPct.toFixed(0)+'%' : '—';
+    var lsPctStr = r.el > 0 ? r.lsPct.toFixed(0)+'%' : '—';
 
     tableBody += '<tr>' +
       '<td style="font-family:monospace;font-weight:700;text-align:center;color:#374151;">' + r.slot + '</td>' +
@@ -8113,7 +8155,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
 
   // Total row (yellow)
   var tFcVar = totalFO > 0 ? (totalAO-totalFO)/totalFO*100 : 0;
-  var tLsPct = totalAO > 0 ? totalLS/totalAO*100 : 0;
+  var tLsPct = totalEL > 0 ? totalLS/totalEL*100 : 0;
   var tVS    = tFcVar > 0 ? '+' : '';
 
   tableBody += '<tr style="background:#ffd600;color:#1a1830;font-weight:800;">' +
@@ -8123,7 +8165,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
     '<td style="text-align:center;font-size:16px;">' + totalAO + '</td>' +
     '<td style="text-align:center;">' + totalAU + '</td>' +
     '<td style="text-align:center;color:' + (totalLS > 0 ? '#b91c1c' : '#065f46') + ';">' +
-      totalLS + (totalAO > 0 ? ' (' + tLsPct.toFixed(1) + '%)' : '') +
+      totalLS + (totalEL > 0 ? ' (' + tLsPct.toFixed(1) + '%)' : '') +
     '</td>' +
     '<td style="text-align:center;">' + tVS + tFcVar.toFixed(1) + '%</td>' +
     '</tr>';
@@ -8138,7 +8180,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
     '<div class="results-panel" style="margin-bottom:24px;background:#fff;border-color:#d5d2f0;">' +
     '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
     '<h3>⏱️ Late Slam — ' + storeId + '</h3>' +
-    '<span class="results-count">' + totalAO + ' orders · ' + totalLS + ' lateslams (' + tLsPct.toFixed(1) + '%) · FC Var: ' + tVS + tFcVar.toFixed(1) + '%</span>' +
+    '<span class="results-count">' + totalAO + ' orders · ' + totalLS + ' lateslams (' + tLsPct.toFixed(1) + '%) · FC Var: ' + tVS + tFcVar.toFixed(1) + '%' + (tph.ok ? ' · ' + Math.round(tph.perHour) + ' units/hr' : '') + '</span>' +
     '</div>' +
     '<div class="results-body" style="background:#fff;">' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;">' +
@@ -8149,6 +8191,8 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
     _lsStatCard(totalLS,  'Lateslam',    totalLS > 0 ? '#e11d48' : '#059669') +
     _lsStatCard(tLsPct.toFixed(1) + '%', 'LS Rate', tLsPct > 10 ? '#e11d48' : tLsPct > 5 ? '#ea580c' : '#059669', true) +
     _lsStatCard(tVS + tFcVar.toFixed(1) + '%', 'FC Var', tFcVar > 10 ? '#991b1b' : tFcVar > 0 ? '#dc2626' : '#1d4ed8', true) +
+    _lsStatCard(tph.ok ? Math.round(tph.perHour) : '—', 'Thruput/Hr', tph.ok ? lsTphColor(tph.perHour) : '#9ca3af') +
+    _lsStatCard(tph.ok ? tph.avgSec.toFixed(1) + 's' : '—', 'Avg Sec/Unit', '#7c3aed', true) +
     '</div>' +
     '<div class="tbl-wrap" style="border-color:#d5d2f0;"><table>' +
     '<thead><tr style="background:#1a1830;">' +
@@ -8164,7 +8208,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate) {
     '<tbody>' + tableBody + '</tbody></table></div>' +
     '</div></div>';
 
-  return { html:html, totals:{totalAO:totalAO,totalAU:totalAU,totalLS:totalLS,totalFO:totalFO,totalFU:totalFU,tLsPct:tLsPct,tFcVar:tFcVar}, exportRows:exportRows };
+  return { html:html, totals:{totalAO:totalAO,totalAU:totalAU,totalLS:totalLS,totalFO:totalFO,totalFU:totalFU,totalEL:totalEL,tLsPct:tLsPct,tFcVar:tFcVar}, exportRows:exportRows };
 }
 
 function _lsStatCard(val, label, color, small) {
@@ -8176,14 +8220,20 @@ function _lsStatCard(val, label, color, small) {
 }
 
 // ── Multi-store summary ───────────────────────────────────────
+var _lsThW = 'text-align:center;white-space:normal;word-break:break-word;font-size:10px;line-height:1.25;padding:8px 4px;';
 function lsBuildSummary(summaryArr, reportDate) {
   var gAO=0,gAU=0,gLS=0,gFO=0,gFU=0;
+  var gSecs=0, gTphUnits=0;
   summaryArr.forEach(function(item) {
     gAO+=item.t.totalAO; gAU+=item.t.totalAU; gLS+=item.t.totalLS;
     gFO+=item.t.totalFO; gFU+=item.t.totalFU;
+    if (item.tph && item.tph.ok) { gSecs+=item.tph.secs; gTphUnits+=item.tph.units; }
   });
+  var gAvgSec = gTphUnits ? gSecs/gTphUnits : 0;
+  var gTph = gAvgSec ? 3600/gAvgSec : 0;
   var gFV = gFO > 0 ? (gAO-gFO)/gFO*100 : 0;
-  var gLR = gAO > 0 ? gLS/gAO*100 : 0;
+  var gEL = 0; summaryArr.forEach(function(item){ gEL += (item.t.totalEL||0); });
+  var gLR = gEL > 0 ? gLS/gEL*100 : 0;
 
   var rows = summaryArr.map(function(item) {
     var t = item.t;
@@ -8191,15 +8241,23 @@ function lsBuildSummary(summaryArr, reportDate) {
                   t.tLsPct > 0  ? 'background:#fef3c7;color:#92400e;' : 'color:#6b7280;';
     var vS = t.tFcVar > 0 ? '+' : '';
     var vStyle = t.tFcVar > 0 ? 'color:#dc2626;font-weight:700;' : t.tFcVar < 0 ? 'color:#1d4ed8;font-weight:700;' : '';
+    var tp = item.tph || {};
+    var blank = !!tp.merged;                       // volume rolled into the parent store
+    var tphTxt = tp.ok ? Math.round(tp.perHour) : (blank ? '' : '—');
+    var avgTxt = tp.ok ? tp.avgSec.toFixed(1) + 's' : (blank ? '' : '—');
+    var C = 'text-align:center;font-size:12px;padding:8px 4px;';
     return '<tr>' +
-      '<td style="font-weight:800;color:#e11d48;font-size:14px;">' + item.storeId + '</td>' +
-      '<td style="text-align:center;">' + t.totalFO + '</td>' +
-      '<td style="text-align:center;">' + t.totalFU + '</td>' +
-      '<td style="text-align:center;font-weight:800;">' + t.totalAO + '</td>' +
-      '<td style="text-align:center;">' + t.totalAU + '</td>' +
-      '<td style="text-align:center;' + lsStyle + '">' + t.totalLS + '</td>' +
-      '<td style="text-align:center;' + lsStyle + '">' + t.tLsPct.toFixed(1) + '%</td>' +
-      '<td style="text-align:center;' + vStyle + '">' + vS + t.tFcVar.toFixed(1) + '%</td>' +
+      '<td style="font-weight:800;color:#e11d48;font-size:12px;padding:8px 6px;">' + item.storeId + '</td>' +
+      '<td style="' + C + '">' + t.totalFO + '</td>' +
+      '<td style="' + C + '">' + t.totalFU + '</td>' +
+      '<td style="' + C + 'font-weight:800;">' + t.totalAO + '</td>' +
+      '<td style="' + C + '">' + t.totalAU + '</td>' +
+      '<td style="' + C + lsStyle + '">' + t.totalLS + '</td>' +
+      '<td style="' + C + lsStyle + '">' + t.tLsPct.toFixed(1) + '%</td>' +
+      '<td style="' + C + vStyle + '">' + vS + t.tFcVar.toFixed(1) + '%</td>' +
+      '<td style="' + C + 'color:#7c3aed;">' + avgTxt + '</td>' +
+      '<td style="' + C + 'font-weight:800;color:' + (tp.ok ? lsTphColor(tp.perHour) : '#9ca3af') + ';">' + tphTxt + '</td>' +
+      '<td style="' + C + 'color:#6b7280;">' + (blank ? '' : lsTphTarget()) + '</td>' +
       '</tr>';
   }).join('');
 
@@ -8208,27 +8266,33 @@ function lsBuildSummary(summaryArr, reportDate) {
     '<div class="results-panel" style="margin-bottom:24px;background:#fff;border-color:#d5d2f0;">' +
     '<div class="results-header" style="background:linear-gradient(135deg,#1a1830,#2d2b5e);">' +
     '<h3>📊 Multi-Store Summary</h3>' +
-    '<span class="results-count">' + summaryArr.length + ' stores · ' + gAO + ' orders · ' + gLS + ' lateslams (' + gLR.toFixed(1) + '%)</span>' +
-    '</div><div class="results-body" style="background:#fff;"><div class="tbl-wrap" style="border-color:#d5d2f0;"><table>' +
+    '<span class="results-count">' + summaryArr.length + ' stores · ' + gAO + ' orders · ' + gLS + ' lateslams (' + gLR.toFixed(1) + '%)' + (gTphUnits ? ' · ' + Math.round(gTph) + ' units/hr' : '') + '</span>' +
+    '</div><div class="results-body" style="background:#fff;"><div class="tbl-wrap" style="border-color:#d5d2f0;overflow-x:visible;"><table style="width:100%;table-layout:fixed;">' +
     '<thead><tr style="background:#1a1830;">' +
-    '<th style="color:#94a3b8;">STORE</th>' +
-    '<th style="color:#93c5fd;text-align:center;">FC ORDERS</th>' +
-    '<th style="color:#7dd3fc;text-align:center;">FC UNITS</th>' +
-    '<th style="color:#fde047;text-align:center;">ACT ORDERS</th>' +
-    '<th style="color:#fbbf24;text-align:center;">ACT UNITS</th>' +
-    '<th style="color:#fca5a5;text-align:center;">LATESLAM</th>' +
-    '<th style="color:#fca5a5;text-align:center;">LS %</th>' +
-    '<th style="color:#6ee7b7;text-align:center;">FC VAR %</th>' +
+    '<th style="color:#94a3b8;' + _lsThW + 'width:11%;text-align:left;">STORE</th>' +
+    '<th style="color:#93c5fd;' + _lsThW + '">FC ORDERS</th>' +
+    '<th style="color:#7dd3fc;' + _lsThW + '">FC UNITS</th>' +
+    '<th style="color:#fde047;' + _lsThW + '">ACT ORDERS</th>' +
+    '<th style="color:#fbbf24;' + _lsThW + '">ACT UNITS</th>' +
+    '<th style="color:#fca5a5;' + _lsThW + '">LATE SLAM</th>' +
+    '<th style="color:#fca5a5;' + _lsThW + 'width:7%;">LS %</th>' +
+    '<th style="color:#6ee7b7;' + _lsThW + '">FC VAR %</th>' +
+    '<th style="color:#c4b5fd;' + _lsThW + '">AVG SEC / UNIT</th>' +
+    '<th style="color:#86efac;' + _lsThW + '">THRU PUT / HR</th>' +
+    '<th style="color:#94a3b8;' + _lsThW + '">TARGET / HR</th>' +
     '</tr></thead><tbody>' + rows +
-    '<tr style="background:#ffd600;color:#1a1830;font-weight:800;">' +
-    '<td>GRAND TOTAL</td>' +
+    '<tr style="background:#ffd600;color:#1a1830;font-weight:800;font-size:12px;">' +
+    '<td style="padding:9px 6px;font-size:11px;">GRAND TOTAL</td>' +
     '<td style="text-align:center;">' + gFO + '</td>' +
     '<td style="text-align:center;">' + gFU + '</td>' +
-    '<td style="text-align:center;font-size:16px;">' + gAO + '</td>' +
+    '<td style="text-align:center;font-size:13px;">' + gAO + '</td>' +
     '<td style="text-align:center;">' + gAU + '</td>' +
     '<td style="text-align:center;color:' + (gLS > 0 ? '#b91c1c' : '#065f46') + ';">' + gLS + '</td>' +
     '<td style="text-align:center;">' + gLR.toFixed(1) + '%</td>' +
     '<td style="text-align:center;">' + gVS + gFV.toFixed(1) + '%</td>' +
+    '<td style="text-align:center;">' + (gTphUnits ? gAvgSec.toFixed(1) + 's' : '—') + '</td>' +
+    '<td style="text-align:center;color:' + (gTphUnits ? lsTphColor(gTph) : '#6b7280') + ';">' + (gTphUnits ? Math.round(gTph) : '—') + '</td>' +
+    '<td style="text-align:center;">' + lsTphTarget() + '</td>' +
     '</tr></tbody></table></div></div></div>';
 }
 
@@ -8448,13 +8512,15 @@ function lsExportExcel() {
 
   if (Object.keys(exp.stores).length > 1) {
     var sumRows = [['MULTI-STORE SUMMARY','',exp.reportDate],[],
-      ['STORE','FC ORDERS','FC UNITS','ACT ORDERS','ACT UNITS','LATESLAM','LS %','FC VAR %']];
+      ['STORE','FC ORDERS','FC UNITS','ACT ORDERS','ACT UNITS','LATESLAM','LS %','FC VAR %','AVG SEC/UNIT','THRUPUT/HR','TARGET/HR']];
     Object.keys(exp.stores).forEach(function(sid) {
       var d=exp.stores[sid];
       var ao=0,au=0,ls=0,fo=0,fu=0;
       d.rows.forEach(function(r){ao+=r.ao;au+=r.au;ls+=r.ls;fo+=r.fo;fu+=r.fu;});
       var fv=fo>0?(ao-fo)/fo*100:0, lp=ao>0?(ls/ao*100):0;
-      sumRows.push([sid,fo,fu,ao,au,ls,lp.toFixed(1)+'%',(fv>0?'+':'')+fv.toFixed(1)+'%']);
+      var tp = d.tph;
+      sumRows.push([sid,fo,fu,ao,au,ls,lp.toFixed(1)+'%',(fv>0?'+':'')+fv.toFixed(1)+'%',
+        tp&&tp.ok?+tp.avgSec.toFixed(2):'—', tp&&tp.ok?Math.round(tp.perHour):'—', lsTphTarget()]);
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumRows), 'Summary');
   }
