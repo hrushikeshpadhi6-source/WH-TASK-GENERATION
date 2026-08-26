@@ -91,7 +91,11 @@ tbody tr:hover td{background:#f8f7ff;}
     <span style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Group by:
       <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeP" value="week" checked onchange="groupModeChangedP('week')">Week</label>
       <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeP" value="date" onchange="groupModeChangedP('date')">Date</label>
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeP" value="month" onchange="groupModeChangedP('month')">Month</label>
     </span>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Target/Hr
+      <input type="number" id="targetP" value="170" min="1" step="1" style="width:74px;padding:8px 10px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="if(FILES[1]&&FILES[2])calcThroughput()">
+    </label>
     <select id="dateSelectP" style="display:none;padding:9px 12px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="calcThroughput()"><option value="">All dates</option></select>
     <button class="calc-btn" id="calcBtn" onclick="calcThroughput()" disabled>🔍 Calculate Throughput</button>
     <button class="calc-btn" id="exportBtn" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3);" onclick="exportExcel()" disabled>⬇️ Export to Excel</button>
@@ -103,8 +107,8 @@ tbody tr:hover td{background:#f8f7ff;}
   <div class="tbl-wrap">
     <div class="tbl-scroll">
       <table>
-        <thead id="th"><tr><th>User</th><th id="thPeriodP">Week</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
-        <tbody id="tb"><tr><td class="empty" colspan="7">Upload both files, then click Calculate</td></tr></tbody>
+        <thead id="th"><tr><th>User</th><th id="thPeriodP">Week</th><th style="text-align:right;">Total Orders</th><th style="text-align:right;">Total Seconds</th><th style="text-align:right;">Total Units</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th><th style="text-align:right;">Target/Hr</th><th style="text-align:right;">Vs Target</th></tr></thead>
+        <tbody id="tb"><tr><td class="empty" colspan="9">Upload both files, then click Calculate</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -128,7 +132,11 @@ tbody tr:hover td{background:#f8f7ff;}
     <span style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Group by:
       <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeS" value="week" checked onchange="groupModeChangedS('week')">Week</label>
       <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeS" value="date" onchange="groupModeChangedS('date')">Date</label>
+      <label style="display:flex;gap:4px;align-items:center;cursor:pointer;font-weight:600;"><input type="radio" name="groupModeS" value="month" onchange="groupModeChangedS('month')">Month</label>
     </span>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;font-weight:700;color:#1a1830;">Target/Hr
+      <input type="number" id="targetS" value="170" min="1" step="1" style="width:74px;padding:8px 10px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="if(STORE_FILE)calcStore()">
+    </label>
     <select id="dateSelectS" style="display:none;padding:9px 12px;border-radius:8px;border:1px solid #d5d2f0;background:#fff;font-family:'DM Mono',monospace;font-size:13px;" onchange="calcStore()"><option value="">All dates</option></select>
     <button class="calc-btn" id="calcBtnS" onclick="calcStore()" disabled>🔍 Calculate by Store</button>
     <button class="calc-btn" id="exportBtnS" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.3);" onclick="exportExcelStore()" disabled>⬇️ Export to Excel</button>
@@ -143,8 +151,8 @@ tbody tr:hover td{background:#f8f7ff;}
   <div class="tbl-wrap">
     <div class="tbl-scroll">
       <table>
-        <thead><tr><th>Store</th><th id="thWeekS">Week</th><th class="colS-extra" style="text-align:right;">Total Orders</th><th class="colS-extra" style="text-align:right;">Total Seconds</th><th class="colS-extra" style="text-align:right;">Total Units</th><th class="colS-extra" style="text-align:right;">UPO</th><th class="colS-extra">UPO Bucket</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th></tr></thead>
-        <tbody id="tbS"><tr><td class="empty" colspan="9">Upload Lateslam UTR Data, then click Calculate</td></tr></tbody>
+        <thead><tr><th>Store</th><th id="thWeekS">Week</th><th class="colS-extra" style="text-align:right;">Total Orders</th><th class="colS-extra" style="text-align:right;">Total Seconds</th><th class="colS-extra" style="text-align:right;">Total Units</th><th class="colS-extra" style="text-align:right;">UPO</th><th class="colS-extra">UPO Bucket</th><th style="text-align:right;">Avg Seconds/Unit</th><th style="text-align:right;">Throughput/Hr</th><th style="text-align:right;">Target/Hr</th><th style="text-align:right;">Vs Target</th></tr></thead>
+        <tbody id="tbS"><tr><td class="empty" colspan="11">Upload Lateslam UTR Data, then click Calculate</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -180,9 +188,9 @@ function loadFile(slot, input){
       var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
       FILES[slot] = rows;
       setStatus('');
-      if(slot===1 && (document.querySelector('input[name="groupModeP"]:checked')||{}).value==='date'){
-        var iDateChk = findCol(rows[0], ['date']);
-        if(iDateChk>=0) fillDateSelect(document.getElementById('dateSelectP'), uniqueColValues(rows, iDateChk, formatDateVal));
+      if(slot===1){
+        var gmP = (document.querySelector('input[name="groupModeP"]:checked')||{}).value;
+        if(gmP!=='week') groupModeChangedP(gmP);
       }
     }catch(err){
       setStatus('❌ Could not read '+file.name+': '+err.message, true);
@@ -260,10 +268,10 @@ function calcThroughput(){
   var iDate  = findCol(lsH, ['date']);
   if (iOrder<0 || iSec<0 || iUnits<0){ setStatus('❌ order_id / assignment_to_stage / units_picked column not found in Lateslam UTR Data', true); return; }
   var groupMode = (document.querySelector('input[name="groupModeP"]:checked')||{}).value || 'week';
-  var iPeriod = groupMode==='date' ? iDate : iWeek;
+  var iPeriod = groupMode==='week' ? iWeek : iDate;
   if (iPeriod<0){ setStatus('❌ No '+groupMode+' column found in Lateslam UTR Data to group by', true); return; }
-  document.getElementById('thPeriodP').textContent = groupMode==='date' ? 'Date' : 'Week';
-  var selDateP = groupMode==='date' ? document.getElementById('dateSelectP').value : '';
+  document.getElementById('thPeriodP').textContent = groupMode==='date' ? 'Date' : groupMode==='month' ? 'Month' : 'Week';
+  var selDateP = groupMode==='week' ? '' : document.getElementById('dateSelectP').value;
 
   var fWeek = document.getElementById('wkFilter').value.trim();
   var byUser = {}, unmatchedOrders=0, consideredOrders=0;
@@ -275,7 +283,7 @@ function calcThroughput(){
       var w = String(r[iWeek]||'').replace(/\D/g,'');
       if(w !== fWeek.replace(/\D/g,'')) continue;
     }
-    var periodRaw = (groupMode==='date' ? formatDateVal(r[iPeriod]) : String(r[iPeriod]||'').trim()) || '—';
+    var periodRaw = (groupMode==='date' ? formatDateVal(r[iPeriod]) : groupMode==='month' ? monthLabelVal(r[iPeriod]) : String(r[iPeriod]||'').trim()) || '—';
     if(selDateP && periodRaw !== selDateP) continue;
     consideredOrders++;
     var secs = Number(r[iSec])||0;
@@ -326,11 +334,13 @@ function exportExcel(){
       'Total Seconds': r.totalSeconds,
       'Total Units': r.totalUnits,
       'Avg Seconds/Unit': r.avgSecPerUnit,
-      'Throughput/Hr': Math.round(r.throughputPerHour)
+      'Throughput/Hr': Math.round(r.throughputPerHour),
+      'Target/Hr': getTargetP(),
+      'Vs Target': Math.round(r.throughputPerHour) - getTargetP()
     };
   });
   var ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:22},{wch:12},{wch:14},{wch:14},{wch:12},{wch:16},{wch:14}];
+  ws['!cols'] = [{wch:22},{wch:12},{wch:14},{wch:14},{wch:12},{wch:16},{wch:14},{wch:11},{wch:11}];
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Throughput');
   var fWeek = document.getElementById('wkFilter').value.trim();
@@ -340,7 +350,22 @@ function exportExcel(){
 }
 
 function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
-function speedCol(v){ return v>=170?'#10B981':v>=165?'#F59E0B':'#EF4444'; }
+function getTargetP(){ var v=Number((document.getElementById('targetP')||{}).value); return v>0?v:170; }
+function getTargetS(){ var v=Number((document.getElementById('targetS')||{}).value); return v>0?v:170; }
+function speedCol(v, target){ var t=target||170; return v>=t?'#10B981':v>=t-5?'#F59E0B':'#EF4444'; }
+var MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthLabelVal(v){
+  var s = formatDateVal(v);
+  if(!s) return '';
+  var m;
+  if((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return MONTH_NAMES[+m[2]-1]+' '+m[1];
+  if((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) return MONTH_NAMES[+m[1]-1]+' '+(m[3].length===2?'20'+m[3]:m[3]);
+  if((m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})/))) return MONTH_NAMES[+m[2]-1]+' '+(m[3].length===2?'20'+m[3]:m[3]);
+  var d = new Date(s);
+  if(!isNaN(d.getTime())) return MONTH_NAMES[d.getMonth()]+' '+d.getFullYear();
+  return s;
+}
+function monthSortKey(lbl){ var p=String(lbl).split(' '); var mi=MONTH_NAMES.indexOf(p[0]); return mi<0?String(lbl):(p[1]+String(mi+1).padStart(2,'0')); }
 function formatDateVal(v){
   if(v===null||v===undefined||v==='') return '';
   var s = String(v).trim();
@@ -363,24 +388,34 @@ function uniqueColValues(rows, colIdx, formatter){
   out.sort();
   return out;
 }
-function fillDateSelect(sel, vals){
-  sel.innerHTML = '<option value="">All dates</option>' + vals.map(function(v){ var esc=v.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); return '<option value="'+esc+'">'+esc+'</option>'; }).join('');
+function fillDateSelect(sel, vals, allLabel){
+  sel.innerHTML = '<option value="">'+(allLabel||'All dates')+'</option>' + vals.map(function(v){ var esc=v.replace(/&/g,'&amp;').replace(/"/g,'&quot;'); return '<option value="'+esc+'">'+esc+'</option>'; }).join('');
 }
 function groupModeChangedP(mode){
   var sel = document.getElementById('dateSelectP');
-  sel.style.display = mode==='date' ? '' : 'none';
-  if(mode==='date' && FILES[1]){
+  sel.style.display = mode==='week' ? 'none' : '';
+  if(mode!=='week' && FILES[1]){
     var iDate = findCol(FILES[1][0], ['date']);
-    if(iDate>=0) fillDateSelect(sel, uniqueColValues(FILES[1], iDate, formatDateVal));
+    if(iDate>=0){
+      if(mode==='month'){
+        var mv = uniqueColValues(FILES[1], iDate, monthLabelVal).sort(function(a,b){ return monthSortKey(a).localeCompare(monthSortKey(b)); });
+        fillDateSelect(sel, mv, 'All months');
+      } else fillDateSelect(sel, uniqueColValues(FILES[1], iDate, formatDateVal));
+    }
   }
   if(FILES[1] && FILES[2]) calcThroughput();
 }
 function groupModeChangedS(mode){
   var sel = document.getElementById('dateSelectS');
-  sel.style.display = mode==='date' ? '' : 'none';
-  if(mode==='date' && STORE_FILE){
+  sel.style.display = mode==='week' ? 'none' : '';
+  if(mode!=='week' && STORE_FILE){
     var iDateS = findCol(STORE_FILE[0], ['date']);
-    if(iDateS>=0) fillDateSelect(sel, uniqueColValues(STORE_FILE, iDateS, formatDateVal));
+    if(iDateS>=0){
+      if(mode==='month'){
+        var mvS = uniqueColValues(STORE_FILE, iDateS, monthLabelVal).sort(function(a,b){ return monthSortKey(a).localeCompare(monthSortKey(b)); });
+        fillDateSelect(sel, mvS, 'All months');
+      } else fillDateSelect(sel, uniqueColValues(STORE_FILE, iDateS, formatDateVal));
+    }
   }
   if(STORE_FILE) calcStore();
 }
@@ -405,10 +440,8 @@ function loadStoreFile(input){
       var rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
       STORE_FILE = rows;
       setStatusS('');
-      if((document.querySelector('input[name="groupModeS"]:checked')||{}).value==='date'){
-        var iDateChkS = findCol(rows[0], ['date']);
-        if(iDateChkS>=0) fillDateSelect(document.getElementById('dateSelectS'), uniqueColValues(rows, iDateChkS, formatDateVal));
-      }
+      var gmS = (document.querySelector('input[name="groupModeS"]:checked')||{}).value;
+      if(gmS!=='week') groupModeChangedS(gmS);
     }catch(err){
       setStatusS('❌ Could not read '+file.name+': '+err.message, true);
       STORE_FILE = null;
@@ -440,10 +473,10 @@ function calcStore(){
   if(STORE_FILE.length<2){ setStatusS('❌ File has no data rows', true); return; }
   var groupModeS = (document.querySelector('input[name="groupModeS"]:checked')||{}).value || 'week';
   var iDateS = findCol(STORE_FILE[0], ['date']);
-  var colPeriodS = groupModeS==='date' ? iDateS : COL_WEEK_S;
+  var colPeriodS = groupModeS==='week' ? COL_WEEK_S : iDateS;
   if(colPeriodS<0){ setStatusS('❌ No date column found in this file to group by', true); return; }
-  document.getElementById('thWeekS').textContent = groupModeS==='date' ? 'Date' : 'Week';
-  var selDateS = groupModeS==='date' ? document.getElementById('dateSelectS').value : '';
+  document.getElementById('thWeekS').textContent = groupModeS==='date' ? 'Date' : groupModeS==='month' ? 'Month' : 'Week';
+  var selDateS = groupModeS==='week' ? '' : document.getElementById('dateSelectS').value;
   var fWeek = document.getElementById('wkFilterS').value.trim();
   var byStore = {};
   var considered=0, skipped=0;
@@ -455,7 +488,7 @@ function calcStore(){
       var w = String(r[COL_WEEK_S]||'').replace(/\D/g,'');
       if(w !== fWeek.replace(/\D/g,'')) continue;
     }
-    var wk = (groupModeS==='date' ? formatDateVal(r[colPeriodS]) : String(r[colPeriodS]||'').trim()) || '—';
+    var wk = (groupModeS==='date' ? formatDateVal(r[colPeriodS]) : groupModeS==='month' ? monthLabelVal(r[colPeriodS]) : String(r[colPeriodS]||'').trim()) || '—';
     if(selDateS && wk !== selDateS) continue;
     considered++;
     var key = store+'|'+wk;
@@ -498,14 +531,16 @@ function renderStore(rows, totals){
     {ic:'🏬',lb:'Stores',vl:rows.length,sb:'in view',c:'#2563EB'},
     {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
     {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
-    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
+    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'target '+getTargetS(),c:speedCol(totals.throughputPerHour, getTargetS())}
   ];
   kpis.innerHTML = k.map(function(c){ return '<div class="kpi'+(c.extra?' colS-extra':'')+'" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
 
   var tb = document.getElementById('tbS');
-  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="9">No matched rows for this filter</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="11">No matched rows for this filter</td></tr>'; return; }
+  var tgtS = getTargetS();
   tb.innerHTML = rows.map(function(r){
-    var col = speedCol(r.throughputPerHour);
+    var col = speedCol(r.throughputPerHour, tgtS);
+    var gapS = Math.round(r.throughputPerHour) - tgtS;
     return '<tr><td style="font-weight:700;color:#1a1830;">'+r.store+'</td>'+
       '<td>'+(r.week||'—')+'</td>'+
       '<td class="colS-extra" style="text-align:right;">'+fmt(r.orders)+'</td>'+
@@ -514,7 +549,9 @@ function renderStore(rows, totals){
       '<td class="colS-extra" style="text-align:right;">'+r.upo.toFixed(1)+'</td>'+
       '<td class="colS-extra">'+upoBucket(r.upo)+'</td>'+
       '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
-      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td></tr>';
+      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td>'+
+      '<td style="text-align:right;color:#6b6890;">'+tgtS+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:'+col+';">'+(gapS>=0?'+':'')+gapS+'</td></tr>';
   }).join('');
   toggleStoreCols();
 }
@@ -536,11 +573,13 @@ function exportExcelStore(){
       'UPO': r.upo,
       'UPO Bucket': upoBucket(r.upo),
       'Avg Seconds/Unit': r.avgSecPerUnit,
-      'Throughput/Hr': Math.round(r.throughputPerHour)
+      'Throughput/Hr': Math.round(r.throughputPerHour),
+      'Target/Hr': getTargetS(),
+      'Vs Target': Math.round(r.throughputPerHour) - getTargetS()
     };
   });
   var ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:16},{wch:10},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:16},{wch:14}];
+  ws['!cols'] = [{wch:16},{wch:10},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:16},{wch:14},{wch:11},{wch:11}];
   var wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Store Throughput');
   var fWeek = document.getElementById('wkFilterS').value.trim();
@@ -558,21 +597,25 @@ function render(rows, totals, unmatchedOrders, usedFallback){
     {ic:'👤',lb:'Pickers',vl:rows.length,sb:'active users',c:'#2563EB'},
     {ic:'📦',lb:'Total Units',vl:fmt(totals.totalUnits),sb:'picked',c:'#7C3AED'},
     {ic:'⏱️',lb:'Avg Sec/Unit',vl:totals.avgSecPerUnit.toFixed(1)+'s',sb:'overall',c:'#F59E0B'},
-    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'units per hour',c:speedCol(totals.throughputPerHour)}
+    {ic:'🚀',lb:'Throughput/Hr',vl:Math.round(totals.throughputPerHour),sb:'target '+getTargetP(),c:speedCol(totals.throughputPerHour, getTargetP())}
   ];
   kpis.innerHTML = k.map(function(c){ return '<div class="kpi" style="--kc:'+c.c+';"><div class="ic">'+c.ic+'</div><div class="lb">'+c.lb+'</div><div class="vl">'+c.vl+'</div><div class="sb">'+c.sb+'</div></div>'; }).join('');
 
   var tb = document.getElementById('tb');
-  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="7">No matched rows for this filter</td></tr>'; return; }
+  if(!rows.length){ tb.innerHTML='<tr><td class="empty" colspan="9">No matched rows for this filter</td></tr>'; return; }
+  var tgt = getTargetP();
   tb.innerHTML = rows.map(function(r){
-    var col = speedCol(r.throughputPerHour);
+    var col = speedCol(r.throughputPerHour, tgt);
+    var gap = Math.round(r.throughputPerHour) - tgt;
     return '<tr><td style="font-weight:700;color:#1a1830;">'+r.user+'</td>'+
       '<td>'+r.period+'</td>'+
       '<td style="text-align:right;">'+fmt(r.orders)+'</td>'+
       '<td style="text-align:right;">'+fmt(r.totalSeconds)+'</td>'+
       '<td style="text-align:right;">'+fmt(r.totalUnits)+'</td>'+
       '<td style="text-align:right;font-weight:700;">'+r.avgSecPerUnit.toFixed(1)+'s</td>'+
-      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td></tr>';
+      '<td style="text-align:right;font-weight:800;color:'+col+';">'+Math.round(r.throughputPerHour)+'</td>'+
+      '<td style="text-align:right;color:#6b6890;">'+tgt+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:'+col+';">'+(gap>=0?'+':'')+gap+'</td></tr>';
   }).join('');
 }
 </script>
