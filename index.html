@@ -7345,8 +7345,8 @@ function lsSumForecastForDates(dates, callback) {
   dates.forEach(function(d) {
     var cached = window._lsFcCache[d];
     if (cached) { setTimeout(function(){ absorb(cached); }, 0); return; }
-    appsScriptJSONP(
-      { action: 'forecast', date: d },
+    lsForecastFetch(
+      d,
       function(data) { if (data && data.status !== 'error') window._lsFcCache[d] = data; absorb(data); },
       function() { absorb(null); }
     );
@@ -7486,9 +7486,15 @@ function lsBuildStoreFilter() {
 // ── Shared JSONP caller for Apps Script ─────────────────────
 // Apps Script supports ?callback=funcName natively
 // Script tag injection bypasses CORS + host allowlist from file://
-function appsScriptJSONP(params, onSuccess, onError) {
+function appsScriptJSONP(params, onSuccess, onError, _attempt) {
   var base = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
   var cbName = 'asJSONP_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+  var attempt = _attempt || 1;
+  // Apps Script cold-starts can take well over half a minute; retry once before failing.
+  function retryOrFail(err) {
+    if (attempt < 2) appsScriptJSONP(params, onSuccess, onError, attempt + 1);
+    else onError(err);
+  }
 
   // Map legacy 'tab' param to 'action' param that the Apps Script expects
   var finalParams = Object.assign({}, params);
@@ -7504,8 +7510,8 @@ function appsScriptJSONP(params, onSuccess, onError) {
 
   var timer = setTimeout(function() {
     cleanup();
-    onError(new Error('Timeout — check internet connection'));
-  }, 25000);
+    retryOrFail(new Error('Timeout — check internet connection'));
+  }, 60000);
 
   function cleanup() {
     delete window[cbName];
@@ -7523,8 +7529,94 @@ function appsScriptJSONP(params, onSuccess, onError) {
   var script = document.createElement('script');
   script.id  = 'jsonp-' + cbName;
   script.src = url;
-  script.onerror = function() { cleanup(); onError(new Error('Script load error — check Apps Script deployment')); };
+  script.onerror = function() { cleanup(); retryOrFail(new Error('Script load error — check Apps Script deployment')); };
   document.head.appendChild(script);
+}
+
+// ── Forecast straight from the Google Sheet (gviz) ───────────
+// The sheet repeats its date headers twice (a second block of 16-Aug…24-Oct
+// further right). The Apps Script was reading the SECOND block, which is why
+// FC Orders never matched the sheet's own Total Orders row. We read the sheet
+// directly and always take the FIRST column that matches the date.
+var LS_GVIZ_CACHE = {};
+var LS_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var LS_MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function lsGvizTable(tab) {
+  if (LS_GVIZ_CACHE[tab]) return LS_GVIZ_CACHE[tab];
+  var url = 'https://docs.google.com/spreadsheets/d/' + LS_SHEET_ID +
+            '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(tab);
+  LS_GVIZ_CACHE[tab] = fetch(url).then(function(r) { return r.text(); }).then(function(t) {
+    var a = t.indexOf('('), b = t.lastIndexOf(')');
+    if (a < 0 || b < 0) throw new Error('Bad gviz response for ' + tab);
+    return JSON.parse(t.slice(a + 1, b)).table;
+  });
+  return LS_GVIZ_CACHE[tab];
+}
+
+function lsGvizCell(row, i) {
+  var c = (row.c || [])[i];
+  if (!c) return null;
+  return c.f !== undefined && c.f !== null ? c.f : c.v;
+}
+
+// Column index for YYYY-MM-DD — first match wins (ignores the duplicate block)
+function lsGvizDateCol(table, ymd) {
+  var p = ymd.split('-'), day = parseInt(p[2], 10), mi = parseInt(p[1], 10) - 1;
+  if (!(mi >= 0 && mi < 12)) return -1;
+  var want = [day + '-' + LS_MONTHS[mi], day + '-' + LS_MONTHS_FULL[mi]].map(function(s){ return s.toLowerCase(); });
+  var hdr = table.rows.length ? table.rows[0] : null;
+  if (!hdr) return -1;
+  for (var i = 2; i < table.cols.length; i++) {
+    var h = lsGvizCell(hdr, i);
+    if (h === null || h === undefined) continue;
+    var s = String(h).trim().toLowerCase().replace(/\s+/g, '');
+    if (want.indexOf(s) >= 0) return i;
+  }
+  return -1;
+}
+
+function lsGvizStoreSlots(table, colIdx) {
+  var out = {};
+  for (var r = 1; r < table.rows.length; r++) {
+    var row = table.rows[r];
+    var store = String(lsGvizCell(row, 0) || '').trim();
+    var slotRaw = String(lsGvizCell(row, 1) || '').trim();
+    if (!store) continue;
+    var m = slotRaw.match(/^(\d{1,2}):(\d{2})/);
+    if (!m) continue;                       // skips "Total Orders" / "Final Units Forecast"
+    var hh = parseInt(m[1], 10), mn = parseInt(m[2], 10);
+    if (!(hh >= 0 && hh < 24)) continue;
+    var slot = (hh < 10 ? '0' : '') + hh + ':' + (mn < 30 ? '00' : '30');
+    var v = parseFloat(String(lsGvizCell(row, colIdx) === null ? 0 : lsGvizCell(row, colIdx)).replace(/,/g, ''));
+    if (!isFinite(v)) v = 0;
+    if (!out[store]) out[store] = {};
+    out[store][slot] = (out[store][slot] || 0) + v;
+  }
+  return out;
+}
+
+function lsForecastFromSheet(ymd) {
+  return Promise.all([lsGvizTable(LS_TAB_ORDERS), lsGvizTable(LS_TAB_UNITS)]).then(function(t) {
+    var oCol = lsGvizDateCol(t[0], ymd), uCol = lsGvizDateCol(t[1], ymd);
+    if (oCol < 0 && uCol < 0) throw new Error('Date not in sheet');
+    var orders = oCol >= 0 ? lsGvizStoreSlots(t[0], oCol) : {};
+    var units  = uCol >= 0 ? lsGvizStoreSlots(t[1], uCol) : {};
+    var names = {};
+    Object.keys(orders).forEach(function(s){ names[s] = 1; });
+    Object.keys(units).forEach(function(s){ names[s] = 1; });
+    return { status: 'ok', date: ymd, orders: orders, units: units, stores: Object.keys(names), source: 'sheet' };
+  });
+}
+
+// Sheet first, Apps Script as fallback
+function lsForecastFetch(ymd, onOk, onErr) {
+  lsForecastFromSheet(ymd).then(function(d) {
+    if (d && d.stores.length) onOk(d);
+    else appsScriptJSONP({ action: 'forecast', date: ymd }, onOk, onErr);
+  }).catch(function() {
+    appsScriptJSONP({ action: 'forecast', date: ymd }, onOk, onErr);
+  });
 }
 
 function lsFetchForecast() {
@@ -7770,10 +7862,10 @@ function lsFetchForecast() {
 
   // ── Fetch forecast via Apps Script (no public sheet required) ─────
   // Apps Script action=forecast returns { orders:{store:{slot:val}}, units:{...} }
-  setStatus('⏳ Fetching forecast from Apps Script…', 'warn');
+  setStatus('⏳ Fetching forecast from Google Sheet…', 'warn');
 
-  appsScriptJSONP(
-    { action: 'forecast', date: dateVal },
+  lsForecastFetch(
+    dateVal,
     function(data) {
       // data = { status:'ok', date, orders:{store:{slot:val}}, units:{...}, stores:[], datesAvailable:[] }
       if (!data || data.status === 'error') {
@@ -7885,8 +7977,8 @@ function lsFetchForecastRange() {
       return;
     }
     var d = dates[idx++];
-    appsScriptJSONP(
-      { action: 'forecast', date: d },
+    lsForecastFetch(
+      d,
       function(data) {
         if (data && data.status !== 'error') addDay(data); else failed++;
         next();
@@ -7957,7 +8049,12 @@ function lsGenerate() {
   }
   var wholeDays = Object.keys(datesSeen).sort();
 
-  lsSumForecastForDates(wholeDays, function(fcOrdersMap, fcUnitsMap) {
+  // Forecast must match the selected Report Date only. Uploaded files often span
+  // more than one calendar day (late-night picks rolling over), and summing every
+  // day found in the file inflated FC Orders/Units.
+  var fcDates = dateVal ? [dateVal] : wholeDays;
+
+  lsSumForecastForDates(fcDates, function(fcOrdersMap, fcUnitsMap) {
   setTimeout(function() {
     // Group rows by store
     var storeMap = {};
@@ -8565,8 +8662,8 @@ function ddFetchForecast() {
     return;
   }
   statusEl.textContent = '⏳ Fetching forecast…';
-  appsScriptJSONP(
-    { action: 'forecast', date: dateVal },
+  lsForecastFetch(
+    dateVal,
     function(data) {
       if (!data || data.status === 'error') {
         statusEl.textContent = '❌ Forecast fetch failed: ' + (data ? data.message : 'No response');
