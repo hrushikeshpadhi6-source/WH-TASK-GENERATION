@@ -1965,6 +1965,13 @@ function smKPI(rows){
   var short  =sum(rows.map(function(r){return gNum(r,['SHORT','Short','short','V']);}));
   var skipCol =skip>0?'#EF4444':'#10B981';
   var shortCol=short>0?'#EF4444':'#10B981';
+  var tphAvg  =avg(rows.map(function(r){return gNum(r,['THROUGHPUT','Throughput','AA']);}));
+  var tphCol  =tphAvg>=170?'#10B981':tphAvg>=165?'#F59E0B':'#EF4444';
+  var tphStores=[...new Set(rows.map(gStore))].filter(Boolean).map(function(s){
+    var v=avg(rows.filter(function(r){return gStore(r)===s;}).map(function(r){return gNum(r,['THROUGHPUT','Throughput','AA']);}));
+    return {s:s,v:v};
+  }).filter(function(x){return x.v>=170;});
+  var tphHit=tphStores.length?'<div style="font-size:10px;margin-top:3px;color:#10B981;">🎯 '+tphStores.map(function(x){return x.s;}).join(', ')+'</div>':'';
   var cards=[
     {icon:'📥',lbl:'Total Inbound',  val:fmt(inbound),        sub:'total IB units',     col:'#10B981'},
     {icon:'🏭',lbl:'Vendor Units',   val:fmt(vendor),         sub:'vendor stow',        col:'#0EA5E9'},
@@ -1974,6 +1981,7 @@ function smKPI(rows){
     {icon:'📊',lbl:'Avg UPO',        val:avgUpo.toFixed(2),   sub:'units per order',    col:'#64748B'},
     {icon:'⚡',lbl:'IB TPH',         val:ibTph.toFixed(1),    sub:'inbound/hr avg',     col:'#0EA5E9'},
     {icon:'🚀',lbl:'OB TPH',         val:obTph.toFixed(1),    sub:'outbound/hr avg',    col:'#2563EB'},
+    {icon:'🏎️',lbl:'Throughput',    val:tphAvg?tphAvg.toFixed(0):'—', sub:'tgt ≥170 · '+(tphAvg>=170?'✅ On Target':tphAvg>=165?'⚠️ Near Target':tphAvg?'🔴 Below Target':'no data')+tphHit, col:tphCol},
     {icon:'🚨',lbl:'Late Slams',     val:fmt(lateSlam),       sub:'LS Rate: '+lsRate,   col:lsCol},
     {icon:'⚡',lbl:'LS V2',     val:fmt(lsV2),           sub:'Rate: '+lsV2Rate.toFixed(2)+'%  ·  tgt ≤3%', col:lsV2Col},
     {icon:'✅',lbl:'Avg SLA %',      val:avgSla.toFixed(2)+'%',sub:avgSla>=99?'✅ On Target':'⚠️ Below Target',col:slaCol},
@@ -3820,7 +3828,7 @@ function copySummaryRun(){
   }
   var nlPeriod=(smPeriod==='week'||smPeriod==='month');
 
-  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0,lsV1:0,ibTphArr:[],donate:0,damRem:0,qualRem:0};
+  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0,lsV1:0,ibTphArr:[],tphArr:[],donate:0,damRem:0,qualRem:0};
   stores.forEach(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders  = sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
@@ -3847,6 +3855,7 @@ function copySummaryRun(){
     var short   = sum(sr.map(function(r){return gNum(r,['SHORT','Short','V']);}));
     var ibTph   = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
     var obTph   = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
+    var tphAvg  = avg(sr.map(function(r){return gNum(r,['THROUGHPUT','Throughput','AA']);}));
     var damaged = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
     var quality = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
     var donate  = sum(sr.map(function(r){return gNum(r,['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H']);}));
@@ -3865,6 +3874,7 @@ function copySummaryRun(){
     lines.push('📊 LS v2 logic ('+dateLabel+'): '+lsV2Line+'  · tgt ≤'+LS_V2_TARGET+'%');
     lines.push('⏭️ Skips/Shorts: '+skip+'/'+short);
     lines.push('⚡ TPH IB/OB: '+ibTph.toFixed(0)+'/'+obTph.toFixed(0)+'  · IB tgt ≥'+IB_TPH_TARGET);
+    lines.push('🏎️ Throughput: '+(tphAvg?tphAvg.toFixed(0):'Not Updated')+'  · tgt ≥170');
     lines.push('🔴 Removals under Damage: '+damaged);
     lines.push('🔵 Removals under Quality: '+quality);
     lines.push('🤝 Expiry Awareness Donation: '+donate);
@@ -3898,7 +3908,7 @@ function copySummaryRun(){
     T.ls+=ls; T.lsv2+=lsV2cnt; T.skip+=skip; T.short+=short;
     if(vocCnt!==null) T.voc+=vocCnt;
     try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s,rows):0); }catch(e){}
-    T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
+    T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); if(tphAvg>0) T.tphArr.push(tphAvg); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
   });
 
   lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -3913,6 +3923,8 @@ function copySummaryRun(){
   lines.push('🎯 Total UTR: '+(smVocRaw&&smVocRaw.length?fmt(T.utr):'Fetch VOC'));
   var tAvgIbTph=T.ibTphArr.length?(T.ibTphArr.reduce(function(a,b){return a+b;},0)/T.ibTphArr.length).toFixed(0):'N/A';
   lines.push('⚡ IB TPH Avg (Network): '+tAvgIbTph+'  · tgt ≥'+IB_TPH_TARGET);
+  var tAvgTph=T.tphArr.length?(T.tphArr.reduce(function(a,b){return a+b;},0)/T.tphArr.length).toFixed(0):'Not Updated';
+  lines.push('🏎️ Throughput Avg (Network): '+tAvgTph+'  · tgt ≥170');
   lines.push('🤝 Total Donated Marked: '+fmt(T.donate));
   lines.push('🔴 Total Damages: '+fmt(T.damRem));
   lines.push('🔵 Total Culling Removals: '+fmt(T.qualRem));
@@ -3984,6 +3996,7 @@ var ANA_METRICS = [
   {key:'avgUpo',    label:'Avg UPO',                keys:['AVG UPO','Avg UPO','T'],                                        agg:'avg', goodUp:null},
   {key:'ibTph',     label:'IB TPH',                 keys:['IB TPH','O'],                                                   agg:'avg', goodUp:true},
   {key:'obTph',     label:'OB TPH',                 keys:['OB TPH','P'],                                                   agg:'avg', goodUp:true},
+  {key:'throughput',label:'Throughput',             keys:['THROUGHPUT','Throughput','AA'],                                 agg:'avg', goodUp:true},
   {key:'donate',    label:'Expiry Donation',        keys:['EXP-DONATED','Exp-Donated','EXP-DONATE','Exp-Donate','EXP DONATED','H'], agg:'sum', goodUp:false}
 ];
 
@@ -4286,7 +4299,7 @@ function anaDrawFullTable(curRows,prevRows){
     '<tbody>'+rowsHtml+'</tbody></table>';
 }
 
-var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamV2','avgSla','avgUpo','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph'];
+var ANA_CARD_ROWS=['inbound','obUnits','lateSlam','lateSlamV2','avgSla','avgUpo','skip','short','qualRem','damRem','expRem','donate','ibTph','obTph','throughput'];
 function anaDrawScorecards(curRows,prevRows){
   var el=document.getElementById('ana-scorecards'); if(!el) return;
   var stores=[...new Set(curRows.map(gStore))].filter(Boolean).sort();
