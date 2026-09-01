@@ -2054,6 +2054,25 @@ window.feedbackAdminClear=async function(){
 
 <div id="app-shell" style="display:none;">
 
+<div id="maintenance-overlay" style="display:none;position:fixed;inset:0;z-index:99997;background:linear-gradient(135deg,#0a0914 0%,#0f0e17 40%,#1a1928 100%);
+  color:#e8e6ff;font-family:'Syne',sans-serif;align-items:center;justify-content:center;padding:24px;">
+  <div style="max-width:460px;text-align:center;background:rgba(26,25,40,0.97);border:1px solid rgba(37,99,235,0.3);border-radius:24px;padding:44px 36px;box-shadow:0 24px 80px rgba(0,0,0,0.7);">
+    <div style="font-size:52px;margin-bottom:14px;">🚧</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:4px;">HP World – DMS Pro</div>
+    <div style="font-size:15px;font-weight:700;color:#ffd60a;margin-bottom:16px;">Sorry for the inconvenience!</div>
+    <div style="font-size:13.5px;color:#b8b6d9;line-height:1.7;margin-bottom:18px;" id="maintenance-msg">
+      DMS Pro is currently undergoing maintenance.<br>We’ll be back soon with an improved experience.
+    </div>
+    <div style="font-size:12.5px;color:#8b8aad;line-height:1.7;">
+      For urgent assistance, please contact:<br>📧 <span style="color:#2563EB;">Hrushikeshpadhi6@live.com</span>
+    </div>
+    <div style="font-size:12px;color:#5a5878;margin-top:18px;">Thank you for your patience and understanding. 🙏</div>
+  </div>
+</div>
+<div id="maintenance-banner" style="display:none;background:linear-gradient(90deg,#78350f,#b45309);color:#fff;padding:10px 20px;font-size:12.5px;font-weight:700;text-align:center;">
+  🚧 Limited access during maintenance — only selected tools are available right now.
+</div>
+
 <header class="header">
   <div class="header-logo" onclick="goHome()" title="Go to Home">
     <img src="data:image/png;base64,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" style="height:46px;width:46px;object-fit:contain;" alt="HP World Logo">
@@ -2290,14 +2309,14 @@ window.feedbackAdminClear=async function(){
 
   <div class="task-grid">
     <div class="task-section-head" id="sec-movement"><span class="tsh-label">Stock Movement</span><span class="tsh-line"></span></div>
-    <div class="task-card" style="--card-color:#e8500a" onclick="openTask('consolidation')">
+    <div class="task-card" data-tool="consolidation" data-tool-label="Consolidation" style="--card-color:#e8500a" onclick="openTask('consolidation')">
       
       <span class="card-icon" style="display:inline-block;animation:iconShuffle 2s ease-in-out infinite;">🔀</span>
       <h3>Consolidation</h3>
       <p>Group ASINs spread across multiple locations and generate consolidation task lists.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
+    <div class="task-card" data-tool="slow-moving" data-tool-label="Slow Moving Items" style="--card-color:#7c3aed" onclick="openTask('slow-moving')">
       
       <span class="card-icon" style="display:inline-block;animation:iconSlowCrawl 3.5s ease-in-out infinite;">🐢</span>
       <h3>Slow Moving Items</h3>
@@ -2306,21 +2325,21 @@ window.feedbackAdminClear=async function(){
     </div>
 
     <div class="task-section-head" id="sec-audits"><span class="tsh-label">Audits &amp; Counts</span><span class="tsh-line"></span></div>
-    <div class="task-card" style="--card-color:#1a5cff" onclick="openTask('audit-loc')">
+    <div class="task-card" data-tool="audit-loc" data-tool-label="Audit by Location" style="--card-color:#1a5cff" onclick="openTask('audit-loc')">
       
       <span class="card-icon" style="display:inline-block;animation:iconPinDrop 2.2s ease-in-out infinite;">📍</span>
       <h3>Audit by Location</h3>
       <p>Generate 90 random locations across Frozen, Chiller, Hazmat, Ambient, HRV & Mixed zones.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#c9a227" onclick="openTask('audit-asin')">
+    <div class="task-card" data-tool="audit-asin" data-tool-label="Audit by ASIN" style="--card-color:#c9a227" onclick="openTask('audit-asin')">
       
       <span class="card-icon" style="display:inline-block;animation:iconZoomSearch 2.5s ease-in-out infinite;">🔎</span>
       <h3>Audit by ASIN</h3>
       <p>Pick 60 random ASINs from inventory for physical stock count verification.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#0f766e" onclick="openTask('report')">
+    <div class="task-card" data-tool="report" data-tool-label="Inventory Report" style="--card-color:#0f766e" onclick="openTask('report')">
       
       <span class="card-icon" style="display:inline-block;animation:iconChartGrow 2.2s ease-in-out infinite;">📊</span>
       <h3>Inventory Report</h3>
@@ -2329,42 +2348,42 @@ window.feedbackAdminClear=async function(){
     </div>
 
     <div class="task-section-head" id="sec-labels"><span class="tsh-label">Labels &amp; Barcodes</span><span class="tsh-line"></span></div>
-    <div class="task-card" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
+    <div class="task-card" data-tool="ysm" data-tool-label="YSM Barcode Task" style="--card-color:#1a7a4a" onclick="openTask('ysm')">
       
       <span class="card-icon" style="display:inline-block;animation:iconScanSweep 2.4s ease-in-out infinite;">🏷️</span>
       <h3>YSM Barcode Task</h3>
       <p>Generate individual scannable barcode labels for each unit. One label per item.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#d97706" onclick="openTask('catalog-issue')">
+    <div class="task-card" data-tool="catalog-issue" data-tool-label="Catalog Issue Items" style="--card-color:#d97706" onclick="openTask('catalog-issue')">
       
       <span class="card-icon" style="display:inline-block;animation:iconClipFlip 3s ease-in-out infinite;">📋</span>
       <h3>Catalog Issue Items</h3>
       <p>Avoid VOC and Late Slam – Move Fast to Special Bin. Auto-fetch from Google Sheet.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#0284c7" onclick="openTask('scanning-issue')">
+    <div class="task-card" data-tool="scanning-issue" data-tool-label="Scanning Issue Items" style="--card-color:#0284c7" onclick="openTask('scanning-issue')">
       
       <span class="card-icon" style="display:inline-block;animation:iconMicroFocus 2.8s ease-in-out infinite;">🔬</span>
       <h3>Scanning Issue Items</h3>
       <p>Identify scanning problem ASINs from Google Sheet and generate barcode labels.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#16a34a" onclick="openTask('locid')">
+    <div class="task-card" data-tool="locid" data-tool-label="Location ID Maker" style="--card-color:#16a34a" onclick="openTask('locid')">
       
       <span class="card-icon" style="display:inline-block;animation:iconTagSwing 2.5s ease-in-out infinite;">🏷️</span>
       <h3>Location ID Maker</h3>
       <p>Generate professional warehouse location labels — colored, with QR codes. Print-ready A4 format.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#e11d48" onclick="openTask('lateslam')">
+    <div class="task-card" data-tool="lateslam" data-tool-label="Late Slam Calculator" style="--card-color:#e11d48" onclick="openTask('lateslam')">
       
       <span class="card-icon" style="display:inline-block;animation:iconTimerTick 2s ease-in-out infinite;">⏱️</span>
       <h3>Late Slam Calculator</h3>
       <p>Upload orders → fetch forecast → full 30-min slot variance report per store.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#10B981" onclick="openTask('voc')">
+    <div class="task-card" data-tool="voc" data-tool-label="VOC Analysis" style="--card-color:#10B981" onclick="openTask('voc')">
       <!-- no task number — this is an analysis tool -->
       <!-- Animated stock-market trendline SVG -->
       <span class="card-icon" style="display:inline-block;line-height:1;">
@@ -2406,39 +2425,39 @@ window.feedbackAdminClear=async function(){
       <p>Live Voice of Customer analytics — UTR, OTR, Non-Ops breakdown, picker contribution & deep dive by store.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#F59E0B;" onclick="window.open('Throughput Per Picking Hour.html','_blank')">
+    <div class="task-card" data-tool="throughput" data-tool-label="Throughput per Picking Hour" style="--card-color:#F59E0B;" onclick="window.open('Throughput Per Picking Hour.html','_blank')">
       <span class="card-icon">🧑‍🏭</span>
       <h3 style="background:linear-gradient(135deg,#F59E0B,#D97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Throughput per Picking Hour</h3>
       <p>Upload Lateslam UTR + Outbound Pick files — units picked per hour, per picker. Standalone, no sheet connection needed.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#7b78a8;" onclick="window.open('store-metrics.html','_blank')">
+    <div class="task-card" data-tool="store-metrics" data-tool-label="Store Metrics" style="--card-color:#7b78a8;" onclick="window.open('store-metrics.html','_blank')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🏪</span>
       <h3 style="background:linear-gradient(135deg,#7b78a8,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Store Metrics</h3>
       <p>Live store-wise KPIs — orders, inbound, OB/IB TPH, SLA, UPO, removals &amp; performance trends.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#7C3AED;" onclick="window.open('inventory-category-analysis.html','_blank')">
+    <div class="task-card" data-tool="inventory-category" data-tool-label="Inventory Category Analysis" style="--card-color:#7C3AED;" onclick="window.open('inventory-category-analysis.html','_blank')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📦</span>
       <h3 style="background:linear-gradient(135deg,#7C3AED,#2563EB);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inventory Category Analysis</h3>
       <p>Upload inventory, AI-classify every location by category, spot misplaced stock and bin utilization — no category master needed.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#2563EB;" onclick="window.open('manpower-engine.html','_blank')">
+    <div class="task-card" data-tool="manpower" data-tool-label="Manpower Allocation Engine" style="--card-color:#2563EB;" onclick="window.open('manpower-engine.html','_blank')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🧮</span>
       <h3 style="background:linear-gradient(135deg,#2563EB,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Manpower Allocation Engine</h3>
       <p>OB + IB hourly workforce planning — peak headcount, AA-hours, shift &amp; manpower requirement per store.</p>
       <span class="card-arrow">→</span>
     </div>
 
-    <div class="task-card" style="--card-color:#16a34a;" onclick="window.open('Expiry Manager.html','_blank')">
+    <div class="task-card" data-tool="expiry-manager" data-tool-label="Expiry Manager" style="--card-color:#16a34a;" onclick="window.open('Expiry Manager.html','_blank')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📦</span>
       <h3 style="background:linear-gradient(135deg,#16a34a,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Expiry Manager</h3>
       <p>Upload expiry CSV → detect wrong dates → get alerts for items expiring within 1 day & daily report.</p>
       <span class="card-arrow">→</span>
     </div>
 
-    <div class="task-card" style="--card-color:#EA580C;" onclick="openTask('smart-stow')">
+    <div class="task-card" data-tool="smart-stow" data-tool-label="Smart Stowing" style="--card-color:#EA580C;" onclick="openTask('smart-stow')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🎯</span>
       <h3 style="background:linear-gradient(135deg,#EA580C,#DC2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Smart Stowing</h3>
       <p>Check ASIN location capacity or get automatic stow recommendations by Bay — same-ASIN matching first.</p>
@@ -2446,20 +2465,20 @@ window.feedbackAdminClear=async function(){
     </div>
 
     <div class="task-section-head" id="sec-ops"><span class="tsh-label">Ops &amp; Support</span><span class="tsh-line"></span></div>
-    <div class="task-card" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
+    <div class="task-card" data-tool="deliverynote" data-tool-label="Reverse Transshipment" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
       
       <span class="card-icon" style="display:inline-block;animation:iconBarScan 2.4s ease-in-out infinite;">🚚</span>
       <h3>Reverse Transshipment</h3>
       <p>Upload the tote file → auto-fill everything → export the Delivery Note &amp; Gate Pass together.</p>
       <span class="card-arrow">→</span>
     </div>
-    <div class="task-card" style="--card-color:#db2777" onclick="openTask('feedback')">
+    <div class="task-card" data-tool="feedback" data-tool-label="Report &amp; Suggest" style="--card-color:#db2777" onclick="openTask('feedback')">
       <span class="card-icon" style="animation:reportBounce 1.8s ease-in-out infinite;display:inline-block;">💬</span>
       <h3>Report &amp; Suggest</h3>
       <p>Share feedback, flag issues, or suggest improvements directly to the system administrator.</p>
       <span class="card-arrow" style="animation:arrowPing 1.5s ease-in-out infinite;">→</span>
     </div>
-    <div class="task-card" style="--card-color:#0891b2" onclick="openTask('contact')">
+    <div class="task-card" data-tool="contact" data-tool-label="Support Desk" style="--card-color:#0891b2" onclick="openTask('contact')">
       <span class="card-icon" style="animation:phoneRing 2.2s ease-in-out infinite;display:inline-block;">📞</span>
       <h3>Support Desk</h3>
       <p>Get in touch with the Dark Store Management System team for any support or queries.</p>
@@ -16197,6 +16216,117 @@ var PENDING_KEY    = 'dms_pending_signup';
 // sees their own code, so nobody gets in without the admin's approval.
 var ADMIN_EMAIL = 'hrushikeshpadhi6@gmail.com';
 
+// ── MAINTENANCE MODE ─────────────────────────────────────────────
+// Stored centrally in Firestore (app_settings/maintenance) so a toggle from the
+// admin's browser applies live to everyone else's open session. localStorage is
+// only a last-known-value cache for when Firebase isn't reachable.
+var MAINT_TOOLS = [
+  ['consolidation','Consolidation'],['slow-moving','Slow Moving Items'],
+  ['audit-loc','Audit by Location'],['audit-asin','Audit by ASIN'],['report','Inventory Report'],
+  ['ysm','YSM Barcode Task'],['catalog-issue','Catalog Issue Items'],['scanning-issue','Scanning Issue Items'],
+  ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],
+  ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
+  ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
+  ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
+  ['feedback','Report & Suggest'],['contact','Support Desk']
+];
+var MAINT_KEY = 'dms_maintenance_settings';
+var _maintUnsub = null;
+var _maintSettings = { enabled:false, message:"DMS Pro is currently undergoing maintenance.\nWe'll be back soon with an improved experience.", allowedTools:[] };
+
+function maintCurrentIsAdmin(){
+  try{
+    if(window.FIREBASE_READY && window.fbAuth && window.fbAuth.currentUser){
+      return (window.fbAuth.currentUser.email||'').toLowerCase()===ADMIN_EMAIL;
+    }
+  }catch(e){}
+  try{ return (localStorage.getItem('voc_session_user')||'').toLowerCase()===ADMIN_EMAIL; }catch(e){ return false; }
+}
+
+function maintApply(){
+  var s=_maintSettings||{};
+  var overlay=document.getElementById('maintenance-overlay');
+  var banner=document.getElementById('maintenance-banner');
+  var cards=document.querySelectorAll('.task-card[data-tool]');
+  if(!overlay||!banner) return;
+  if(!s.enabled || maintCurrentIsAdmin()){
+    overlay.style.display='none'; banner.style.display='none';
+    cards.forEach(function(c){ c.style.display=''; });
+    return;
+  }
+  var allowed=s.allowedTools||[];
+  if(!allowed.length){
+    overlay.style.display='flex'; banner.style.display='none';
+    var msgEl=document.getElementById('maintenance-msg');
+    if(msgEl) msgEl.innerHTML=(s.message||'').replace(/\n/g,'<br>');
+    return;
+  }
+  overlay.style.display='none'; banner.style.display='block';
+  cards.forEach(function(c){ c.style.display = allowed.indexOf(c.getAttribute('data-tool'))>-1 ? '' : 'none'; });
+}
+
+function maintSaveLocal(s){ try{ localStorage.setItem(MAINT_KEY, JSON.stringify(s)); }catch(e){} }
+function maintLoadLocal(){ try{ var v=localStorage.getItem(MAINT_KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
+
+function maintInit(){
+  var cached=maintLoadLocal();
+  if(cached) _maintSettings=cached;
+  maintApply();
+  if(window.FIREBASE_READY && window.fbDB){
+    if(_maintUnsub) try{_maintUnsub();}catch(e){}
+    _maintUnsub=fbDB.collection('app_settings').doc('maintenance').onSnapshot(function(doc){
+      if(doc.exists){
+        var d=doc.data();
+        _maintSettings={ enabled:!!d.enabled, message:d.message||_maintSettings.message, allowedTools:d.allowedTools||[] };
+        maintSaveLocal(_maintSettings);
+        maintApply();
+        maintAdminRefreshUI();
+      }
+    }, function(){});
+  }
+}
+
+// ── Admin Panel controls ──────────────────────────────────────────
+function maintAdminBuildList(){
+  var wrap=document.getElementById('maint-tool-list'); if(!wrap) return;
+  wrap.innerHTML=MAINT_TOOLS.map(function(t){
+    var checked=(_maintSettings.allowedTools||[]).indexOf(t[0])>-1?'checked':'';
+    return '<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#e8e6ff;background:rgba(15,14,23,0.5);border:1px solid #2e2c45;border-radius:8px;padding:8px 10px;cursor:pointer;">'+
+      '<input type="checkbox" value="'+t[0]+'" '+checked+' style="accent-color:#10B981;">'+t[1]+'</label>';
+  }).join('');
+}
+function maintAdminRefreshUI(){
+  var t=document.getElementById('maint-toggle'); if(!t) return;
+  t.checked=!!_maintSettings.enabled;
+  document.getElementById('maint-status-lbl').textContent=_maintSettings.enabled?'ON':'OFF';
+  document.getElementById('maint-toggle-track').style.background=_maintSettings.enabled?'#10B981':'#2e2c45';
+  document.getElementById('maint-toggle-knob').style.left=_maintSettings.enabled?'25px':'3px';
+  var m=document.getElementById('maint-message'); if(m) m.value=_maintSettings.message||'';
+  maintAdminBuildList();
+}
+function maintAdminToggle(checked){
+  _maintSettings.enabled=checked;
+  maintAdminRefreshUI();
+}
+function maintAdminSave(){
+  var allowed=Array.prototype.map.call(document.querySelectorAll('#maint-tool-list input:checked'), function(i){return i.value;});
+  var s={ enabled:document.getElementById('maint-toggle').checked, message:document.getElementById('maint-message').value, allowedTools:allowed };
+  _maintSettings=s;
+  maintSaveLocal(s);
+  maintApply();
+  var status=document.getElementById('maint-save-status');
+  if(window.FIREBASE_READY && window.fbDB){
+    fbDB.collection('app_settings').doc('maintenance').set(s).then(function(){
+      if(status){ status.textContent='✅ Saved — live for all users'; setTimeout(function(){status.textContent='';},3000); }
+    }).catch(function(err){ if(status) status.textContent='⚠️ '+err.message; });
+  } else if(status){
+    status.textContent='✅ Saved locally (Firebase offline — only applies to this browser)';
+    setTimeout(function(){status.textContent='';},4000);
+  }
+}
+document.addEventListener('DOMContentLoaded', maintInit);
+
+
 // ── EmailJS (optional) — for the email ALERT to the admin ──────
 //  Paste your 3 EmailJS values to enable email alerts. Until then the
 //  in-app Admin "Account Requests" list works on its own (no email needed).
@@ -16302,6 +16432,7 @@ function authShowApp(displayName) {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app-shell').style.display     = 'block';
   document.getElementById('session-badge').style.display = 'flex';
+  try{ maintApply(); }catch(e){}
   if (displayName) {
     var nm = document.querySelector('#session-badge .sb-name');
     if (nm) nm.textContent = displayName;
@@ -17706,6 +17837,32 @@ function handleScanningASIN(e) {
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <!-- ── MAINTENANCE MODE ──────────────────────────────────── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">🚧 Maintenance Mode</div>
+          <div style="font-size:11px;color:#8b8aad;">Enable to show all other users the maintenance screen. Your account always gets full access.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <span id="maint-status-lbl" style="font-size:12px;font-weight:700;color:#8b8aad;">OFF</span>
+          <span style="position:relative;width:46px;height:24px;display:inline-block;">
+            <input type="checkbox" id="maint-toggle" onchange="maintAdminToggle(this.checked)" style="opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:1;">
+            <span id="maint-toggle-track" style="position:absolute;inset:0;background:#2e2c45;border-radius:20px;transition:background .2s;"></span>
+            <span id="maint-toggle-knob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;"></span>
+          </span>
+        </label>
+      </div>
+      <div style="padding:18px 24px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Message shown to blocked users</div>
+        <textarea id="maint-message" rows="3" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:12px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;resize:vertical;margin-bottom:18px;">DMS Pro is currently undergoing maintenance.
+We'll be back soon with an improved experience.</textarea>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:10px;">Allow access to these tools while maintenance is ON <span style="opacity:0.7;">(leave all unchecked to block everyone)</span></div>
+        <div id="maint-tool-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:18px;"></div>
+        <button onclick="maintAdminSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 Save Maintenance Settings</button>
+        <span id="maint-save-status" style="margin-left:12px;font-size:12px;color:#10B981;"></span>
+      </div>
+    </div>
     <!-- ── USER FEEDBACK ─────────────────────────────────────── -->
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -18405,6 +18562,7 @@ var DSTPRO = (function() {
     });
   }
   function renderAdminDash(){
+    try{ maintAdminRefreshUI(); }catch(e){}
     var logins=_logs.filter(function(l){return l.tool==='Login'&&l.action==='Signed In';}).length;
     var users=new Set(_logs.map(function(l){return l.name;})).size;
     var tools=new Set(_logs.filter(function(l){return l.tool!=='Login';}).map(function(l){return l.tool;})).size;
