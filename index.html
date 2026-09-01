@@ -16183,6 +16183,10 @@ var firebaseConfig = {
 //  │      allow read, update, delete: if isAdmin();                 │
 //  │    }                                                           │
 //  │    match /mail/{id} { allow create: if true; }                │
+//  │    match /app_settings/{id} {                                  │
+//  │      allow read: if true;                                      │
+//  │      allow write: if isAdmin();                                │
+//  │    }                                                            │
 //  │   }                                                            │
 //  │  }                                                             │
 //  └────────────────────────────────────────────────────────────┘
@@ -16318,7 +16322,13 @@ function maintAdminSave(){
   if(window.FIREBASE_READY && window.fbDB){
     fbDB.collection('app_settings').doc('maintenance').set(s).then(function(){
       if(status){ status.textContent='✅ Saved — live for all users'; setTimeout(function(){status.textContent='';},3000); }
-    }).catch(function(err){ if(status) status.textContent='⚠️ '+err.message; });
+    }).catch(function(err){
+      if(!status) return;
+      var perm=err.code==='permission-denied'||/permission/i.test(err.message);
+      status.innerHTML=perm
+        ? '⚠️ Add to Firestore rules: <code style="font-family:monospace;font-size:11px;color:#10B981;">match /app_settings/{id} { allow read: if true; allow write: if isAdmin(); }</code>'
+        : '⚠️ '+err.message;
+    });
   } else if(status){
     status.textContent='✅ Saved locally (Firebase offline — only applies to this browser)';
     setTimeout(function(){status.textContent='';},4000);
