@@ -352,7 +352,7 @@ function exportExcel(){
 function fmt(x){ return Math.round(Number(x)).toLocaleString(); }
 function getTargetP(){ var v=Number((document.getElementById('targetP')||{}).value); return v>0?v:170; }
 function getTargetS(){ var v=Number((document.getElementById('targetS')||{}).value); return v>0?v:170; }
-function speedCol(v, target){ var t=target||170; return v>=t?'#10B981':v>=t-5?'#F59E0B':'#EF4444'; }
+function speedCol(v, target){ var t=target||170; v=Math.round(v); return v>=t?'#10B981':v>=t-5?'#F59E0B':'#EF4444'; }
 var MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function monthLabelVal(v){
   var s = formatDateVal(v);
