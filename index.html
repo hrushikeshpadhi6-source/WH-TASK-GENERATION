@@ -7620,6 +7620,7 @@ function lsForecastFetch(ymd, onOk, onErr) {
 }
 
 function lsFetchForecast() {
+  window._lsForecastFetched = true;
   var statusEl = document.getElementById('ls-forecast-status');
   function setStatus(msg, type) {
     statusEl.style.display = 'block';
@@ -7991,7 +7992,7 @@ function lsFetchForecastRange() {
 
 // ── Throughput helpers ───────────────────────────────────────
 function lsTphTarget(){ var el=document.getElementById('ls-tph-target'); var v=el?Number(el.value):170; return v>0?v:170; }
-function lsTphColor(v){ var t=lsTphTarget(); return v>=t?'#059669':v>=t-5?'#ea580c':'#e11d48'; }
+function lsTphColor(v){ var t=lsTphTarget(); v=Math.round(v); return v>=t?'#059669':v>=t-5?'#ea580c':'#e11d48'; }
 // Finds the assignment_to_stage_seconds column in the uploaded lateslam file
 function lsFindSecCol(row){
   if(!row) return '';
@@ -8049,12 +8050,13 @@ function lsGenerate() {
   }
   var wholeDays = Object.keys(datesSeen).sort();
 
-  // Forecast must match the selected Report Date only. Uploaded files often span
-  // more than one calendar day (late-night picks rolling over), and summing every
-  // day found in the file inflated FC Orders/Units.
-  var fcDates = dateVal ? [dateVal] : wholeDays;
+  // Only pull forecast if the user explicitly fetched it (☁️ Fetch Forecast button).
+  // Generate used to silently fetch its own copy every time, so FC Orders/Units/Var
+  // showed up even when the user never asked for forecast data.
+  var fcDates = window._lsForecastFetched ? (dateVal ? [dateVal] : wholeDays) : [];
 
   lsSumForecastForDates(fcDates, function(fcOrdersMap, fcUnitsMap) {
+  window._lsHasForecast = Object.keys(fcOrdersMap || {}).length > 0;
   setTimeout(function() {
     // Group rows by store
     var storeMap = {};
@@ -8239,32 +8241,33 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     tableBody += '<tr>' +
       '<td style="font-family:monospace;font-weight:700;text-align:center;color:#374151;">' + r.slot + '</td>' +
       '<td style="font-family:monospace;font-size:11px;text-align:center;color:#6b7280;">' + lsSlotLabel(r.slot) + '</td>' +
-      '<td style="text-align:center;color:#1d4ed8;">' + r.fo + '</td>' +
-      '<td style="text-align:center;color:#0369a1;">' + r.fu + '</td>' +
+      '<td style="text-align:center;color:#1d4ed8;">' + (window._lsHasForecast ? r.fo : '—') + '</td>' +
+      '<td style="text-align:center;color:#0369a1;">' + (window._lsHasForecast ? r.fu : '—') + '</td>' +
       '<td style="text-align:center;font-weight:' + (r.ao > 0 ? '800' : '400') + ';color:' + (r.ao > 0 ? '#111827' : '#9ca3af') + ';">' + r.ao + '</td>' +
       '<td style="text-align:center;color:#374151;">' + r.au + '</td>' +
       '<td style="text-align:center;' + lsStyle + '">' +
         (r.ls > 0 ? r.ls + ' <span style="font-size:10px;opacity:0.8;">(' + lsPctStr + ')</span>' : '0') +
       '</td>' +
-      '<td style="text-align:center;' + varStyle + '">' + ((r.fo===0 && r.ao===0) ? '—' : varSign + r.fcVar.toFixed(1) + '%') + '</td>' +
+      '<td style="text-align:center;' + varStyle + '">' + (!window._lsHasForecast ? '—' : (r.fo===0 && r.ao===0) ? '—' : varSign + r.fcVar.toFixed(1) + '%') + '</td>' +
       '</tr>';
   });
 
   // Total row (yellow)
-  var tFcVar = totalFO > 0 ? (totalAO-totalFO)/totalFO*100 : 0;
+  var tFcVar = window._lsHasForecast && totalFO > 0 ? (totalAO-totalFO)/totalFO*100 : 0;
   var tLsPct = totalEL > 0 ? totalLS/totalEL*100 : 0;
   var tVS    = tFcVar > 0 ? '+' : '';
+  var hasFc  = window._lsHasForecast;
 
   tableBody += '<tr style="background:#ffd600;color:#1a1830;font-weight:800;">' +
     '<td colspan="2" style="text-align:center;font-size:13px;letter-spacing:2px;padding:12px 8px;">TOTAL ORDERS</td>' +
-    '<td style="text-align:center;font-size:15px;">' + totalFO + '</td>' +
-    '<td style="text-align:center;">' + totalFU + '</td>' +
+    '<td style="text-align:center;font-size:15px;">' + (hasFc ? totalFO : '—') + '</td>' +
+    '<td style="text-align:center;">' + (hasFc ? totalFU : '—') + '</td>' +
     '<td style="text-align:center;font-size:16px;">' + totalAO + '</td>' +
     '<td style="text-align:center;">' + totalAU + '</td>' +
     '<td style="text-align:center;color:' + (totalLS > 0 ? '#b91c1c' : '#065f46') + ';">' +
       totalLS + (totalEL > 0 ? ' (' + tLsPct.toFixed(1) + '%)' : '') +
     '</td>' +
-    '<td style="text-align:center;">' + tVS + tFcVar.toFixed(1) + '%</td>' +
+    '<td style="text-align:center;">' + (hasFc ? tVS + tFcVar.toFixed(1) + '%' : '—') + '</td>' +
     '</tr>';
 
   var html =
@@ -8281,13 +8284,13 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     '</div>' +
     '<div class="results-body" style="background:#fff;">' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;">' +
-    _lsStatCard(totalFO,  'FC Orders',   '#1d4ed8') +
-    _lsStatCard(totalFU,  'FC Units',    '#0369a1') +
+    _lsStatCard(hasFc ? totalFO : '—',  'FC Orders',   '#1d4ed8') +
+    _lsStatCard(hasFc ? totalFU : '—',  'FC Units',    '#0369a1') +
     _lsStatCard(totalAO,  'Act Orders',  '#111827') +
     _lsStatCard(totalAU,  'Act Units',   '#374151') +
     _lsStatCard(totalLS,  'Lateslam',    totalLS > 0 ? '#e11d48' : '#059669') +
     _lsStatCard(tLsPct.toFixed(1) + '%', 'LS Rate', tLsPct > 10 ? '#e11d48' : tLsPct > 5 ? '#ea580c' : '#059669', true) +
-    _lsStatCard(tVS + tFcVar.toFixed(1) + '%', 'FC Var', tFcVar > 10 ? '#991b1b' : tFcVar > 0 ? '#dc2626' : '#1d4ed8', true) +
+    _lsStatCard(hasFc ? tVS + tFcVar.toFixed(1) + '%' : '—', 'FC Var', tFcVar > 10 ? '#991b1b' : tFcVar > 0 ? '#dc2626' : '#1d4ed8', true) +
     _lsStatCard(tph.ok ? Math.round(tph.perHour) : '—', 'Thruput/Hr', tph.ok ? lsTphColor(tph.perHour) : '#9ca3af') +
     _lsStatCard(tph.ok ? tph.avgSec.toFixed(1) + 's' : '—', 'Avg Sec/Unit', '#7c3aed', true) +
     '</div>' +
@@ -8338,6 +8341,7 @@ function lsBuildSummary(summaryArr, reportDate) {
                   t.tLsPct > 0  ? 'background:#fef3c7;color:#92400e;' : 'color:#6b7280;';
     var vS = t.tFcVar > 0 ? '+' : '';
     var vStyle = t.tFcVar > 0 ? 'color:#dc2626;font-weight:700;' : t.tFcVar < 0 ? 'color:#1d4ed8;font-weight:700;' : '';
+    var hasFc = window._lsHasForecast;
     var tp = item.tph || {};
     var blank = !!tp.merged;                       // volume rolled into the parent store
     var tphTxt = tp.ok ? Math.round(tp.perHour) : (blank ? '' : '—');
@@ -8345,13 +8349,13 @@ function lsBuildSummary(summaryArr, reportDate) {
     var C = 'text-align:center;font-size:12px;padding:8px 4px;';
     return '<tr>' +
       '<td style="font-weight:800;color:#e11d48;font-size:12px;padding:8px 6px;">' + item.storeId + '</td>' +
-      '<td style="' + C + '">' + t.totalFO + '</td>' +
-      '<td style="' + C + '">' + t.totalFU + '</td>' +
+      '<td style="' + C + '">' + (hasFc ? t.totalFO : '—') + '</td>' +
+      '<td style="' + C + '">' + (hasFc ? t.totalFU : '—') + '</td>' +
       '<td style="' + C + 'font-weight:800;">' + t.totalAO + '</td>' +
       '<td style="' + C + '">' + t.totalAU + '</td>' +
       '<td style="' + C + lsStyle + '">' + t.totalLS + '</td>' +
       '<td style="' + C + lsStyle + '">' + t.tLsPct.toFixed(1) + '%</td>' +
-      '<td style="' + C + vStyle + '">' + vS + t.tFcVar.toFixed(1) + '%</td>' +
+      '<td style="' + C + vStyle + '">' + (hasFc ? vS + t.tFcVar.toFixed(1) + '%' : '—') + '</td>' +
       '<td style="' + C + 'color:#7c3aed;">' + avgTxt + '</td>' +
       '<td style="' + C + 'font-weight:800;color:' + (tp.ok ? lsTphColor(tp.perHour) : '#9ca3af') + ';">' + tphTxt + '</td>' +
       '<td style="' + C + 'color:#6b7280;">' + (blank ? '' : lsTphTarget()) + '</td>' +
@@ -8628,7 +8632,7 @@ function lsExportExcel() {
 
 // ── Reset ─────────────────────────────────────────────────────
 function lsReset() {
-  lsData=[]; lsHeaders=[];
+  lsData=[]; lsHeaders=[]; window._lsForecastFetched=false; window._lsHasForecast=false;
   ['fo-lateslam','ls-mapper','ls-forecast-status','ls-col-info'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) { el.classList ? el.classList.remove('show') : (el.style.display='none'); }

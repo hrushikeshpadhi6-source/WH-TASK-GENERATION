@@ -3836,14 +3836,16 @@ function copySummary(){
         lines.push('📦 WHD (Warehouse Damage): '+nl.whd.toFixed(2)+'%');
         T.nlGms+=nl.gms; T.nlWhlW+=nl.whl*nl.gms; T.nlWhdW+=nl.whd*nl.gms;
       } else {
-        lines.push('🏭 WHL / WHD: '+((!nlData||!nlData.length)?'Fetch Network Loss':'—'));
+        lines.push('🏭 WHL / WHD: Not Updated');
       }
       if(scData&&scData.length){
         var scRThis=scRateForStore(s);
-        lines.push('🎟️ Store Concession: '+(scRThis==null?'—':(scRThis*100).toFixed(2)+'%'));
+        lines.push('🎟️ Store Concession: '+(scRThis==null?'Not Updated':(scRThis*100).toFixed(2)+'%'));
+      } else {
+        lines.push('🎟️ Store Concession: Not Updated');
       }
     } else {
-      lines.push('📦 WHD (Warehouse Damage): Not Updated');
+      lines.push('🏭 WHL / WHD: Not Updated');
       lines.push('🎟️ Store Concession: Not Updated');
     }
     lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
