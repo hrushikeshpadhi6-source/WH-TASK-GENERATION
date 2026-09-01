@@ -621,6 +621,25 @@ tbody tr:hover{background:var(--row-hover);}
       <option value="evening">🌆 Good Evening</option>
     </select>
     <button class="copy-btn" onclick="copySummary()">📋 Copy Summary</button>
+    <div id="cs-modal-overlay" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="font-weight:800;font-size:15px;color:var(--text);margin-bottom:14px;">📋 Copy Summary</div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">🏭 Network Loss (WHL/WHD)</div>
+        <select id="cs-nl-sel" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:14px;">
+          <option value="updated">Updated</option>
+          <option value="not_updated">Not Updated</option>
+        </select>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">🎟️ Store Concession</div>
+        <select id="cs-sc-sel" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:18px;">
+          <option value="updated">Updated</option>
+          <option value="not_updated">Not Updated</option>
+        </select>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button onclick="csModalClose()" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;font-weight:700;cursor:pointer;">Cancel</button>
+          <button onclick="copySummaryRun()" style="padding:8px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Generate</button>
+        </div>
+      </div>
+    </div>
     <button class="load-btn" id="sm-btn" onclick="smLoad()">⟳ Refresh</button>
   </div>
 </div>
@@ -3711,6 +3730,28 @@ setInterval(showClkMsg, 30000); // new message every 30 seconds
 // ═══════════════════════════════════════════════
 function copySummary(){
   if(!smData.length){alert('Load data first');return;}
+  var nlSel=document.getElementById('cs-nl-sel'), scSel=document.getElementById('cs-sc-sel');
+  if(nlSel) nlSel.value = (nlData&&nlData.length)?'updated':'not_updated';
+  if(scSel) scSel.value = (scData&&scData.length)?'updated':'not_updated';
+  var ov=document.getElementById('cs-modal-overlay');
+  if(ov) ov.style.display='flex';
+}
+function csModalClose(){
+  var ov=document.getElementById('cs-modal-overlay');
+  if(ov) ov.style.display='none';
+}
+function scUpdatedThruLabel(){
+  if(smPeriod!=='month' || !scWeekCols.length) return '';
+  var mo=scActiveMonth();
+  var wks = mo ? scWeekCols.filter(function(w){ return String(scWeekMonth[w]||'').toLowerCase()===String(mo).toLowerCase(); }) : scWeekCols;
+  if(!wks.length) return '';
+  return ' (updated thru Wk'+Math.max.apply(null,wks)+')';
+}
+function copySummaryRun(){
+  var nlSel=document.getElementById('cs-nl-sel'), scSel=document.getElementById('cs-sc-sel');
+  var nlChoice = nlSel ? nlSel.value : 'updated';
+  var scChoice = scSel ? scSel.value : 'updated';
+  csModalClose();
   var rows=smFilter();
   var stores=[...new Set(rows.map(gStore))].filter(Boolean).sort();
   var period=document.getElementById('sm-pval').value;
@@ -3829,7 +3870,9 @@ function copySummary(){
     lines.push('🤝 Expiry Awareness Donation: '+donate);
     lines.push('✅ SLA Trans/Vend: '+slaTpct+'/'+slaVpct+'  · tgt ≥'+SLA_TARGET+'%');
     lines.push('🎙️ VOC ('+dateLabel+'): '+vocLine);
-    if(nlPeriod){
+    if(nlChoice==='not_updated'){
+      lines.push('🏭 WHL / WHD: Not Updated');
+    } else if(nlPeriod){
       var nl=nlForStore(s);
       if(nl){
         lines.push('🏭 WHL (Warehouse Loss): '+nl.whl.toFixed(2)+'%');
@@ -3838,14 +3881,15 @@ function copySummary(){
       } else {
         lines.push('🏭 WHL / WHD: Not Updated');
       }
-      if(scData&&scData.length){
-        var scRThis=scRateForStore(s);
-        lines.push('🎟️ Store Concession: '+(scRThis==null?'Not Updated':(scRThis*100).toFixed(2)+'%'));
-      } else {
-        lines.push('🎟️ Store Concession: Not Updated');
-      }
     } else {
       lines.push('🏭 WHL / WHD: Not Updated');
+    }
+    if(scChoice==='not_updated'){
+      lines.push('🎟️ Store Concession: Not Updated');
+    } else if(nlPeriod && scData && scData.length){
+      var scRThis=scRateForStore(s);
+      lines.push('🎟️ Store Concession: '+(scRThis==null?'Not Updated':(scRThis*100).toFixed(2)+'%'+scUpdatedThruLabel()));
+    } else {
       lines.push('🎟️ Store Concession: Not Updated');
     }
     lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -3872,15 +3916,18 @@ function copySummary(){
   lines.push('🤝 Total Donated Marked: '+fmt(T.donate));
   lines.push('🔴 Total Damages: '+fmt(T.damRem));
   lines.push('🔵 Total Culling Removals: '+fmt(T.qualRem));
-  if(nlPeriod && T.nlGms>0){
+  if(nlChoice==='updated' && nlPeriod && T.nlGms>0){
     lines.push('🏭 Avg WHL (Warehouse Loss): '+(T.nlWhlW/T.nlGms).toFixed(2)+'%');
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');
   }
-  if(nlPeriod && scData && scData.length){
+  if(scChoice==='not_updated'){
+    lines.push('');
+    lines.push('🎟️ Store Concessions: Not Updated');
+  } else if(nlPeriod && scData && scData.length){
     var scPeriodTxt=(scActiveWeek()!=null)?('Wk'+scActiveWeek()):(smPeriod==='month'?(scActiveMonth()||'this month'):'peak week');
     var scVals=scData.map(function(r){ return {r:r, v:scCurrentValue(r)}; }).filter(function(x){ return x.v!=null; });
     lines.push('');
-    lines.push('🎟️ Store Concessions — '+scPeriodTxt+' · orange ≥0.30%, red ≥0.50%, green <0.20%:');
+    lines.push('🎟️ Store Concessions — '+scPeriodTxt+scUpdatedThruLabel()+' · orange ≥0.30%, red ≥0.50%, green <0.20%:');
     if(scVals.length){
       scVals.sort(function(a,b){ return b.v-a.v; }).forEach(function(x){
         var flag=x.v>=0.005?' 🔴':x.v>=0.003?' 🟠':x.v<0.002?' 🟢':'';
