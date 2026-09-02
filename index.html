@@ -16272,14 +16272,18 @@ function maintIsTargeted(s){
 }
 function maintBuildInit(){
   if(!(window.FIREBASE_READY && window.fbDB)) return;
+  if(maintCurrentIsAdmin()) return; // admin already gets live updates via the settings listener, no hard reload
+  var known=null;
+  try{ known=localStorage.getItem('dms_build_version'); }catch(e){}
   if(_buildUnsub) try{_buildUnsub();}catch(e){}
   _buildUnsub=fbDB.collection('app_settings').doc('build').onSnapshot(function(doc){
-    if(doc.exists){
-      var v=doc.data().version;
-      if(v && v!==BUILD_VERSION){
-        try{ sessionStorage.setItem('dms_reload_notice','1'); }catch(e){}
-        location.reload();
-      }
+    if(!doc.exists) return;
+    var v=doc.data().version;
+    if(!v) return;
+    if(known===null){ known=v; try{ localStorage.setItem('dms_build_version', v); }catch(e){} return; }
+    if(v!==known){
+      try{ localStorage.setItem('dms_build_version', v); }catch(e){}
+      location.reload();
     }
   }, function(){});
 }
