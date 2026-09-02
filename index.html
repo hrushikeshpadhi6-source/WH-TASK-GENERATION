@@ -16247,6 +16247,7 @@ var MAINT_TOOLS = [
   ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
   ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
+  ['fast-moving','Fast Moving ASIN'],['inv-audit','Inventory Audit'],['top-performer','Top Performer'],
   ['feedback','Report & Suggest'],['contact','Support Desk']
 ];
 var MAINT_KEY = 'dms_maintenance_settings';
@@ -19517,6 +19518,7 @@ var DSTPRO = (function() {
       if(document.getElementById('dstpro-card-'+card.id))return;
       var div=document.createElement('div');
       div.id='dstpro-card-'+card.id; div.className='task-card';
+      div.setAttribute('data-tool',card.id); div.setAttribute('data-tool-label',card.title);
       div.style.setProperty('--card-color',card.col);
       div.setAttribute('onclick',"openTask('"+card.id+"')");
       div.innerHTML='<div class="card-num" style="color:'+card.col+';">'+card.num+'</div>'+
@@ -19526,6 +19528,7 @@ var DSTPRO = (function() {
       if(anchor)grid.insertBefore(div,anchor);
       else { var fb=grid.querySelector('[onclick*="feedback"]'); if(fb)grid.insertBefore(div,fb); else grid.appendChild(div); }
     });
+    try{ if(window.maintApply) maintApply(); }catch(e){}
     // Footer injection for new pages
     ['page-fast-moving','page-inv-audit','page-top-performer'].forEach(function(id){
       var pg=document.getElementById(id);
