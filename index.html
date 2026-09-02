@@ -2067,6 +2067,16 @@ window.feedbackAdminClear=async function(){
       For urgent assistance, please contact:<br>📧 <span style="color:#2563EB;">Hrushikeshpadhi6@live.com</span>
     </div>
     <div style="font-size:12px;color:#5a5878;margin-top:18px;">Thank you for your patience and understanding. 🙏</div>
+
+    <div id="maint-req-block" style="margin-top:22px;padding-top:18px;border-top:1px solid #2e2c45;text-align:left;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:10px;text-align:center;">Need something urgently?</div>
+      <div style="display:flex;gap:8px;">
+        <select id="maint-req-tool" style="flex:1;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:8px;padding:9px 10px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12.5px;"></select>
+        <button onclick="maintRequestAccess()" style="padding:9px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-family:'Syne',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;">Request access</button>
+      </div>
+      <div id="maint-req-status" style="font-size:11.5px;color:#8b8aad;margin-top:6px;"></div>
+      <div id="maint-req-list" style="display:flex;flex-direction:column;gap:6px;margin-top:12px;"></div>
+    </div>
   </div>
 </div>
 <div id="maintenance-banner" style="display:none;background:linear-gradient(90deg,#78350f,#b45309);color:#fff;padding:10px 20px;font-size:12.5px;font-weight:700;text-align:center;">
@@ -16187,6 +16197,11 @@ var firebaseConfig = {
 //  │      allow read: if true;                                      │
 //  │      allow write: if isAdmin();                                │
 //  │    }                                                            │
+//  │    match /access_requests/{id} {                               │
+//  │      allow create: if request.auth != null;                    │
+//  │      allow read: if request.auth != null;                      │
+//  │      allow update, delete: if isAdmin();                       │
+//  │    }                                                            │
 //  │   }                                                            │
 //  │  }                                                             │
 //  └────────────────────────────────────────────────────────────┘
@@ -16236,7 +16251,42 @@ var MAINT_TOOLS = [
 ];
 var MAINT_KEY = 'dms_maintenance_settings';
 var _maintUnsub = null;
-var _maintSettings = { enabled:false, message:"DMS Pro is currently undergoing maintenance.\nWe'll be back soon with an improved experience.", allowedTools:[] };
+var _maintSettings = { enabled:false, message:"DMS Pro is currently undergoing maintenance.\nWe'll be back soon with an improved experience.", allowedTools:[], targetedUsers:[] };
+var BUILD_VERSION = '2026-09-02T00:00:00Z';
+var _buildUnsub = null;
+var _accessReqUnsub = null;
+var _myAccessRequests = [];
+
+function maintCurrentUser(){
+  try{
+    if(window.FIREBASE_READY && window.fbAuth && window.fbAuth.currentUser){
+      var u=window.fbAuth.currentUser;
+      return { uid:u.uid, email:(u.email||'').toLowerCase(), name:u.displayName||'' };
+    }
+  }catch(e){}
+  return null;
+}
+function maintIsTargeted(s){
+  var cu=maintCurrentUser(); if(!cu) return false;
+  return (s.targetedUsers||[]).some(function(t){ return t.uid===cu.uid || (t.email||'').toLowerCase()===cu.email; });
+}
+function maintBuildInit(){
+  if(!(window.FIREBASE_READY && window.fbDB)) return;
+  if(_buildUnsub) try{_buildUnsub();}catch(e){}
+  _buildUnsub=fbDB.collection('app_settings').doc('build').onSnapshot(function(doc){
+    if(doc.exists){
+      var v=doc.data().version;
+      if(v && v!==BUILD_VERSION){
+        try{ sessionStorage.setItem('dms_reload_notice','1'); }catch(e){}
+        location.reload();
+      }
+    }
+  }, function(){});
+}
+function maintBumpBuildVersion(){
+  if(!(window.FIREBASE_READY && window.fbDB)) return;
+  fbDB.collection('app_settings').doc('build').set({ version:'v'+Date.now() }).catch(function(){});
+}
 
 function maintCurrentIsAdmin(){
   try{
@@ -16253,20 +16303,89 @@ function maintApply(){
   var banner=document.getElementById('maintenance-banner');
   var cards=document.querySelectorAll('.task-card[data-tool]');
   if(!overlay||!banner) return;
-  if(!s.enabled || maintCurrentIsAdmin()){
+  if(maintCurrentIsAdmin()){
     overlay.style.display='none'; banner.style.display='none';
     cards.forEach(function(c){ c.style.display=''; });
     return;
   }
-  var allowed=s.allowedTools||[];
+  var targeted=maintIsTargeted(s);
+  var inMaint=!!s.enabled || targeted;
+  if(!inMaint){
+    overlay.style.display='none'; banner.style.display='none';
+    cards.forEach(function(c){ c.style.display=''; });
+    return;
+  }
+  var allowed = targeted
+    ? _myAccessRequests.filter(function(r){ return r.status==='approved'; }).map(function(r){ return r.tool; })
+    : (s.allowedTools||[]);
+  var msgEl=document.getElementById('maintenance-msg');
+  if(msgEl) msgEl.innerHTML=(s.message||'').replace(/\n/g,'<br>');
+  maintRenderReqBlock(targeted);
   if(!allowed.length){
     overlay.style.display='flex'; banner.style.display='none';
-    var msgEl=document.getElementById('maintenance-msg');
-    if(msgEl) msgEl.innerHTML=(s.message||'').replace(/\n/g,'<br>');
     return;
   }
   overlay.style.display='none'; banner.style.display='block';
   cards.forEach(function(c){ c.style.display = allowed.indexOf(c.getAttribute('data-tool'))>-1 ? '' : 'none'; });
+}
+
+function maintRenderReqBlock(targeted){
+  var sel=document.getElementById('maint-req-tool');
+  if(sel && !sel.options.length){
+    sel.innerHTML=MAINT_TOOLS.map(function(t){ return '<option value="'+t[0]+'">'+t[1]+'</option>'; }).join('');
+  }
+  var list=document.getElementById('maint-req-list'); if(!list) return;
+  if(!_myAccessRequests.length){ list.innerHTML=''; return; }
+  var badge={ pending:['#ffd60a','Pending'], approved:['#10B981','Approved'], denied:['#f72585','Denied'] };
+  list.innerHTML=_myAccessRequests.map(function(r){
+    var b=badge[r.status]||badge.pending;
+    var label=(MAINT_TOOLS.find(function(t){return t[0]===r.tool;})||[r.tool,r.tool])[1];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(15,14,23,0.5);border:1px solid #2e2c45;border-radius:8px;padding:8px 10px;font-size:12px;">'+
+      '<span>'+label+'</span><span style="color:'+b[0]+';font-weight:700;">'+b[1]+'</span></div>';
+  }).join('');
+}
+
+function maintRequestAccess(){
+  var sel=document.getElementById('maint-req-tool');
+  var status=document.getElementById('maint-req-status');
+  var cu=maintCurrentUser();
+  if(!cu){ if(status) status.textContent='⚠️ Sign in first.'; return; }
+  var tool=sel.value;
+  if(_myAccessRequests.some(function(r){ return r.tool===tool && r.status!=='denied'; })){
+    if(status) status.textContent='Already requested — awaiting/holding approval.'; return;
+  }
+  var toolLabel=(MAINT_TOOLS.find(function(t){return t[0]===tool;})||[tool,tool])[1];
+  var req={ uid:cu.uid, email:cu.email, name:cu.name||cu.email, tool:tool, toolLabel:toolLabel, status:'pending', createdAt:Date.now() };
+  if(!(window.FIREBASE_READY && window.fbDB)){ if(status) status.textContent='⚠️ Offline — cannot send request.'; return; }
+  fbDB.collection('access_requests').add(Object.assign({}, req, { createdAt: firebase.firestore.FieldValue.serverTimestamp() })).then(function(){
+    if(status){ status.textContent='✅ Request sent — waiting for admin approval.'; setTimeout(function(){status.textContent='';},3500); }
+    _maintNotifyAdminOfRequest(req);
+  }).catch(function(err){
+    if(status) status.textContent='⚠️ '+err.message;
+  });
+}
+
+async function _maintNotifyAdminOfRequest(req){
+  if(!EMAILJS_READY) return;
+  if(!window.emailjs){ _loadEmailJs(); await new Promise(function(r){ setTimeout(r,1200); }); }
+  if(!window.emailjs) return;
+  try{
+    await emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      email: ADMIN_EMAIL, to_email: ADMIN_EMAIL, to_name:'Admin', passcode:'N/A',
+      req_name: req.name+' is requesting emergency access to "'+req.toolLabel+'" during maintenance',
+      req_email: req.email, req_store: req.toolLabel
+    }, { publicKey: EMAILJS.publicKey });
+  }catch(e){ console.warn('Access request email failed:', e); }
+}
+
+function maintMyRequestsListen(){
+  var cu=maintCurrentUser();
+  if(_accessReqUnsub) try{_accessReqUnsub();}catch(e){}
+  if(!cu || !(window.FIREBASE_READY && window.fbDB)) return;
+  _accessReqUnsub=fbDB.collection('access_requests').where('uid','==',cu.uid).onSnapshot(function(snap){
+    _myAccessRequests=snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    maintApply();
+  }, function(){});
 }
 
 function maintSaveLocal(s){ try{ localStorage.setItem(MAINT_KEY, JSON.stringify(s)); }catch(e){} }
@@ -16276,12 +16395,14 @@ function maintInit(){
   var cached=maintLoadLocal();
   if(cached) _maintSettings=cached;
   maintApply();
+  maintBuildInit();
+  maintMyRequestsListen();
   if(window.FIREBASE_READY && window.fbDB){
     if(_maintUnsub) try{_maintUnsub();}catch(e){}
     _maintUnsub=fbDB.collection('app_settings').doc('maintenance').onSnapshot(function(doc){
       if(doc.exists){
         var d=doc.data();
-        _maintSettings={ enabled:!!d.enabled, message:d.message||_maintSettings.message, allowedTools:d.allowedTools||[] };
+        _maintSettings={ enabled:!!d.enabled, message:d.message||_maintSettings.message, allowedTools:d.allowedTools||[], targetedUsers:d.targetedUsers||[] };
         maintSaveLocal(_maintSettings);
         maintApply();
         maintAdminRefreshUI();
@@ -16307,6 +16428,69 @@ function maintAdminRefreshUI(){
   document.getElementById('maint-toggle-knob').style.left=_maintSettings.enabled?'25px':'3px';
   var m=document.getElementById('maint-message'); if(m) m.value=_maintSettings.message||'';
   maintAdminBuildList();
+  maintRenderUserChips();
+}
+
+function maintSearchUsers(q){
+  var box=document.getElementById('maint-user-results'); if(!box) return;
+  q=(q||'').trim().toLowerCase();
+  if(!q){ box.innerHTML=''; return; }
+  var already=(_maintSettings.targetedUsers||[]).map(function(t){return t.uid||t.email;});
+  var matches=(_dmsUsersCache||[]).filter(function(u){
+    return already.indexOf(u.id)===-1 && ((u.name||'').toLowerCase().indexOf(q)>-1 || (u.email||'').toLowerCase().indexOf(q)>-1);
+  }).slice(0,8);
+  box.innerHTML=matches.map(function(u){
+    return '<div onclick="maintAddTargetedUser(\''+u.id+'\')" style="cursor:pointer;padding:8px 10px;background:rgba(15,14,23,0.5);border:1px solid #2e2c45;border-radius:8px;font-size:12.5px;color:#e8e6ff;">'+_esc(u.name||u.email)+' <span style="color:#8b8aad;">'+_esc(u.email)+'</span></div>';
+  }).join('') || '<div style="color:#8b8aad;font-size:12px;padding:6px 2px;">No matches. Open "Manage Users" once first to load the list.</div>';
+}
+function maintAddTargetedUser(uid){
+  var u=(_dmsUsersCache||[]).find(function(x){return x.id===uid;}); if(!u) return;
+  _maintSettings.targetedUsers=_maintSettings.targetedUsers||[];
+  _maintSettings.targetedUsers.push({ uid:u.id, email:u.email||'', name:u.name||u.email||'' });
+  document.getElementById('maint-user-search').value='';
+  document.getElementById('maint-user-results').innerHTML='';
+  maintRenderUserChips();
+}
+function maintRemoveTargetedUser(uid){
+  _maintSettings.targetedUsers=(_maintSettings.targetedUsers||[]).filter(function(t){return t.uid!==uid;});
+  maintRenderUserChips();
+}
+function maintRenderUserChips(){
+  var box=document.getElementById('maint-user-chips'); if(!box) return;
+  box.innerHTML=(_maintSettings.targetedUsers||[]).map(function(t){
+    return '<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.4);border-radius:20px;padding:6px 8px 6px 12px;font-size:12px;color:#e8e6ff;">'+_esc(t.name)+
+      '<span onclick="maintRemoveTargetedUser(\''+t.uid+'\')" style="cursor:pointer;color:#f72585;font-weight:700;padding:0 4px;">✕</span></span>';
+  }).join('') || '<span style="font-size:11.5px;color:#5a5878;">No users targeted.</span>';
+}
+
+function maintLoadAccessRequests(){
+  var box=document.getElementById('maint-req-admin-list'); if(!box) return;
+  if(!(window.FIREBASE_READY && window.fbDB)){ box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Firebase offline.</div>'; return; }
+  box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Loading…</div>';
+  fbDB.collection('access_requests').get().then(function(snap){
+    var reqs=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
+    reqs.sort(function(a,b){ return (_ms(b.createdAt))-(_ms(a.createdAt)); });
+    if(!reqs.length){ box.innerHTML='<div style="color:#8b8aad;font-size:13px;">No requests yet.</div>'; return; }
+    var badge={pending:'#ffd60a',approved:'#10B981',denied:'#f72585',revoked:'#8b8aad'};
+    box.innerHTML=reqs.map(function(r){
+      var actions='';
+      if(r.status==='pending'){
+        actions='<button onclick="maintResolveRequest(\''+r.id+'\',\'approved\')" style="padding:6px 12px;border-radius:6px;border:none;background:#10B981;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;margin-right:6px;">Approve</button>'+
+          '<button onclick="maintResolveRequest(\''+r.id+'\',\'denied\')" style="padding:6px 12px;border-radius:6px;border:none;background:#f72585;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;">Deny</button>';
+      } else if(r.status==='approved'){
+        actions='<button onclick="maintResolveRequest(\''+r.id+'\',\'revoked\')" style="padding:6px 12px;border-radius:6px;border:1px solid #2e2c45;background:transparent;color:#f72585;font-size:11.5px;font-weight:700;cursor:pointer;">Revoke</button>';
+      }
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(15,14,23,0.5);border:1px solid #2e2c45;border-radius:10px;padding:10px 14px;margin-bottom:8px;">'+
+        '<div><div style="font-size:12.5px;color:#e8e6ff;font-weight:700;">'+_esc(r.name)+' <span style="color:#8b8aad;font-weight:400;">'+_esc(r.email)+'</span></div>'+
+        '<div style="font-size:12px;color:#b8b6d9;margin-top:2px;">wants <b>'+_esc(r.toolLabel)+'</b> — <span style="color:'+(badge[r.status]||'#8b8aad')+';font-weight:700;">'+r.status+'</span></div></div>'+
+        '<div>'+actions+'</div></div>';
+    }).join('');
+  }).catch(function(e){ box.innerHTML='<div style="color:#f72585;font-size:13px;">'+_esc(e.message)+'</div>'; });
+}
+function maintResolveRequest(id,status){
+  fbDB.collection('access_requests').doc(id).update({ status:status, resolvedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(function(){
+    maintLoadAccessRequests();
+  }).catch(function(e){ alert('Failed: '+e.message); });
 }
 function maintAdminToggle(checked){
   _maintSettings.enabled=checked;
@@ -16314,19 +16498,20 @@ function maintAdminToggle(checked){
 }
 function maintAdminSave(){
   var allowed=Array.prototype.map.call(document.querySelectorAll('#maint-tool-list input:checked'), function(i){return i.value;});
-  var s={ enabled:document.getElementById('maint-toggle').checked, message:document.getElementById('maint-message').value, allowedTools:allowed };
+  var s={ enabled:document.getElementById('maint-toggle').checked, message:document.getElementById('maint-message').value, allowedTools:allowed, targetedUsers:_maintSettings.targetedUsers||[] };
   _maintSettings=s;
   maintSaveLocal(s);
   maintApply();
   var status=document.getElementById('maint-save-status');
   if(window.FIREBASE_READY && window.fbDB){
     fbDB.collection('app_settings').doc('maintenance').set(s).then(function(){
+      maintBumpBuildVersion();
       if(status){ status.textContent='✅ Saved — live for all users'; setTimeout(function(){status.textContent='';},3000); }
     }).catch(function(err){
       if(!status) return;
       var perm=err.code==='permission-denied'||/permission/i.test(err.message);
       status.innerHTML=perm
-        ? '⚠️ Add to Firestore rules: <code style="font-family:monospace;font-size:11px;color:#10B981;">match /app_settings/{id} { allow read: if true; allow write: if isAdmin(); }</code>'
+        ? '⚠️ Add to Firestore rules: <code style="font-family:monospace;font-size:11px;color:#10B981;">match /app_settings/{id} { allow read: if true; allow write: if isAdmin(); } match /access_requests/{id} { allow create, read: if request.auth != null; allow update, delete: if isAdmin(); }</code>'
         : '⚠️ '+err.message;
     });
   } else if(status){
@@ -16442,7 +16627,7 @@ function authShowApp(displayName) {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app-shell').style.display     = 'block';
   document.getElementById('session-badge').style.display = 'flex';
-  try{ maintApply(); }catch(e){}
+  try{ maintApply(); maintMyRequestsListen(); }catch(e){}
   if (displayName) {
     var nm = document.querySelector('#session-badge .sb-name');
     if (nm) nm.textContent = displayName;
@@ -17869,9 +18054,24 @@ function handleScanningASIN(e) {
 We'll be back soon with an improved experience.</textarea>
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:10px;">Allow access to these tools while maintenance is ON <span style="opacity:0.7;">(leave all unchecked to block everyone)</span></div>
         <div id="maint-tool-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:18px;"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:10px;">Target specific users <span style="opacity:0.7;">(these people see maintenance even while the toggle above is OFF, and only get tools you approve below)</span></div>
+        <input id="maint-user-search" type="text" placeholder="Search users by name or email…" oninput="maintSearchUsers(this.value)" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12.5px;margin-bottom:6px;">
+        <div id="maint-user-results" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
+        <div id="maint-user-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;"></div>
         <button onclick="maintAdminSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 Save Maintenance Settings</button>
         <span id="maint-save-status" style="margin-left:12px;font-size:12px;color:#10B981;"></span>
       </div>
+    </div>
+    <!-- ── ACCESS REQUESTS ───────────────────────────────────── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">🆘 Emergency Access Requests</div>
+          <div style="font-size:11px;color:#8b8aad;">From users targeted into maintenance who need one tool right now. Approvals stay on until you revoke them.</div>
+        </div>
+        <button onclick="maintLoadAccessRequests()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+      </div>
+      <div id="maint-req-admin-list" style="padding:18px 24px;"><div style="color:#8b8aad;font-size:13px;">Loading…</div></div>
     </div>
     <!-- ── USER FEEDBACK ─────────────────────────────────────── -->
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
@@ -18547,6 +18747,7 @@ var DSTPRO = (function() {
       document.getElementById('dstpro-admin-dash').style.display='block';
       renderAdminDash();
       if(window.dmsRenderRequests)window.dmsRenderRequests();
+      maintLoadAccessRequests();
       if(window.dmsRenderCodes)window.dmsRenderCodes();
       if(window.vocAdminRender)window.vocAdminRender();
       if(window.dmsRenderUsers)window.dmsRenderUsers();
