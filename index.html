@@ -5045,6 +5045,7 @@ let slowMovingRows = [];
 // NAVIGATION
 function openTask(id) {
   if (id === 'voc') { return openVocVersionChooser(); }
+  if (window.maintIsBlocked && maintIsBlocked(id)) { if(window.maintApply) maintApply(); return; }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   window.scrollTo(0, 0);
@@ -16302,6 +16303,17 @@ function maintCurrentIsAdmin(){
   try{ return (localStorage.getItem('voc_session_user')||'').toLowerCase()===ADMIN_EMAIL; }catch(e){ return false; }
 }
 
+function maintIsBlocked(toolId){
+  if(maintCurrentIsAdmin()) return false;
+  var s=_maintSettings||{};
+  var targeted=maintIsTargeted(s);
+  var inMaint=!!s.enabled || targeted;
+  if(!inMaint) return false;
+  var allowed = targeted
+    ? _myAccessRequests.filter(function(r){ return r.status==='approved'; }).map(function(r){ return r.tool; })
+    : (s.allowedTools||[]);
+  return allowed.indexOf(toolId)===-1;
+}
 function maintApply(){
   var s=_maintSettings||{};
   var overlay=document.getElementById('maintenance-overlay');
@@ -16332,6 +16344,14 @@ function maintApply(){
   }
   overlay.style.display='none'; banner.style.display='block';
   cards.forEach(function(c){ c.style.display = allowed.indexOf(c.getAttribute('data-tool'))>-1 ? '' : 'none'; });
+  var activePage=document.querySelector('.page.active');
+  if(activePage){
+    var activeId=activePage.id.replace(/^page-/,'');
+    if(allowed.indexOf(activeId)===-1 && activeId!=='dashboard'){
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+      var dash=document.getElementById('page-dashboard'); if(dash) dash.classList.add('active');
+    }
+  }
 }
 
 function maintRenderReqBlock(targeted){
