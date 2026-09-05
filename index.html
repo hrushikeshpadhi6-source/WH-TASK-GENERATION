@@ -2555,6 +2555,14 @@ window.feedbackAdminClear=async function(){
     <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="ssResetUpload('inv')">✕</button>
   </div>
 
+  <div id="ss-emptysrc-wrap" style="display:none;margin-bottom:14px;">
+    <div class="ctrl-label">Check Empty Locations By</div>
+    <select class="select-field" id="ss-empty-source" style="width:220px;" onchange="ssEmptySourceChange()">
+      <option value="pickpath">Pick Path File</option>
+      <option value="inv">Real-Time Inventory Only</option>
+    </select>
+  </div>
+
   <div id="ss-pickpath-block" style="display:none;">
     <div class="upload-zone" id="uz-ss-pickpath" onclick="triggerUpload('f-ss-pickpath')" style="background:#fff;border-color:#d5d2f0;">
       <input type="file" id="f-ss-pickpath" accept=".xlsx,.xls,.csv" onchange="ssHandleUpload(this,'pickpath')">
@@ -5453,9 +5461,10 @@ function ssLoadPickPathPaste() {
 }
 
 function ssMaybeReady() {
-  var ready = ssData.mode === 3 ? (ssData.pickpath.data.length && ssData.inv.data.length) : ssData.mode === 1 ? ssData.inv.data.length : (ssData.trans.data.length && ssData.inv.data.length);
+  var ready = ssData.mode === 3 ? (ssEmptySrc() === 'inv' ? ssData.inv.data.length : (ssData.pickpath.data.length && ssData.inv.data.length)) : ssData.mode === 1 ? ssData.inv.data.length : (ssData.trans.data.length && ssData.inv.data.length);
   if (ready) {
     ssPopulateBays();
+    if (ssData.mode === 3 && ssEmptySrc() === 'inv') ssPopulateInvZones();
     document.getElementById('ss-ctrl-row').style.display = 'flex';
   } else {
     document.getElementById('ss-ctrl-row').style.display = 'none';
@@ -5500,14 +5509,15 @@ function ssSwitchTab(n) {
   document.getElementById('ss-tab-desc').textContent = n === 1
     ? 'View available ASIN capacity per location. No recommendations.'
     : n === 3
-    ? 'Find locations by exact ASIN count in a Zone (e.g. P-1-A, P-1-K, HAZ) — Pick Path defines all locations, Real-Time Inventory supplies occupancy — choose 0 to list all empty locations.'
+    ? 'Find locations by exact ASIN count in a Zone (e.g. P-1-A, P-1-K, HAZ) — check via Pick Path (defines all locations) or directly from Real-Time Inventory (adds Warehouse-wise breakdown) — choose 0 to list all empty locations.'
     : 'Automatically find the best stowing location using existing ASIN matching and available capacity.';
   document.getElementById('ss-upload-grid').style.gridTemplateColumns = n === 2 ? '1fr 1fr' : '1fr';
   document.getElementById('uz-ss-trans').style.display = n === 2 ? '' : 'none';
   document.getElementById('fo-ss-trans').style.display = n === 2 ? '' : 'none';
   document.getElementById('uz-ss-inv').style.display = '';
   document.getElementById('fo-ss-inv').style.display = '';
-  document.getElementById('ss-pickpath-block').style.display = n === 3 ? '' : 'none';
+  document.getElementById('ss-pickpath-block').style.display = (n === 3 && ssEmptySrc() === 'pickpath') ? '' : 'none';
+  document.getElementById('ss-emptysrc-wrap').style.display = n === 3 ? '' : 'none';
   document.getElementById('ss-limit-wrap').style.display = n === 3 ? 'none' : '';
   document.getElementById('ss-targetcount-wrap').style.display = n === 3 ? '' : 'none';
   document.getElementById('ss-bay-wrap').style.display = n === 3 ? 'none' : '';
@@ -5522,6 +5532,7 @@ function ssBuildLocationData(bays, limit) {
   var locCol = findCol(ih, ['location','bin','shelf','slot','locationid']);
   var asinCol = findCol(ih, ['asin','product.?id','item.?id','fcsku','sku']);
   var qtyCol = findCol(ih, ['quantity','qty','units','unit.?count']);
+  var whCol = findCol(ih, ['warehouseid','warehouse','store']);
   if (!locCol || !asinCol) { showToast('⚠️ Location/ASIN column not found in inventory file'); return null; }
   var locMap = {}, asinLocMap = {};
   ssData.inv.data.forEach(function(r) {
@@ -5529,11 +5540,12 @@ function ssBuildLocationData(bays, limit) {
     if (!loc) return;
     var b = extractBay(loc);
     if (bays && bays.length && bays.indexOf(b) === -1) return;
-    if (!locMap[loc]) locMap[loc] = { asins: {} };
+    if (!locMap[loc]) locMap[loc] = { asins: {}, units: 0, warehouse: whCol ? (r[whCol] || '').toString().trim() : '' };
     var asin = (r[asinCol] || '').toString().trim().toUpperCase();
     if (!asin) return;
     var qty = parseFloat(r[qtyCol]) || 0;
     locMap[loc].asins[asin] = (locMap[loc].asins[asin] || 0) + qty;
+    locMap[loc].units += qty;
     if (!asinLocMap[asin]) asinLocMap[asin] = [];
     var existing = asinLocMap[asin].find(function(x){ return x.location === loc; });
     if (existing) existing.qty += qty; else asinLocMap[asin].push({ location: loc, qty: qty });
@@ -5595,7 +5607,7 @@ function ssRun() {
     document.getElementById('out-smart-stow').innerHTML = '';
     document.getElementById('export-smart-stow').style.display = 'none';
     setTimeout(function() {
-      var ld = ssBuildLocationDataByZone(zones);
+      var ld = ssEmptySrc() === 'inv' ? ssBuildLocationDataByZoneFromInv(zones) : ssBuildLocationDataByZone(zones);
       if (!ld) { showLoading('smart-stow', false); return; }
       ssRunOption3(ld, zoneLabel);
       showLoading('smart-stow', false);
@@ -5622,45 +5634,100 @@ function ssRunOption1(ld, bay, limit) {
   var rows = Object.keys(ld.locMap).sort().map(function(loc) {
     var count = Object.keys(ld.locMap[loc].asins).length;
     var avail = limit - count;
-    return { location: loc, count: count, limit: limit, avail: avail, status: avail > 0 ? 'Available' : 'FULL' };
+    return { location: loc, count: count, limit: limit, avail: avail, status: avail > 0 ? 'Available' : 'FULL', warehouse: ld.locMap[loc].warehouse || '', units: ld.locMap[loc].units || 0 };
   });
   ssData.results = rows;
   if (!rows.length) {
     document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ No locations found in bay "' + bay + '".</div>';
     return;
   }
+  var hasWh = rows.some(function(r){ return r.warehouse; });
   var full = rows.filter(function(r){ return r.status === 'FULL'; }).length;
   var html = '<div class="results-panel"><div class="results-header"><h3>📊 Location Space Checker — Bay ' + bay + '</h3><span class="results-count">' + rows.length + ' locations · ' + full + ' full</span></div>' +
     '<div class="results-body"><div style="margin-bottom:14px;"><input class="input-field" style="width:220px;" placeholder="🔎 Search location…" oninput="ssFilterTable(this.value)"></div>' +
-    '<div class="tbl-wrap"><table id="ss-table"><thead><tr><th>Location</th><th>Current Unique ASINs</th><th>ASIN Limit</th><th>Available Slots</th><th>Status</th></tr></thead><tbody>' +
+    '<div class="tbl-wrap"><table id="ss-table"><thead><tr>' + (hasWh ? '<th>Warehouse</th>' : '') + '<th>Location</th><th>Current Unique ASINs</th><th>ASIN Limit</th><th>Available Slots</th><th>Status</th></tr></thead><tbody>' +
     rows.map(function(r) {
       var badge = r.status === 'FULL' ? '<span class="ss-badge ss-badge-red">🔴 FULL</span>' : '<span class="ss-badge ss-badge-green">🟢 Available</span>';
-      return '<tr><td>' + r.location + '</td><td>' + r.count + '</td><td>' + r.limit + '</td><td>' + r.avail + '</td><td>' + badge + '</td></tr>';
+      return '<tr>' + (hasWh ? '<td>' + (r.warehouse || '—') + '</td>' : '') + '<td>' + r.location + '</td><td>' + r.count + '</td><td>' + r.limit + '</td><td>' + r.avail + '</td><td>' + badge + '</td></tr>';
     }).join('') + '</tbody></table></div></div></div>';
   document.getElementById('out-smart-stow').innerHTML = html;
   document.getElementById('export-smart-stow').style.display = 'flex';
   document.getElementById('ss-print-btn').style.display = 'none';
 }
 
+function ssEmptySrc() {
+  var el = document.getElementById('ss-empty-source');
+  return el ? el.value : 'pickpath';
+}
+function ssEmptySourceChange() {
+  var src = ssEmptySrc();
+  document.getElementById('ss-pickpath-block').style.display = src === 'pickpath' ? '' : 'none';
+  if (src === 'inv') ssPopulateInvZones();
+  document.getElementById('out-smart-stow').innerHTML = '';
+  document.getElementById('export-smart-stow').style.display = 'none';
+  ssMaybeReady();
+}
+function ssPopulateInvZones() {
+  var h = ssData.inv.headers;
+  var locCol = findCol(h, ['location','bin','shelf','slot','locationid']);
+  if (!locCol) return;
+  var zones = {};
+  ssData.inv.data.forEach(function(r) {
+    var loc = (r[locCol] || '').toString();
+    if (!loc) return;
+    var z = extractZone(loc);
+    if (z) zones[z] = true;
+  });
+  var zsel = document.getElementById('ss-zone');
+  var zcur = Array.from(zsel.selectedOptions).map(function(o){ return o.value; });
+  zsel.innerHTML = Object.keys(zones).sort().map(function(z){ return '<option value="'+z+'">'+z+'</option>'; }).join('');
+  Array.from(zsel.options).forEach(function(o){ if (zcur.indexOf(o.value) > -1) o.selected = true; });
+}
+
+function ssBuildLocationDataByZoneFromInv(zones) {
+  var ih = ssData.inv.headers;
+  var locCol = findCol(ih, ['location','bin','shelf','slot','locationid']);
+  var asinCol = findCol(ih, ['asin','product.?id','item.?id','fcsku','sku']);
+  var qtyCol = findCol(ih, ['quantity','qty','units','unit.?count']);
+  var whCol = findCol(ih, ['warehouseid','warehouse','store']);
+  if (!locCol || !asinCol) { showToast('⚠️ Location/ASIN column not found in inventory file'); return null; }
+  var locMap = {};
+  ssData.inv.data.forEach(function(r) {
+    var loc = (r[locCol] || '').toString().trim();
+    if (!loc) return;
+    var z = extractZone(loc);
+    if (zones && zones.length && zones.indexOf(z) === -1) return;
+    if (!locMap[loc]) locMap[loc] = { asins: {}, units: 0, warehouse: whCol ? (r[whCol] || '').toString().trim() : '' };
+    var asin = (r[asinCol] || '').toString().trim().toUpperCase();
+    if (!asin) return;
+    var qty = parseFloat(r[qtyCol]) || 0;
+    locMap[loc].asins[asin] = (locMap[loc].asins[asin] || 0) + qty;
+    locMap[loc].units += qty;
+  });
+  return { locMap: locMap, fromInv: true };
+}
+
 function ssRunOption3(ld, bay) {
   var targetCount = parseInt(document.getElementById('ss-target-count').value);
   if (isNaN(targetCount) || targetCount < 0) targetCount = 0;
+  var fromInv = !!ld.fromInv;
   var rows = Object.keys(ld.locMap).sort().map(function(loc) {
-    return { location: loc, count: Object.keys(ld.locMap[loc].asins).length };
+    return { location: loc, count: Object.keys(ld.locMap[loc].asins).length, warehouse: fromInv ? (ld.locMap[loc].warehouse || '') : '', units: fromInv ? (ld.locMap[loc].units || 0) : 0 };
   }).filter(function(r) { return r.count === targetCount; });
   ssData.results = rows;
   if (!rows.length) {
     document.getElementById('out-smart-stow').innerHTML = '<div class="alert alert-warn">⚠️ No locations with exactly ' + targetCount + ' ASIN(s) found in bay "' + bay + '".</div>';
     return;
   }
+  var hasWh = rows.some(function(r){ return r.warehouse; });
   var title = targetCount === 0 ? '🕳️ Empty Locations' : '🕳️ Locations with ' + targetCount + ' ASIN(s)';
-  var matchNote = '<div class="alert alert-info" style="margin:0 0 14px;font-size:12px;">📦 Inventory: ' + (ld.invLocCount || 0).toLocaleString() + ' distinct locations loaded &nbsp;·&nbsp; Matched ' + (ld.matchedCount || 0).toLocaleString() + ' of ' + (ld.totalCount || 0).toLocaleString() + ' pick-path locations against inventory' + ((ld.matchedCount || 0) === 0 && (ld.totalCount || 0) > 0 ? ' — <strong>0 matches: check the Location format matches between your Pick Path and Inventory files.</strong>' : '') + '</div>';
+  var matchNote = fromInv ? '' : '<div class="alert alert-info" style="margin:0 0 14px;font-size:12px;">📦 Inventory: ' + (ld.invLocCount || 0).toLocaleString() + ' distinct locations loaded &nbsp;·&nbsp; Matched ' + (ld.matchedCount || 0).toLocaleString() + ' of ' + (ld.totalCount || 0).toLocaleString() + ' pick-path locations against inventory' + ((ld.matchedCount || 0) === 0 && (ld.totalCount || 0) > 0 ? ' — <strong>0 matches: check the Location format matches between your Pick Path and Inventory files.</strong>' : '') + '</div>';
   var html = '<div class="results-panel"><div class="results-header"><h3>' + title + ' — Zone ' + bay + '</h3><span class="results-count">' + rows.length + ' locations</span></div>' +
     '<div class="results-body">' + matchNote + '<div style="margin-bottom:14px;"><input class="input-field" style="width:220px;" placeholder="🔎 Search location…" oninput="ssFilterTable(this.value)"></div>' +
-    '<div class="tbl-wrap"><table id="ss-table"><thead><tr><th>Location</th><th>Current Unique ASINs</th><th>Status</th></tr></thead><tbody>' +
+    '<div class="tbl-wrap"><table id="ss-table"><thead><tr>' + (hasWh ? '<th>Warehouse</th>' : '') + '<th>Location</th><th>Current Unique ASINs</th>' + (hasWh ? '<th>Units</th>' : '') + '<th>Status</th></tr></thead><tbody>' +
     rows.map(function(r) {
       var badge = r.count === 0 ? '<span class="ss-badge ss-badge-green">🕳️ EMPTY</span>' : '<span class="ss-badge ss-badge-red">' + r.count + ' ASIN(s)</span>';
-      return '<tr><td>' + r.location + '</td><td>' + r.count + '</td><td>' + badge + '</td></tr>';
+      return '<tr>' + (hasWh ? '<td>' + (r.warehouse || '—') + '</td>' : '') + '<td>' + r.location + '</td><td>' + r.count + '</td>' + (hasWh ? '<td>' + r.units + '</td>' : '') + '<td>' + badge + '</td></tr>';
     }).join('') + '</tbody></table></div></div></div>';
   document.getElementById('out-smart-stow').innerHTML = html;
   document.getElementById('export-smart-stow').style.display = 'flex';
@@ -5730,14 +5797,29 @@ function ssExportExcel() {
   if (!ssData.results.length) { showToast('Generate results first'); return; }
   var wb = XLSX.utils.book_new(), rows;
   if (ssData.mode === 1) {
-    rows = ssData.results.map(function(r){ return { Location: r.location, 'Current Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, Status: r.status }; });
+    rows = ssData.results.map(function(r){ return { Warehouse: r.warehouse || '', Location: r.location, 'Current Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, Status: r.status, Units: r.units || 0 }; });
   } else if (ssData.mode === 3) {
-    rows = ssData.results.map(function(r){ return { Location: r.location, 'Current Unique ASINs': r.count, Status: r.count === 0 ? 'EMPTY' : (r.count + ' ASIN(s)') }; });
+    var hasWh3 = ssData.results.some(function(r){ return r.warehouse; });
+    rows = ssData.results.map(function(r){ return hasWh3 ? { Warehouse: r.warehouse || '', Location: r.location, 'Current Unique ASINs': r.count, Units: r.units || 0, Status: r.count === 0 ? 'EMPTY' : (r.count + ' ASIN(s)') } : { Location: r.location, 'Current Unique ASINs': r.count, Status: r.count === 0 ? 'EMPTY' : (r.count + ' ASIN(s)') }; });
   } else {
     rows = ssData.results.map(function(r){ return { ASIN: r.asin, 'Trans Qty': r.transQty, 'Recommended Location': r.location, 'Current ASIN Qty': r.curQty, 'Unique ASINs': r.count, 'ASIN Limit': r.limit, 'Available Slots': r.avail, 'Recommendation Type': r.type, Reason: r.reason, Priority: r.priority }; });
   }
   var ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, ssData.mode === 1 ? 'Location Space' : ssData.mode === 3 ? 'Empty Locations' : 'Smart Stow');
+  if (ssData.mode === 1 || (ssData.mode === 3 && ssData.results.some(function(r){ return r.warehouse; }))) {
+    var pivot = {}; // key: warehouse||zone||count -> location tally + unit sum
+    ssData.results.forEach(function(r) {
+      var wh = r.warehouse || '(No Warehouse)';
+      var zone = extractZone(r.location);
+      var key = wh + '||' + zone + '||' + r.count;
+      if (!pivot[key]) pivot[key] = { Warehouse: wh, Zone: zone, 'ASINs per Location': r.count, 'Location Count': 0, 'Total Units': 0 };
+      pivot[key]['Location Count']++;
+      pivot[key]['Total Units'] += (r.units || 0);
+    });
+    var pivotRows = Object.keys(pivot).sort().map(function(k){ return pivot[k]; });
+    var wsMaster = XLSX.utils.json_to_sheet(pivotRows);
+    XLSX.utils.book_append_sheet(wb, wsMaster, 'Master');
+  }
   XLSX.writeFile(wb, (ssData.mode === 1 ? 'LocationSpaceChecker_' : ssData.mode === 3 ? 'EmptyLocations_' : 'SmartStowPlan_') + new Date().toISOString().split('T')[0] + '.xlsx');
   if (typeof logActivity === 'function') logActivity('Smart Stowing', 'Exported Excel');
 }
