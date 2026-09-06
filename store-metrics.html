@@ -1231,7 +1231,7 @@ function smLoad(isAuto){
     // Auto-select latest date
     smAutoSelectLatest();
     setProgress(100);
-    setTimeout(function(){ smFetchVOC(); smFetchNetworkLoss(); smFetchConcessions(); hideLoader(); done(smData.length + ' rows'); }, 400);
+    setTimeout(function(){ smFetchVOC(); smFetchNetworkLoss(); smFetchConcessions(); smFetchBarometer(); hideLoader(); done(smData.length + ' rows'); }, 400);
   };
 
   var s = document.createElement('script'); s.id='j-'+cb;
@@ -1537,6 +1537,33 @@ function smRenderConcessions(){
     var cells=cols.map(function(c){ return scCellHtml(getVal(r,c)); }).join('');
     return '<tr><td class="strong">'+(r.store||'')+'</td><td>'+(r.name||'')+'</td><td>'+(r.owner||'')+'</td><td>'+(r.oe||'')+'</td>'+cells+'</tr>';
   }).join('');
+}
+
+// Barometer — manual Weekly + MTD scores from the "Barometer Weekly" / "Barometer MTD"
+// sheet tabs. Copy Summary uses its Late Slam v2 % (when the active week/month has a
+// row) instead of the value computed from raw daily data.
+var bmDataMonth=[], bmDataWeek=[];
+function smFetchBarometer(){
+  ['month','week'].forEach(function(kind){
+    var cb='bmCb_'+kind+'_'+Date.now();
+    var t=setTimeout(function(){ cleanup(); },25000);
+    function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
+    window[cb]=function(data){
+      cleanup();
+      if(data&&data.status==='ok'&&Array.isArray(data.rows)){
+        if(kind==='month') bmDataMonth=data.rows; else bmDataWeek=data.rows;
+      }
+    };
+    var s=document.createElement('script'); s.id='j-'+cb;
+    s.src=APPS_URL+'?action=barometer&period='+kind+'&callback='+cb;
+    s.onerror=function(){ cleanup(); };
+    document.head.appendChild(s);
+  });
+}
+function bmLookup(store, periodLabel, kind){
+  var data = kind==='week' ? bmDataWeek : bmDataMonth;
+  if(!data||!data.length||!periodLabel) return null;
+  return data.find(function(r){ return r.store===store && r.period===periodLabel; }) || null;
 }
 
 function smFetchNetworkLoss(){
@@ -3787,7 +3814,17 @@ function copySummaryRun(){
     dateLabel = period;
   }
 
-  // Old-logic Late Slam uses the current selection (no prev-day shift).
+  // Barometer lookup key — matches the "Week"/"Month" column in the relevant sheet tab.
+  // Month period → "August 2026" against Barometer MTD; Week period → "Week 36" against
+  // Barometer Weekly. Other period types (day/year/range/all) get no override.
+  var bmLabel=null, bmKind=null;
+  if(smPeriod==='month'){
+    var bmm=String(period).match(/^(\d{4})-(\d{1,2})/);
+    if(bmm){ bmLabel = monthsLong[parseInt(bmm[2],10)-1]+' '+bmm[1]; bmKind='month'; }
+  } else if(smPeriod==='week'){
+    var bww=String(period).replace(/\D/g,'');
+    if(bww){ bmLabel = 'Week '+parseInt(bww,10); bmKind='week'; }
+  }
 
   var lines=[];
 
@@ -3851,10 +3888,23 @@ function copySummaryRun(){
     } else {
       lsV2Line = 'Not Updated';
     }
+    // Barometer override — if the relevant Barometer tab (Weekly for a week filter,
+    // MTD for a month filter) has a row for this store + active period, its
+    // manually-entered Late Slam v2 % wins over the computed value.
+    var bmRow = bmKind ? bmLookup(s, bmLabel, bmKind) : null;
+    if(bmRow && bmRow.lsv2!==null && bmRow.lsv2!==undefined && Number.isFinite(bmRow.lsv2)){
+      lsV2Pct = bmRow.lsv2;
+      lsV2Line = (lsV2cnt>0?lsV2cnt+' ':'') + '('+lsV2Pct.toFixed(2)+'% · Barometer)';
+    }
     var skip    = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','U']);}));
     var short   = sum(sr.map(function(r){return gNum(r,['SHORT','Short','V']);}));
     var ibTph   = avg(sr.map(function(r){return gNum(r,['IB TPH','O']);}));
     var obTph   = avg(sr.map(function(r){return gNum(r,['OB TPH','P']);}));
+    // Barometer override — IB TPH follows the same rule as Late Slam v2: if the
+    // relevant Barometer tab has a row for this store + active period, use it.
+    if(bmRow && bmRow.ibTph!==null && bmRow.ibTph!==undefined && Number.isFinite(bmRow.ibTph)){
+      ibTph = bmRow.ibTph;
+    }
     var tphAvg  = avg(sr.map(function(r){return gNum(r,['THROUGHPUT','Throughput','AA']);}));
     var damaged = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
     var quality = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
