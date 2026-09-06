@@ -3865,7 +3865,7 @@ function copySummaryRun(){
   }
   var nlPeriod=(smPeriod==='week'||smPeriod==='month');
 
-  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0,lsV1:0,ibTphArr:[],tphArr:[],donate:0,damRem:0,qualRem:0};
+  var T={inbound:0,orders:0,units:0,ls:0,lsv2:0,skip:0,short:0,voc:0,utr:0,nlGms:0,nlWhlW:0,nlWhdW:0,lsV1:0,ibTphArr:[],tphArr:[],donate:0,damRem:0,qualRem:0,lsV2PctArr:[],lsV2BmPctArr:[]};
   stores.forEach(function(s){
     var sr=rows.filter(function(r){return gStore(r)===s;});
     var orders  = sum(sr.map(function(r){return gNum(r,['ORDERS','Orders','I']);}));
@@ -3895,6 +3895,7 @@ function copySummaryRun(){
     if(bmRow && bmRow.lsv2!==null && bmRow.lsv2!==undefined && Number.isFinite(bmRow.lsv2)){
       lsV2Pct = bmRow.lsv2;
       lsV2Line = (lsV2cnt>0?lsV2cnt+' ':'') + '('+lsV2Pct.toFixed(2)+'% · Barometer)';
+      T.lsV2BmPctArr.push(lsV2Pct);
     }
     var skip    = sum(sr.map(function(r){return gNum(r,['SKIP','Skip','U']);}));
     var short   = sum(sr.map(function(r){return gNum(r,['SHORT','Short','V']);}));
@@ -3959,6 +3960,7 @@ function copySummaryRun(){
     if(vocCnt!==null) T.voc+=vocCnt;
     try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s,rows):0); }catch(e){}
     T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); if(tphAvg>0) T.tphArr.push(tphAvg); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
+    T.lsV2PctArr.push(lsV2Pct);
   });
 
   lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -3967,7 +3969,7 @@ function copySummaryRun(){
   lines.push('📦 Total Orders: '+fmt(T.orders));
   lines.push('📤 Total Units: '+fmt(T.units));
   lines.push('🚨 Total Late Slams: '+fmt(T.ls));
-  lines.push('📊 Total LS v2: '+fmt(T.lsv2));
+  lines.push('📊 Total LS v2: '+fmt(T.lsv2)+(T.lsV2BmPctArr.length?'  · Barometer network avg: '+(T.lsV2BmPctArr.reduce(function(a,b){return a+b;},0)/T.lsV2BmPctArr.length).toFixed(2)+'% · tgt ≤'+LS_V2_TARGET+'%':(T.lsV2PctArr.length?'  · network avg: '+(T.lsV2PctArr.reduce(function(a,b){return a+b;},0)/T.lsV2PctArr.length).toFixed(2)+'% · tgt ≤'+LS_V2_TARGET+'%':'')));
   lines.push('⏭️ Total Skips/Shorts: '+T.skip+'/'+T.short);
   lines.push('🎙️ Total VOC: '+(smVocRaw&&smVocRaw.length?fmt(T.voc):'Fetch VOC'));
   lines.push('🎯 Total UTR: '+(smVocRaw&&smVocRaw.length?fmt(T.utr):'Fetch VOC'));
