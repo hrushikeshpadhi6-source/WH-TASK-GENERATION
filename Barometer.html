@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barometer — HP World DMS PRO</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif; background: #F4F6F9; color: #1a1830; }
+  a { color: #1F3864; }
+  a:hover { color: #35538f; }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #C7D0DE; border-radius: 6px; }
+  .hdr { position: sticky; top: 0; z-index: 20; background: #fff; border-bottom: 1px solid #E3E8F0; height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+  .hdr-left { display: flex; align-items: center; gap: 14px; }
+  .back-btn { border: 1px solid #D7DEEA; background: #fff; color: #1F3864; font-weight: 700; font-size: 12.5px; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  .back-btn:hover { background: #F4F6F9; }
+  .gwc-logo { height: 32px; width: auto; display: block; }
+  .vr { width: 1px; height: 26px; background: #E3E8F0; }
+  .page-ttl { font-size: 14px; font-weight: 800; color: #1F3864; }
+  .month-sel { padding: 8px 12px; border-radius: 8px; border: 1px solid #D7DEEA; background: #fff; color: #1F3864; font-size: 12.5px; font-weight: 700; font-family: inherit; }
+  .seg { display: flex; border: 1px solid #D7DEEA; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+  .seg button { border: none; background: #fff; color: #1F3864; font-weight: 700; font-size: 12.5px; padding: 8px 14px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .seg button.active { background: #1F3864; color: #fff; }
+  input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <button class="back-btn" onclick="location.href='index.html'">← Back</button>
+    <div class="vr"></div>
+    <img class="gwc-logo" src="assets/gwc-logo-transparent.png" alt="GWC">
+  </div>
+  <div class="hdr-left">
+    <span class="page-ttl" id="bm-title">GWC Score Card</span>
+  </div>
+  <div class="hdr-left">
+    <div class="seg">
+      <button id="bm-kind-month" class="active" onclick="bmSetKind('month')">Month (MTD)</button>
+      <button id="bm-kind-week" onclick="bmSetKind('week')">Week</button>
+    </div>
+    <select id="bm-month" class="month-sel" onchange="bmRender()"></select>
+    <button class="back-btn" onclick="bmExportExcel()">⬇ Excel</button>
+    <button class="back-btn" onclick="bmExportPdf()">⬇ PDF</button>
+  </div>
+</div>
+
+<div style="max-width:1920px;margin:0 auto;padding:24px 24px 60px;">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="assets/gwc-logo-transparent.png" alt="GWC" style="height:34px;width:auto;display:block;">
+      <div>
+        <div style="font-size:22px;font-weight:700;color:#1F3864;letter-spacing:0.2px;" id="bm-heading">GWC Score Card</div>
+        <div style="font-size:13px;color:#6B7686;margin-top:2px;" id="bm-sub">Warehouse operations</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bm-wrap" style="overflow-x:auto;border:1px solid #E3E8F0;border-radius:10px;background:#fff;">
+    <div style="padding:40px;text-align:center;color:#8b93a3;font-size:13px;" id="bm-status">⏳ Connecting to Google Sheet…</div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E3E8F0;border-radius:10px;padding:14px 16px;margin-top:14px;font-size:12.5px;color:#5A6472;line-height:1.6;">
+    Scoring rubric: 11 weighted metrics, 85 points max. Values are entered in the <b>Barometer MTD</b> / <b>Barometer Weekly</b> tabs of the Google Sheet — this page is read-only and recalculates the score + rank the moment the sheet is updated. Switch Month/Week and pick a period above.
+  </div>
+
+</div>
+
+<script>
+var APPS_URL = 'https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+
+var bmRows = [];
+var bmKind = 'month';
+var bmCache = {};
+
+var metricMeta = [
+  {key:'safety', label:'Safety Init.', max:10, targetLabel:'95-100%', unit:'%'},
+  {key:'lsv2',   label:'Late Slam v2', max:10, targetLabel:'<3%', unit:'%'},
+  {key:'ibTph',  label:'IB TPH',       max:7.5, targetLabel:'>140', unit:''},
+  {key:'tput',   label:'Throughput/PH',max:7.5, targetLabel:'>170', unit:''},
+  {key:'skip',   label:'Skips (DPMO)', max:5,  targetLabel:'<300', unit:''},
+  {key:'short',  label:'Shorts (DPMO)',max:5,  targetLabel:'<300', unit:''},
+  {key:'irdr',   label:'IRDR (DPMO)',  max:10, targetLabel:'<4500', unit:''},
+  {key:'pqa',    label:'Produce QA',   max:5,  targetLabel:'>95%', unit:'%'},
+  {key:'conc',   label:'Concessions',  max:10, targetLabel:'<0.5%', unit:'%'},
+  {key:'whd',    label:'WHD',          max:5,  targetLabel:'<0.15%', unit:'%'},
+  {key:'whl',    label:'WHL (GMS)',    max:10, targetLabel:'>-0.1%', unit:'%'}
+];
+
+var scoreFns = {
+  safety:  function(v){ return v>=95?10:(v>=85?5:0); },
+  lsv2:    function(v){ return v<3?10:0; },
+  ibTph:   function(v){ return v>140?7.5:(v>=126?5:0); },
+  tput:    function(v){ return v>170?7.5:(v>=144?2.5:0); },
+  skip:    function(v){ return v<300?5:(v<=500?2.5:0); },
+  short:   function(v){ return v<300?5:(v<=500?2.5:0); },
+  irdr:    function(v){ return v<4500?10:(v<=15000?8:0); },
+  pqa:     function(v){ return v>=95?5:(v>=85?2.5:0); },
+  conc:    function(v){ return v<0.5?10:(v<0.65?8:0); },
+  whd:     function(v){ return v<0.15?5:(v<0.5?2.5:0); },
+  whl:     function(v){ return v>-0.1?10:(v>=-0.5?2.5:0); }
+};
+
+function meta_target_line(m){ return 'max '+m.max+' · '+m.targetLabel; }
+function fmt(n,d){ d=d===undefined?1:d; return Number.isFinite(n) ? (+n.toFixed(d)).toString() : n; }
+
+function bmSetKind(kind){
+  bmKind = kind;
+  document.getElementById('bm-kind-month').classList.toggle('active', kind==='month');
+  document.getElementById('bm-kind-week').classList.toggle('active', kind==='week');
+  bmFetch();
+}
+
+function bmFetch(){
+  if(bmCache[bmKind]){ bmApply(bmCache[bmKind]); return; }
+  var wrap=document.getElementById('bm-wrap');
+  wrap.innerHTML='<div style="padding:40px;text-align:center;color:#8b93a3;font-size:13px;" id="bm-status">⏳ Connecting to Google Sheet…</div>';
+  var cb='bmCb_'+Date.now();
+  var t=setTimeout(function(){ cleanup(); fail('❌ Timeout — check connection'); },25000);
+  function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
+  function fail(m){ var st=document.getElementById('bm-status'); if(st) st.textContent=m; }
+  window[cb]=function(data){
+    cleanup();
+    if(!data||data.status!=='ok'){ fail('❌ '+((data&&data.message)||'No data')); return; }
+    console.log('[Barometer] kind='+bmKind, 'sheetNameUsed='+data.sheetNameUsed, 'codeVersion='+data.codeVersion, 'periods='+JSON.stringify(data.periods));
+    bmCache[bmKind]=data;
+    bmApply(data);
+  };
+  var s=document.createElement('script'); s.id='j-'+cb;
+  s.src=APPS_URL+'?action=barometer&period='+bmKind+'&callback='+cb;
+  s.onerror=function(){ cleanup(); fail('❌ Error loading sheet'); };
+  document.head.appendChild(s);
+}
+
+function bmApply(data){
+  bmRows = data.rows||[];
+  var sel=document.getElementById('bm-month');
+  var periods=(data.periods||[]).slice().sort();
+  if(!periods.length){
+    document.getElementById('bm-wrap').innerHTML='<div style="padding:40px;text-align:center;color:#8b93a3;font-size:13px;">No rows found in the Barometer '+(bmKind==='week'?'Weekly':'MTD')+' tab yet.</div>';
+    sel.innerHTML='';
+    return;
+  }
+  sel.innerHTML = periods.map(function(m){return '<option value="'+m+'">'+m+'</option>';}).join('');
+  sel.value = periods[periods.length-1];
+  bmRender();
+}
+
+function bmRender(){
+  var period=document.getElementById('bm-month').value;
+  var rows=bmRows.filter(function(r){ return r.period===period; });
+  document.getElementById('bm-title').textContent = 'GWC Score Card' + (period? ' — '+period : '');
+  document.getElementById('bm-heading').textContent = 'GWC Score Card' + (period? ' — '+period : '');
+  document.getElementById('bm-sub').textContent = rows.length + ' stores — ' + period;
+  var wrap=document.getElementById('bm-wrap');
+  if(!rows.length){ wrap.innerHTML='<div style="padding:40px;text-align:center;color:#8b93a3;font-size:13px;">No rows for '+period+' yet.</div>'; return; }
+
+  var thStyle='background:#1F3864;color:#EDF1F8;padding:9px 6px 8px;text-align:center;border-bottom:2px solid #16294a;border-right:1px solid rgba(255,255,255,0.08);font-weight:600;line-height:1.3;letter-spacing:0.1px;';
+  var thStickyStyle=thStyle+'position:sticky;background:#1F3864;';
+  var tdStickyStyle='position:sticky;background:inherit;padding:9px 6px;border-bottom:1px solid #EEF1F6;';
+
+  var computed = rows.map(function(row){
+    var cells = metricMeta.map(function(meta){
+      var raw = row[meta.key];
+      var hasVal = raw!==null && raw!==undefined && Number.isFinite(raw);
+      var score = hasVal ? scoreFns[meta.key](raw) : 0;
+      var pct = meta.max ? score/meta.max : 0;
+      var badgeColor = !hasVal ? 'color:#9AA5B4;background:transparent;' : (pct>=0.99 ? 'color:#1e7e34;background:#EAF6EC;' : (pct>0 ? 'color:#9a6b00;background:#FFF3D6;' : 'color:#B3261E;background:#FCEAEA;'));
+      return {
+        actualLabel: hasVal ? (fmt(raw)+meta.unit) : '—',
+        scoreLabel: hasVal ? (fmt(score,1)+'/'+meta.max) : '',
+        scoreStyle: 'font-size:9.5px;font-weight:600;margin-top:3px;padding:1px 5px;border-radius:8px;display:inline-block;'+badgeColor
+      };
+    });
+    var overall = metricMeta.reduce(function(sum,meta,i){
+      var raw=row[meta.key];
+      var hasVal = raw!==null && raw!==undefined && Number.isFinite(raw);
+      return sum + (hasVal?scoreFns[meta.key](raw):0);
+    },0);
+    return { store: row.store, cells: cells, overall: overall };
+  });
+
+  computed.sort(function(a,b){ return b.overall-a.overall; });
+
+  var html = '<table style="border-collapse:collapse;width:100%;table-layout:fixed;font-size:11px;font-family:inherit;">';
+  html += '<thead><tr>';
+  html += '<th style="'+thStickyStyle+'left:0;z-index:3;width:36px;">Rank</th>';
+  html += '<th style="'+thStickyStyle+'left:36px;z-index:3;width:56px;text-align:left;">Store</th>';
+  metricMeta.forEach(function(m){
+    html += '<th style="'+thStyle+'">'+m.label+'<div style="font-weight:400;opacity:0.6;font-size:8.5px;margin-top:2px;letter-spacing:0;">'+meta_target_line(m)+'</div></th>';
+  });
+  html += '<th style="'+thStyle+'background:#16294a;width:54px;border-right:none;">Overall<div style="font-weight:400;opacity:0.7;font-size:8.5px;margin-top:2px;">/ 85</div></th>';
+  html += '</tr></thead><tbody>';
+
+  computed.forEach(function(row,i){
+    var rowBg = i%2===0 ? '#fff' : '#FAFBFD';
+    html += '<tr style="background:'+rowBg+';">';
+    html += '<td style="'+tdStickyStyle+'left:0;font-weight:600;color:#4A5468;text-align:center;">'+(i+1)+'</td>';
+    html += '<td style="'+tdStickyStyle+'left:36px;font-weight:700;color:#1F3864;font-size:11px;">'+row.store+'</td>';
+    row.cells.forEach(function(cell){
+      html += '<td style="padding:7px 3px;border-bottom:1px solid #EEF1F6;text-align:center;">'+
+        '<div style="font-weight:600;color:#2A3346;">'+cell.actualLabel+'</div>'+
+        (cell.scoreLabel? '<div style="'+cell.scoreStyle+'">'+cell.scoreLabel+'</div>' : '<div style="height:15px;"></div>')+'</td>';
+    });
+    html += '<td style="border-bottom:1px solid #EEF1F6;padding:7px 3px;text-align:center;background:#F5F8FC;">'+
+      '<div style="font-size:14px;font-weight:700;color:#1F3864;">'+fmt(row.overall,1)+'</div>'+
+      '<div style="font-size:9px;color:#8891A0;margin-top:1px;">'+fmt(row.overall/85*100,1)+'%</div></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function bmExportExcel(){
+  var table=document.querySelector('#bm-wrap table');
+  if(!table){ alert('Load data first.'); return; }
+  var period=(document.getElementById('bm-month').value||'all').replace(/\s+/g,'_');
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+table.outerHTML+'</body></html>';
+  var a=document.createElement('a');
+  a.href='data:application/vnd.ms-excel;charset=utf-8,'+encodeURIComponent(html);
+  a.download='Barometer_'+bmKind+'_'+period+'.xls';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function bmExportPdf(){
+  var table=document.querySelector('#bm-wrap table');
+  if(!table){ alert('Load data first.'); return; }
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>Barometer</title><style>body{font-family:sans-serif;padding:16px;}@page{size:landscape;}</style></head><body>'+table.outerHTML+'</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
+bmFetch();
+</script>
+</body>
+</html>
