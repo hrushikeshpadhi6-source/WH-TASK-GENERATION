@@ -211,7 +211,7 @@ function bmRender(){
     html += '<td style="'+tdStickyStyle+'left:0;font-weight:600;color:#4A5468;text-align:center;font-size:15px;">'+row.rank+'</td>';
     html += '<td style="'+tdStickyStyle+'left:40px;font-weight:700;color:#1F3864;font-size:15px;">'+row.store+'</td>';
     row.cells.forEach(function(cell){
-      html += '<td style="padding:9px 3px;border-bottom:1px solid #EEF1F6;text-align:center;">'+
+      html += '<td style="padding:9px 3px;border-bottom:1px solid #EEF1F6;text-align:center;mso-number-format:\'\\@\';">'+
         '<div style="font-weight:600;color:#2A3346;font-size:15px;">'+cell.actualLabel+'</div>'+
         (cell.scoreLabel? '<div style="'+cell.scoreStyle+'">'+cell.scoreLabel+'</div>' : '<div style="height:18px;"></div>')+'</td>';
     });
