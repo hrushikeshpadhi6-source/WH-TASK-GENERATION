@@ -189,6 +189,11 @@ function bmRender(){
   });
 
   computed.sort(function(a,b){ return b.overall-a.overall; });
+  var rankNum=0, prevScore=null;
+  computed.forEach(function(row,i){
+    if(prevScore===null || row.overall!==prevScore){ rankNum++; prevScore=row.overall; }
+    row.rank=rankNum;
+  });
 
   var html = '<table style="border-collapse:collapse;width:100%;table-layout:auto;font-size:15px;font-family:inherit;">';
   html += '<thead><tr>';
@@ -203,7 +208,7 @@ function bmRender(){
   computed.forEach(function(row,i){
     var rowBg = i%2===0 ? '#fff' : '#FAFBFD';
     html += '<tr style="background:'+rowBg+';">';
-    html += '<td style="'+tdStickyStyle+'left:0;font-weight:600;color:#4A5468;text-align:center;font-size:15px;">'+(i+1)+'</td>';
+    html += '<td style="'+tdStickyStyle+'left:0;font-weight:600;color:#4A5468;text-align:center;font-size:15px;">'+row.rank+'</td>';
     html += '<td style="'+tdStickyStyle+'left:40px;font-weight:700;color:#1F3864;font-size:15px;">'+row.store+'</td>';
     row.cells.forEach(function(cell){
       html += '<td style="padding:9px 3px;border-bottom:1px solid #EEF1F6;text-align:center;">'+
