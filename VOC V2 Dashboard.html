@@ -1761,7 +1761,6 @@ function buildSampleData() {
 const V2_UTR_DESCS   = ['UTR QC Miss', 'Picker Mistake', 'UTR Expiry Miss', 'Packing SOP Failure', 'UTR Temp. Abuse']; // under-the-roof ops
 const V2_OTR_DESCS   = ['Verified OTR Issue', 'OTR to check'];                // on-the-road ops
 const V2_PICKER_DESC = 'Picker Mistake';
-const V2_QC_DESC     = 'UTR QC Miss';
 const VOC_UTR_TARGET = 0.10; // 0.10% of orders — same target as old system
 
 // Ops / Non-Ops / Untriaged from the authoritative Issue Category column (M)
@@ -1793,7 +1792,7 @@ function classify(r) {
     isUTR:      kind === 'ops' && V2_UTR_DESCS.indexOf(d) !== -1,
     isOTR:      kind === 'ops' && V2_OTR_DESCS.indexOf(d) !== -1,
     isPicker:   d === V2_PICKER_DESC,
-    isQC:       d === V2_QC_DESC,
+    isQuality:  ['quality','damaged','missing','wrong'].indexOf(complaintCat(r)) !== -1,
     isNonOps:   kind === 'nonops',
     rcaPending: rcaPending(r)
   };
@@ -1844,7 +1843,7 @@ window.VOCData = {
   CONCESSION_MAP, concessionLabel, concessionGroup,
   deriveStatus, STATUS_META, weekNum, weekLabel,
   buildSampleData,
-  V2_UTR_DESCS, V2_OTR_DESCS, V2_PICKER_DESC, V2_QC_DESC, VOC_UTR_TARGET,
+  V2_UTR_DESCS, V2_OTR_DESCS, V2_PICKER_DESC, VOC_UTR_TARGET,
   catKind, rcaPending, rcaTriggered, rcaFilledNotTriggered, classify, rcaMismatch,
   COMPLAINT_CATS, COMPLAINT_CAT_META, complaintCat, complaintCatSource
 };
@@ -2343,13 +2342,17 @@ function monthLabelOf(v) {
 /* ═══════════ KPIs ═══════════ */
 function computeKpis(rows) {
   // Operational metrics ported from VOC Analysis, mapped to V2 columns.
-  const k = { total: rows.length, utr: 0, otr: 0, picker: 0, qc: 0, nonops: 0, rcaPending: 0 };
+  const k = { total: rows.length, utr: 0, otr: 0, picker: 0, quality: 0, damaged: 0, missing: 0, wrong: 0, nonops: 0, rcaPending: 0 };
   rows.forEach(r => {
     const c = D.classify(r);
     if (c.isUTR) k.utr++;
     if (c.isOTR) k.otr++;
     if (c.isPicker) k.picker++;
-    if (c.isQC) k.qc++;
+    if (c.isQuality) k.quality++;
+    const cat = r._cat || D.complaintCat(r);
+    if (cat === 'damaged') k.damaged++;
+    if (cat === 'missing') k.missing++;
+    if (cat === 'wrong') k.wrong++;
     if (c.isNonOps) k.nonops++;
     if (c.rcaPending) k.rcaPending++;
   });
@@ -2390,7 +2393,7 @@ function renderKpis() {
     { cls: 'is-danger',  label: 'UTR Ops Controllable', val: k.utr,  foot: 'QC · Picker · Expiry misses' },
     { cls: 'is-warning', label: 'OTR Ops Controllable', val: k.otr,  foot: 'Delivery / on-road' },
     { cls: 'is-danger',  label: 'Picker Mistakes',  val: k.picker,   foot: 'Ops Controllable · Picker' },
-    { cls: 'is-primary', label: 'QC Issues',        val: k.qc,       foot: 'UTR QC Miss' },
+    { cls: 'is-primary', label: 'Quality Issues',   val: k.quality,  foot: 'Damaged ' + k.damaged + ' · Missing ' + k.missing + ' · Wrong item ' + k.wrong },
     { cls: 'is-neutral', label: 'Non-Ops Controllable', val: k.nonops, foot: 'Vendor / Catalogue / PAD / CoM' },
     { cls: (k.rcaPending ? 'is-warning' : 'is-success'), label: 'RCA &amp; CAP Pending', val: k.rcaPending,
       foot: k.rcaDone + ' filled · ' + (k.total ? Math.round(k.rcaDone / k.total * 100) : 0) + '% done', help: true },
@@ -2795,8 +2798,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = sorted();
     const th = EXPORT_COLS.map(c => '<th style="background:#232F3E;color:#fff;text-align:left;padding:5px">' + c[0] + '</th>').join('');
     const tr = rows.map(r => '<tr>' + EXPORT_COLS.map(c => '<td>' + esc(String(c[1](r) == null ? '' : c[1](r))) + '</td>').join('') + '</tr>').join('');
-    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head>
-<meta charset="utf-8"></head><body><table border="1"><thead><tr>' + th + '</tr></thead><tbody>' + tr + '</tbody></table></body></html>';
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>' + th + '</tr></thead><tbody>' + tr + '</tbody></table></body></html>';
     download('VOC_V2_records_' + stamp() + '.xls', 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html));
     toast(rows.length + ' records exported to Excel', ICON.check);
   }
@@ -2827,7 +2829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const headers = ['Period / Store','Total VOC','Duplicate VOC','Cancelled Orders','Unique VOC',
       'Ops Controllable','Non-Ops Controllable','UTR (Ops)','OTR (Ops)',
-      'Picker Mistake','QC Issue','RCA Pending','Picker Not Filled'];
+      'Picker Mistake','Quality Issue','RCA Pending','Picker Not Filled'];
 
     function metricsRow(label, rows, bold) {
       const total  = rows.length;
@@ -2839,7 +2841,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const utr    = rows.filter(r => !r._dup && D.classify(r).isUTR).length;
       const otr    = rows.filter(r => !r._dup && D.classify(r).isOTR).length;
       const picker = rows.filter(r => !r._dup && D.classify(r).isPicker).length;
-      const qc     = rows.filter(r => !r._dup && D.classify(r).isQC).length;
+      const qc     = rows.filter(r => !r._dup && D.classify(r).isQuality).length;
       const rcap   = rows.filter(r => !r._dup && D.rcaPending(r)).length;
       const pnf    = rows.filter(r => !r._dup && !D.rcaPending(r) && !(r.pickerId && r.pickerId.trim())).length;
       return '<tr' + (bold ? ' style="font-weight:700;background:#F0F4F8"' : '') + '>' +
@@ -2882,8 +2884,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const generated = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
     const xhtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
-      '<head>
-<meta charset="utf-8"></head><body>' +
+      '<head><meta charset="utf-8"></head><body>' +
       '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Export</h2>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 4px">Generated: ' + generated + ' · Total records: ' + all.length + '</p>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Filter: ' + filterNote + '</p>' +
@@ -3283,7 +3284,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const utr = cnt(sr, r => cls(r).isUTR),    putr = cnt(pr, r => cls(r).isUTR);
       const otr = cnt(sr, r => cls(r).isOTR),    potr = cnt(pr, r => cls(r).isOTR);
       const pm  = cnt(sr, r => cls(r).isPicker), ppm  = cnt(pr, r => cls(r).isPicker);
-      const qc  = cnt(sr, r => cls(r).isQC),     pqc  = cnt(pr, r => cls(r).isQC);
+      const qc  = cnt(sr, r => cls(r).isQuality), pqc  = cnt(pr, r => cls(r).isQuality);
       const nonops = cnt(sr, r => cls(r).isNonOps), pnon = cnt(pr, r => cls(r).isNonOps);
       const expiry = cnt(sr, r => (r._cat || D.complaintCat(r)) === 'expiry'), pexpiry = cnt(pr, r => (r._cat || D.complaintCat(r)) === 'expiry');
       const pend = cnt(sr, D.rcaPending);
@@ -3331,7 +3332,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${line('UTR (Ops)', utr, false, delta(utr, putr))}
           ${line('OTR (Ops)', otr, false, delta(otr, potr))}
           ${line('Picker Err', pm + (pm > 5 ? ' ⚠' : ''), pm > 5, delta(pm, ppm))}
-          ${line('QC Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3, delta(qc, pqc))}
+          ${line('Quality Issue', qc + (qc > 3 ? ' ⚠' : ''), qc > 3, delta(qc, pqc))}
           ${line('Non-Ops', nonops, false, delta(nonops, pnon))}
           ${line('Expiry', expiry, expiry > 3, delta(expiry, pexpiry))}
           ${line('RCA Pending', pend + (pend > 0 ? ' ⏳' : ''), pend > 0)}
@@ -3718,19 +3719,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── shared: classify a row set into the operational buckets ── */
   function vocMetrics(rows) {
-    const k = { voc: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, rcaPending:0, expiry:0, damaged:0 };
+    const k = { voc: rows.length, utr:0, otr:0, picker:0, quality:0, nonops:0, rcaPending:0, expiry:0, damaged:0, missing:0, wrong:0 };
     rows.forEach(r => {
       if (r._dup) { k.voc--; return; }   // duplicates excluded from compare too
       const c = D.classify(r);
       if (c.isUTR) k.utr++;
       if (c.isOTR) k.otr++;
       if (c.isPicker) k.picker++;
-      if (c.isQC) k.qc++;
+      if (c.isQuality) k.quality++;
       if (c.isNonOps) k.nonops++;
       if (c.rcaPending) k.rcaPending++;
       const cat = r._cat || D.complaintCat(r);
       if (cat === 'expiry') k.expiry++;
       if (cat === 'damaged') k.damaged++;
+      if (cat === 'missing') k.missing++;
+      if (cat === 'wrong') k.wrong++;
     });
     return k;
   }
@@ -4068,7 +4071,7 @@ document.addEventListener('DOMContentLoaded', () => {
               '<option value="orders">Orders</option>' +
               '<option value="units">OB Units</option>' +
               '<option value="ops">Ops Controllable</option>' +
-              '<option value="qc">QC Issues</option>' +
+              '<option value="qc">Quality Issues</option>' +
               '<option value="picker">Picker Errors</option>' +
             '</select></div>' +
           '<button id="cmpRefresh" class="btn sm">Refresh orders</button>' +
@@ -4142,7 +4145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       orders: { k: 'Orders',        c: cO,     p: pO,     good: true,  sub: 'outbound' },
       units:  { k: 'OB Units',      c: cU,     p: pU,     good: true,  sub: 'outbound' },
       ops:    { k: 'Ops Controllable', c: ops(cm), p: ops(pm), good: false, sub: 'UTR + OTR' },
-      qc:     { k: 'QC Issues',     c: cm.qc, p: pm.qc, good: false, sub: 'UTR QC miss' },
+      qc:     { k: 'Quality Issues', c: cm.quality, p: pm.quality, good: false, sub: 'damaged/missing/wrong' },
       picker: { k: 'Picker Errors', c: cm.picker, p: pm.picker, good: false, sub: 'picker mistake' }
     };
     const f = focusMap[C.focus] || focusMap.voc;
@@ -4167,7 +4170,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ['UTR Ops Controllable', cm.utr, pm.utr, false, false],
       ['OTR Ops Controllable', cm.otr, pm.otr, false, false],
       ['Picker Errors', cm.picker, pm.picker, false, false],
-      ['QC Issues', cm.qc, pm.qc, false, false],
+      ['Quality Issues', cm.quality, pm.quality, false, false],
       ['Non-Ops Controllable', cm.nonops, pm.nonops, false, false],
       ['Expiry', cm.expiry, pm.expiry, false, false],
       ['Damaged', cm.damaged, pm.damaged, false, false],
@@ -4614,18 +4617,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function metrics(rows) {
-    const m = { total: rows.length, utr:0, otr:0, picker:0, qc:0, nonops:0, ops:0, rcaPending:0, pnf:0, fnt:0 };
+    const m = { total: rows.length, utr:0, otr:0, picker:0, quality:0, nonops:0, ops:0, rcaPending:0, pnf:0, fnt:0 };
     rows.forEach(r => {
       const c = D.classify(r);
       if (c.isUTR) m.utr++; if (c.isOTR) m.otr++; if (c.isPicker) m.picker++;
-      if (c.isQC) m.qc++; if (c.isNonOps) m.nonops++; if (c.kind === 'ops') m.ops++;
+      if (c.isQuality) m.quality++; if (c.isNonOps) m.nonops++; if (c.kind === 'ops') m.ops++;
       if (c.rcaPending) m.rcaPending++; if (pnfOf(r)) m.pnf++; if (D.rcaFilledNotTriggered(r)) m.fnt++;
     });
     return m;
   }
   function topDriverOf(m) {
     const d = [['RCA Pending', m.rcaPending], ['Non-Ops', m.nonops], ['Picker Errors', m.picker],
-              ['UTR (Ops)', m.utr], ['OTR (Ops)', m.otr], ['QC Issues', m.qc]];
+              ['UTR (Ops)', m.utr], ['OTR (Ops)', m.otr], ['Quality Issues', m.quality]];
     d.sort((a,b)=>b[1]-a[1]); return d[0][1] ? d[0][0] : '—';
   }
   function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
@@ -4674,7 +4677,7 @@ document.addEventListener('DOMContentLoaded', () => {
           line('UTR (Ops)', cm.utr, false, dCell(cm.utr, hasPrev?pm.utr:null, false)) +
           line('OTR (Ops)', cm.otr, false, dCell(cm.otr, hasPrev?pm.otr:null, false)) +
           line('Picker Err', cm.picker, cm.picker > 5, dCell(cm.picker, hasPrev?pm.picker:null, false)) +
-          line('QC Issue', cm.qc, cm.qc > 3, dCell(cm.qc, hasPrev?pm.qc:null, false)) +
+          line('Quality Issue', cm.quality, cm.quality > 3, dCell(cm.quality, hasPrev?pm.quality:null, false)) +
           line('Non-Ops', cm.nonops, false, dCell(cm.nonops, hasPrev?pm.nonops:null, false)) +
           line('RCA Pending', cm.rcaPending + (cm.rcaPending ? ' ⏳' : ''), cm.rcaPending > 0) +
           (cm.fnt ? '<div class="qs-pnf nt" data-pnf><span>RCA Not Triggered</span><span>' + cm.fnt + ' ⚠</span>' + popnt + '</div>' : '') +
@@ -4703,7 +4706,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = [
       ['Non-Ops', cm.nonops, COL.steel], ['RCA Pending', cm.rcaPending, COL.warning],
       ['UTR (Ops)', cm.utr, COL.danger], ['Picker Errors', cm.picker, COL.primary],
-      ['OTR (Ops)', cm.otr, COL.navy], ['QC Issues', cm.qc, COL.purple]
+      ['OTR (Ops)', cm.otr, COL.navy], ['Quality Issues', cm.quality, COL.purple]
     ].sort((a,b)=>b[1]-a[1]);
     const max = Math.max(1, ...rows.map(r=>r[1]));
     return '<div class="qs-drv">' + rows.map(r =>
@@ -4786,7 +4789,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function actions(cm) {
     const rows = [];
     if (cm.picker > 0) rows.push(['Daily picker coaching &amp; compliance checks', 'Operations Leads', fmtDue(1), cm.picker>5?'prog':'pend', cm.picker>5?'In Progress':'Pending']);
-    if (cm.qc > 0 || cm.utr > 0) rows.push(['QC validation before staging', 'QC Leads', fmtDue(1), 'prog', 'In Progress']);
+    if (cm.quality > 0 || cm.utr > 0) rows.push(['QC validation before staging', 'QC Leads', fmtDue(1), 'prog', 'In Progress']);
     if (cm.rcaPending > 0) rows.push(['Close all pending RCA within 24 hours', 'Store Managers', fmtDue(1), 'pend', 'Pending']);
     rows.push(['Review repeat VOC orders &amp; standardise process', 'Process Team', fmtDue(2), 'pend', 'Pending']);
     return '<table class="qs-table"><thead><tr><th style="width:34px">#</th><th>Action</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
@@ -5134,7 +5137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const ops = active.filter(r => String(r.issueCategory||'').toLowerCase().includes('ops controllable') && !String(r.issueCategory||'').toLowerCase().includes('non'));
       const nonops = active.filter(r => String(r.issueCategory||'').toLowerCase().includes('non ops'));
       const picker = active.filter(r => /picker/i.test(r.issueDesc||''));
-      const qc = active.filter(r => /qc|quality/i.test(r.issueDesc||''));
+      const quality = active.filter(r => ['quality','damaged','missing','wrong'].indexOf(r._cat || D.complaintCat(r)) !== -1);
       const utr = active.filter(r => /utr/i.test(r.issueDesc||''));
       const otr = active.filter(r => /otr/i.test(r.issueDesc||''));
       const rcaPending = active.filter(r => D.rcaPending(r));
@@ -5148,7 +5151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tdn(cur.length) + tdn(v1c) + tdn(v2c) +
         tdn(dups, true) + tdn(active.length) +
         tdn(ops.length) + tdn(nonops.length, true) +
-        tdn(picker.length, true) + tdn(qc.length, true) +
+        tdn(picker.length, true) + tdn(quality.length, true) +
         tdn(utr.length) + tdn(otr.length) +
         tdn(rcaPending.length, true) + tdn(stores) +
       '</tr>';
@@ -5166,7 +5169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tdn(allRows.filter(r=>!r._dup&&/ops controllable/i.test(r.issueCategory||'')&&!/non/i.test(r.issueCategory||'')).length) +
       tdn(allRows.filter(r=>!r._dup&&/non ops/i.test(r.issueCategory||'')).length) +
       tdn(allRows.filter(r=>!r._dup&&/picker/i.test(r.issueDesc||'')).length) +
-      tdn(allRows.filter(r=>!r._dup&&/qc|quality/i.test(r.issueDesc||'')).length) +
+      tdn(allRows.filter(r=>!r._dup&&['quality','damaged','missing','wrong'].indexOf(r._cat || D.complaintCat(r)) !== -1).length) +
       tdn(allRows.filter(r=>!r._dup&&/utr/i.test(r.issueDesc||'')).length) +
       tdn(allRows.filter(r=>!r._dup&&/otr/i.test(r.issueDesc||'')).length) +
       tdn(allRows.filter(r=>!r._dup&&D.rcaPending(r)).length) +
@@ -5175,7 +5178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const summaryTable = '<table border="1" style="border-collapse:collapse;font-family:Arial;margin-bottom:24px">'+
       '<thead><tr>' + ['Month','Total VOC','V1 (Old)','V2 (New)','Duplicates','Unique VOC',
-        'Ops Controllable','Non-Ops Controllable','Picker Mistake','QC Issue',
+        'Ops Controllable','Non-Ops Controllable','Picker Mistake','Quality Issue',
         'UTR (Ops)','OTR (Ops)','RCA Pending','Stores Affected'].map(th).join('') + '</tr></thead>'+
       '<tbody>' + mRows.join('') + totalRow + '</tbody></table>';
 
@@ -5204,8 +5207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const title = s => '<h3 style="font-family:Arial;font-size:14px;margin:20px 0 6px;color:#232F3E">' + s + '</h3>';
     const generated = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
     const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
-      '<head>
-<meta charset="utf-8"><style>body{font-family:Arial}</style></head><body>' +
+      '<head><meta charset="utf-8"><style>body{font-family:Arial}</style></head><body>' +
       '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Report (V1 + V2 Combined)</h2>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Generated: ' + generated + ' · Total records: ' + allRows.length + ' (V1: ' + (V.S.v1Count||0) + ' · V2: ' + (V.S.v2Count||0) + ')</p>' +
       title('Month-wise Summary') + summaryTable +
