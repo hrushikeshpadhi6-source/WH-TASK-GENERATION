@@ -146,6 +146,17 @@ body::before {
   background: linear-gradient(135deg,var(--card-color,var(--accent)),transparent 60%);
   opacity:0; transition:opacity 0.25s; pointer-events:none;
 }
+.task-card-maint { opacity:0.82; }
+.task-card-maint .maint-chip {
+  position:absolute; top:10px; right:10px; z-index:5;
+  width:26px; height:26px; border-radius:50%;
+  background:#78350f; color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:13px; animation: maintChipPulse 1.8s ease-in-out infinite;
+}
+@keyframes maintChipPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(180,83,9,0.55); }
+  50% { box-shadow:0 0 0 7px rgba(180,83,9,0); }
+}
 .task-card:hover {
   border-color:var(--card-color,var(--accent));
   transform:translateY(-6px) scale(1.01);
@@ -2081,6 +2092,17 @@ window.feedbackAdminClear=async function(){
 </div>
 <div id="maintenance-banner" style="display:none;background:linear-gradient(90deg,#78350f,#b45309);color:#fff;padding:10px 20px;font-size:12.5px;font-weight:700;text-align:center;">
   🚧 Limited access during maintenance — only selected tools are available right now.
+</div>
+
+<div id="tool-maint-popup" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(10,9,20,0.6);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeToolMaintPopup()">
+  <div style="max-width:380px;width:100%;background:#151420;border:1px solid rgba(180,83,9,0.4);border-radius:20px;padding:32px 28px;text-align:center;font-family:'Syne',sans-serif;box-shadow:0 24px 60px rgba(0,0,0,0.6);">
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(180,83,9,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;animation:maintChipPulse 1.8s ease-in-out infinite;">🔧</div>
+    <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:6px;">Under Maintenance</div>
+    <div style="font-size:13px;color:#b8b6d9;line-height:1.6;margin-bottom:20px;" id="tmp-msg">This tool is temporarily unavailable.</div>
+    <button onclick="maintQuickRequestAccess()" id="tmp-req-btn" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:10px;">🚨 Request Urgent Access</button>
+    <div id="tmp-status" style="font-size:12px;color:#8b8aad;min-height:16px;margin-bottom:8px;"></div>
+    <button onclick="closeToolMaintPopup()" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#b8b6d9;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Close</button>
+  </div>
 </div>
 
 <header class="header">
@@ -11597,13 +11619,13 @@ if (document.readyState === 'loading') {
   var liPaused = false;
 
   // ── tiny JSONP ──
-  function jsonp(action, cb){
+  function jsonp(action, cb, extraQS){
     var name = 'liCb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
     var s = document.createElement('script'); s.id = 'js-'+name;
     var t = setTimeout(function(){ cleanup(); cb(null); }, 25000);
     function cleanup(){ clearTimeout(t); delete window[name]; if(s.parentNode) s.parentNode.removeChild(s); }
     window[name] = function(d){ cleanup(); cb(d); };
-    s.src = LI_API + '?action=' + action + '&callback=' + name;
+    s.src = LI_API + '?action=' + action + (extraQS||'') + '&callback=' + name;
     s.onerror = function(){ cleanup(); cb(null); };
     document.head.appendChild(s);
   }
@@ -11627,11 +11649,25 @@ if (document.readyState === 'loading') {
   }
 
   // ── build slides from rows ──
-  function buildSlides(smRows, vocRows){
+  function buildSlides(smRows, vocRows, baroRows){
     var now = new Date();
     var ym  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
     var monthLabel = monthLong(now) + ' ' + now.getFullYear();
     var monthLabelShort = monthLong(now).slice(0,3).toUpperCase() + ' MTD';
+
+    // Late Slam v2 % comes from the Barometer MTD tab (authoritative), not
+    // computed from raw order rows — keyed by store for this month's period.
+    var baroByStore = {};
+    (baroRows||[]).forEach(function(r){
+      if(String(r.period||'').trim() !== monthLabel) return;
+      var st = String(r.store||'').trim(); if(!st) return;
+      baroByStore[st] = {
+        lsv2:  (r.lsv2  != null && r.lsv2  !== '') ? toP(n(r.lsv2))  : null,
+        ibTph: (r.ibTph != null && r.ibTph !== '') ? n(r.ibTph)      : null,
+        tput:  (r.tput  != null && r.tput  !== '') ? n(r.tput)       : null,
+        irdr:  (r.irdr  != null && r.irdr  !== '') ? n(r.irdr)       : null
+      };
+    });
 
     document.getElementById('li-month-label').textContent = monthLabelShort;
 
@@ -11657,36 +11693,37 @@ if (document.readyState === 'loading') {
 
     // Slide 1 — Month overview
     var totOrd = sum(stores.map(function(s){return byStore[s].orders;}));
-    var totLs  = sum(stores.map(function(s){return byStore[s].ls;}));
-    var lsRate = totOrd > 0 ? (totLs/totOrd*100) : 0;
     var totVoc = sum(stores.map(function(s){return byStore[s].voc;}));
+    var lsv2Vals = Object.keys(baroByStore).map(function(s){return baroByStore[s].lsv2;}).filter(function(v){return v!=null;});
+    var lsRate = lsv2Vals.length ? sum(lsv2Vals)/lsv2Vals.length : 0;
     slides.push({
       icon:'📊',
       title: monthLabel + ' — Snapshot',
       value: totOrd.toLocaleString() + ' orders',
       valueColor:'#3B82F6',
-      msg: '🏪 ' + stores.length + ' stores · 🚨 ' + totLs.toLocaleString() + ' late slams (' + lsRate.toFixed(2) + '%)' + (totVoc>0 ? ' · 📣 ' + totVoc + ' VOC' : ''),
+      msg: '🏪 ' + stores.length + ' stores' + (lsv2Vals.length ? ' · 🚨 Late Slam v2 avg ' + lsRate.toFixed(2) + '% (Barometer)' : '') + (totVoc>0 ? ' · 📣 ' + totVoc + ' VOC' : ''),
       msgColor:'rgba(255,255,255,0.78)',
       bg:'rgba(37,99,235,0.10)', bd:'rgba(37,99,235,0.30)'
     });
 
-    // Slide 2 — Worst Late-Slam store (RED)
-    if(stores.length){
+    // Slides 2–4 use Late Slam v2 % from the Barometer sheet when available
+    // for a store; stores with no Barometer row for this month are skipped.
+    var lsStores = Object.keys(baroByStore).filter(function(s){ return baroByStore[s].lsv2 != null; });
+    if(lsStores.length){
+      // Slide 2 — Worst Late-Slam store (RED)
       var worst = null, worstRate = -1;
-      stores.forEach(function(s){
-        var o = byStore[s].orders, l = byStore[s].ls;
-        if(o > 0){
-          var r = l/o*100;
-          if(r > worstRate){ worstRate = r; worst = s; }
-        }
+      lsStores.forEach(function(s){
+        var r = baroByStore[s].lsv2;
+        if(r > worstRate){ worstRate = r; worst = s; }
       });
       if(worst){
+        var wCounts = byStore[worst];
         slides.push({
           icon:'🚨',
           title:'Highest Late Slam',
           value: worst + ' · ' + worstRate.toFixed(2) + '%',
           valueColor: worstRate >= 3 ? '#ef4444' : worstRate >= 1.5 ? '#ffd60a' : '#10B981',
-          msg: byStore[worst].ls.toLocaleString() + ' late slams of ' + byStore[worst].orders.toLocaleString() + ' orders — needs attention.',
+          msg: (wCounts ? wCounts.ls.toLocaleString() + ' late slams of ' + wCounts.orders.toLocaleString() + ' orders — ' : 'Barometer · ' + monthLabel + ' — ') + 'needs attention.',
           msgColor:'rgba(255,255,255,0.78)',
           bg: worstRate >= 3 ? 'rgba(239,68,68,0.10)' : 'rgba(255,214,10,0.08)',
           bd: worstRate >= 3 ? 'rgba(239,68,68,0.40)' : 'rgba(255,214,10,0.30)'
@@ -11695,29 +11732,27 @@ if (document.readyState === 'loading') {
 
       // Slide 3 — Best Late-Slam store (GREEN)
       var best = null, bestRate = 999;
-      stores.forEach(function(s){
-        var o = byStore[s].orders, l = byStore[s].ls;
-        if(o > 0){
-          var r = l/o*100;
-          if(r < bestRate){ bestRate = r; best = s; }
-        }
+      lsStores.forEach(function(s){
+        var r = baroByStore[s].lsv2;
+        if(r < bestRate){ bestRate = r; best = s; }
       });
       if(best && best !== worst){
+        var bCounts = byStore[best];
         slides.push({
           icon:'🏆',
           title:'Lowest Late Slam',
           value: best + ' · ' + bestRate.toFixed(2) + '%',
           valueColor:'#10B981',
-          msg: byStore[best].ls.toLocaleString() + ' late slams of ' + byStore[best].orders.toLocaleString() + ' orders — keep it up!',
+          msg: (bCounts ? bCounts.ls.toLocaleString() + ' late slams of ' + bCounts.orders.toLocaleString() + ' orders — ' : 'Barometer · ' + monthLabel + ' — ') + 'keep it up!',
           msgColor:'rgba(255,255,255,0.78)',
           bg:'rgba(16,185,129,0.10)', bd:'rgba(16,185,129,0.35)'
         });
       }
 
-      // Slide 4 — Stores under target (LS > 3% target)
-      var underTarget = stores.filter(function(s){
-        var o = byStore[s].orders; return o > 0 && (byStore[s].ls/o*100) > 3;
-      }).sort(function(a,b){ return (byStore[b].ls/byStore[b].orders) - (byStore[a].ls/byStore[a].orders); });
+      // Slide 4 — Stores over target (Late Slam v2 > 3%)
+      var underTarget = lsStores.filter(function(s){
+        return baroByStore[s].lsv2 > 3;
+      }).sort(function(a,b){ return baroByStore[b].lsv2 - baroByStore[a].lsv2; });
       if(underTarget.length){
         slides.push({
           icon:'⚠️',
@@ -11725,7 +11760,7 @@ if (document.readyState === 'loading') {
           value: underTarget.length + ' store' + (underTarget.length>1?'s':'') + ' > 3%',
           valueColor:'#ef4444',
           msg: underTarget.slice(0,3).map(function(s){
-            return s + ' (' + (byStore[s].ls/byStore[s].orders*100).toFixed(1) + '%)';
+            return s + ' (' + baroByStore[s].lsv2.toFixed(1) + '%)';
           }).join(' · '),
           msgColor:'rgba(255,255,255,0.82)',
           bg:'rgba(239,68,68,0.10)', bd:'rgba(239,68,68,0.40)'
@@ -11741,6 +11776,51 @@ if (document.readyState === 'loading') {
           bg:'rgba(16,185,129,0.10)', bd:'rgba(16,185,129,0.35)'
         });
       }
+    }
+
+    // Slide 4b — Top Throughput/PH (Barometer)
+    var tputStores = Object.keys(baroByStore).filter(function(s){ return baroByStore[s].tput != null; });
+    if(tputStores.length){
+      var topT = tputStores.reduce(function(a,b){ return baroByStore[b].tput > baroByStore[a].tput ? b : a; });
+      slides.push({
+        icon:'⚡',
+        title:'Top Throughput/PH',
+        value: topT + ' · ' + Math.round(baroByStore[topT].tput) + '/hr',
+        valueColor: baroByStore[topT].tput > 170 ? '#10B981' : '#ffd60a',
+        msg: 'Barometer · ' + monthLabel + ' — target >170/hr.',
+        msgColor:'rgba(255,255,255,0.78)',
+        bg:'rgba(245,158,11,0.10)', bd:'rgba(245,158,11,0.35)'
+      });
+    }
+
+    // Slide 4c — Top IB TPH (Barometer)
+    var ibtStores = Object.keys(baroByStore).filter(function(s){ return baroByStore[s].ibTph != null; });
+    if(ibtStores.length){
+      var topIb = ibtStores.reduce(function(a,b){ return baroByStore[b].ibTph > baroByStore[a].ibTph ? b : a; });
+      slides.push({
+        icon:'📥',
+        title:'Top IB TPH',
+        value: topIb + ' · ' + Math.round(baroByStore[topIb].ibTph) + '/hr',
+        valueColor: baroByStore[topIb].ibTph > 140 ? '#10B981' : '#ffd60a',
+        msg: 'Barometer · ' + monthLabel + ' — target >140/hr.',
+        msgColor:'rgba(255,255,255,0.78)',
+        bg:'rgba(8,145,178,0.10)', bd:'rgba(8,145,178,0.35)'
+      });
+    }
+
+    // Slide 4d — Highest IRDR (Barometer, needs attention)
+    var irdrStores = Object.keys(baroByStore).filter(function(s){ return baroByStore[s].irdr != null; });
+    if(irdrStores.length){
+      var topIrdr = irdrStores.reduce(function(a,b){ return baroByStore[b].irdr > baroByStore[a].irdr ? b : a; });
+      slides.push({
+        icon:'📦',
+        title:'Highest IRDR',
+        value: topIrdr + ' · ' + Math.round(baroByStore[topIrdr].irdr) + ' DPMO',
+        valueColor: baroByStore[topIrdr].irdr > 4500 ? '#ef4444' : '#10B981',
+        msg: 'Barometer · ' + monthLabel + ' — target <4500 DPMO.',
+        msgColor:'rgba(255,255,255,0.78)',
+        bg:'rgba(239,68,68,0.10)', bd:'rgba(239,68,68,0.30)'
+      });
     }
 
     // Slide 5 — VOC: worst store (if VOC data available)
@@ -11789,10 +11869,11 @@ if (document.readyState === 'loading') {
       }
     }
 
-    // Slide 7 — Race Track scene (top 6 stores by Late Slam %, lowest = leader)
-    if(stores.length >= 2){
-      var ranked = stores.filter(function(s){return byStore[s].orders > 0;})
-        .map(function(s){ return { s:s, r: byStore[s].ls / byStore[s].orders * 100, orders: byStore[s].orders }; })
+    // Slide 7 — Race Track scene (top 6 stores by Barometer Late Slam v2 %, lowest = leader)
+    var raceStores = Object.keys(baroByStore).filter(function(s){ return baroByStore[s].lsv2 != null; });
+    if(raceStores.length >= 2){
+      var ranked = raceStores
+        .map(function(s){ return { s:s, r: baroByStore[s].lsv2 }; })
         .sort(function(a,b){ return a.r - b.r; })
         .slice(0, 6);
       if(ranked.length >= 2){
@@ -11892,10 +11973,10 @@ if (document.readyState === 'loading') {
 
   // ── load + assemble ──
   function loadInsights(){
-    var smDone=false, vocDone=false, smRows=null, vocRows=null;
+    var smDone=false, vocDone=false, baroDone=false, smRows=null, vocRows=null, baroRows=null;
     function assemble(){
-      if(!smDone || !vocDone) return;
-      liSlides = buildSlides(smRows||[], vocRows||[]);
+      if(!smDone || !vocDone || !baroDone) return;
+      liSlides = buildSlides(smRows||[], vocRows||[], baroRows||[]);
       if(!liSlides.length){
         liSlides = [{
           icon:'⚠️', title:'No Data', value:'—',
@@ -11911,6 +11992,7 @@ if (document.readyState === 'loading') {
     }
     jsonp('storeMetric', function(d){ smDone=true; smRows = d && Array.isArray(d.rows) ? d.rows : []; assemble(); });
     jsonp('voc',         function(d){ vocDone=true; vocRows = d && Array.isArray(d.rows) ? d.rows : []; assemble(); });
+    jsonp('barometer',   function(d){ baroDone=true; baroRows = d && Array.isArray(d.rows) ? d.rows : []; assemble(); }, '&period=month');
   }
 
   window.liRefresh = function(){
@@ -16337,6 +16419,7 @@ var MAINT_TOOLS = [
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
   ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
   ['fast-moving','Fast Moving ASIN'],['inv-audit','Inventory Audit'],['top-performer','Top Performer'],
+  ['barometer','Barometer'],
   ['feedback','Report & Suggest'],['contact','Support Desk']
 ];
 var MAINT_KEY = 'dms_maintenance_settings';
@@ -16410,14 +16493,14 @@ function maintApply(){
   if(!overlay||!banner) return;
   if(maintCurrentIsAdmin()){
     overlay.style.display='none'; banner.style.display='none';
-    cards.forEach(function(c){ c.style.display=''; });
+    cards.forEach(function(c){ c.style.display=''; c.classList.remove('task-card-maint'); var chip=c.querySelector('.maint-chip'); if(chip) chip.remove(); });
     return;
   }
   var targeted=maintIsTargeted(s);
   var inMaint=!!s.enabled || targeted;
   if(!inMaint){
     overlay.style.display='none'; banner.style.display='none';
-    cards.forEach(function(c){ c.style.display=''; });
+    cards.forEach(function(c){ c.style.display=''; c.classList.remove('task-card-maint'); var chip=c.querySelector('.maint-chip'); if(chip) chip.remove(); });
     return;
   }
   var allowed = targeted
@@ -16431,7 +16514,13 @@ function maintApply(){
     return;
   }
   overlay.style.display='none'; banner.style.display='block';
-  cards.forEach(function(c){ c.style.display = allowed.indexOf(c.getAttribute('data-tool'))>-1 ? '' : 'none'; });
+  cards.forEach(function(c){
+    var blocked = allowed.indexOf(c.getAttribute('data-tool'))===-1;
+    c.classList.toggle('task-card-maint', blocked);
+    var chip = c.querySelector('.maint-chip');
+    if(blocked && !chip){ chip=document.createElement('span'); chip.className='maint-chip'; chip.textContent='🔧'; chip.title='Under maintenance'; c.appendChild(chip); }
+    if(!blocked && chip) chip.remove();
+  });
   var activePage=document.querySelector('.page.active');
   if(activePage){
     var activeId=activePage.id.replace(/^page-/,'');
@@ -16457,6 +16546,48 @@ function maintRenderReqBlock(targeted){
       '<span>'+label+'</span><span style="color:'+b[0]+';font-weight:700;">'+b[1]+'</span></div>';
   }).join('');
 }
+
+// ── Blocked-tool click popup (dashboard cards stay visible + badged) ──
+var _tmpToolId = null;
+function maintShowBlockedPopup(toolId){
+  _tmpToolId = toolId;
+  var label=(MAINT_TOOLS.find(function(t){return t[0]===toolId;})||[toolId,toolId])[1];
+  var msgEl=document.getElementById('tmp-msg');
+  if(msgEl) msgEl.textContent = '"'+label+'" is under maintenance right now. Need it urgently? Send a request to the admin.';
+  var status=document.getElementById('tmp-status'); if(status) status.textContent='';
+  var already=_myAccessRequests.some(function(r){ return r.tool===toolId && r.status!=='denied'; });
+  var btn=document.getElementById('tmp-req-btn');
+  if(btn) btn.style.display = already ? 'none' : '';
+  if(already && status) status.textContent = already && _myAccessRequests.some(function(r){return r.tool===toolId && r.status==='approved';}) ? '✅ Approved — reopen the tool.' : 'Request already sent — awaiting approval.';
+  var pop=document.getElementById('tool-maint-popup'); if(pop) pop.style.display='flex';
+}
+function closeToolMaintPopup(){ var pop=document.getElementById('tool-maint-popup'); if(pop) pop.style.display='none'; }
+function maintQuickRequestAccess(){
+  var toolId=_tmpToolId; if(!toolId) return;
+  var status=document.getElementById('tmp-status');
+  var cu=maintCurrentUser();
+  if(!cu){ if(status) status.textContent='⚠️ Sign in first.'; return; }
+  if(_myAccessRequests.some(function(r){ return r.tool===toolId && r.status!=='denied'; })){
+    if(status) status.textContent='Already requested — awaiting approval.'; return;
+  }
+  var toolLabel=(MAINT_TOOLS.find(function(t){return t[0]===toolId;})||[toolId,toolId])[1];
+  var req={ uid:cu.uid, email:cu.email, name:cu.name||cu.email, tool:toolId, toolLabel:toolLabel, status:'pending', createdAt:Date.now() };
+  if(!(window.FIREBASE_READY && window.fbDB)){ if(status) status.textContent='⚠️ Offline — cannot send request.'; return; }
+  fbDB.collection('access_requests').add(Object.assign({}, req, { createdAt: firebase.firestore.FieldValue.serverTimestamp() })).then(function(){
+    if(status) status.textContent='✅ Request sent — waiting for admin approval.';
+    var btn=document.getElementById('tmp-req-btn'); if(btn) btn.style.display='none';
+    _maintNotifyAdminOfRequest(req);
+  }).catch(function(err){ if(status) status.textContent='⚠️ '+err.message; });
+}
+document.addEventListener('click', function(e){
+  var card = e.target.closest && e.target.closest('.task-card[data-tool]');
+  if(!card) return;
+  var tool = card.getAttribute('data-tool');
+  if(window.maintIsBlocked && maintIsBlocked(tool)){
+    e.preventDefault(); e.stopPropagation();
+    maintShowBlockedPopup(tool);
+  }
+}, true);
 
 function maintRequestAccess(){
   var sel=document.getElementById('maint-req-tool');
@@ -16736,7 +16867,45 @@ function authSwitchTab(which) {
 }
 
 // ── show / hide app ────────────────────────────────────────────
+// ── Centralized daily session expiry (all tools, like DMS Pro) ──
+// Every login is only valid for the current calendar day; at 23:59:59 local
+// time (or on reopen the next day) the session is force-cleared and the
+// user is dropped back to the login screen.
+var DMS_SESSION_DATE_KEY = 'dms_session_date';
+var _dmsMidnightTimer = null;
+function _dmsTodayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+function _dmsIsSessionStale() {
+  try {
+    var d = localStorage.getItem(DMS_SESSION_DATE_KEY);
+    return !!d && d !== _dmsTodayStr();
+  } catch(e) { return false; }
+}
+function _dmsMarkSessionToday() {
+  try { localStorage.setItem(DMS_SESSION_DATE_KEY, _dmsTodayStr()); } catch(e) {}
+}
+function _dmsScheduleMidnightLogout() {
+  if (_dmsMidnightTimer) clearTimeout(_dmsMidnightTimer);
+  var now = new Date();
+  var boundary = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 0);
+  var ms = boundary.getTime() - now.getTime();
+  if (ms < 0) ms = 0;
+  _dmsMidnightTimer = setTimeout(function(){
+    try { if (typeof showToast === 'function') showToast('🔒 Session expired at midnight — please sign in again'); } catch(e){}
+    authLogout();
+  }, ms + 500);
+}
 function authShowApp(displayName) {
+  // A session from a previous calendar day is never valid — bounce to login.
+  if (_dmsIsSessionStale()) {
+    try { localStorage.removeItem(DMS_SESSION_DATE_KEY); } catch(e) {}
+    authLogout();
+    return;
+  }
+  _dmsMarkSessionToday();
+  _dmsScheduleMidnightLogout();
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app-shell').style.display     = 'block';
   document.getElementById('session-badge').style.display = 'flex';
@@ -17549,6 +17718,8 @@ function authShowLogout() {
 }
 async function authLogout() {
   var m = document.getElementById('logout-menu'); if (m) m.style.display = 'none';
+  if (_dmsMidnightTimer) { clearTimeout(_dmsMidnightTimer); _dmsMidnightTimer = null; }
+  try { localStorage.removeItem(DMS_SESSION_DATE_KEY); } catch(e) {}
   try {
     if (FIREBASE_READY) { await fbAuth.signOut(); }
     else { localStorage.removeItem(DEMO_SESSION_KEY); authShowLogin(); }

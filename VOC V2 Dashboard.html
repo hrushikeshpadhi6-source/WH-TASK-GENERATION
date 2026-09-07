@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VOC V2 — Operations Dashboard</title>
@@ -2781,7 +2794,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = sorted();
     const th = EXPORT_COLS.map(c => '<th style="background:#232F3E;color:#fff;text-align:left;padding:5px">' + c[0] + '</th>').join('');
     const tr = rows.map(r => '<tr>' + EXPORT_COLS.map(c => '<td>' + esc(String(c[1](r) == null ? '' : c[1](r))) + '</td>').join('') + '</tr>').join('');
-    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><thead><tr>' + th + '</tr></thead><tbody>' + tr + '</tbody></table></body></html>';
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="utf-8"></head><body><table border="1"><thead><tr>' + th + '</tr></thead><tbody>' + tr + '</tbody></table></body></html>';
     download('VOC_V2_records_' + stamp() + '.xls', 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html));
     toast(rows.length + ' records exported to Excel', ICON.check);
   }
@@ -2867,7 +2893,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const generated = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
     const xhtml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
-      '<head><meta charset="utf-8"></head><body>' +
+      '<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="utf-8"></head><body>' +
       '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Export</h2>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 4px">Generated: ' + generated + ' · Total records: ' + all.length + '</p>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Filter: ' + filterNote + '</p>' +
@@ -5188,7 +5227,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const title = s => '<h3 style="font-family:Arial;font-size:14px;margin:20px 0 6px;color:#232F3E">' + s + '</h3>';
     const generated = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
     const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
-      '<head><meta charset="utf-8"><style>body{font-family:Arial}</style></head><body>' +
+      '<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="utf-8"><style>body{font-family:Arial}</style></head><body>' +
       '<h2 style="font-family:Arial;color:#232F3E;margin-bottom:4px">VOC Summary Report (V1 + V2 Combined)</h2>' +
       '<p style="font-family:Arial;font-size:12px;color:#666;margin:0 0 16px">Generated: ' + generated + ' · Total records: ' + allRows.length + ' (V1: ' + (V.S.v1Count||0) + ' · V2: ' + (V.S.v2Count||0) + ')</p>' +
       title('Month-wise Summary') + summaryTable +

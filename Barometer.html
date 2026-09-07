@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Barometer — HP World DMS PRO</title>
@@ -228,7 +241,20 @@ function bmExportExcel(){
   var table=document.querySelector('#bm-wrap table');
   if(!table){ alert('Load data first.'); return; }
   var period=(document.getElementById('bm-month').value||'all').replace(/\s+/g,'_');
-  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>'+table.outerHTML+'</body></html>';
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="utf-8"></head><body>'+table.outerHTML+'</body></html>';
   var a=document.createElement('a');
   a.href='data:application/vnd.ms-excel;charset=utf-8,'+encodeURIComponent(html);
   a.download='Barometer_'+bmKind+'_'+period+'.xls';
@@ -239,7 +265,20 @@ function bmExportPdf(){
   var table=document.querySelector('#bm-wrap table');
   if(!table){ alert('Load data first.'); return; }
   var w=window.open('','_blank');
-  w.document.write('<html><head><title>Barometer</title><style>body{font-family:sans-serif;padding:16px;}@page{size:landscape;}</style></head><body>'+table.outerHTML+'</body></html>');
+  w.document.write('<html><head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<title>Barometer</title><style>body{font-family:sans-serif;padding:16px;}@page{size:landscape;}</style></head><body>'+table.outerHTML+'</body></html>');
   w.document.close();
   w.focus();
   setTimeout(function(){ w.print(); }, 300);

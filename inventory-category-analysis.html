@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Category Analysis — HP World DMS PRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+[data-theme="dark"]{
+  --bg:#07060f;--surface:#0f0e1c;--card:#13121f;--border:rgba(255,255,255,0.08);
+  --text:#e8e6ff;--muted:#7e7ca0;--th-bg:#0d0c1a;--row-hover:rgba(255,255,255,0.03);
+  --filter-bg:rgba(255,255,255,0.05);--hdr-bg:rgba(7,6,15,0.95);--note-bg:rgba(37,99,235,0.10);
+  --input-bg:rgba(255,255,255,0.04);
+}
+[data-theme="light"]{
+  --bg:#eeedf8;--surface:#fff;--card:#fff;--border:rgba(0,0,0,0.1);
+  --text:#0d0c1a;--muted:#4a4870;--th-bg:#e8e6f8;--row-hover:rgba(37,99,235,0.06);
+  --filter-bg:rgba(0,0,0,0.05);--hdr-bg:rgba(238,237,248,0.98);--note-bg:rgba(37,99,235,0.06);
+  --input-bg:#f4f3fb;
+}
+:root{--accent:#2563EB;--green:#10B981;--yellow:#F59E0B;--red:#EF4444;--cyan:#0EA5E9;--purple:#7C3AED;--slate:#64748B;--grey:#94A3B8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;transition:background .3s,color .3s;}
+
+.hdr{position:sticky;top:0;z-index:100;background:var(--hdr-bg);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);min-height:62px;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:12px;flex-wrap:wrap;}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.logo-circle{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#2563EB,#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35);}
+.vr{width:1px;height:30px;background:var(--border);}
+.page-ttl{font-size:14px;font-weight:900;color:var(--text);}
+.page-sub{font-size:10px;color:var(--muted);font-family:'Inter',monospace;margin-top:1px;}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.back-btn,.theme-btn{background:var(--filter-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;}
+.back-btn{padding:8px 14px;}
+.theme-btn{width:36px;height:36px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.back-btn:hover,.theme-btn:hover{background:rgba(37,99,235,.15);border-color:var(--accent);}
+
+.top-progress{height:3px;background:rgba(127,127,160,.15);position:relative;overflow:hidden;}
+.top-progress-bar{height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB);width:0%;transition:width .3s;}
+
+.main{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:22px 20px 80px;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.06);margin-bottom:18px;}
+.sec-hdr{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;color:var(--text);padding:15px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.sec-hdr .ico{width:26px;height:26px;border-radius:8px;background:var(--note-bg);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.sec-hdr small{font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);font-size:10px;margin-left:auto;font-family:'Inter',monospace;}
+
+.upload-zone{margin:18px 20px;border:2px dashed var(--border);border-radius:14px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--note-bg);}
+.upload-zone .ic{font-size:34px;margin-bottom:8px;}
+.upload-zone .t1{font-size:14px;font-weight:800;}
+.upload-zone .t2{font-size:11px;color:var(--muted);margin-top:4px;}
+
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:16px 20px;}
+.fld{display:flex;flex-direction:column;gap:6px;}
+.fld label{font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}
+.fld input,.fld select{background:var(--input-bg);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 11px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:700;outline:none;width:100%;}
+.fld input:focus,.fld select:focus{border-color:var(--accent);}
+.seg{display:flex;background:var(--input-bg);border:1px solid var(--border);border-radius:9px;padding:3px;gap:3px;flex-wrap:wrap;}
+.seg button{border:none;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:800;padding:7px 12px;border-radius:7px;cursor:pointer;transition:all .15s;}
+.seg button.on{background:var(--accent);color:#fff;}
+.chk{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;}
+
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;padding:0 20px 18px;align-items:center;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:11px;border:none;background:linear-gradient(135deg,#2563EB,#1D4ED8);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .2s;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.48);}
+.btn-ghost{display:inline-flex;align-items:center;gap:7px;padding:11px 16px;border-radius:11px;border:1px solid var(--border);background:var(--filter-bg);color:var(--text);font-weight:800;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.08);}
+.btn-ghost.xls:hover{border-color:#1D6F42;color:#1D6F42;background:rgba(29,111,66,.08);}
+.btn-ghost.pdf:hover{border-color:#DC2626;color:#DC2626;background:rgba(220,38,38,.08);}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:18px 20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kc,var(--accent));}
+.kpi .k-lbl{font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);}
+.kpi .k-val{font-size:27px;font-weight:900;color:var(--text);line-height:1.1;margin:7px 0 3px;font-variant-numeric:tabular-nums;}
+.kpi .k-sub{font-size:10px;font-weight:700;color:var(--kc,var(--accent));}
+
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;padding:16px 20px;}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .15s;}
+.cat-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.cat-card .cc-top{display:flex;align-items:center;gap:8px;}
+.cat-card .cc-ic{font-size:20px;}
+.cat-card .cc-name{font-size:12.5px;font-weight:800;}
+.cat-card .cc-row{display:flex;justify-content:space-between;margin-top:9px;font-size:10.5px;color:var(--muted);font-weight:700;}
+.cat-card .cc-row b{color:var(--text);font-size:12px;font-variant-numeric:tabular-nums;}
+.cat-card .cc-util{margin-top:8px;height:6px;border-radius:20px;background:var(--input-bg);overflow:hidden;}
+.cat-card .cc-util i{display:block;height:100%;border-radius:20px;}
+
+.tbl-wrap{overflow:auto;border-radius:0 0 16px 16px;max-height:520px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead th{position:sticky;top:0;background:var(--th-bg);color:var(--muted);font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:11px 12px;text-align:right;white-space:nowrap;z-index:2;cursor:pointer;}
+thead th:first-child,tbody td:first-child{text-align:left;}
+tbody td{padding:9px 12px;text-align:right;border-top:1px solid var(--border);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+tbody tr:hover td{background:var(--row-hover);}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:800;}
+.empty{padding:34px;text-align:center;color:var(--muted);font-size:13px;font-weight:600;}
+.note{font-size:11px;color:var(--muted);font-weight:600;line-height:1.5;padding:14px 20px;}
+.note b{color:var(--text);}
+.pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;padding:12px 20px;font-size:11px;font-weight:700;color:var(--muted);}
+.pager button{background:var(--filter-bg);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;cursor:pointer;font-weight:800;}
+.pager button:disabled{opacity:.4;cursor:not-allowed;}
+
+.charts-2{display:grid;grid-template-columns:1fr;gap:14px;}
+.chart-card .body{padding:16px 18px;}
+
+.heat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;padding:16px 20px;}
+.heat-cell{border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;transition:transform .15s;font-size:10px;font-weight:800;color:#fff;}
+.heat-cell:hover{transform:scale(1.06);}
+.heat-cell .hc-loc{font-size:11px;font-weight:900;}
+.heat-cell .hc-sub{font-size:9px;opacity:.9;margin-top:2px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:0 20px 14px;font-size:11px;font-weight:700;color:var(--muted);}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+.rec-list{display:flex;flex-direction:column;gap:10px;padding:16px 20px;}
+.rec-item{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+.rec-item .ri-ic{font-size:16px;}
+.rec-item .ri-txt{font-size:12.5px;font-weight:700;line-height:1.5;}
+.rec-item .ri-txt b{color:var(--accent);}
+
+@media(max-width:860px){.charts-2{grid-template-columns:1fr;}}
+#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .4s;}
+#loader.hide{opacity:0;pointer-events:none;}
+.ld-bar{width:240px;height:4px;background:rgba(127,127,160,.2);border-radius:50px;overflow:hidden;}
+.ld-bar i{display:block;height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB);animation:lda 1.6s ease-in-out infinite;}
+@keyframes lda{0%{width:0}60%{width:85%}100%{width:100%}}
+.status{font-size:11px;font-weight:700;color:var(--muted);font-family:'Inter',monospace;}
+a{color:var(--accent);}
+a:hover{color:#1D4ED8;}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="logo-circle" style="width:54px;height:54px;border-radius:16px;font-size:26px;">📦</div>
+  <div style="font-size:16px;font-weight:900;">Inventory Category Analysis</div>
+  <div class="ld-bar"><i></i></div>
+  <div id="ld-msg" class="status">Ready — upload an inventory file to begin</div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <button class="back-btn" onclick="goBack()">← Back</button>
+    <div class="logo-circle">📦</div>
+    <div class="vr"></div>
+    <div>
+      <div class="page-ttl">Inventory Category Analysis</div>
+      <div class="page-sub" id="hdr-sub">AI category mapping · bin utilization · no master needed</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="src-status" class="status"></span>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌓</button>
+  </div>
+</div>
+<div class="top-progress"><div class="top-progress-bar" id="top-bar"></div></div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="sec-hdr"><span class="ico">📤</span>Upload Inventory Report<small id="up-sub">CSV / XLSX · Location ID, ASIN, Item Name, Quantity, Bin Type, Temp Zone</small></div>
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="ic">📁</div>
+      <div class="t1" id="up-t1">Click to upload, or drag & drop your inventory file here</div>
+      <div class="t2" id="up-t2">Columns are auto-detected — no fixed template required</div>
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none;" onchange="handleFile(this.files[0])">
+    </div>
+    <div class="btn-row" id="upload-actions" style="display:none;">
+      <span class="status" id="parse-status"></span>
+    </div>
+    <div id="map-panel" style="display:none;">
+      <div class="sec-hdr" style="border-top:1px solid var(--border);"><span class="ico">🧩</span>Map Columns<small>pick which column in your file holds each field</small></div>
+      <div class="ctrl-grid" id="map-grid"></div>
+      <div class="btn-row"><button class="btn-primary" onclick="confirmMapping()">✅ Confirm & Process</button></div>
+    </div>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🏬</span>Store Summary<small id="store-sub"></small></div>
+      <div class="kpi-grid" id="store-kpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🗂️</span>Category Dashboard<small>click a card to filter tables below</small></div>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">📊</span>Top Categories<small></small></div>
+      <div class="ctrl-grid" style="grid-template-columns:none;padding:14px 20px 0;">
+        <div class="seg" id="chart-mode">
+          <button class="on" data-m="locations" onclick="setChartMode('locations')">Locations</button>
+          <button data-m="units" onclick="setChartMode('units')">Units</button>
+          <button data-m="asin" onclick="setChartMode('asin')">ASIN</button>
+          <button data-m="util" onclick="setChartMode('util')">Utilization</button>
+        </div>
+      </div>
+      <div class="chart-card" style="border:none;box-shadow:none;"><div class="body"><canvas id="top-cat-chart" height="110"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🌡️</span>Aisle Heat Map<small id="heat-sub">green = correct · yellow = mixed · red = wrong-category risk · grey = empty</small></div>
+      <div class="legend">
+        <span><i style="background:#10B981;"></i>Correct</span>
+        <span><i style="background:#F59E0B;"></i>Mixed</span>
+        <span><i style="background:#EF4444;"></i>Wrong-category risk</span>
+        <span><i style="background:#94A3B8;"></i>Empty</span>
+      </div>
+      <div class="heat-grid" id="heat-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🔍</span>Search & Filters<small></small></div>
+      <div class="ctrl-grid">
+        <div class="fld"><label>Search</label><input type="text" id="f-search" placeholder="Location, ASIN, Item, Aisle…" oninput="renderLocTable(1)"></div>
+        <div class="fld"><label>Category</label><select id="f-cat" onchange="renderLocTable(1)"></select></div>
+        <div class="fld"><label>Aisle</label><select id="f-aisle" onchange="renderLocTable(1)"></select></div>
+        <div class="fld"><label>Floor</label><select id="f-floor" onchange="renderLocTable(1)"></select></div>
+        <div class="fld"><label>Utilization</label><select id="f-util" onchange="renderLocTable(1)">
+          <option value="">All</option><option value="excellent">Excellent 90-100%</option><option value="good">Good 75-89%</option><option value="average">Average 50-74%</option><option value="low">Low &lt;50%</option>
+        </select></div>
+        <div class="fld"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="f-mixed" onchange="renderLocTable(1)"> Mixed only</label></div>
+        <div class="fld"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="f-empty" onchange="renderLocTable(1)"> Empty only</label></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">📍</span>Location Summary<small id="loc-count"></small></div>
+      <div class="tbl-wrap"><table id="loc-tbl"><thead></thead><tbody></tbody></table></div>
+      <div class="pager" id="loc-pager"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🛤️</span>Aisle Summary<small></small></div>
+      <div class="tbl-wrap"><table id="aisle-tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🏢</span>Floor Summary<small></small></div>
+      <div class="tbl-wrap"><table id="floor-tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">⚠️</span>Wrong-Category Detection<small id="wrong-count"></small></div>
+      <div class="tbl-wrap"><table id="wrong-tbl"><thead></thead><tbody></tbody></table></div>
+      <div class="pager" id="wrong-pager"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🔀</span>Mixed Locations<small id="mixed-count"></small></div>
+      <div class="tbl-wrap"><table id="mixed-tbl"><thead></thead><tbody></tbody></table></div>
+      <div class="pager" id="mixed-pager"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">🤖</span>AI Recommendations<small></small></div>
+      <div class="rec-list" id="rec-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-hdr"><span class="ico">📤</span>Export<small></small></div>
+      <div class="btn-row">
+        <button class="btn-ghost xls" onclick="exportExcel()">📊 Export Excel</button>
+        <button class="btn-ghost pdf" onclick="exportPDF()">📄 Export PDF Summary</button>
+        <button class="btn-ghost" onclick="window.print()">🖨️ Print Summary</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// THEME / NAV
+// ════════════════════════════════════════════════════
+(function(){ var t=localStorage.getItem('ica-theme')||'light'; document.documentElement.setAttribute('data-theme',t); })();
+function toggleTheme(){ var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); localStorage.setItem('ica-theme',t); }
+function goBack(){ location.href='index.html'; }
+function hideLoader(){ var l=document.getElementById('loader'); l.classList.add('hide'); setTimeout(function(){l.style.display='none';},420); }
+setTimeout(hideLoader,300);
+function $(id){ return document.getElementById(id); }
+
+// ════════════════════════════════════════════════════
+// COLUMN DETECTION
+// ════════════════════════════════════════════════════
+var COL_ALIASES = {
+  locationId: ['location id','locationid','location','loc id','bin location','bin id','location code','storage location'],
+  asin:       ['asin','sku','item code','product code','item id'],
+  itemName:   ['item name','item description','description','product name','item','product description'],
+  qty:        ['quantity','sellable units','qty','units','sellable qty','stock qty','unit count','on hand qty','onhand'],
+  binType:    ['bin type','bin size','location type','storage type'],
+  tempZone:   ['temperature zone','temp zone','zone','storage zone','temperature']
+};
+function norm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function detectColumns(headerRow){
+  var map={};
+  headerRow.forEach(function(h,i){
+    var nh=norm(h);
+    for(var field in COL_ALIASES){
+      if(map[field]!==undefined) continue;
+      var aliases=COL_ALIASES[field];
+      for(var a=0;a<aliases.length;a++){
+        if(nh===norm(aliases[a]) || nh.indexOf(norm(aliases[a]))!==-1){ map[field]=i; break; }
+      }
+    }
+  });
+  return map;
+}
+
+// ════════════════════════════════════════════════════
+// AI CATEGORY KEYWORD ENGINE (no master required)
+// ════════════════════════════════════════════════════
+var CATS = {
+  'Fruits':['banana','apple','orange','mango','grape','watermelon','papaya','pear','kiwi','pineapple','strawberr','pomegranate','melon','plum','peach','fresh fruit'],
+  'Vegetables':['tomato','onion','potato','carrot','cucumber','cabbage','cauliflower','capsicum','spinach','broccoli','garlic','ginger','lettuce','pepper','okra','beans','fresh vegetable'],
+  'Dairy':['milk','cheese','butter','yogurt','yoghurt','cream','paneer','curd','ghee'],
+  'Frozen Food':['frozen nugget','frozen','frozen food','frozen vegetable','frozen snack','frozen fries'],
+  'Ice Cream':['ice cream','sorbet','gelato','popsicle'],
+  'Meat':['chicken','beef','mutton','lamb','pork','turkey','meat breast','minced meat','chicken breast'],
+  'Seafood':['fish','shrimp','prawn','salmon','tuna fish','crab','seafood','squid'],
+  'Bakery':['bread','bun','croissant','cake','pastry','bakery','baguette','muffin'],
+  'Rice & Flour':['basmati rice','rice','flour','atta','maida','wheat flour','semolina'],
+  'Cooking Oil':['olive oil','sunflower oil','vegetable oil','cooking oil','canola oil','ghee oil'],
+  'Snacks':['lays','chips','popcorn','pretzel','nachos','crackers','snack'],
+  'Chocolate':['kitkat','chocolate','cadbury','nutella','choco','cocoa'],
+  'Biscuits':['biscuit','cookie','oreo','marie'],
+  'Soft Drinks':['coca cola','coke','pepsi','sprite','fanta','soda','soft drink'],
+  'Juice':['apple juice','orange juice','fruit juice','juice'],
+  'Water':['mineral water','drinking water','bottled water',' water '],
+  'Tea & Coffee':['tea','coffee','nescafe','lipton','green tea'],
+  'Beverages':['drink','beverage','energy drink'],
+  'Baby Food':['baby food','infant formula','baby cereal','gerber'],
+  'Baby Care':['pampers','huggies','diaper','baby wipes','johnson baby','baby lotion','baby powder','baby oil','baby care'],
+  'Hair Care':['shampoo','conditioner','pantene','dove shampoo','head & shoulders','head and shoulders','hair oil','hair gel','hair care','sunsilk','clear shampoo'],
+  'Oral Care':['toothpaste','toothbrush','mouthwash','colgate','sensodyne','oral care','dental floss'],
+  'Skin Care':['lotion','moisturizer','sunscreen','face cream','skin care','face wash','nivea'],
+  'Beauty':['lipstick','makeup','mascara','nail polish','perfume','cosmetic','foundation cream','beauty'],
+  'Personal Care':['deodorant','razor','shaving cream','soap bar','body wash','personal care','antiperspirant'],
+  'Medicine':['panadol','paracetamol','dettol','ibuprofen','aspirin','antiseptic','tablet','syrup','medicine','cough syrup','antibiotic'],
+  'Vitamins':['vitamin','supplement','multivitamin','omega 3','calcium tablet'],
+  'Cleaning':['dettol antiseptic','floor cleaner','toilet cleaner','disinfectant','bleach','cleaning spray','glass cleaner'],
+  'Laundry':['surf excel','comfort fabric','fabric softener','detergent','laundry powder','laundry liquid','ariel','tide'],
+  'Household':['fairy dish','dish wash','dishwashing','tissue paper','paper towel','trash bag','household','air freshener'],
+  'Kitchen':['kitchen towel','aluminium foil','cling film','kitchen roll','ziploc'],
+  'Pet Food':['pedigree','whiskas','pet food','dog food','cat food','friskies','royal canin'],
+  'Pet Care':['pet shampoo','pet toy','pet care','cat litter','pet leash'],
+  'Electronics':['battery','charger','cable','earphone','headphone','bulb','electronics'],
+  'Stationery':['pen','pencil','notebook','stapler','stationery','marker','eraser'],
+  'Seasonal':['christmas','diwali','halloween','easter','seasonal','festive'],
+  'Grocery':['sugar','salt','spice','masala','lentil','dal','pulses','pasta','noodles','sauce','ketchup','jam','honey','vinegar','grocery']
+};
+var CAT_ICONS = {'Fruits':'🍎','Vegetables':'🥦','Dairy':'🥛','Frozen Food':'🧊','Ice Cream':'🍦','Meat':'🥩','Seafood':'🐟','Bakery':'🍞','Grocery':'🛒','Rice & Flour':'🌾','Cooking Oil':'🫒','Snacks':'🍟','Chocolate':'🍫','Biscuits':'🍪','Beverages':'🥤','Soft Drinks':'🥤','Juice':'🧃','Water':'💧','Tea & Coffee':'☕','Baby Care':'🍼','Baby Food':'🍼','Hair Care':'💇','Beauty':'💄','Personal Care':'🧴','Skin Care':'🧴','Oral Care':'🪥','Medicine':'💊','Vitamins':'💊','Household':'🏠','Cleaning':'🧽','Laundry':'🧺','Kitchen':'🍽️','Pet Food':'🐾','Pet Care':'🐾','Electronics':'🔌','Stationery':'✏️','Seasonal':'🎄','Others':'📦','Mixed':'🔀'};
+var classifyCache = new Map();
+function classifyItem(name){
+  var n=String(name||'').toLowerCase();
+  if(classifyCache.has(n)) return classifyCache.get(n);
+  var best='Others', bestLen=0;
+  for(var cat in CATS){
+    var kws=CATS[cat];
+    for(var i=0;i<kws.length;i++){
+      var k=kws[i];
+      if(n.indexOf(k)!==-1 && k.length>bestLen){ best=cat; bestLen=k.length; }
+    }
+  }
+  classifyCache.set(n,best);
+  return best;
+}
+
+// ════════════════════════════════════════════════════
+// FILE HANDLING
+// ════════════════════════════════════════════════════
+var dz=$('drop-zone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('drag');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+
+var DB=null; // processed database
+var PENDING=null; // {rows, headerIdx, colMap, fname}
+var FIELD_LABELS={locationId:'Location ID *',asin:'ASIN',itemName:'Item Name *',qty:'Quantity / Units',binType:'Bin Type',tempZone:'Temp Zone'};
+
+function handleFile(file){
+  if(!file) return;
+  $('parse-status').textContent='Reading '+file.name+'…';
+  $('upload-actions').style.display='flex';
+  $('map-panel').style.display='none';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'binary'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      prepareMapping(rows,file.name);
+    }catch(err){
+      $('parse-status').textContent='⚠️ Could not parse file: '+err.message;
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function prepareMapping(rows, fname){
+  if(!rows || rows.length<2){ $('parse-status').textContent='⚠️ No data rows found'; return; }
+  var headerIdx=0;
+  var colMap=detectColumns(rows[0]);
+  if(Object.keys(colMap).length<3 && rows.length>1){
+    var alt=detectColumns(rows[1]);
+    if(Object.keys(alt).length>Object.keys(colMap).length){ colMap=alt; headerIdx=1; }
+  }
+  PENDING={rows:rows, headerIdx:headerIdx, colMap:colMap, fname:fname};
+  var header=rows[headerIdx];
+  var ok=colMap.locationId!==undefined && colMap.itemName!==undefined;
+  $('parse-status').textContent = ok
+    ? 'Auto-detected columns — review below, then confirm.'
+    : '⚠️ Could not auto-detect Location ID / Item Name — please map columns below.';
+  var optsHtml='<option value="">— none —</option>'+header.map(function(h,i){return '<option value="'+i+'">'+(h||'Column '+(i+1))+' (col '+(i+1)+')</option>';}).join('');
+  $('map-grid').innerHTML=Object.keys(FIELD_LABELS).map(function(f){
+    return '<div class="fld"><label>'+FIELD_LABELS[f]+'</label><select id="map-'+f+'">'+optsHtml+'</select></div>';
+  }).join('');
+  Object.keys(FIELD_LABELS).forEach(function(f){
+    if(colMap[f]!==undefined) $('map-'+f).value=colMap[f];
+  });
+  $('map-panel').style.display='block';
+}
+
+function confirmMapping(){
+  if(!PENDING) return;
+  var colMap={};
+  Object.keys(FIELD_LABELS).forEach(function(f){
+    var v=$('map-'+f).value;
+    if(v!=='') colMap[f]=parseInt(v,10);
+  });
+  if(colMap.locationId===undefined || colMap.itemName===undefined){
+    $('parse-status').textContent='⚠️ Location ID and Item Name are required — please map both.';
+    return;
+  }
+  $('parse-status').textContent='Classifying rows…';
+  processRows(PENDING.rows, PENDING.fname, colMap, PENDING.headerIdx);
+  $('map-panel').style.display='none';
+}
+
+function processRows(rows, fname, colMap, headerIdx){
+  var locMap=new Map();
+  var globalAsin=new Set();
+  var totalUnits=0;
+  var capBinKnown = colMap.binType!==undefined;
+  var BIN_CAP={'small':100,'medium':180,'large':250};
+
+  for(var r=headerIdx+1;r<rows.length;r++){
+    var row=rows[r];
+    if(!row || !row.length) continue;
+    var locId=String(row[colMap.locationId]||'').trim();
+    if(!locId) continue;
+    var asin=String(colMap.asin!==undefined?row[colMap.asin]:'').trim() || ('ITEM-'+r);
+    var itemName=String(row[colMap.itemName]||'').trim();
+    var qty=colMap.qty!==undefined ? (parseFloat(row[colMap.qty])||0) : 0;
+    var binType=colMap.binType!==undefined ? String(row[colMap.binType]||'').toLowerCase().trim() : '';
+    var cat=classifyItem(itemName);
+
+    globalAsin.add(asin);
+    totalUnits+=qty;
+
+    var loc=locMap.get(locId);
+    if(!loc){
+      var p=parseLoc(locId);
+      loc={locationId:locId,floor:p.floor,aisle:p.aisle,asinSet:new Set(),totalUnits:0,catAsin:{},catUnits:{},binType:binType,items:[]};
+      locMap.set(locId,loc);
+    }
+    loc.asinSet.add(asin);
+    loc.totalUnits+=qty;
+    loc.catAsin[cat]=(loc.catAsin[cat]||0)+1;
+    loc.catUnits[cat]=(loc.catUnits[cat]||0)+qty;
+    if(loc.items.length<500) loc.items.push({asin:asin,itemName:itemName,category:cat,qty:qty});
+    if(binType) loc.binType=binType;
+  }
+
+  // capacity estimate when bin type absent: 90th percentile of totalUnits
+  var unitVals=[]; locMap.forEach(function(l){ if(l.totalUnits>0) unitVals.push(l.totalUnits); });
+  unitVals.sort(function(a,b){return a-b;});
+  var p90 = unitVals.length ? unitVals[Math.min(unitVals.length-1,Math.floor(unitVals.length*0.9))] : 1;
+  var fallbackCap = Math.max(p90,1);
+
+  // finalize each location: primary category, utilization
+  locMap.forEach(function(loc){
+    var asinCount=loc.asinSet.size;
+    var best=null,bestShare=0;
+    for(var cat in loc.catAsin){
+      var share=loc.catAsin[cat]/asinCount;
+      if(share>bestShare){ bestShare=share; best=cat; }
+    }
+    loc.primaryCategory = (asinCount>0 && bestShare>=0.7) ? best : 'Mixed';
+    loc.primaryShare = bestShare;
+    var cap = capBinKnown && BIN_CAP[loc.binType] ? BIN_CAP[loc.binType] : fallbackCap;
+    loc.capacity = cap;
+    loc.utilization = loc.totalUnits>0 ? Math.min(100, (loc.totalUnits/cap)*100) : 0;
+  });
+
+  DB = { locMap:locMap, globalAsin:globalAsin, totalUnits:totalUnits, fname:fname, capBinKnown:capBinKnown, rowCount:rows.length-1-headerIdx };
+  $('parse-status').textContent='✅ Loaded '+DB.rowCount.toLocaleString()+' rows · '+locMap.size.toLocaleString()+' locations · '+globalAsin.size.toLocaleString()+' ASIN from '+fname;
+  buildAggregates();
+  renderAll();
+  $('dashboard').style.display='block';
+  $('src-status').textContent=fname+' · '+new Date().toLocaleString();
+}
+
+function parseLoc(id){
+  var s=String(id||'').trim();
+  var parts=s.split('-');
+  if(parts.length===1){
+    var m0=s.match(/^(.*?)([A-Za-z])(\d+)$/);
+    if(m0){ var b0=m0[1]||s; return {floor:b0, aisle:b0+'-'+m0[2]}; }
+    return {floor:s, aisle:s};
+  }
+  var last=parts[parts.length-1];
+  var head=parts.slice(0,-1).join('-');
+  var m=last.match(/^(.*?)([A-Za-z])(\d+)$/);
+  if(m){
+    var block=m[1], letter=m[2];
+    var floor=block ? head+'-'+block : head;
+    return {floor:floor, aisle:floor+'-'+letter};
+  }
+  if(parts.length>=3){
+    var floor2=parts[0]+'-'+parts[1];
+    var m2=parts[2].match(/[A-Za-z]+/);
+    var aisleLetter=m2?m2[0]:parts[2];
+    return {floor:floor2, aisle:floor2+'-'+aisleLetter};
+  }
+  return {floor:parts[0], aisle:parts[0]+'-'+parts[1]};
+}
+
+// ════════════════════════════════════════════════════
+// AGGREGATES: aisle / floor / store / category
+// ════════════════════════════════════════════════════
+var AGG={};
+function utilBand(u){ return u>=90?'excellent':u>=75?'good':u>=50?'average':'low'; }
+function utilColor(u){ return u>=90?'#10B981':u>=75?'#0EA5E9':u>=50?'#F59E0B':'#EF4444'; }
+
+function buildAggregates(){
+  var locs=Array.from(DB.locMap.values());
+  var aisleMap=new Map(), floorMap=new Map(), catAgg={};
+
+  locs.forEach(function(loc){
+    // aisle
+    var a=aisleMap.get(loc.aisle);
+    if(!a){ a={aisle:loc.aisle,floor:loc.floor,total:0,asin:0,units:0,utilSum:0,utilN:0,cats:{}}; aisleMap.set(loc.aisle,a); }
+    a.total++; a.asin+=loc.asinSet.size; a.units+=loc.totalUnits;
+    if(loc.totalUnits>0){ a.utilSum+=loc.utilization; a.utilN++; }
+    a.cats[loc.primaryCategory]=(a.cats[loc.primaryCategory]||0)+1;
+
+    // floor
+    var f=floorMap.get(loc.floor);
+    if(!f){ f={floor:loc.floor,total:0,asin:0,units:0,utilSum:0,utilN:0,cats:{}}; floorMap.set(loc.floor,f); }
+    f.total++; f.asin+=loc.asinSet.size; f.units+=loc.totalUnits;
+    if(loc.totalUnits>0){ f.utilSum+=loc.utilization; f.utilN++; }
+    f.cats[loc.primaryCategory]=(f.cats[loc.primaryCategory]||0)+1;
+
+    // category dashboard
+    for(var cat in loc.catAsin){
+      if(!catAgg[cat]) catAgg[cat]={category:cat,asin:0,units:0,locSum:0,locCount:0};
+      catAgg[cat].asin+=loc.catAsin[cat];
+      catAgg[cat].units+=loc.catUnits[cat]||0;
+    }
+    if(loc.primaryCategory!=='Mixed'){
+      if(!catAgg[loc.primaryCategory]) catAgg[loc.primaryCategory]={category:loc.primaryCategory,asin:0,units:0,locSum:0,locCount:0};
+      catAgg[loc.primaryCategory].locCount++;
+      catAgg[loc.primaryCategory].locSum+=loc.utilization;
+    }
+  });
+
+  var occupied=locs.filter(function(l){return l.totalUnits>0;});
+  var mixed=locs.filter(function(l){return l.primaryCategory==='Mixed';});
+
+  // wrong-category detection
+  var wrong=[];
+  locs.forEach(function(loc){
+    if(loc.primaryCategory==='Mixed') return;
+    loc.items.forEach(function(it){
+      if(it.category!==loc.primaryCategory){
+        var share=(loc.catUnits[it.category]||0)/(loc.totalUnits||1);
+        wrong.push({location:loc.locationId, primaryCategory:loc.primaryCategory, item:it.itemName||it.asin, asin:it.asin, itemCategory:it.category, qty:it.qty, priority: share>0.15?'High':share>0.05?'Medium':'Low'});
+      }
+    });
+  });
+  wrong.sort(function(a,b){ var order={High:0,Medium:1,Low:2}; return order[a.priority]-order[b.priority] || b.qty-a.qty; });
+
+  AGG={
+    locs:locs, aisles:Array.from(aisleMap.values()), floors:Array.from(floorMap.values()),
+    categories:Object.values(catAgg).filter(function(c){return c.category!=='Others'||c.asin>0;}),
+    occupied:occupied, empty:locs.length-occupied.length, mixed:mixed, wrong:wrong
+  };
+}
+
+// ════════════════════════════════════════════════════
+// RENDER: store KPIs
+// ════════════════════════════════════════════════════
+function fmt(n){ return Math.round(n).toLocaleString(); }
+function renderStoreKpis(){
+  var locs=AGG.locs, occ=AGG.occupied;
+  var avgUnitsPerLoc = occ.length? DB.totalUnits/occ.length : 0;
+  var avgAsinPerLoc = occ.length? occ.reduce(function(s,l){return s+l.asinSet.size;},0)/occ.length : 0;
+  var overallUtil = occ.length? occ.reduce(function(s,l){return s+l.utilization;},0)/occ.length : 0;
+  var kpis=[
+    ['Total Locations', fmt(locs.length), '', 'var(--accent)'],
+    ['Occupied', fmt(occ.length), (locs.length? (occ.length/locs.length*100).toFixed(1):0)+'% of total', 'var(--green)'],
+    ['Empty', fmt(AGG.empty), (locs.length? (AGG.empty/locs.length*100).toFixed(1):0)+'% of total', 'var(--slate)'],
+    ['Total ASIN', fmt(DB.globalAsin.size), 'distinct', 'var(--cyan)'],
+    ['Total Units', fmt(DB.totalUnits), '', 'var(--purple)'],
+    ['Avg Units / Location', avgUnitsPerLoc.toFixed(1), '', 'var(--accent)'],
+    ['Avg ASIN / Location', avgAsinPerLoc.toFixed(1), '', 'var(--accent)'],
+    ['Overall Bin Utilization', overallUtil.toFixed(1)+'%', DB.capBinKnown?'from Bin Type':'estimated (p90 occupancy)', utilColor(overallUtil)]
+  ];
+  $('store-kpis').innerHTML=kpis.map(function(k){
+    return '<div class="kpi" style="--kc:'+k[3]+';"><div class="k-lbl">'+k[0]+'</div><div class="k-val">'+k[1]+'</div><div class="k-sub">'+k[2]+'</div></div>';
+  }).join('');
+  $('store-sub').textContent=DB.fname+' · '+DB.rowCount.toLocaleString()+' rows';
+}
+
+// ════════════════════════════════════════════════════
+// RENDER: category dashboard cards
+// ════════════════════════════════════════════════════
+function renderCatGrid(){
+  var cats=AGG.categories.slice().sort(function(a,b){return b.asin-a.asin;});
+  $('cat-grid').innerHTML=cats.map(function(c){
+    var util = c.locCount? c.locSum/c.locCount : 0;
+    return '<div class="cat-card" onclick="filterByCategory(\''+c.category.replace(/'/g,"\\'")+'\')">'+
+      '<div class="cc-top"><span class="cc-ic">'+(CAT_ICONS[c.category]||'📦')+'</span><span class="cc-name">'+c.category+'</span></div>'+
+      '<div class="cc-row"><span>Locations</span><b>'+fmt(c.locCount)+'</b></div>'+
+      '<div class="cc-row"><span>ASIN</span><b>'+fmt(c.asin)+'</b></div>'+
+      '<div class="cc-row"><span>Units</span><b>'+fmt(c.units)+'</b></div>'+
+      '<div class="cc-util"><i style="width:'+util.toFixed(0)+'%;background:'+utilColor(util)+';"></i></div>'+
+      '<div class="cc-row"><span>Utilization</span><b>'+util.toFixed(1)+'%</b></div>'+
+    '</div>';
+  }).join('') || '<div class="empty">No categories detected</div>';
+}
+function filterByCategory(cat){ $('f-cat').value=cat; renderLocTable(1); scrollToLocTable(); }
+
+// ════════════════════════════════════════════════════
+// RENDER: top categories chart
+// ════════════════════════════════════════════════════
+var chartMode='locations', topChart=null;
+function setChartMode(m){ chartMode=m; document.querySelectorAll('#chart-mode button').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); renderTopChart(); }
+function renderTopChart(){
+  var cats=AGG.categories.slice();
+  var valFn = chartMode==='locations'?function(c){return c.locCount;} : chartMode==='units'?function(c){return c.units;} : chartMode==='asin'?function(c){return c.asin;} : function(c){return c.locCount?c.locSum/c.locCount:0;};
+  cats.sort(function(a,b){return valFn(b)-valFn(a);});
+  cats=cats.slice(0,10);
+  var ctx=document.getElementById('top-cat-chart').getContext('2d');
+  if(topChart) topChart.destroy();
+  topChart=new Chart(ctx,{type:'bar',data:{labels:cats.map(function(c){return c.category;}),datasets:[{data:cats.map(valFn),backgroundColor:'#2563EB',borderRadius:6}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
+}
+
+// ════════════════════════════════════════════════════
+// RENDER: aisle heat map
+// ════════════════════════════════════════════════════
+function renderHeatMap(){
+  var aisles=AGG.aisles.slice().sort(function(a,b){return a.aisle.localeCompare(b.aisle);}).slice(0,300);
+  $('heat-grid').innerHTML=aisles.map(function(a){
+    var wrongCount = AGG.wrong.filter(function(w){ var loc=DB.locMap.get(w.location); return loc && loc.aisle===a.aisle; }).length;
+    var mixedShare = (a.cats['Mixed']||0)/a.total;
+    var emptyShare = a.utilN===0 ? 1 : 1-(a.utilN/a.total);
+    var color;
+    if(emptyShare>0.7) color='#94A3B8';
+    else if(wrongCount>3) color='#EF4444';
+    else if(mixedShare>0.3) color='#F59E0B';
+    else color='#10B981';
+    var util = a.utilN? (a.utilSum/a.utilN):0;
+    return '<div class="heat-cell" style="background:'+color+';" onclick="filterByAisle(\''+a.aisle.replace(/'/g,"\\'")+'\')" title="'+a.aisle+' · '+util.toFixed(0)+'% util">'+
+      '<div class="hc-loc">'+a.aisle+'</div><div class="hc-sub">'+util.toFixed(0)+'%</div></div>';
+  }).join('') || '<div class="empty">No aisles detected</div>';
+}
+function filterByAisle(aisle){ $('f-aisle').value=aisle; renderLocTable(1); scrollToLocTable(); }
+
+// ════════════════════════════════════════════════════
+// FILTER DROPDOWNS
+// ════════════════════════════════════════════════════
+function populateFilters(){
+  var cats=Array.from(new Set(AGG.locs.map(function(l){return l.primaryCategory;}))).sort();
+  var aisles=Array.from(new Set(AGG.locs.map(function(l){return l.aisle;}))).sort();
+  var floors=Array.from(new Set(AGG.locs.map(function(l){return l.floor;}))).sort();
+  $('f-cat').innerHTML='<option value="">All Categories</option>'+cats.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+  $('f-aisle').innerHTML='<option value="">All Aisles</option>'+aisles.map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  $('f-floor').innerHTML='<option value="">All Floors</option>'+floors.map(function(f){return '<option value="'+f+'">'+f+'</option>';}).join('');
+}
+
+// ════════════════════════════════════════════════════
+// LOCATION TABLE (paginated)
+// ════════════════════════════════════════════════════
+var locSort={key:'locationId',dir:1};
+var locPage=1, PAGE_SIZE=50;
+function getFilteredLocs(){
+  var q=($('f-search').value||'').toLowerCase().trim();
+  var cat=$('f-cat').value, aisle=$('f-aisle').value, floor=$('f-floor').value, band=$('f-util').value;
+  var mixedOnly=$('f-mixed').checked, emptyOnly=$('f-empty').checked;
+  return AGG.locs.filter(function(l){
+    if(cat && l.primaryCategory!==cat) return false;
+    if(aisle && l.aisle!==aisle) return false;
+    if(floor && l.floor!==floor) return false;
+    if(band && utilBand(l.utilization)!==band) return false;
+    if(mixedOnly && l.primaryCategory!=='Mixed') return false;
+    if(emptyOnly && l.totalUnits>0) return false;
+    if(q && l.locationId.toLowerCase().indexOf(q)===-1 && l.aisle.toLowerCase().indexOf(q)===-1 && l.floor.toLowerCase().indexOf(q)===-1 && l.primaryCategory.toLowerCase().indexOf(q)===-1) return false;
+    return true;
+  });
+}
+function sortLocs(list){
+  var k=locSort.key,d=locSort.dir;
+  return list.slice().sort(function(a,b){
+    var av,bv;
+    if(k==='locationId'){av=a.locationId;bv=b.locationId;return d*String(av).localeCompare(String(bv));}
+    if(k==='category'){av=a.primaryCategory;bv=b.primaryCategory;return d*String(av).localeCompare(String(bv));}
+    if(k==='asin'){av=a.asinSet.size;bv=b.asinSet.size;}
+    else if(k==='units'){av=a.totalUnits;bv=b.totalUnits;}
+    else {av=a.utilization;bv=b.utilization;}
+    return d*(av-bv);
+  });
+}
+function setLocSort(key){ if(locSort.key===key) locSort.dir*=-1; else {locSort.key=key;locSort.dir=1;} renderLocTable(locPage); }
+function renderLocTable(page){
+  locPage=page||1;
+  var filtered=sortLocs(getFilteredLocs());
+  var total=filtered.length;
+  var pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  locPage=Math.min(locPage,pages);
+  var slice=filtered.slice((locPage-1)*PAGE_SIZE, locPage*PAGE_SIZE);
+  $('loc-count').textContent=total.toLocaleString()+' locations';
+  $('loc-tbl').querySelector('thead')?.remove();
+  $('loc-tbl').innerHTML='<thead><tr>'+
+    '<th onclick="setLocSort(\'locationId\')">Location</th>'+
+    '<th onclick="setLocSort(\'category\')">Category</th>'+
+    '<th onclick="setLocSort(\'asin\')">ASIN Count</th>'+
+    '<th onclick="setLocSort(\'units\')">Unit Count</th>'+
+    '<th onclick="setLocSort(\'util\')">Utilization</th>'+
+  '</tr></thead><tbody>'+
+  slice.map(function(l){
+    var pillColor = l.primaryCategory==='Mixed'?'#F59E0B':'#2563EB';
+    return '<tr><td>'+l.locationId+'</td>'+
+      '<td><span class="pill" style="background:'+pillColor+'22;color:'+pillColor+';">'+(CAT_ICONS[l.primaryCategory]||'')+' '+l.primaryCategory+'</span></td>'+
+      '<td>'+fmt(l.asinSet.size)+'</td><td>'+fmt(l.totalUnits)+'</td>'+
+      '<td><span class="pill" style="background:'+utilColor(l.utilization)+'22;color:'+utilColor(l.utilization)+';">'+l.utilization.toFixed(0)+'%</span></td></tr>';
+  }).join('') +'</tbody>' || '<tbody><tr><td class="empty" colspan="5">No matching locations</td></tr></tbody>';
+  if(!slice.length) $('loc-tbl').querySelector('tbody').innerHTML='<tr><td class="empty" colspan="5">No matching locations</td></tr>';
+  $('loc-pager').innerHTML='<button onclick="renderLocTable('+(locPage-1)+')" '+(locPage<=1?'disabled':'')+'>← Prev</button><span>Page '+locPage+' / '+pages+'</span><button onclick="renderLocTable('+(locPage+1)+')" '+(locPage>=pages?'disabled':'')+'>Next →</button>';
+}
+
+// ════════════════════════════════════════════════════
+// AISLE / FLOOR TABLES
+// ════════════════════════════════════════════════════
+function renderAisleTable(){
+  var aisles=AGG.aisles.slice().sort(function(a,b){return b.total-a.total;});
+  $('aisle-tbl').innerHTML='<thead><tr><th>Aisle</th><th>Floor</th><th>Locations</th><th>Top Category</th><th>Mixed</th><th>ASIN</th><th>Units</th><th>Utilization</th></tr></thead><tbody>'+
+    aisles.map(function(a){
+      var top=Object.entries(a.cats).filter(function(e){return e[0]!=='Mixed';}).sort(function(x,y){return y[1]-x[1];})[0];
+      var util=a.utilN?a.utilSum/a.utilN:0;
+      return '<tr style="cursor:pointer;" onclick="filterByAisle(\''+a.aisle.replace(/'/g,"\\'")+'\')" title="Click to see full locations, e.g. bins under '+a.aisle+'"><td>'+a.aisle+'</td><td>'+a.floor+'</td><td>'+fmt(a.total)+'</td><td>'+(top?(CAT_ICONS[top[0]]||'')+' '+top[0]+' ('+top[1]+')':'—')+'</td><td>'+(a.cats['Mixed']||0)+'</td><td>'+fmt(a.asin)+'</td><td>'+fmt(a.units)+'</td><td><span class="pill" style="background:'+utilColor(util)+'22;color:'+utilColor(util)+';">'+util.toFixed(0)+'%</span></td></tr>';
+    }).join('') +'</tbody>';
+}
+function renderFloorTable(){
+  var floors=AGG.floors.slice().sort(function(a,b){return b.total-a.total;});
+  $('floor-tbl').innerHTML='<thead><tr><th>Floor</th><th>Locations</th><th>ASIN</th><th>Units</th><th>Top Categories</th><th>Utilization</th></tr></thead><tbody>'+
+    floors.map(function(f){
+      var top=Object.entries(f.cats).filter(function(e){return e[0]!=='Mixed';}).sort(function(x,y){return y[1]-x[1];}).slice(0,3).map(function(e){return e[0]+' ('+e[1]+')';}).join(', ');
+      var util=f.utilN?f.utilSum/f.utilN:0;
+      return '<tr style="cursor:pointer;" onclick="filterByFloor(\''+f.floor.replace(/'/g,"\\'")+'\')" title="Click to see full locations under '+f.floor+'"><td>'+f.floor+'</td><td>'+fmt(f.total)+'</td><td>'+fmt(f.asin)+'</td><td>'+fmt(f.units)+'</td><td>'+(top||'—')+'</td><td><span class="pill" style="background:'+utilColor(util)+'22;color:'+utilColor(util)+';">'+util.toFixed(0)+'%</span></td></tr>';
+    }).join('') +'</tbody>';
+}
+function filterByFloor(floor){ $('f-floor').value=floor; $('f-aisle').value=''; renderLocTable(1); scrollToLocTable(); }
+function scrollToLocTable(){ var el=$('loc-tbl').closest('.card'); if(el) window.scrollTo({top:el.offsetTop-70,behavior:'smooth'}); }
+
+// ════════════════════════════════════════════════════
+// WRONG-CATEGORY & MIXED TABLES (paginated)
+// ════════════════════════════════════════════════════
+var wrongPage=1, mixedPage=1;
+function renderWrongTable(page){
+  wrongPage=page||1;
+  var list=AGG.wrong;
+  var pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  wrongPage=Math.min(wrongPage,pages);
+  var slice=list.slice((wrongPage-1)*PAGE_SIZE,wrongPage*PAGE_SIZE);
+  $('wrong-count').textContent=list.length.toLocaleString()+' misplaced items';
+  $('wrong-tbl').innerHTML='<thead><tr><th>Location</th><th>Primary Category</th><th>Item</th><th>Item Category</th><th>Qty</th><th>Priority</th></tr></thead><tbody>'+
+    (slice.length? slice.map(function(w){
+      var pc=w.priority==='High'?'#EF4444':w.priority==='Medium'?'#F59E0B':'#64748B';
+      return '<tr><td>'+w.location+'</td><td>'+(CAT_ICONS[w.primaryCategory]||'')+' '+w.primaryCategory+'</td><td>'+(w.item||w.asin)+'</td><td>'+(CAT_ICONS[w.itemCategory]||'')+' '+w.itemCategory+'</td><td>'+fmt(w.qty)+'</td><td><span class="pill" style="background:'+pc+'22;color:'+pc+';">'+w.priority+'</span></td></tr>';
+    }).join('') : '<tr><td class="empty" colspan="6">No wrong-category items detected</td></tr>') +'</tbody>';
+  $('wrong-pager').innerHTML='<button onclick="renderWrongTable('+(wrongPage-1)+')" '+(wrongPage<=1?'disabled':'')+'>← Prev</button><span>Page '+wrongPage+' / '+pages+'</span><button onclick="renderWrongTable('+(wrongPage+1)+')" '+(wrongPage>=pages?'disabled':'')+'>Next →</button>';
+}
+function renderMixedTable(page){
+  mixedPage=page||1;
+  var list=AGG.mixed;
+  var pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  mixedPage=Math.min(mixedPage,pages);
+  var slice=list.slice((mixedPage-1)*PAGE_SIZE,mixedPage*PAGE_SIZE);
+  $('mixed-count').textContent=list.length.toLocaleString()+' mixed locations';
+  $('mixed-tbl').innerHTML='<thead><tr><th>Location</th><th>Top Categories</th><th>ASIN</th><th>Units</th><th>Recommendation</th></tr></thead><tbody>'+
+    (slice.length? slice.map(function(l){
+      var top=Object.entries(l.catAsin).sort(function(a,b){return b[1]-a[1];}).slice(0,4).map(function(e){return e[0]+' ('+e[1]+')';}).join(', ');
+      return '<tr><td>'+l.locationId+'</td><td>'+top+'</td><td>'+fmt(l.asinSet.size)+'</td><td>'+fmt(l.totalUnits)+'</td><td><span class="pill" style="background:#F59E0B22;color:#F59E0B;">Needs Consolidation</span></td></tr>';
+    }).join('') : '<tr><td class="empty" colspan="5">No mixed locations</td></tr>') +'</tbody>';
+  $('mixed-pager').innerHTML='<button onclick="renderMixedTable('+(mixedPage-1)+')" '+(mixedPage<=1?'disabled':'')+'>← Prev</button><span>Page '+mixedPage+' / '+pages+'</span><button onclick="renderMixedTable('+(mixedPage+1)+')" '+(mixedPage>=pages?'disabled':'')+'>Next →</button>';
+}
+
+// ════════════════════════════════════════════════════
+// AI RECOMMENDATIONS
+// ════════════════════════════════════════════════════
+function renderRecommendations(){
+  var recs=[];
+  var wrongByCat={};
+  AGG.wrong.forEach(function(w){ wrongByCat[w.itemCategory]=(wrongByCat[w.itemCategory]||0)+1; });
+  Object.entries(wrongByCat).sort(function(a,b){return b[1]-a[1];}).slice(0,3).forEach(function(e){
+    recs.push({ic:'📦',txt:'Move <b>'+e[1]+'</b> '+e[0]+' ASINs to their correct '+e[0]+' locations.'});
+  });
+  if(AGG.mixed.length) recs.push({ic:'🔀',txt:'Consolidate <b>'+AGG.mixed.length+'</b> mixed bins to simplify picking.'});
+  var lowUtilByCat={};
+  AGG.locs.forEach(function(l){ if(l.totalUnits>0 && l.utilization<50 && l.primaryCategory!=='Mixed') lowUtilByCat[l.primaryCategory]=(lowUtilByCat[l.primaryCategory]||0)+1; });
+  Object.entries(lowUtilByCat).sort(function(a,b){return b[1]-a[1];}).slice(0,2).forEach(function(e){
+    recs.push({ic:'📉',txt:'Merge <b>'+e[1]+'</b> low-utilization '+e[0]+' locations to reduce footprint.'});
+  });
+  var catSpread={};
+  AGG.locs.forEach(function(l){ if(l.primaryCategory!=='Mixed') (catSpread[l.primaryCategory]=catSpread[l.primaryCategory]||new Set()).add(l.aisle); });
+  Object.entries(catSpread).forEach(function(e){
+    var cat=e[0], aisleCount=e[1].size;
+    var locCount=AGG.locs.filter(function(l){return l.primaryCategory===cat;}).length;
+    if(locCount>=15 && aisleCount>=4){ recs.push({ic:'🏗️',txt:'Create a dedicated <b>'+cat+'</b> aisle — currently spread across '+aisleCount+' aisles.'}); }
+  });
+  var overloaded=AGG.locs.filter(function(l){return l.utilization>=100;}).length;
+  if(overloaded) recs.push({ic:'🚨',txt:'<b>'+overloaded+'</b> locations are at or above capacity — review for overflow risk.'});
+  var underutil=AGG.locs.filter(function(l){return l.totalUnits>0 && l.utilization<50;}).length;
+  if(underutil) recs.push({ic:'📊',txt:'<b>'+underutil+'</b> occupied locations are under 50% utilization — candidates for consolidation.'});
+  recs.push({ic:'⚡',txt:'Group category-adjacent aisles to reduce picker travel time across the floor.'});
+
+  $('rec-list').innerHTML=recs.slice(0,8).map(function(r){
+    return '<div class="rec-item"><span class="ri-ic">'+r.ic+'</span><span class="ri-txt">'+r.txt+'</span></div>';
+  }).join('') || '<div class="empty">No recommendations — inventory looks well organized.</div>';
+}
+
+// ════════════════════════════════════════════════════
+// RENDER ALL
+// ════════════════════════════════════════════════════
+function renderAll(){
+  populateFilters();
+  renderStoreKpis();
+  renderCatGrid();
+  renderTopChart();
+  renderHeatMap();
+  renderLocTable(1);
+  renderAisleTable();
+  renderFloorTable();
+  renderWrongTable(1);
+  renderMixedTable(1);
+  renderRecommendations();
+}
+
+// ════════════════════════════════════════════════════
+// EXPORT
+// ════════════════════════════════════════════════════
+function exportExcel(){
+  if(!DB){ return; }
+  var wb=XLSX.utils.book_new();
+  var storeRows=[['Metric','Value'],
+    ['Total Locations',AGG.locs.length],['Occupied',AGG.occupied.length],['Empty',AGG.empty],
+    ['Total ASIN',DB.globalAsin.size],['Total Units',DB.totalUnits]];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(storeRows),'Store Summary');
+
+  var catRows=[['Category','Locations','ASIN','Units','Utilization %']].concat(AGG.categories.map(function(c){
+    return [c.category,c.locCount,c.asin,c.units,c.locCount?(c.locSum/c.locCount).toFixed(1):0];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(catRows),'Category Dashboard');
+
+  var locRows=[['Location','Category','ASIN Count','Unit Count','Utilization %']].concat(AGG.locs.map(function(l){
+    return [l.locationId,l.primaryCategory,l.asinSet.size,l.totalUnits,l.utilization.toFixed(1)];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(locRows),'Location Summary');
+
+  var aisleRows=[['Aisle','Floor','Locations','ASIN','Units','Utilization %']].concat(AGG.aisles.map(function(a){
+    return [a.aisle,a.floor,a.total,a.asin,a.units,a.utilN?(a.utilSum/a.utilN).toFixed(1):0];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aisleRows),'Aisle Summary');
+
+  var floorRows=[['Floor','Locations','ASIN','Units','Utilization %']].concat(AGG.floors.map(function(f){
+    return [f.floor,f.total,f.asin,f.units,f.utilN?(f.utilSum/f.utilN).toFixed(1):0];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(floorRows),'Floor Summary');
+
+  var wrongRows=[['Location','Primary Category','Item','Item Category','Qty','Priority']].concat(AGG.wrong.map(function(w){
+    return [w.location,w.primaryCategory,w.item,w.itemCategory,w.qty,w.priority];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(wrongRows),'Wrong Category');
+
+  var mixedRows=[['Location','ASIN','Units']].concat(AGG.mixed.map(function(l){
+    return [l.locationId,l.asinSet.size,l.totalUnits];
+  }));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(mixedRows),'Mixed Locations');
+
+  XLSX.writeFile(wb,'Inventory_Category_Analysis_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+function exportPDF(){
+  if(!DB) return;
+  var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  doc.setFontSize(16);doc.setFont(undefined,'bold');doc.text('Inventory Category Analysis — HP World DMS PRO',14,18);
+  doc.setFontSize(10);doc.setFont(undefined,'normal');doc.text('Generated: '+new Date().toLocaleString()+'  ·  Source: '+DB.fname,14,25);
+  var y=35;
+  doc.setFontSize(12);doc.setFont(undefined,'bold');doc.text('Store Summary',14,y); y+=7;
+  doc.setFontSize(10);doc.setFont(undefined,'normal');
+  var occ=AGG.occupied, overallUtil=occ.length?occ.reduce(function(s,l){return s+l.utilization;},0)/occ.length:0;
+  [['Total Locations',AGG.locs.length],['Occupied',occ.length],['Empty',AGG.empty],['Total ASIN',DB.globalAsin.size],['Total Units',DB.totalUnits],['Overall Utilization',overallUtil.toFixed(1)+'%']].forEach(function(r){
+    doc.text(r[0]+': '+r[1],14,y); y+=6;
+  });
+  y+=4; doc.setFontSize(12);doc.setFont(undefined,'bold');doc.text('Top Categories',14,y); y+=7;
+  doc.setFontSize(9.5);doc.setFont(undefined,'normal');
+  AGG.categories.slice().sort(function(a,b){return b.asin-a.asin;}).slice(0,12).forEach(function(c){
+    if(y>270){ doc.addPage(); y=20; }
+    var util=c.locCount?c.locSum/c.locCount:0;
+    doc.text(c.category+' — Locations: '+c.locCount+', ASIN: '+c.asin+', Units: '+c.units+', Util: '+util.toFixed(1)+'%',14,y); y+=6;
+  });
+  y+=4; if(y>250){ doc.addPage(); y=20; } doc.setFontSize(12);doc.setFont(undefined,'bold');doc.text('Top Wrong-Category Items',14,y); y+=7;
+  doc.setFontSize(9);doc.setFont(undefined,'normal');
+  AGG.wrong.slice(0,20).forEach(function(w){
+    if(y>280){ doc.addPage(); y=20; }
+    doc.text(w.location+' · '+(w.item||w.asin).slice(0,40)+' → should be '+w.primaryCategory+' (found '+w.itemCategory+', '+w.priority+')',14,y); y+=5.5;
+  });
+  doc.save('Inventory_Category_Analysis_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+</script>
+</body>
+</html>
