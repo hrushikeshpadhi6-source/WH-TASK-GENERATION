@@ -16424,7 +16424,7 @@ var MAINT_TOOLS = [
 ];
 var MAINT_KEY = 'dms_maintenance_settings';
 var _maintUnsub = null;
-var _maintSettings = { enabled:false, message:"DMS Pro is currently undergoing maintenance.\nWe'll be back soon with an improved experience.", allowedTools:[], targetedUsers:[] };
+var _maintSettings = { enabled:false, message:"DMS Pro is currently undergoing maintenance.\nWe'll be back soon with an improved experience.", allowedTools:[], targetedUsers:[], durationMin:0, autoOffAt:null };
 var BUILD_VERSION = '2026-09-02T00:00:00Z';
 var _buildUnsub = null;
 var _accessReqUnsub = null;
@@ -16477,6 +16477,12 @@ function maintCurrentIsAdmin(){
 function maintIsBlocked(toolId){
   if(maintCurrentIsAdmin()) return false;
   var s=_maintSettings||{};
+  // Auto-expiry: once the maintenance timer has passed, nobody stays blocked
+  // even if the admin's browser hasn't written the OFF state yet.
+  if(s.autoOffAt && Date.now()>=s.autoOffAt) return false;
+  // A personally-approved emergency access request always grants access to
+  // that one tool, regardless of whether maintenance is global or targeted.
+  if(_myAccessRequests.some(function(r){ return r.tool===toolId && r.status==='approved'; })) return false;
   var targeted=maintIsTargeted(s);
   var inMaint=!!s.enabled || targeted;
   if(!inMaint) return false;
@@ -16491,13 +16497,17 @@ function maintApply(){
   var banner=document.getElementById('maintenance-banner');
   var cards=document.querySelectorAll('.task-card[data-tool]');
   if(!overlay||!banner) return;
+  var expired = !!(s.autoOffAt && Date.now()>=s.autoOffAt);
   if(maintCurrentIsAdmin()){
     overlay.style.display='none'; banner.style.display='none';
     cards.forEach(function(c){ c.style.display=''; c.classList.remove('task-card-maint'); var chip=c.querySelector('.maint-chip'); if(chip) chip.remove(); });
+    // Self-heal: if the timer ran out, the admin's own client writes the OFF
+    // state back to Firestore so it's really off for everyone, not just locally.
+    if(expired && s.enabled) maintAdminAutoExpire();
     return;
   }
   var targeted=maintIsTargeted(s);
-  var inMaint=!!s.enabled || targeted;
+  var inMaint=(!!s.enabled || targeted) && !expired;
   if(!inMaint){
     overlay.style.display='none'; banner.style.display='none';
     cards.forEach(function(c){ c.style.display=''; c.classList.remove('task-card-maint'); var chip=c.querySelector('.maint-chip'); if(chip) chip.remove(); });
@@ -16514,6 +16524,13 @@ function maintApply(){
     return;
   }
   overlay.style.display='none'; banner.style.display='block';
+  var bannerBase='🚧 Limited access during maintenance — only selected tools are available right now.';
+  if(s.autoOffAt){
+    var remMin=Math.max(0,Math.ceil((s.autoOffAt-Date.now())/60000));
+    banner.textContent=bannerBase+' Auto-resumes in ~'+remMin+' min.';
+  } else {
+    banner.textContent=bannerBase;
+  }
   cards.forEach(function(c){
     var blocked = allowed.indexOf(c.getAttribute('data-tool'))===-1;
     c.classList.toggle('task-card-maint', blocked);
@@ -16634,6 +16651,21 @@ function maintMyRequestsListen(){
 
 function maintSaveLocal(s){ try{ localStorage.setItem(MAINT_KEY, JSON.stringify(s)); }catch(e){} }
 function maintLoadLocal(){ try{ var v=localStorage.getItem(MAINT_KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
+// Runs only in the admin's own client: if the auto-off timer has passed while
+// maintenance is still marked ON in Firestore, flip it off for everyone.
+var _maintAutoExpireBusy=false;
+function maintAdminAutoExpire(){
+  if(_maintAutoExpireBusy || !(window.FIREBASE_READY && window.fbDB)) return;
+  _maintAutoExpireBusy=true;
+  var s=Object.assign({}, _maintSettings, { enabled:false, autoOffAt:null, durationMin:0 });
+  fbDB.collection('app_settings').doc('maintenance').set(s).then(function(){
+    maintBumpBuildVersion();
+    _maintAutoExpireBusy=false;
+  }).catch(function(){ _maintAutoExpireBusy=false; });
+}
+// Re-check the timer every 15s even without a fresh Firestore push, so the
+// countdown/auto-resume works purely from elapsed time.
+setInterval(function(){ if(window.maintApply) maintApply(); }, 15000);
 
 function maintInit(){
   var cached=maintLoadLocal();
@@ -16671,8 +16703,25 @@ function maintAdminRefreshUI(){
   document.getElementById('maint-toggle-track').style.background=_maintSettings.enabled?'#10B981':'#2e2c45';
   document.getElementById('maint-toggle-knob').style.left=_maintSettings.enabled?'25px':'3px';
   var m=document.getElementById('maint-message'); if(m) m.value=_maintSettings.message||'';
+  var d=document.getElementById('maint-duration'); if(d) d.value=String(_maintSettings.durationMin||0);
+  maintAdminUpdateCountdown();
   maintAdminBuildList();
   maintRenderUserChips();
+}
+function maintDurationChanged(v){ _maintSettings.durationMin=parseInt(v,10)||0; }
+var _maintCountdownTick=null;
+function maintAdminUpdateCountdown(){
+  var el=document.getElementById('maint-countdown'); if(!el) return;
+  if(_maintCountdownTick){ clearInterval(_maintCountdownTick); _maintCountdownTick=null; }
+  if(!_maintSettings.enabled || !_maintSettings.autoOffAt){ el.textContent=''; return; }
+  function tick(){
+    var remMs=_maintSettings.autoOffAt-Date.now();
+    if(remMs<=0){ el.textContent='⏳ resuming…'; clearInterval(_maintCountdownTick); _maintCountdownTick=null; return; }
+    var m=Math.floor(remMs/60000), sec=Math.floor((remMs%60000)/1000);
+    el.textContent='⏳ auto-resumes in '+m+':'+(sec<10?'0':'')+sec;
+  }
+  tick();
+  _maintCountdownTick=setInterval(tick,1000);
 }
 
 function maintSearchUsers(q){
@@ -16738,11 +16787,17 @@ function maintResolveRequest(id,status){
 }
 function maintAdminToggle(checked){
   _maintSettings.enabled=checked;
+  var d=document.getElementById('maint-duration');
+  var durationMin=d?(parseInt(d.value,10)||0):0;
+  _maintSettings.durationMin=durationMin;
+  _maintSettings.autoOffAt = (checked && durationMin>0) ? (Date.now()+durationMin*60000) : null;
   maintAdminRefreshUI();
 }
 function maintAdminSave(){
   var allowed=Array.prototype.map.call(document.querySelectorAll('#maint-tool-list input:checked'), function(i){return i.value;});
-  var s={ enabled:document.getElementById('maint-toggle').checked, message:document.getElementById('maint-message').value, allowedTools:allowed, targetedUsers:_maintSettings.targetedUsers||[] };
+  var durationMin=parseInt((document.getElementById('maint-duration')||{}).value,10)||0;
+  var enabled=document.getElementById('maint-toggle').checked;
+  var s={ enabled:enabled, message:document.getElementById('maint-message').value, allowedTools:allowed, targetedUsers:_maintSettings.targetedUsers||[], durationMin:durationMin, autoOffAt:(enabled && durationMin>0) ? (_maintSettings.autoOffAt || (Date.now()+durationMin*60000)) : null };
   _maintSettings=s;
   maintSaveLocal(s);
   maintApply();
@@ -18323,6 +18378,18 @@ function handleScanningASIN(e) {
           <div style="font-size:14px;font-weight:700;color:#fff;">🚧 Maintenance Mode</div>
           <div style="font-size:11px;color:#8b8aad;">Enable to show all other users the maintenance screen. Your account always gets full access.</div>
         </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b8aad;">
+            Auto-resume after
+            <select id="maint-duration" onchange="maintDurationChanged(this.value)" style="background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:6px;padding:5px 8px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:11.5px;">
+              <option value="0">Manual (no timer)</option>
+              <option value="10">10 minutes</option>
+              <option value="20">20 minutes</option>
+              <option value="30">30 minutes</option>
+              <option value="60">60 minutes</option>
+            </select>
+          </label>
+          <span id="maint-countdown" style="font-size:11px;color:#ffd60a;font-weight:700;"></span>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
           <span id="maint-status-lbl" style="font-size:12px;font-weight:700;color:#8b8aad;">OFF</span>
           <span style="position:relative;width:46px;height:24px;display:inline-block;">
@@ -18331,6 +18398,7 @@ function handleScanningASIN(e) {
             <span id="maint-toggle-knob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;"></span>
           </span>
         </label>
+        </div>
       </div>
       <div style="padding:18px 24px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Message shown to blocked users</div>

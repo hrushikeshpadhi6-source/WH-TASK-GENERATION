@@ -1892,6 +1892,26 @@ function smBuildSummary(rows,mode){
   });
   return out;
 }
+// Sheets/Apps Script often hands numeric columns back as display strings
+// ("82.50%", "1,234"). Excel/pivot SUM only works on real number cells, so
+// convert anything that's purely numeric-looking into an actual Number.
+function smCleanForExport(rows){
+  return rows.map(function(r){
+    var o={};
+    Object.keys(r).forEach(function(k){
+      var v=r[k];
+      if(typeof v==='string'){
+        var t=v.trim();
+        if(t!=='' && t!=='#DIV/0!' && t!=='#N/A' && t!=='#ERROR!' && /^-?[\d,]+(\.\d+)?%?$/.test(t)){
+          var num=parseFloat(t.replace(/,/g,'').replace('%',''));
+          if(!isNaN(num)){ o[k]=num; return; }
+        }
+      }
+      o[k]=v;
+    });
+    return o;
+  });
+}
 function smExportExcel(){
   if(typeof XLSX==='undefined'){ alert('Excel library is still loading — please try again in a moment.'); return; }
   if(!smData.length){ alert('Load data first, then export.'); return; }
@@ -1905,7 +1925,7 @@ function smExportExcel(){
     if(mode!=='raw'){
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(smBuildSummary(rows,mode)), 'Summary by '+mode);
     }
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Raw Data');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(smCleanForExport(rows)), 'Raw Data');
     var stamp=new Date().toISOString().slice(0,10);
     var fname='StoreMetrics_'+(mode==='raw'?'raw':'by-'+mode)+'_'+stamp+'.xlsx';
     XLSX.writeFile(wb, fname);
