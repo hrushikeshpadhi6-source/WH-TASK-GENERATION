@@ -16812,6 +16812,19 @@ function maintResolveRequest(id,status){
     maintLoadAccessRequests();
   }).catch(function(e){ alert('Failed: '+e.message); });
 }
+function maintClearAllRequests(){
+  if(!(window.FIREBASE_READY && window.fbDB)) return;
+  if(!confirm('Clear all emergency access requests (approved, pending, denied, revoked)? This cannot be undone.')) return;
+  var box=document.getElementById('maint-req-admin-list');
+  if(box) box.innerHTML='<div style="color:#8b8aad;font-size:13px;">Clearing…</div>';
+  fbDB.collection('access_requests').get().then(function(snap){
+    var batch=fbDB.batch();
+    snap.docs.forEach(function(d){ batch.delete(d.ref); });
+    return batch.commit();
+  }).then(function(){
+    maintLoadAccessRequests();
+  }).catch(function(e){ alert('Failed: '+e.message); maintLoadAccessRequests(); });
+}
 function maintAdminToggle(checked){
   _maintSettings.enabled=checked;
   var d=document.getElementById('maint-duration');
@@ -18448,6 +18461,7 @@ We'll be back soon with an improved experience.</textarea>
           <div style="font-size:14px;font-weight:700;color:#fff;">🆘 Emergency Access Requests</div>
           <div style="font-size:11px;color:#8b8aad;">From users targeted into maintenance who need one tool right now. Approvals auto-revoke on their timer (default 30 min) or when you revoke manually.</div>
         </div>
+        <button onclick="maintClearAllRequests()" style="padding:8px 16px;border-radius:8px;border:1px solid #f72585;background:transparent;color:#f72585;font-family:'Syne',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;margin-right:8px;">🗑 Clear All</button>
         <button onclick="maintLoadAccessRequests()" style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
       </div>
       <div id="maint-req-admin-list" style="padding:18px 24px;"><div style="color:#8b8aad;font-size:13px;">Loading…</div></div>
