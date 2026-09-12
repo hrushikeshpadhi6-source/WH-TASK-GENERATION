@@ -1094,6 +1094,39 @@ body.qs-printing .qs-overlay { position: static; }
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js"></script>
 </head>
 <body>
+<style>@keyframes annMarquee{0%{transform:translateX(100%);}100%{transform:translateX(-100%);}}</style>
+<div id="ann-banner" style="display:none;position:relative;z-index:50;padding:12px 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#fff;background:#2563EB;line-height:1.5;overflow:hidden;">
+  <span id="ann-banner-text" style="display:block;white-space:pre-wrap;"></span>
+</div>
+<script>
+(function(){
+  var KEY='dms_announce';
+  function render(){
+    var s=null; try{ s=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
+    var banner=document.getElementById('ann-banner'), txt=document.getElementById('ann-banner-text');
+    if(!banner||!txt) return;
+    if(!s || !s.enabled || !s.text){ banner.style.display='none'; return; }
+    banner.style.background=s.color||'#2563EB';
+    banner.style.color=s.textColor||'#ffffff';
+    var speed=s.speed||20;
+    if(s.style==='running'||s.style==='chain'){
+      banner.style.padding='12px 0';
+      txt.style.whiteSpace='nowrap'; txt.style.display='inline-block';
+      txt.style.animation='annMarquee '+speed+'s linear infinite'; txt.style.paddingLeft='20px';
+      txt.textContent = s.style==='chain' ? Array(6).fill(s.text).join('   \u2022   ') : s.text;
+    } else {
+      banner.style.padding='12px 20px';
+      txt.style.whiteSpace='pre-wrap'; txt.style.display='block'; txt.style.animation='none';
+      txt.textContent=s.text;
+    }
+    banner.style.display='block';
+  }
+  window.addEventListener('storage', function(e){ if(e.key===KEY) render(); });
+  document.addEventListener('DOMContentLoaded', render);
+  if(document.readyState!=='loading') render();
+})();
+</script>
+
 
 
 

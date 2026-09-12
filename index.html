@@ -96,6 +96,7 @@ body::before {
   padding: 5px 12px; border-radius: 20px; color: var(--accent); letter-spacing:1px;
 }
 .page { display: none; position: relative; z-index: 1; }
+@keyframes annMarquee { 0%{ transform:translateX(100%); } 100%{ transform:translateX(-100%); } }
 .page.active { display: block; }
 .dashboard { max-width: 1200px; margin: 0 auto; padding: 60px 24px 40px; }
 .dash-hero { text-align: center; margin-bottom: 48px; }
@@ -2064,6 +2065,10 @@ window.feedbackAdminClear=async function(){
 </script>
 
 <div id="app-shell" style="display:none;">
+
+<div id="ann-banner" style="display:none;position:sticky;top:68px;z-index:150;padding:12px 20px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:#fff;background:#2563EB;line-height:1.5;overflow:hidden;">
+  <span id="ann-banner-text" style="display:block;white-space:pre-wrap;"></span>
+</div>
 
 <div id="maintenance-overlay" style="display:none;position:fixed;inset:0;z-index:99997;background:linear-gradient(135deg,#0a0914 0%,#0f0e17 40%,#1a1928 100%);
   color:#e8e6ff;font-family:'Syne',sans-serif;align-items:center;justify-content:center;padding:24px;">
@@ -16860,6 +16865,132 @@ function maintAdminSave(){
 }
 document.addEventListener('DOMContentLoaded', maintInit);
 
+// ── Announcement Banner ────────────────────────────────────────────
+var _annSettings={ enabled:true, text:'📢 Important Announcement\n\nHi Team, for throughput calculations, please use SPI (Seconds Per Item) instead of IPS (Items Per Second), as we are measuring the time taken to process one item.\n\nPlease use SPI consistently going forward.\n\nThank you, DMS Pro team!', color:'#2563EB', textColor:'#ffffff', style:'static', speed:20 };
+var _annUnsub=null;
+function announceLoadLocal(){ try{ var s=localStorage.getItem('dms_announce'); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function announceSaveLocal(s){ try{ localStorage.setItem('dms_announce',JSON.stringify(s)); }catch(e){} }
+function announceStyleChanged(){
+  var sty=(document.getElementById('ann-style')||{}).value;
+  var row=document.getElementById('ann-speed-row');
+  if(row) row.style.display=(sty==='running'||sty==='chain')?'flex':'none';
+}
+function _annSpeedLabel(v){ v=+v; return v<=13?'Fast':(v>=32?'Slow':'Medium'); }
+function _annRenderBanner(){
+  var banner=document.getElementById('ann-banner'), txtEl=document.getElementById('ann-banner-text');
+  if(!banner||!txtEl) return;
+  var s=_annSettings||{};
+  banner.style.background=s.color||'#2563EB';
+  banner.style.color=s.textColor||'#ffffff';
+  var speed=s.speed||20;
+  if(s.style==='running'||s.style==='chain'){
+    banner.style.padding='12px 0';
+    txtEl.style.whiteSpace='nowrap';
+    txtEl.style.display='inline-block';
+    txtEl.style.animation='annMarquee '+speed+'s linear infinite';
+    txtEl.style.paddingLeft='20px';
+    txtEl.textContent=s.style==='chain' ? Array(6).fill(s.text||'').join('   •   ') : (s.text||'');
+  } else {
+    banner.style.padding='12px 20px';
+    txtEl.style.whiteSpace='pre-wrap';
+    txtEl.style.display='block';
+    txtEl.style.animation='none';
+    txtEl.textContent=s.text||'';
+  }
+}
+function announceApply(){
+  var s=_annSettings||{};
+  var banner=document.getElementById('ann-banner'); if(!banner) return;
+  if(s.enabled && s.text){
+    _annRenderBanner();
+    banner.style.display='block';
+  } else {
+    banner.style.display='none';
+  }
+}
+function announceInit(){
+  var cached=announceLoadLocal();
+  if(cached) _annSettings=cached;
+  announceApply();
+  announceAdminRefreshUI();
+  if(window.FIREBASE_READY && window.fbDB){
+    if(_annUnsub) try{_annUnsub();}catch(e){}
+    _annUnsub=fbDB.collection('app_settings').doc('announcement').onSnapshot(function(doc){
+      if(doc.exists){
+        var d=doc.data();
+        _annSettings={ enabled:!!d.enabled, text:d.text||'', color:d.color||'#2563EB', textColor:d.textColor||'#ffffff', style:d.style||'static', speed:d.speed||20 };
+        announceSaveLocal(_annSettings);
+        announceApply();
+        announceAdminRefreshUI();
+      }
+    }, function(){});
+  }
+}
+function announceAdminRefreshUI(){
+  var t=document.getElementById('ann-toggle'); if(!t) return;
+  t.checked=!!_annSettings.enabled;
+  document.getElementById('ann-status-lbl').textContent=_annSettings.enabled?'ON':'OFF';
+  document.getElementById('ann-toggle-track').style.background=_annSettings.enabled?'#10B981':'#2e2c45';
+  document.getElementById('ann-toggle-knob').style.left=_annSettings.enabled?'25px':'3px';
+  var txt=document.getElementById('ann-text'); if(txt) txt.value=_annSettings.text||'';
+  var col=document.getElementById('ann-color'); if(col) col.value=_annSettings.color||'#2563EB';
+  var tcol=document.getElementById('ann-text-color'); if(tcol) tcol.value=_annSettings.textColor||'#ffffff';
+  var sty=document.getElementById('ann-style'); if(sty) sty.value=_annSettings.style||'static';
+  var spd=document.getElementById('ann-speed'); if(spd) spd.value=String(_annSettings.speed||20);
+  announceStyleChanged();
+  announcePreview();
+}
+function announceSetColor(hex){
+  var col=document.getElementById('ann-color'); if(col) col.value=hex;
+  announcePreview();
+}
+function announceSetTextColor(hex){
+  var col=document.getElementById('ann-text-color'); if(col) col.value=hex;
+  announcePreview();
+}
+function announcePreview(){
+  var p=document.getElementById('ann-preview'); if(!p) return;
+  var txt=(document.getElementById('ann-text')||{}).value||'';
+  var col=(document.getElementById('ann-color')||{}).value||'#2563EB';
+  var tcol=(document.getElementById('ann-text-color')||{}).value||'#ffffff';
+  var spd=(document.getElementById('ann-speed')||{}).value||'20';
+  var lbl=document.getElementById('ann-speed-lbl'); if(lbl) lbl.textContent=_annSpeedLabel(spd);
+  p.style.background=col;
+  p.style.color=tcol;
+  p.textContent=txt||'Your announcement will appear here…';
+}
+function announceAdminToggle(checked){
+  _annSettings.enabled=checked;
+  announceAdminRefreshUI();
+}
+function announceAdminSave(){
+  var enabled=document.getElementById('ann-toggle').checked;
+  var text=document.getElementById('ann-text').value;
+  var color=document.getElementById('ann-color').value;
+  var textColor=document.getElementById('ann-text-color').value;
+  var style=document.getElementById('ann-style').value;
+  var speed=parseInt(document.getElementById('ann-speed').value,10)||20;
+  var s={ enabled:enabled, text:text, color:color, textColor:textColor, style:style, speed:speed };
+  _annSettings=s;
+  announceSaveLocal(s);
+  announceApply();
+  var status=document.getElementById('ann-save-status');
+  if(window.FIREBASE_READY && window.fbDB){
+    fbDB.collection('app_settings').doc('announcement').set(s).then(function(){
+      if(status){ status.textContent='✅ Published — live for all users'; setTimeout(function(){status.textContent='';},3000); }
+    }).catch(function(err){
+      if(!status) return;
+      var perm=err.code==='permission-denied'||/permission/i.test(err.message);
+      status.innerHTML=perm
+        ? '⚠️ Add to Firestore rules: <code style="font-family:monospace;font-size:11px;color:#10B981;">match /app_settings/{id} { allow read: if true; allow write: if isAdmin(); }</code>'
+        : '⚠️ '+err.message;
+    });
+  } else if(status){
+    status.textContent='✅ Saved locally (offline mode)'; setTimeout(function(){status.textContent='';},3000);
+  }
+}
+document.addEventListener('DOMContentLoaded', announceInit);
+
 
 // ── EmailJS (optional) — for the email ALERT to the admin ──────
 //  Paste your 3 EmailJS values to enable email alerts. Until then the
@@ -18411,6 +18542,65 @@ function handleScanningASIN(e) {
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <!-- ── ANNOUNCEMENT ───────────────────────────────────────── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">📢 Announcement Banner</div>
+          <div style="font-size:11px;color:#8b8aad;">Shown at the top of the app to every signed-in user until you turn it off.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <span id="ann-status-lbl" style="font-size:12px;font-weight:700;color:#8b8aad;">OFF</span>
+          <span style="position:relative;width:46px;height:24px;display:inline-block;">
+            <input type="checkbox" id="ann-toggle" onchange="announceAdminToggle(this.checked)" style="opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:1;">
+            <span id="ann-toggle-track" style="position:absolute;inset:0;background:#2e2c45;border-radius:20px;transition:background .2s;"></span>
+            <span id="ann-toggle-knob" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;"></span>
+          </span>
+        </label>
+      </div>
+      <div style="padding:18px 24px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Message shown to everyone</div>
+        <textarea id="ann-text" rows="4" oninput="announcePreview()" placeholder="📢 Important Announcement…" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:12px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;resize:vertical;margin-bottom:16px;"></textarea>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Banner color</div>
+          <input type="color" id="ann-color" value="#2563EB" oninput="announcePreview()" style="width:40px;height:32px;border:1px solid #2e2c45;border-radius:8px;background:none;cursor:pointer;padding:0;">
+          <div style="display:flex;gap:6px;">
+            <span onclick="announceSetColor('#2563EB')" style="width:22px;height:22px;border-radius:6px;background:#2563EB;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetColor('#10B981')" style="width:22px;height:22px;border-radius:6px;background:#10B981;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetColor('#ffd60a')" style="width:22px;height:22px;border-radius:6px;background:#ffd60a;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetColor('#f72585')" style="width:22px;height:22px;border-radius:6px;background:#f72585;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetColor('#7c3aed')" style="width:22px;height:22px;border-radius:6px;background:#7c3aed;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Text color</div>
+          <input type="color" id="ann-text-color" value="#ffffff" oninput="announcePreview()" style="width:40px;height:32px;border:1px solid #2e2c45;border-radius:8px;background:none;cursor:pointer;padding:0;">
+          <div style="display:flex;gap:6px;">
+            <span onclick="announceSetTextColor('#ffffff')" style="width:22px;height:22px;border-radius:6px;background:#ffffff;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetTextColor('#0a0914')" style="width:22px;height:22px;border-radius:6px;background:#0a0914;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+            <span onclick="announceSetTextColor('#ffd60a')" style="width:22px;height:22px;border-radius:6px;background:#ffd60a;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Style</div>
+          <select id="ann-style" onchange="announcePreview();announceStyleChanged();" style="background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:6px;padding:7px 10px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12.5px;">
+            <option value="static">Static banner</option>
+            <option value="running">Running ticker</option>
+            <option value="chain">Running chain (repeats with • dividers)</option>
+          </select>
+        </div>
+        <div id="ann-speed-row" style="display:none;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Scroll speed</div>
+          <input type="range" id="ann-speed" min="5" max="50" value="20" oninput="announcePreview()" style="width:160px;accent-color:#2563EB;">
+          <span id="ann-speed-lbl" style="font-size:11.5px;color:#8b8aad;">Medium</span>
+        </div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-bottom:8px;">Preview</div>
+        <div id="ann-preview" style="border-radius:10px;padding:12px 16px;font-family:'Syne',sans-serif;font-size:12.5px;font-weight:600;color:#fff;background:#2563EB;margin-bottom:8px;white-space:pre-wrap;overflow:hidden;"></div>
+        <div style="font-size:11px;color:#5a5878;margin-bottom:18px;">Sticks to the top of the app on every page until you switch it OFF — users can't dismiss it.</div>
+        <button onclick="announceAdminSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">📢 Publish Announcement</button>
+        <span id="ann-save-status" style="margin-left:12px;font-size:12px;color:#10B981;"></span>
+      </div>
+    </div>
     <!-- ── MAINTENANCE MODE ──────────────────────────────────── -->
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
