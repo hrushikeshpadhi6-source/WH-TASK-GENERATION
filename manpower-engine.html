@@ -354,14 +354,16 @@ function cl(lbl,val,col,sub){ return '<div><div class="cl-lbl">'+lbl+'</div><div
 // ════════════════════════════════════════════════════
 // JSONP
 // ════════════════════════════════════════════════════
-function jsonp(params, cb){
+function jsonp(params, cb, _attempt){
+  var attempt=_attempt||1;
+  function retryOrFail(err){ if(attempt<2) jsonp(params, cb, attempt+1); else cb(null, err); }
   var name='cb_'+Math.random().toString(36).slice(2);
-  var t=setTimeout(function(){ cleanup(); cb(null,'timeout'); },22000);
+  var t=setTimeout(function(){ cleanup(); retryOrFail('timeout'); },60000);
   function cleanup(){ clearTimeout(t); delete window[name]; var s=$('j-'+name); if(s)s.remove(); }
   window[name]=function(d){ cleanup(); cb(d,null); };
   var s=document.createElement('script'); s.id='j-'+name;
   s.src=APPS_URL+'?'+params+'&callback='+name;
-  s.onerror=function(){ cleanup(); cb(null,'network'); };
+  s.onerror=function(){ cleanup(); retryOrFail('network'); };
   document.head.appendChild(s);
 }
 

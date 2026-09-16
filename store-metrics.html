@@ -1249,14 +1249,16 @@ window.addEventListener('DOMContentLoaded', function(){
 // ═══════════════════════════════════════════════
 // FETCH STORE METRIC
 // ═══════════════════════════════════════════════
-function smLoad(isAuto){
+function smLoad(isAuto, _attempt){
+  var attempt = _attempt || 1;
   var btn = document.getElementById('sm-btn');
   btn.textContent = '⏳ Loading…'; btn.disabled = true;
   document.getElementById('sm-status').textContent = '';
   setProgress(20);
 
   var cb = 'smCb_' + Date.now();
-  var t = setTimeout(function(){ cleanup(); document.getElementById('sm-status').textContent='❌ Timeout — check connection'; done(''); }, 25000);
+  function retryOrFail(){ if(attempt<2){ cleanup(); smLoad(isAuto, attempt+1); } else { document.getElementById('sm-status').textContent='❌ Timeout — check connection'; done(''); } }
+  var t = setTimeout(function(){ cleanup(); retryOrFail(); }, 60000);
   function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
   function done(msg){
     btn.textContent = '⟳ Refresh'; btn.disabled = false;
@@ -1475,11 +1477,13 @@ function smRender(){
 // Store, Name, Owner, OE, then one column per week (Wk28, Wk29, …).
 // A store's HIGHEST filled week is flagged when it's ≥0.5%.
 // ═══════════════════════════════════════════════
-function smFetchConcessions(){
+function smFetchConcessions(_attempt){
+  var attempt=_attempt||1;
   var btn=document.getElementById('sc-btn');
   if(btn){ btn.textContent='⏳ Loading…'; btn.disabled=true; }
   var cb='scCb_'+Date.now();
-  var t=setTimeout(function(){ cleanup(); fail('❌ Timeout — check connection'); },25000);
+  function retryOrFail(m){ if(attempt<2){ cleanup(); smFetchConcessions(attempt+1); } else fail(m); }
+  var t=setTimeout(function(){ cleanup(); retryOrFail('❌ Timeout — check connection'); },60000);
   function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
   function fin(){ if(btn){ btn.textContent='↻ Concessions'; btn.disabled=false; } }
   function fail(m){ fin(); var tb=document.getElementById('sc-tb'); if(tb)tb.innerHTML='<tr><td class="empty">'+m+'</td></tr>'; }
@@ -1612,11 +1616,13 @@ function bmLookup(store, periodLabel, kind){
   return data.find(function(r){ return r.store===store && r.period===periodLabel; }) || null;
 }
 
-function smFetchNetworkLoss(){
+function smFetchNetworkLoss(_attempt){
+  var attempt=_attempt||1;
   var btn=document.getElementById('nl-btn');
   if(btn){ btn.textContent='⏳ Loading…'; btn.disabled=true; }
   var cb='nlCb_'+Date.now();
-  var t=setTimeout(function(){ cleanup(); fail('❌ Timeout — check connection'); },25000);
+  function retryOrFail(m){ if(attempt<2){ cleanup(); smFetchNetworkLoss(attempt+1); } else fail(m); }
+  var t=setTimeout(function(){ cleanup(); retryOrFail('❌ Timeout — check connection'); },60000);
   function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
   function fin(){ if(btn){ btn.textContent='↻ Network Loss'; btn.disabled=false; } }
   function fail(m){ fin(); var tb=document.getElementById('nl-tb'); if(tb)tb.innerHTML='<tr><td class="empty">'+m+'</td></tr>'; }

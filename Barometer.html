@@ -166,12 +166,14 @@ function bmSetKind(kind){
   bmFetch();
 }
 
-function bmFetch(){
+function bmFetch(_attempt){
+  var attempt=_attempt||1;
   if(bmCache[bmKind]){ bmApply(bmCache[bmKind]); return; }
   var wrap=document.getElementById('bm-wrap');
   wrap.innerHTML='<div style="padding:40px;text-align:center;color:#8b93a3;font-size:13px;" id="bm-status">⏳ Connecting to Google Sheet…</div>';
   var cb='bmCb_'+Date.now();
-  var t=setTimeout(function(){ cleanup(); fail('❌ Timeout — check connection'); },25000);
+  function retryOrFail(m){ if(attempt<2){ cleanup(); bmFetch(attempt+1); } else fail(m); }
+  var t=setTimeout(function(){ cleanup(); retryOrFail('❌ Timeout — check connection'); },60000);
   function cleanup(){ clearTimeout(t); delete window[cb]; var s=document.getElementById('j-'+cb); if(s)s.remove(); }
   function fail(m){ var st=document.getElementById('bm-status'); if(st) st.textContent=m; }
   window[cb]=function(data){
@@ -182,6 +184,7 @@ function bmFetch(){
     bmApply(data);
   };
   var s=document.createElement('script'); s.id='j-'+cb;
+  s.onerror=function(){ cleanup(); retryOrFail('❌ Script load error — check connection'); };
   s.src=APPS_URL+'?action=barometer&period='+bmKind+'&callback='+cb;
   s.onerror=function(){ cleanup(); fail('❌ Error loading sheet'); };
   document.head.appendChild(s);

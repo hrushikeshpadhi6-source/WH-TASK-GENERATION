@@ -1,0 +1,1693 @@
+// ═══════════════════════════════════════════════════════════════════
+// HP WORLD — DARK STORE TASK PRO — COMPLETE APPS SCRIPT (FULL / MERGED)
+// ───────────────────────────────────────────────────────────────────
+// This is the ONE complete Code.gs. Select-all in your Apps Script
+// editor, delete, paste this, Save, then:
+//   Deploy → Manage deployments → Edit → New version → Deploy.
+//
+// PATCH (this version): normSlotKey() inside handleForecast() made
+// tolerant to any dash character / spacing in the Slot column, so a
+// row is never silently dropped from the forecast sum due to label
+// formatting. No other logic changed.
+// ═══════════════════════════════════════════════════════════════════
+
+var SHEET_VOC             = 'voc analysis';
+var SHEET_STORE_METRIC    = 'Store Metric';
+var SHEET_FORECAST_ORDERS = 'OB FORECAST ORDERS';
+var SHEET_FORECAST_UNITS  = 'OB FORECAST UNITS';
+var SHEET_CATALOG         = 'CATALOG ISSUE ASIN';
+var SHEET_SCANNING        = 'SCANNING ISSUE ASIN';
+var SHEET_ACTIVITY_LOG    = 'Activity Log';
+var SHEET_VOC_V2          = 'VOC V2';
+var SHEET_VOC_V2_1        = 'Voc v2.1';
+var SHEET_NETWORK_LOSS    = 'Network loss Data';
+var SHEET_IB_FORECAST     = 'IB FORECAST';
+var SHEET_STORE_CONCESSIONS = 'Store Concessions';
+var SHEET_LATESLAM_UTR      = 'Lateslam UTR Data';
+var SHEET_OUTBOUND_PICK     = 'Outbound Pick Data';
+var SHEET_BAROMETER_WEEKLY  = 'Barometer Weekly';
+var SHEET_BAROMETER_MTD     = 'Barometer MTD';
+
+// ─────────────────────────────────────────────────────────────────
+function doGet(e) {
+  var action   = e.parameter.action   || '';
+  var callback = e.parameter.callback || 'callback';
+  var result;
+  try {
+    if      (action === 'voc')             result = handleVOC(e);
+    else if (action === 'orders')          result = handleOrders(e);
+    else if (action === 'forecast')        result = handleForecast(e);
+    else if (action === 'catalog_asin')    result = handleCatalogASIN(e);
+    else if (action === 'scanning_asin')   result = handleScanningASIN(e);
+    else if (action === 'trackLogin')      result = handleTrackLogin(e);
+    else if (action === 'trackActivity')   result = handleTrackActivity(e);
+    else if (action === 'storeMetric')     result = handleStoreMetric(e);
+    else if (action === 'getActivity')     result = handleGetActivity(e);
+    else if (action === 'vocv2')           result = handleVOCV2(e);
+    else if (action === 'vocTop15')        result = handleVOCTop15(e);
+    else if (action === 'vocStoreSummary') result = handleVOCStoreSummary(e);
+    else if (action === 'compare')         result = handleCompare(e);
+    else if (action === 'networkLoss')     result = handleNetworkLoss(e);
+    else if (action === 'ibForecast')      result = handleIBForecast(e);
+    else if (action === 'storeConcessions') result = handleStoreConcessions(e);
+    else if (action === 'throughputPerHour') result = handleThroughputPerHour(e);
+    else if (action === 'barometer')         result = handleBarometer(e);
+    else result = { status: 'error', message: 'Unknown action: ' + action };
+  } catch (err) {
+    result = { status: 'error', message: err.toString() };
+  }
+  return ContentService
+    .createTextOutput(callback + '(' + JSON.stringify(result) + ')')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function getSS() {
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+function findSheet(names) {
+  var ss = getSS();
+  if (typeof names === 'string') names = [names];
+  for (var n = 0; n < names.length; n++) {
+    var s = ss.getSheetByName(names[n]);
+    if (s) return s;
+  }
+  var norm = function (x) {
+    return String(x == null ? '' : x)
+      .replace(/\u00a0/g, ' ')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+  };
+  var all = ss.getSheets();
+  for (var w = 0; w < names.length; w++) {
+    var want = norm(names[w]);
+    for (var t = 0; t < all.length; t++) {
+      if (norm(all[t].getName()) === want) return all[t];
+    }
+  }
+  return null;
+}
+
+function getSheetLastModified() {
+  try {
+    var ss   = getSS();
+    var file = DriveApp.getFileById(ss.getId());
+    return file.getLastUpdated().toISOString();
+  } catch(e) {
+    return '';
+  }
+}
+
+var MONTH_NAMES_EN = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+function normalizeMonthCell(val) {
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) {
+    return MONTH_NAMES_EN[val.getMonth()] + ' - ' + val.getFullYear();
+  }
+  var s = String(val).trim();
+  if (!s) return '';
+  var m = s.match(/^([A-Za-z]+)\s*[-–—]\s*(\d{4})$/);
+  if (m) return capitalize(m[1]) + ' - ' + m[2];
+  m = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (m) return capitalize(m[1]) + ' - ' + m[2];
+  m = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) { var mi = parseInt(m[1],10)-1; if (mi>=0&&mi<12) return MONTH_NAMES_EN[mi]+' - '+m[2]; }
+  m = s.match(/^(\d{4})-(\d{1,2})$/);
+  if (m) { var mi2=parseInt(m[2],10)-1; if (mi2>=0&&mi2<12) return MONTH_NAMES_EN[mi2]+' - '+m[1]; }
+  m = s.match(/^(\d{1,2})-(\d{4})$/);
+  if (m) { var mi3=parseInt(m[1],10)-1; if (mi3>=0&&mi3<12) return MONTH_NAMES_EN[mi3]+' - '+m[2]; }
+  return s;
+}
+
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 1 — VOC DATA
+// ═══════════════════════════════════════════════════════════════════
+function handleVOC(e) {
+  var sheet = getSS().getSheetByName(SHEET_VOC);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_VOC + '" not found' };
+
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
+
+  function col(names) {
+    for (var n = 0; n < names.length; n++) {
+      var idx = headers.indexOf(names[n].toLowerCase());
+      if (idx > -1) return idx;
+    }
+    return -1;
+  }
+
+  var iStore    = col(['store','store name','delivery station','station']);
+  var iDate     = col(['date','order date','complaint date']);
+  var iOrder    = col(['order id','orderid','order_id','order no','order number']);
+  var iAsin     = col(['asin','asin no']);
+  var iIssue    = col(['issue','issue type','complaint','issue category']);
+  var iRcaCat   = col(['rca category','rca cat','root cause category','category']);
+  var iRca      = col(['rca','root cause','root cause analysis']);
+  var iPicker   = col(['picker id/name','picker','picker id','picker name','employee id','employee','emp id','associate id','associate','staff id','staff','user id','user','operator','operator id','agent','agent id','packed by','picked by','packer','picker no']);
+  var iProduct  = col(['product name','product','item name','item']);
+  var iProdType = col(['product type','type','category type']);
+  var iWeek     = col(['week','week no','week number','wk']);
+  var iComment  = col(['customer comment','customer feedback','comment','comments','customer remark']);
+  var iRemarks  = col(['remarks by oe','remarks','remark']);
+  var iCustomer = col(['customer id','customerid','customer_id']);
+
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var r     = data[i];
+    var store = iStore >= 0 ? String(r[iStore] || '').trim() : '';
+    if (!store) continue;
+
+    var dateVal = '';
+    if (iDate >= 0 && r[iDate]) {
+      if (r[iDate] instanceof Date) {
+        dateVal = r[iDate].toISOString();
+      } else {
+        var d = new Date(r[iDate]);
+        dateVal = isNaN(d.getTime()) ? String(r[iDate]) : d.toISOString();
+      }
+    }
+
+    var weekVal = '';
+    if (iWeek >= 0 && r[iWeek] !== '' && r[iWeek] !== null && r[iWeek] !== undefined) {
+      var wRaw = r[iWeek];
+      if (typeof wRaw === 'number') {
+        weekVal = String(Math.round(wRaw));
+      } else if (wRaw instanceof Date) {
+        var epoch  = new Date(1899, 11, 30).getTime();
+        var serial = Math.round((wRaw.getTime() - epoch) / 86400000);
+        weekVal = String(serial);
+      } else {
+        var sW = String(wRaw).trim();
+        var wm = sW.match(/(\d{1,3})/);
+        weekVal = wm ? wm[1] : sW;
+      }
+    }
+
+    rows.push({
+      store:       store,
+      date:        dateVal,
+      week:        weekVal,
+      orderId:     iOrder    >= 0 ? String(r[iOrder]    || '').trim() : '',
+      asin:        iAsin     >= 0 ? String(r[iAsin]     || '').trim() : '',
+      issue:       iIssue    >= 0 ? String(r[iIssue]    || '').trim() : '',
+      rcaCategory: iRcaCat   >= 0 ? String(r[iRcaCat]   || '').trim() : '',
+      rca:         iRca      >= 0 ? String(r[iRca]      || '').trim() : '',
+      picker:      iPicker   >= 0 ? String(r[iPicker]   || '').trim() : '',
+      product:     iProduct  >= 0 ? String(r[iProduct]  || '').trim() : '',
+      productType: iProdType >= 0 ? String(r[iProdType] || '').trim() : '',
+      comment:     iComment  >= 0 ? String(r[iComment]  || '').trim() : '',
+      remarks:     iRemarks  >= 0 ? String(r[iRemarks]  || '').trim() : '',
+      customerId:  iCustomer >= 0 ? String(r[iCustomer] || '').trim() : ''
+    });
+  }
+
+  return {
+    status:            'ok',
+    rows:              rows,
+    count:             rows.length,
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 2 — ORDERS (DAY / WEEK / MONTH / YEAR / FROM-TO RANGE)
+// ═══════════════════════════════════════════════════════════════════
+function handleOrders(e) {
+  var sheet = getSS().getSheetByName(SHEET_STORE_METRIC);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_STORE_METRIC + '" not found' };
+
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0];
+
+  var dateColIdx   = -1;
+  var monthColIdx  = -1;
+  var weekColIdx   = -1;
+  var ordersColIdx = -1;
+  var unitsColIdx  = -1;
+  var storeColIdx  = -1;
+
+  for (var c = 0; c < headers.length; c++) {
+    var h  = String(headers[c]).trim();
+    var hl = h.toLowerCase();
+    if (hl === 'date' || hl === 'order date' || hl === 'day')            dateColIdx   = c;
+    if (h === 'W' || hl === 'month' || hl === 'month name')              monthColIdx  = c;
+    if (hl === 'week' || hl === 'week no' || hl === 'week number' ||
+        hl === 'wk'   || hl === 'week_no')                               weekColIdx   = c;
+    if (hl === 'orders' || hl === 'total orders' || hl === 'order count'||
+        hl === 'no of orders' || hl === 'total_orders' ||
+        hl === 'outbound orders' || hl === 'ob orders' || hl === 'order') ordersColIdx = c;
+    if (hl === 'ob units' || hl === 'outbound units' || hl === 'units'  ||
+        hl === 'total units' || hl === 'ob_units' || hl === 'unit'      ||
+        hl === 'ob unit')                                                  unitsColIdx  = c;
+    if (hl === 'store' || hl === 'station' || hl === 'delivery station' ||
+        hl === 'store name' || hl === 'site')                             storeColIdx  = c;
+  }
+
+  var filterDay        = String(e.parameter.day        || '').trim();
+  var filterMonthLabel = String(e.parameter.monthLabel || '').trim();
+  var filterMonthName  = String(e.parameter.monthName  || '').trim();
+  var filterYear       = String(e.parameter.year       || '').trim();
+  var filterWeek       = String(e.parameter.week       || '').trim();
+  var filterFrom       = String(e.parameter.from       || '').trim();
+  var filterTo         = String(e.parameter.to         || '').trim();
+  var filterNorm       = filterMonthLabel ? (filterMonthName + ' - ' + filterYear) : '';
+  var tz               = Session.getScriptTimeZone();
+
+  var targetDay = null;
+  if (filterDay) {
+    var dp = filterDay.split('-');
+    if (dp.length === 3) {
+      targetDay = {
+        y: parseInt(dp[0], 10),
+        m: parseInt(dp[1], 10) - 1,
+        d: parseInt(dp[2], 10)
+      };
+    }
+  }
+
+  var totalOrders = 0, totalUnits = 0, storeMap = {}, storeUnitsMap = {};
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var hasData = row.some(function(v){ return v !== '' && v !== null && v !== undefined; });
+    if (!hasData) continue;
+
+    var rawMonthCell = monthColIdx >= 0 ? row[monthColIdx] : '';
+    var rawWeekCell  = weekColIdx  >= 0 ? row[weekColIdx]  : '';
+    var rawStore     = storeColIdx >= 0 ? String(row[storeColIdx] || '').trim() : '';
+    var rowMonthNorm = normalizeMonthCell(rawMonthCell);
+
+    var include = false;
+
+    if (targetDay && dateColIdx >= 0) {
+      var cellVal  = row[dateColIdx];
+      var cellDate = (cellVal instanceof Date) ? cellVal : new Date(cellVal);
+      if (!isNaN(cellDate.getTime()) &&
+          cellDate.getFullYear() === targetDay.y &&
+          cellDate.getMonth()    === targetDay.m &&
+          cellDate.getDate()     === targetDay.d) {
+        include = true;
+      }
+    } else if ((filterFrom || filterTo) && dateColIdx >= 0) {
+      var cv = row[dateColIdx];
+      var cd = (cv instanceof Date) ? cv : new Date(cv);
+      if (!isNaN(cd.getTime())) {
+        var sIso = Utilities.formatDate(cd, tz, 'yyyy-MM-dd');
+        if ((!filterFrom || sIso >= filterFrom) && (!filterTo || sIso <= filterTo)) include = true;
+      }
+    } else if (filterNorm) {
+      if (rowMonthNorm.toLowerCase() === filterNorm.toLowerCase()) include = true;
+    } else if (filterWeek) {
+      var rw = String(rawWeekCell).replace(/\D/g,'');
+      var fw = filterWeek.replace(/\D/g,'');
+      if (rw && rw === fw) include = true;
+    } else if (filterYear) {
+      if (rowMonthNorm.indexOf(filterYear) > -1) include = true;
+    } else {
+      include = true;
+    }
+
+    if (include) {
+      var oVal = ordersColIdx >= 0 ? (Number(row[ordersColIdx]) || 0) : 0;
+      var uVal = unitsColIdx  >= 0 ? (Number(row[unitsColIdx])  || 0) : 0;
+      totalOrders += oVal;
+      totalUnits  += uVal;
+      if (rawStore) {
+        storeMap[rawStore]      = (storeMap[rawStore]      || 0) + oVal;
+        storeUnitsMap[rawStore] = (storeUnitsMap[rawStore] || 0) + uVal;
+      }
+    }
+  }
+
+  var rangeLabel = (filterFrom || filterTo) ? ((filterFrom || '…') + ' → ' + (filterTo || '…')) : '';
+  var returnLabel = filterDay || filterNorm || rangeLabel ||
+                    (filterWeek ? 'Week ' + filterWeek : (filterYear || 'All time'));
+
+  return {
+    status:        'ok',
+    totalOrders:   totalOrders,
+    outboundUnits: totalUnits,
+    stores:        storeMap,
+    storeUnits:    storeUnitsMap,
+    monthLabel:    filterNorm,
+    dayLabel:      filterDay  ? filterDay            : '',
+    weekLabel:     filterWeek ? 'Week ' + filterWeek : '',
+    yearLabel:     filterYear,
+    rangeLabel:    rangeLabel,
+    label:         returnLabel
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 3 — FORECAST  (PATCHED: normSlotKey tolerant to any dash/space)
+// ═══════════════════════════════════════════════════════════════════
+function handleForecast(e) {
+  var ss      = getSS();
+  var dateStr = String(e.parameter.date || '').trim();
+  var sheetO  = ss.getSheetByName(SHEET_FORECAST_ORDERS);
+  var sheetU  = ss.getSheetByName(SHEET_FORECAST_UNITS);
+  if (!sheetO) return { status: 'error', message: 'Sheet "' + SHEET_FORECAST_ORDERS + '" not found' };
+  if (!sheetU) return { status: 'error', message: 'Sheet "' + SHEET_FORECAST_UNITS  + '" not found' };
+
+  var MONTHS_SH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function toSheetDateHeader(isoDate) {
+    if (!isoDate) return '';
+    var parts = isoDate.split('-');
+    if (parts.length !== 3) return '';
+    var day = parseInt(parts[2], 10);
+    var mon = parseInt(parts[1], 10) - 1;
+    if (mon < 0 || mon > 11) return '';
+    return day + '-' + MONTHS_SH[mon];
+  }
+
+  function normHdr(val) {
+    if (val === null || val === undefined || val === '') return '';
+    if (val instanceof Date) {
+      return val.getDate() + '-' + MONTHS_SH[val.getMonth()];
+    }
+    var s = String(val).trim();
+    if (!s) return '';
+    var m1 = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})(?:[-\s]\d{2,4})?$/);
+    if (m1) return parseInt(m1[1], 10) + '-' + capitalize(m1[2].slice(0, 3));
+    var m2 = s.match(/^([A-Za-z]{3,9})[-\s](\d{1,2})(?:[-\s]\d{2,4})?$/);
+    if (m2) return parseInt(m2[2], 10) + '-' + capitalize(m2[1].slice(0, 3));
+    var m3 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m3) {
+      var mon3 = parseInt(m3[2], 10) - 1;
+      if (mon3 >= 0 && mon3 < 12) return parseInt(m3[1], 10) + '-' + MONTHS_SH[mon3];
+    }
+    var m4 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m4) {
+      var mon4 = parseInt(m4[2], 10) - 1;
+      if (mon4 >= 0 && mon4 < 12) return parseInt(m4[3], 10) + '-' + MONTHS_SH[mon4];
+    }
+    if (/^\d{5}$/.test(s)) {
+      var serial = parseInt(s, 10);
+      var dt     = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+      return dt.getUTCDate() + '-' + MONTHS_SH[dt.getUTCMonth()];
+    }
+    return s;
+  }
+
+  function headerToISO(val, year) {
+    var norm = normHdr(val);
+    var m = norm.match(/^(\d{1,2})-([A-Za-z]{3})$/);
+    if (!m) return '';
+    var monIdx = MONTHS_SH.map(function(x){ return x.toLowerCase(); })
+                           .indexOf(m[2].toLowerCase());
+    if (monIdx < 0) return '';
+    var yr = year || new Date().getFullYear();
+    return yr + '-' + String(monIdx + 1).padStart(2,'0') + '-' + String(parseInt(m[1],10)).padStart(2,'0');
+  }
+
+  var requestedYear = dateStr ? parseInt(dateStr.split('-')[0], 10) : new Date().getFullYear();
+  var targetHeader  = toSheetDateHeader(dateStr);
+
+  function parseSheet(sheet) {
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var dateColIdx  = -1;
+    var allDateCols = [];
+    for (var c = 2; c < headers.length; c++) {
+      var normH  = normHdr(headers[c]);
+      var isoHdr = headerToISO(headers[c], requestedYear);
+      if (isoHdr) allDateCols.push({ idx: c, header: normH, iso: isoHdr });
+      if (targetHeader && normH.toLowerCase() === targetHeader.toLowerCase()) dateColIdx = c;
+    }
+    var datesAvail = allDateCols.map(function(d){ return d.iso; }).sort();
+    var result = {};
+    if (dateColIdx < 0) return { data: result, datesAvail: datesAvail };
+
+    // PATCH: tolerant slot-key normalizer — never silently drops a row due
+    // to dash-character/spacing differences in the Slot label. Grabs the
+    // first hh:mm in the cell regardless of what follows it.
+    function normSlotKey(raw) {
+      if (!raw) return null;
+      var s = String(raw).trim().replace(/[\u2010-\u2015]/g, '-');
+      var mp = s.match(/(\d{1,2}):(\d{2})/);
+      if (!mp) return null;
+      var hh = parseInt(mp[1], 10);
+      var mm = Math.floor(parseInt(mp[2], 10) / 30) * 30;
+      return (hh < 10 ? '0' : '') + hh + ':' + (mm === 0 ? '00' : '30');
+    }
+
+    for (var i = 1; i < data.length; i++) {
+      var row   = data[i];
+      var store = String(row[0] || '').trim();
+      var slot  = normSlotKey(String(row[1] || '').trim());
+      if (!store || !slot) continue;
+      var val = Number(row[dateColIdx]) || 0;
+      if (!result[store]) result[store] = {};
+      result[store][slot] = (result[store][slot] || 0) + val;
+    }
+    return { data: result, datesAvail: datesAvail };
+  }
+
+  var oRes = parseSheet(sheetO);
+  var uRes = parseSheet(sheetU);
+
+  return {
+    status:         'ok',
+    date:           dateStr,
+    targetHeader:   targetHeader,
+    orders:         oRes.data,
+    units:          uRes.data,
+    stores:         Object.keys(oRes.data),
+    datesAvailable: oRes.datesAvail
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 4 — CATALOG ISSUE ASINs
+// ═══════════════════════════════════════════════════════════════════
+function handleCatalogASIN(e) {
+  var sheet = getSS().getSheetByName(SHEET_CATALOG);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_CATALOG + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  var asins = [];
+  for (var i = 0; i < data.length; i++) {
+    var v = String(data[i][0] || '').trim();
+    if (v && v.toLowerCase() !== 'asin') asins.push(v);
+  }
+  return { status: 'ok', asins: asins, count: asins.length };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 5 — SCANNING ISSUE ASINs
+// ═══════════════════════════════════════════════════════════════════
+function handleScanningASIN(e) {
+  var sheet = getSS().getSheetByName(SHEET_SCANNING);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_SCANNING + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  var asins = [];
+  for (var i = 0; i < data.length; i++) {
+    var v = String(data[i][0] || '').trim();
+    if (v && v.toLowerCase() !== 'asin') asins.push(v);
+  }
+  return { status: 'ok', asins: asins, count: asins.length };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTIVITY — TRACK LOGIN / ACTIVITY / GET
+// ═══════════════════════════════════════════════════════════════════
+function handleTrackLogin(e) {
+  var sheet  = _getOrCreateSheet();
+  var name   = String(e.parameter.name   || '').trim();
+  var ts     = String(e.parameter.ts     || '').trim();
+  var device = String(e.parameter.device || '').trim();
+  if (!name) return { status: 'error', message: 'Name is required' };
+  var dt      = ts ? new Date(ts) : new Date();
+  var dateStr = Utilities.formatDate(dt, Session.getScriptTimeZone(), 'dd-MMM-yyyy');
+  var timeStr = Utilities.formatDate(dt, Session.getScriptTimeZone(), 'HH:mm:ss');
+  sheet.appendRow([dateStr, timeStr, name, 'Login', 'Signed In', device, ts]);
+  return { status: 'ok', message: 'Login logged for ' + name };
+}
+
+function handleTrackActivity(e) {
+  var sheet  = _getOrCreateSheet();
+  var name   = String(e.parameter.name   || '').trim();
+  var tool   = String(e.parameter.tool   || '').trim();
+  var action = String(e.parameter.action || '').trim();
+  var ts     = String(e.parameter.ts     || '').trim();
+  var device = String(e.parameter.device || '').trim();
+  var dt      = ts ? new Date(ts) : new Date();
+  var dateStr = Utilities.formatDate(dt, Session.getScriptTimeZone(), 'dd-MMM-yyyy');
+  var timeStr = Utilities.formatDate(dt, Session.getScriptTimeZone(), 'HH:mm:ss');
+  sheet.appendRow([dateStr, timeStr, name || 'Unknown', tool || '—', action || 'Opened', device || '—', ts]);
+  return { status: 'ok', message: 'Activity logged' };
+}
+
+function _getOrCreateSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_ACTIVITY_LOG);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_ACTIVITY_LOG);
+    var headers = ['Date','Time','Name','Tool','Action','Device','ISO Timestamp'];
+    sheet.appendRow(headers);
+    var hr = sheet.getRange(1, 1, 1, headers.length);
+    hr.setBackground('#1a1830');
+    hr.setFontColor('#ffffff');
+    hr.setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function handleStoreMetric(e) {
+  var sheet = getSS().getSheetByName(SHEET_STORE_METRIC);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_STORE_METRIC + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { status: 'ok', rows: [] };
+  var headers = data[0].map(function(h){ return String(h||'').trim(); });
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row[0] && !row[1]) continue;
+    var obj = {};
+    headers.forEach(function(h, j) {
+      var v = row[j];
+      if (v instanceof Date) {
+        obj[h] = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      } else {
+        obj[h] = String(v === null || v === undefined ? '' : v).trim();
+      }
+    });
+    rows.push(obj);
+  }
+  return { status: 'ok', rows: rows, count: rows.length };
+}
+
+function handleGetActivity(e) {
+  var sheet   = _getOrCreateSheet();
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow < 2) return { status: 'ok', rows: [], count: 0 };
+
+  var values  = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  var headers = values[0].map(function(h){ return String(h || '').trim(); });
+
+  var idx = {};
+  headers.forEach(function(h, i){ idx[h.toLowerCase()] = i; });
+
+  function pick(row, name) {
+    var k = name.toLowerCase();
+    if (!(k in idx)) return '';
+    var v = row[idx[k]];
+    return (v === null || v === undefined) ? '' : v;
+  }
+
+  var limit = parseInt(e && e.parameter && e.parameter.limit, 10);
+  if (!limit || limit < 1) limit = 5000;
+
+  var rows = [];
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (row.every(function(c){ return c === '' || c === null; })) continue;
+
+    var isoCell = pick(row, 'ISO Timestamp');
+    var iso = '';
+    if (isoCell instanceof Date) iso = isoCell.toISOString();
+    else if (isoCell) { try { iso = new Date(isoCell).toISOString(); } catch(er){} }
+
+    if (!iso) {
+      var dCell = pick(row, 'Date');
+      var tCell = pick(row, 'Time');
+      try {
+        if (dCell instanceof Date && tCell instanceof Date) {
+          var combo = new Date(dCell);
+          combo.setHours(tCell.getHours(), tCell.getMinutes(), tCell.getSeconds());
+          iso = combo.toISOString();
+        } else if (dCell || tCell) {
+          iso = new Date(String(dCell||'') + ' ' + String(tCell||'')).toISOString();
+        }
+      } catch(er2){ iso = ''; }
+    }
+
+    rows.push({
+      iso:    iso,
+      date:   String(pick(row,'Date')   || ''),
+      time:   String(pick(row,'Time')   || ''),
+      name:   String(pick(row,'Name')   || 'Unknown'),
+      tool:   String(pick(row,'Tool')   || '—'),
+      action: String(pick(row,'Action') || '—'),
+      device: String(pick(row,'Device') || '—')
+    });
+  }
+
+  rows.sort(function(a,b){ return (b.iso||'').localeCompare(a.iso||''); });
+  if (rows.length > limit) rows = rows.slice(0, limit);
+
+  return { status: 'ok', rows: rows, count: rows.length };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VOC V2 — SHARED READER + CLASSIFIER
+// ═══════════════════════════════════════════════════════════════════
+function readVocTab(sheet, isV21) {
+  if (!sheet) return [];
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+  var headers = data[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  function col(names) {
+    for (var n = 0; n < names.length; n++) {
+      var i = headers.indexOf(names[n].toLowerCase());
+      if (i > -1) return i;
+    }
+    return -1;
+  }
+  var idx = isV21 ? {
+    date1:       col(['date']),
+    store:       col(['site', 'store', 'store code', 'station', 'delivery station']),
+    area:        col(['area']),
+    comment:     col(['customer comment', 'customer comm', 'comment', 'transcript']),
+    issueCat:    col(['issue category', 'issue cat']),
+    week:        col(['week', 'week number', 'week no', 'week_number', 'wk']),
+    asin:        col(['asin', 'product asin']),
+    title:       col(['product name', 'product title', 'title']),
+    order:       col(['order id', 'orderid', 'order_id']),
+    rcaCategory: col(['rca category', 'rca cat']),
+    rca:         col(['rca & capa', 'rca and capa', 'rca&capa', 'rca capa', 'rca & cap', 'rca cap', 'rca']),
+    picker:      col(['picker id', 'picker', 'picker id/name', 'picker name']),
+    cctv:        col(['cctv'])
+  } : {
+    date1:    col(['date_1', 'date 1', 'date', 'voc date']),
+    ts:       col(['order timestamp', 'timestamp', 'order time']),
+    issued:   col(['date of issued', 'date issued', 'issued date']),
+    store:    col(['store code', 'store', 'station', 'delivery station']),
+    order:    col(['order id', 'orderid', 'order_id']),
+    asin:     col(['product asin', 'asin']),
+    title:    col(['product title', 'title', 'product name']),
+    conc:     col(['concession reason', 'concession re', 'concession', 'concession reasons']),
+    comment:  col(['transcript', 'customer comment', 'comment', 'customer feedback']),
+    cust:     col(['customer id', 'customerid', 'customer_id']),
+    cat:      col(['product category', 'product cat', 'category']),
+    sub:      col(['product subcategory', 'product subcat', 'subcategory', 'sub category']),
+    issueCat: col(['issue category', 'issue cat']),
+    issueDesc:col(['issue description', 'issue desc', 'description']),
+    picker:   col(['picker id', 'picker', 'picker id/name', 'picker name']),
+    rca:      col(['rca & cap', 'rca and cap', 'rca&cap', 'rca cap', 'rca']),
+    oeRemark: col(['oe remarks', 'oe remark', 'oe remarks by oe', 'remarks by oe', 'oe status', 'oe']),
+    week:     col(['week', 'week number', 'week no', 'week_number', 'wk'])
+  };
+  function s(row, i) { if (i < 0) return ''; var v = row[i]; return (v === null || v === undefined) ? '' : String(v).trim(); }
+  function raw(row, i) { return i < 0 ? '' : row[i]; }
+
+  var out = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var store   = s(row, idx.store);
+    var order   = s(row, idx.order);
+    var comment = s(row, idx.comment);
+    if (!store && !order && !comment) continue;
+    out.push({
+      _v21:        !!isV21,
+      date1:       raw(row, idx.date1),
+      ts:          isV21 ? '' : raw(row, idx.ts),
+      issued:      isV21 ? '' : raw(row, idx.issued),
+      store:       store,
+      area:        isV21 ? s(row, idx.area) : '',
+      order:       order,
+      asin:        s(row, idx.asin),
+      title:       s(row, idx.title),
+      conc:        isV21 ? '' : s(row, idx.conc),
+      comment:     comment,
+      cust:        isV21 ? '' : s(row, idx.cust),
+      cat:         isV21 ? '' : s(row, idx.cat),
+      sub:         isV21 ? '' : s(row, idx.sub),
+      issueCat:    s(row, idx.issueCat),
+      issueDesc:   isV21 ? '' : s(row, idx.issueDesc),
+      rcaCategory: isV21 ? s(row, idx.rcaCategory) : '',
+      picker:      s(row, idx.picker),
+      rca:         s(row, idx.rca),
+      oeRemark:    isV21 ? '' : s(row, idx.oeRemark),
+      cctv:        isV21 ? s(row, idx.cctv) : '',
+      week:        raw(row, idx.week)
+    });
+  }
+  return out;
+}
+
+var _vocv2Cache = null;
+function vocv2Sheet() {
+  if (_vocv2Cache) return _vocv2Cache;
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('vocv2_rows');
+  if (cached) {
+    try { _vocv2Cache = { rows: JSON.parse(cached) }; return _vocv2Cache; } catch (e) {}
+  }
+  var sheetOld = getSS().getSheetByName(SHEET_VOC_V2);
+  var sheetNew = findSheet([SHEET_VOC_V2_1, 'Voc v2.1', 'VOC V2.1', 'Voc V2.1', 'VOC v2.1']);
+  if (!sheetOld && !sheetNew) return null;
+  var rows = readVocTab(sheetOld, false).concat(readVocTab(sheetNew, true));
+  _vocv2Cache = { rows: rows };
+  try { cache.put('vocv2_rows', JSON.stringify(rows), 300); } catch (e) {}
+  return _vocv2Cache;
+}
+
+function rawStr(row, key) {
+  var v = row[key];
+  return (v === null || v === undefined) ? '' : String(v).trim();
+}
+
+function rawDate(row) {
+  var cands = [row.date1, row.issued, row.ts];
+  for (var k = 0; k < cands.length; k++) {
+    var v = cands[k];
+    if (!v) continue;
+    if (v instanceof Date) return v;
+    var d = new Date(v); if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function weekNumRaw(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') return Math.round(v);
+  var m = String(v).match(/(\d{1,3})/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function classifyRaw(row) {
+  var src = row.rcaCategory ? row.rcaCategory.toLowerCase() : '';
+  var kind, reasonText;
+  if (src) {
+    kind = src.indexOf('non ops') !== -1 ? 'nonops' : (src.indexOf('ops controllable') !== -1 ? 'ops' : 'untriaged');
+    reasonText = src;
+  } else {
+    var cat = (row.issueCat || '').toLowerCase();
+    kind = !cat ? 'untriaged' : (cat.indexOf('non') !== -1 ? 'nonops' : 'ops');
+    reasonText = (row.issueDesc || '').toLowerCase();
+  }
+  var rcaV = (row.rca || '').toLowerCase();
+  var pending = (!rcaV || rcaV === '-' || rcaV === 'na' || rcaV === 'n/a' || rcaV === 'nil' || rcaV === 'none');
+  return {
+    kind:       kind,
+    isOps:      kind === 'ops',
+    isUTR:      kind === 'ops' && /(qc miss|picker mistake|utr expiry miss|packing sop failure|utr temp)/.test(reasonText),
+    isOTR:      kind === 'ops' && /(otr to check|otr issue|verified otr)/.test(reasonText),
+    isPicker:   /picker mistake/.test(reasonText),
+    isQC:       /qc miss/.test(reasonText),
+    isNonOps:   kind === 'nonops',
+    rcaPending: pending
+  };
+}
+
+function parseFilter(e) {
+  var p = (e && e.parameter) ? e.parameter : {};
+  return {
+    day:       String(p.day       || '').trim(),
+    monthName: String(p.monthName || '').trim(),
+    year:      String(p.year      || '').trim(),
+    week:      String(p.week      || '').trim().replace(/\D/g, ''),
+    from:      String(p.from      || '').trim(),
+    to:        String(p.to        || '').trim(),
+    store:     String(p.store     || '').trim()
+  };
+}
+
+function vocMatch(row, f, tz) {
+  if (f.store) {
+    if (rawStr(row, 'store').toLowerCase() !== f.store.toLowerCase()) return false;
+  }
+  if (f.day) {
+    var d = rawDate(row); if (!d) return false;
+    return Utilities.formatDate(d, tz, 'yyyy-MM-dd') === f.day;
+  }
+  if (f.from || f.to) {
+    var d2 = rawDate(row); if (!d2) return false;
+    var s = Utilities.formatDate(d2, tz, 'yyyy-MM-dd');
+    if (f.from && s < f.from) return false;
+    if (f.to && s > f.to) return false;
+    return true;
+  }
+  if (f.monthName && f.year) {
+    var d3 = rawDate(row); if (!d3) return false;
+    return MONTH_NAMES_EN[d3.getMonth()].toLowerCase() === f.monthName.toLowerCase() &&
+           String(d3.getFullYear()) === String(f.year);
+  }
+  if (f.week) {
+    var w = weekNumRaw(row.week);
+    return w !== null && String(w) === String(f.week);
+  }
+  if (f.year) {
+    var d4 = rawDate(row); if (!d4) return false;
+    return String(d4.getFullYear()) === String(f.year);
+  }
+  return true;
+}
+
+function filterLabel(f) {
+  if (f.day) return f.day;
+  if (f.from || f.to) return (f.from || '…') + ' → ' + (f.to || '…');
+  if (f.monthName && f.year) return capitalize(f.monthName) + ' ' + f.year;
+  if (f.week) return 'Week ' + f.week;
+  if (f.year) return f.year;
+  return 'All time';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 6 — VOC V2 RAW ROWS
+// ═══════════════════════════════════════════════════════════════════
+function handleVOCV2(e) {
+  var S = vocv2Sheet();
+  if (!S) return { status: 'error', message: 'Sheet "' + SHEET_VOC_V2 + '" / "' + SHEET_VOC_V2_1 + '" not found' };
+
+  function cell(v) {
+    if (v === null || v === undefined) return '';
+    if (v instanceof Date) return v.toISOString();
+    return String(v).trim();
+  }
+  function weekCell(r) {
+    var v = r.week;
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'number') return 'week' + Math.round(v);
+    return String(v).trim();
+  }
+
+  var rows = [];
+  for (var i = 0; i < S.rows.length; i++) {
+    var r = S.rows[i];
+    rows.push({
+      date1:           cell(r.date1),
+      orderTimestamp:  cell(r.ts),
+      dateIssued:      cell(r.issued),
+      storeCode:       r.store,
+      area:            r.area,
+      orderId:         r.order,
+      asin:            r.asin,
+      productTitle:    r.title,
+      concession:      r.conc,
+      comment:         r.comment,
+      customerId:      r.cust,
+      productCategory: r.cat,
+      productSub:      r.sub,
+      issueCategory:   r.issueCat,
+      issueDesc:       r.issueDesc,
+      rcaCategory:     r.rcaCategory,
+      pickerId:        r.picker,
+      rcaCap:          r.rca,
+      oeRemark:        r.oeRemark,
+      cctv:            r.cctv,
+      week:            weekCell(r)
+    });
+  }
+  return { status: 'ok', rows: rows, count: rows.length, sheetLastModified: getSheetLastModified() };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 7 — TOP 15 PRODUCTS CONTRIBUTING TO VOC
+// ═══════════════════════════════════════════════════════════════════
+function handleVOCTop15(e) {
+  var S = vocv2Sheet();
+  if (!S) return { status: 'error', message: 'Sheet "' + SHEET_VOC_V2 + '" not found' };
+  var f  = parseFilter(e);
+  var tz = Session.getScriptTimeZone();
+  var limit = parseInt(e.parameter.limit, 10); if (!limit || limit < 1) limit = 15;
+
+  var map = {}, total = 0;
+  for (var i = 0; i < S.rows.length; i++) {
+    var row = S.rows[i];
+    if (!vocMatch(row, f, tz)) continue;
+    var asin  = rawStr(row, 'asin');
+    var title = rawStr(row, 'title');
+    if (!asin && !title) continue;
+    var key = asin + '||' + title;
+    if (!map[key]) map[key] = { asin: asin, productTitle: title, count: 0, stores: {} };
+    map[key].count++;
+    var st = rawStr(row, 'store');
+    if (st) map[key].stores[st] = (map[key].stores[st] || 0) + 1;
+    total++;
+  }
+
+  var items = Object.keys(map).map(function (k) {
+    var o = map[k];
+    var storeList = Object.keys(o.stores).sort(function (a, b) { return o.stores[b] - o.stores[a]; });
+    return {
+      asin:         o.asin,
+      productTitle: o.productTitle || '(no title)',
+      count:        o.count,
+      pct:          total ? +(o.count * 100 / total).toFixed(1) : 0,
+      stores:       storeList,
+      topStore:     storeList.length ? storeList[0] : ''
+    };
+  }).sort(function (a, b) { return b.count - a.count; }).slice(0, limit);
+
+  items.forEach(function (it, i) { it.rank = i + 1; });
+
+  return {
+    status:            'ok',
+    items:             items,
+    count:             items.length,
+    total:             total,
+    label:             filterLabel(f),
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 8 — PER-STORE VOC SUMMARY for the active filter
+// ═══════════════════════════════════════════════════════════════════
+function vocCountByStore(f) {
+  var S = vocv2Sheet();
+  var out = { stores: {}, totals: { voc:0, ops:0, utr:0, otr:0, picker:0, qc:0, nonops:0, rcaPending:0 } };
+  if (!S) return out;
+  var tz = Session.getScriptTimeZone();
+  for (var i = 0; i < S.rows.length; i++) {
+    var row = S.rows[i];
+    if (!vocMatch(row, f, tz)) continue;
+    var st = rawStr(row, 'store') || '—';
+    if (!out.stores[st]) out.stores[st] = { voc:0, ops:0, utr:0, otr:0, picker:0, qc:0, nonops:0, rcaPending:0 };
+    var c = classifyRaw(row);
+    var s = out.stores[st], t = out.totals;
+    s.voc++; t.voc++;
+    if (c.isOps)      { s.ops++;        t.ops++; }
+    if (c.isUTR)      { s.utr++;        t.utr++; }
+    if (c.isOTR)      { s.otr++;        t.otr++; }
+    if (c.isPicker)   { s.picker++;     t.picker++; }
+    if (c.isQC)       { s.qc++;         t.qc++; }
+    if (c.isNonOps)   { s.nonops++;     t.nonops++; }
+    if (c.rcaPending) { s.rcaPending++; t.rcaPending++; }
+  }
+  return out;
+}
+
+function handleVOCStoreSummary(e) {
+  var S = vocv2Sheet();
+  if (!S) return { status: 'error', message: 'Sheet "' + SHEET_VOC_V2 + '" not found' };
+  var f = parseFilter(e);
+  var res = vocCountByStore(f);
+  return {
+    status:            'ok',
+    stores:            res.stores,
+    totals:            res.totals,
+    total:             res.totals.voc,
+    label:             filterLabel(f),
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STORE METRIC — SHARED SUM (orders + units) for a filter
+// ═══════════════════════════════════════════════════════════════════
+var _storeMetricCache = null;
+function storeMetricSheet() {
+  if (_storeMetricCache) return _storeMetricCache;
+  var cache = CacheService.getScriptCache();
+  var cachedIdx = cache.get('sm_idx'), cachedRows = cache.get('sm_data');
+  if (cachedIdx && cachedRows) {
+    try {
+      var rows = JSON.parse(cachedRows).map(function(row){
+        return row.map(function(v){
+          return (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) ? new Date(v) : v;
+        });
+      });
+      _storeMetricCache = { rows: rows, idx: JSON.parse(cachedIdx) };
+      return _storeMetricCache;
+    } catch (e) {}
+  }
+  var sheet = getSS().getSheetByName(SHEET_STORE_METRIC);
+  if (!sheet) return null;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { rows: [], idx: {} };
+  var headers = data[0];
+  var idx = { date:-1, month:-1, week:-1, orders:-1, units:-1, store:-1 };
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c]).trim(); var hl = h.toLowerCase();
+    if (hl === 'date' || hl === 'order date' || hl === 'day')             idx.date  = c;
+    if (h === 'W' || hl === 'month' || hl === 'month name')               idx.month = c;
+    if (hl === 'week' || hl === 'week no' || hl === 'week number' ||
+        hl === 'wk' || hl === 'week_no')                                  idx.week  = c;
+    if (hl === 'orders' || hl === 'total orders' || hl === 'order count'||
+        hl === 'no of orders' || hl === 'total_orders' ||
+        hl === 'outbound orders' || hl === 'ob orders' || hl === 'order') idx.orders= c;
+    if (hl === 'ob units' || hl === 'outbound units' || hl === 'units' ||
+        hl === 'total units' || hl === 'ob_units' || hl === 'unit' ||
+        hl === 'ob unit')                                                 idx.units = c;
+    if (hl === 'store' || hl === 'station' || hl === 'delivery station' ||
+        hl === 'store name' || hl === 'site')                            idx.store = c;
+  }
+  var out = { rows: data.slice(1), idx: idx };
+  _storeMetricCache = out;
+  try {
+    cache.put('sm_idx', JSON.stringify(idx), 300);
+    cache.put('sm_data', JSON.stringify(out.rows), 300);
+  } catch (e) {}
+  return out;
+}
+
+function storeMetricMatch(row, idx, f, tz) {
+  if (f.store && idx.store >= 0) {
+    if (String(row[idx.store] || '').trim().toLowerCase() !== f.store.toLowerCase()) return false;
+  }
+  if (f.day && idx.date >= 0) {
+    var cv = row[idx.date]; var d = (cv instanceof Date) ? cv : new Date(cv);
+    if (isNaN(d.getTime())) return false;
+    return Utilities.formatDate(d, tz, 'yyyy-MM-dd') === f.day;
+  }
+  if ((f.from || f.to) && idx.date >= 0) {
+    var cv2 = row[idx.date]; var d2 = (cv2 instanceof Date) ? cv2 : new Date(cv2);
+    if (isNaN(d2.getTime())) return false;
+    var s = Utilities.formatDate(d2, tz, 'yyyy-MM-dd');
+    if (f.from && s < f.from) return false;
+    if (f.to && s > f.to) return false;
+    return true;
+  }
+  if (f.monthName && f.year && idx.month >= 0) {
+    var norm = normalizeMonthCell(row[idx.month]);
+    return norm.toLowerCase() === (capitalize(f.monthName) + ' - ' + f.year).toLowerCase();
+  }
+  if (f.week && idx.week >= 0) {
+    var rw = String(row[idx.week]).replace(/\D/g, '');
+    return rw && rw === String(f.week).replace(/\D/g, '');
+  }
+  if (f.year && idx.month >= 0) {
+    return normalizeMonthCell(row[idx.month]).indexOf(String(f.year)) > -1;
+  }
+  return true;
+}
+
+function sumStoreMetric(f) {
+  var S = storeMetricSheet();
+  var out = { orders: 0, units: 0, stores: {}, storeUnits: {} };
+  if (!S) return out;
+  var tz = Session.getScriptTimeZone();
+  for (var i = 0; i < S.rows.length; i++) {
+    var row = S.rows[i];
+    var has = row.some(function (v) { return v !== '' && v !== null && v !== undefined; });
+    if (!has) continue;
+    if (!storeMetricMatch(row, S.idx, f, tz)) continue;
+    var o = S.idx.orders >= 0 ? (Number(row[S.idx.orders]) || 0) : 0;
+    var u = S.idx.units  >= 0 ? (Number(row[S.idx.units])  || 0) : 0;
+    out.orders += o; out.units += u;
+    var st = S.idx.store >= 0 ? String(row[S.idx.store] || '').trim() : '';
+    if (st) { out.stores[st] = (out.stores[st] || 0) + o; out.storeUnits[st] = (out.storeUnits[st] || 0) + u; }
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 9 — COMPARE TWO PERIODS
+// ═══════════════════════════════════════════════════════════════════
+function handleCompare(e) {
+  var p   = e.parameter || {};
+  var by  = String(p.compareBy || p.mode || 'month').toLowerCase();
+  var store = String(p.store || '').trim();
+  var curF, prevF, curLabel, prevLabel;
+
+  if (by === 'week') {
+    var cw = parseInt(String(p.week || p.curWeek || '').replace(/\D/g, ''), 10);
+    if (!cw) cw = isoWeekNum(new Date());
+    var pw = parseInt(String(p.prevWeek || '').replace(/\D/g, ''), 10);
+    if (!pw) pw = cw - 1;
+    curF  = { week: String(cw), store: store };
+    prevF = { week: String(pw), store: store };
+    curLabel = 'Week ' + cw; prevLabel = 'Week ' + pw;
+
+  } else if (by === 'range' || by === 'custom') {
+    curF  = { from: String(p.from1 || '').trim(), to: String(p.to1 || '').trim(), store: store };
+    prevF = { from: String(p.from2 || '').trim(), to: String(p.to2 || '').trim(), store: store };
+    curLabel  = (curF.from  || '…') + ' → ' + (curF.to  || '…');
+    prevLabel = (prevF.from || '…') + ' → ' + (prevF.to || '…');
+
+  } else {
+    var now = new Date();
+    var cmName = String(p.monthName || p.curMonthName || MONTH_NAMES_EN[now.getMonth()]).trim();
+    var cmYear = String(p.year      || p.curYear      || now.getFullYear()).trim();
+    var pmName = String(p.prevMonthName || '').trim();
+    var pmYear = String(p.prevYear      || '').trim();
+    if (!pmName) {
+      var mi = MONTH_NAMES_EN.map(function (m) { return m.toLowerCase(); }).indexOf(cmName.toLowerCase());
+      if (mi >= 0) {
+        var pmi = mi - 1, py = parseInt(cmYear, 10);
+        if (pmi < 0) { pmi = 11; py--; }
+        pmName = MONTH_NAMES_EN[pmi]; pmYear = String(py);
+      }
+    }
+    curF  = { monthName: cmName, year: cmYear, store: store };
+    prevF = { monthName: pmName, year: pmYear, store: store };
+    curLabel = capitalize(cmName) + ' ' + cmYear;
+    prevLabel = capitalize(pmName) + ' ' + pmYear;
+  }
+
+  var cur  = buildCompareBucket(curF);  cur.label  = curLabel;
+  var prev = buildCompareBucket(prevF); prev.label = prevLabel;
+
+  return {
+    status:            'ok',
+    compareBy:         by,
+    current:           cur,
+    previous:          prev,
+    deltas:            deltaOf(cur, prev),
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+function buildCompareBucket(f) {
+  var sm = sumStoreMetric(f);
+  var v  = vocCountByStore(f).totals;
+  return {
+    orders: sm.orders, units: sm.units,
+    voc: v.voc, ops: v.ops, utr: v.utr, otr: v.otr,
+    picker: v.picker, qc: v.qc, nonops: v.nonops, rcaPending: v.rcaPending
+  };
+}
+
+function deltaOf(a, b) {
+  var keys = ['orders','units','voc','ops','utr','otr','picker','qc','nonops','rcaPending'];
+  var out = {};
+  keys.forEach(function (k) {
+    var diff = (a[k] || 0) - (b[k] || 0);
+    var pct  = b[k] ? +(diff * 100 / b[k]).toFixed(1) : (a[k] ? 100 : 0);
+    out[k] = { diff: diff, pct: pct };
+  });
+  return out;
+}
+
+function isoWeekNum(d) {
+  var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - dayNum + 3);
+  var firstThu = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  var firstDayNum = (firstThu.getUTCDay() + 6) % 7;
+  firstThu.setUTCDate(firstThu.getUTCDate() - firstDayNum + 3);
+  return 1 + Math.round((date - firstThu) / (7 * 86400000));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 10 — NETWORK LOSS
+// ═══════════════════════════════════════════════════════════════════
+function handleNetworkLoss(e) {
+  var sheet = findSheet([SHEET_NETWORK_LOSS, 'Network loss Data', 'Network Loss Data', 'NETWORK LOSS DATA', 'Network Loss']);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_NETWORK_LOSS + '" not found' };
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { status: 'ok', rows: [], count: 0 };
+
+  var headers = data[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  function col(names) {
+    for (var n = 0; n < names.length; n++) {
+      var i = headers.indexOf(names[n].toLowerCase());
+      if (i > -1) return i;
+    }
+    var norm = function (s) { return String(s).toLowerCase().replace(/[^a-z0-9]/g, ''); };
+    for (var w = 0; w < names.length; w++) {
+      var want = norm(names[w]);
+      for (var c = 0; c < headers.length; c++) {
+        if (norm(headers[c]) === want) return c;
+      }
+    }
+    return -1;
+  }
+
+  var iStore = col(['store', 'store name', 'station', 'delivery station', 'site']);
+  var iGms   = col(['gms_usd', 'gms usd', 'gms', 'gmsusd']);
+  var iWhl   = col(['% to gms - whl', 'percent to gms whl', '% to gms whl', 'gms - whl', 'pct whl']);
+  var iWhd   = col(['% to gms - whd', 'percent to gms whd', '% to gms whd', 'gms - whd', 'pct whd']);
+  var iWeek  = col(['week', 'week no', 'week number', 'wk']);
+  var iMonth = col(['month', 'month name']);
+
+  var iFound = col(['found']);
+  var iMiss  = col(['missing']);
+  var iTrans = col(['transship in', 'transship', 'transshipin', 'transship-in', 'transshipment in', 'transship_in']);
+  var iWhlV  = col(['whl', 'wh loss']);
+  var iWhdV  = col(['whd', 'wh damage']);
+  var iGrand = col(['grand total', 'grandtotal', 'gtotal']);
+
+  function num(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return v;
+    var x = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+    return isNaN(x) ? 0 : x;
+  }
+
+  function pctVal(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') {
+      return Math.abs(v) <= 1 ? +(v * 100).toFixed(4) : +v.toFixed(4);
+    }
+    var s = String(v).trim();
+    if (!s || s === '#DIV/0!' || s === '#N/A' || s === '#ERROR!') return 0;
+    var x = parseFloat(s.replace(/[%\s,]/g, ''));
+    return isNaN(x) ? 0 : x;
+  }
+
+  function weekStr(v) {
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'number') return 'Week' + Math.round(v);
+    return String(v).trim();
+  }
+
+  var fStore = String(e.parameter.store     || '').trim().toLowerCase();
+  var fWeek  = String(e.parameter.week      || '').trim().replace(/\D/g, '');
+  var fMonth = String(e.parameter.monthName || e.parameter.month || '').trim().toLowerCase();
+
+  var rows = [];
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    var store = iStore >= 0 ? String(r[iStore] || '').trim() : '';
+    if (!store) continue;
+
+    var week  = weekStr(iWeek >= 0 ? r[iWeek] : '');
+    var month = iMonth >= 0 ? String(r[iMonth] || '').trim() : '';
+
+    if (fStore && store.toLowerCase() !== fStore) continue;
+    if (fWeek  && String(week).replace(/\D/g, '') !== fWeek) continue;
+    if (fMonth && month.toLowerCase() !== fMonth) continue;
+
+    rows.push({
+      store:       store,
+      found:       num(iFound >= 0 ? r[iFound] : 0),
+      missing:     num(iMiss  >= 0 ? r[iMiss]  : 0),
+      transshipIn: num(iTrans >= 0 ? r[iTrans] : 0),
+      whlVal:      num(iWhlV  >= 0 ? r[iWhlV]  : 0),
+      whdVal:      num(iWhdV  >= 0 ? r[iWhdV]  : 0),
+      grandTotal:  num(iGrand >= 0 ? r[iGrand] : 0),
+      gms:         num(iGms   >= 0 ? r[iGms]   : 0),
+      whl:         pctVal(iWhl >= 0 ? r[iWhl] : 0),
+      whd:         pctVal(iWhd >= 0 ? r[iWhd] : 0),
+      week:        week,
+      month:       month
+    });
+  }
+
+  return {
+    status:            'ok',
+    rows:              rows,
+    count:             rows.length,
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 12 — STORE CONCESSIONS
+// ═══════════════════════════════════════════════════════════════════
+function handleStoreConcessions(e) {
+  var sheet = findSheet([SHEET_STORE_CONCESSIONS, 'Store Concessions', 'STORE CONCESSIONS']);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_STORE_CONCESSIONS + '" not found' };
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { status: 'ok', rows: [], weekCols: [] };
+
+  var headers = data[0];
+  var iStore = -1, iName = -1, iOwner = -1, iOE = -1, iPct = -1, iWeek = -1, iMonth = -1;
+  var weekCols = [];
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c]).trim(), hl = h.toLowerCase();
+    if (hl === 'store') iStore = c;
+    else if (hl === 'name') iName = c;
+    else if (hl === 'owner') iOwner = c;
+    else if (hl === 'oe') iOE = c;
+    else if (hl === 'week') iWeek = c;
+    else if (hl === 'month') iMonth = c;
+    else if (hl.indexOf('concession') > -1 || hl.indexOf('consession') > -1) iPct = c;
+    else {
+      var m = h.match(/^wk\s*(\d{1,2})$/i);
+      if (m) weekCols.push({ idx: c, w: parseInt(m[1], 10) });
+    }
+  }
+
+  function pctVal(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v === 'number') return Math.abs(v) <= 1 ? v : v / 100;
+    var s = String(v).trim();
+    if (!s || s === '-') return null;
+    var x = parseFloat(s.replace(/[%\s,]/g, ''));
+    return isNaN(x) ? null : x / 100;
+  }
+
+  var rows = [], weekMonth = {};
+
+  if (iPct >= 0 && iWeek >= 0) {
+    var byStore = {}, weekSet = {};
+    for (var i = 1; i < data.length; i++) {
+      var r = data[i];
+      var store = iStore >= 0 ? String(r[iStore] || '').trim() : '';
+      if (!store) continue;
+      var wm = String(r[iWeek] || '').match(/(\d{1,2})/);
+      if (!wm) continue;
+      var w = parseInt(wm[1], 10);
+      var month = iMonth >= 0 ? String(r[iMonth] || '').trim() : '';
+      weekSet[w] = true;
+      if (month) weekMonth[w] = month;
+      if (!byStore[store]) {
+        byStore[store] = {
+          store: store,
+          name:  iName  >= 0 ? String(r[iName]  || '').trim() : '',
+          owner: iOwner >= 0 ? String(r[iOwner] || '').trim() : '',
+          oe:    iOE    >= 0 ? String(r[iOE]    || '').trim() : '',
+          weeks: {}
+        };
+      }
+      byStore[store].weeks[w] = pctVal(r[iPct]);
+    }
+    rows = Object.keys(byStore).map(function (k) { return byStore[k]; });
+    weekCols = Object.keys(weekSet).map(function (w) { return parseInt(w, 10); });
+  } else {
+    for (var i2 = 1; i2 < data.length; i2++) {
+      var r2 = data[i2];
+      var store2 = iStore >= 0 ? String(r2[iStore] || '').trim() : '';
+      if (!store2) continue;
+      var weeks2 = {};
+      weekCols.forEach(function (wc) { weeks2[wc.w] = pctVal(r2[wc.idx]); });
+      rows.push({
+        store: store2,
+        name:  iName  >= 0 ? String(r2[iName]  || '').trim() : '',
+        owner: iOwner >= 0 ? String(r2[iOwner] || '').trim() : '',
+        oe:    iOE    >= 0 ? String(r2[iOE]    || '').trim() : '',
+        weeks: weeks2
+      });
+    }
+    weekCols = weekCols.map(function (wc) { return wc.w; });
+  }
+
+  return {
+    status:            'ok',
+    rows:              rows,
+    weekCols:          weekCols.sort(function (a, b) { return a - b; }),
+    weekMonth:         weekMonth,
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 13 — THROUGHPUT PER PICKING HOUR
+// ═══════════════════════════════════════════════════════════════════
+function handleThroughputPerHour(e) {
+  var lsSheet = findSheet([SHEET_LATESLAM_UTR, 'Lateslam UTR Data', 'Lateslam UTR', 'LateSlam UTR Data', 'Late Slam UTR Data', 'UTR Data']);
+  var obSheet = findSheet([SHEET_OUTBOUND_PICK, 'Outbound Pick Data', 'Outbound Pick', 'OB Pick Data']);
+  if (!lsSheet) return { status: 'error', message: 'Sheet "' + SHEET_LATESLAM_UTR + '" not found' };
+  if (!obSheet) return { status: 'error', message: 'Sheet "' + SHEET_OUTBOUND_PICK + '" not found' };
+
+  function findCol(headers, tests) {
+    for (var c = 0; c < headers.length; c++) {
+      var h = String(headers[c] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (var t = 0; t < tests.length; t++) { if (h.indexOf(tests[t]) > -1) return c; }
+    }
+    return -1;
+  }
+
+  var obData = obSheet.getDataRange().getValues();
+  if (obData.length < 2) return { status: 'error', message: 'Sheet "' + obSheet.getName() + '" has no data' };
+  var obH   = obData[0];
+  var iRef  = findCol(obH, ['referenceidvalue', 'referenceid', 'refid']);
+  var iUser = findCol(obH, ['user']);
+  var iProc = findCol(obH, ['process']);
+  if (iRef < 0 || iUser < 0) {
+    return { status: 'error', message: 'ReferenceIdValue / User column not found in "' + obSheet.getName() + '"' };
+  }
+  var orderUserCounts = {};
+  for (var i = 1; i < obData.length; i++) {
+    var row = obData[i];
+    var ref = String(row[iRef] || '').trim();
+    var usr = String(row[iUser] || '').trim();
+    if (!ref || !usr) continue;
+    if (iProc >= 0) {
+      var proc = String(row[iProc] || '').trim().toLowerCase();
+      if (proc && proc !== 'outbound') continue;
+    }
+    if (!orderUserCounts[ref]) orderUserCounts[ref] = {};
+    orderUserCounts[ref][usr] = (orderUserCounts[ref][usr] || 0) + 1;
+  }
+  var orderUser = {};
+  Object.keys(orderUserCounts).forEach(function (ref) {
+    var counts = orderUserCounts[ref], best = '', bestN = 0;
+    Object.keys(counts).forEach(function (u) { if (counts[u] > bestN) { bestN = counts[u]; best = u; } });
+    orderUser[ref] = best;
+  });
+
+  var lsData = lsSheet.getDataRange().getValues();
+  if (lsData.length < 2) return { status: 'error', message: 'Sheet "' + lsSheet.getName() + '" has no data' };
+  var lsH    = lsData[0];
+  var iOrder = findCol(lsH, ['orderid']);
+  var iSec   = findCol(lsH, ['assignmenttostage']);
+  var iUnits = findCol(lsH, ['unitspicked']);
+  var iWeek  = findCol(lsH, ['weekname', 'week']);
+  if (iOrder < 0 || iSec < 0 || iUnits < 0) {
+    return { status: 'error', message: 'order_id / assignment_to_stage / units_picked column not found in "' + lsSheet.getName() + '"' };
+  }
+
+  var fWeek = String(e.parameter.week || '').trim();
+
+  var byUser = {}, unmatchedSeconds = 0, unmatchedUnits = 0, unmatchedOrders = 0;
+  for (var j = 1; j < lsData.length; j++) {
+    var r = lsData[j];
+    var orderId = String(r[iOrder] || '').trim();
+    if (!orderId) continue;
+    if (fWeek && iWeek >= 0) {
+      var w = String(r[iWeek] || '').replace(/\D/g, '');
+      if (w !== fWeek.replace(/\D/g, '')) continue;
+    }
+    var secs  = Number(r[iSec])   || 0;
+    var units = Number(r[iUnits]) || 0;
+    var user  = orderUser[orderId] || '';
+    if (!user) { unmatchedSeconds += secs; unmatchedUnits += units; unmatchedOrders++; continue; }
+    if (!byUser[user]) byUser[user] = { user: user, totalSeconds: 0, totalUnits: 0, orders: 0 };
+    byUser[user].totalSeconds += secs;
+    byUser[user].totalUnits   += units;
+    byUser[user].orders++;
+  }
+
+  var rows = Object.keys(byUser).map(function (u) {
+    var o = byUser[u];
+    var avgSecPerUnit     = o.totalUnits ? o.totalSeconds / o.totalUnits : 0;
+    var throughputPerHour = avgSecPerUnit ? 3600 / avgSecPerUnit : 0;
+    return {
+      user: o.user, orders: o.orders,
+      totalSeconds: Math.round(o.totalSeconds), totalUnits: o.totalUnits,
+      avgSecPerUnit: +avgSecPerUnit.toFixed(2), throughputPerHour: +throughputPerHour.toFixed(1)
+    };
+  }).sort(function (a, b) { return b.throughputPerHour - a.throughputPerHour; });
+
+  var grandSeconds = 0, grandUnits = 0;
+  rows.forEach(function (r) { grandSeconds += r.totalSeconds; grandUnits += r.totalUnits; });
+  var overallAvgSecPerUnit = grandUnits ? grandSeconds / grandUnits : 0;
+  var overallThroughput    = overallAvgSecPerUnit ? 3600 / overallAvgSecPerUnit : 0;
+
+  return {
+    status: 'ok',
+    rows:   rows,
+    totals: {
+      totalSeconds: grandSeconds, totalUnits: grandUnits,
+      avgSecPerUnit: +overallAvgSecPerUnit.toFixed(2), throughputPerHour: +overallThroughput.toFixed(1)
+    },
+    unmatched: { orders: unmatchedOrders, seconds: Math.round(unmatchedSeconds), units: unmatchedUnits },
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 14 — BAROMETER
+// ═══════════════════════════════════════════════════════════════════
+function parseBarometerSheet(sheet, periodKind) {
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { rows: [], periods: [] };
+  var headers = data[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  function col(names) {
+    for (var n = 0; n < names.length; n++) {
+      var i = headers.indexOf(names[n].toLowerCase());
+      if (i > -1) return i;
+    }
+    return -1;
+  }
+  var idxPeriod = periodKind === 'week' ? col(['week']) : col(['month']);
+  var idx = {
+    store:  col(['store', 'store code']),
+    safety: col(['safety init.', 'safety init', 'safety init %', 'safety init. %', 'safety']),
+    lsv2:   col(['late slam v2 %', 'late slam v2', 'late slam v.2', 'late slam v.2 %']),
+    ibTph:  col(['ib tph']),
+    tput:   col(['throughput/ph', 'throughput per hour', 'throughput']),
+    skip:   col(['skips (dpmo)', 'skips dpmo', 'skip dpmo', 'skips']),
+    short:  col(['shorts (dpmo)', 'shorts dpmo', 'short dpmo', 'shorts']),
+    irdr:   col(['irdr (dpmo)', 'irdr dpmo', 'irdr']),
+    pqa:    col(['produce qa', 'produce qa %']),
+    conc:   col(['concessions', 'concessions %']),
+    whd:    col(['whd', 'whd %']),
+    whl:    col(['whl (gms)', 'whl (gms) %', 'whl', 'whl %'])
+  };
+
+  function num(v) {
+    if (v === '' || v === null || v === undefined) return null;
+    if (typeof v === 'number') return v;
+    var s = String(v).trim();
+    if (!s || s.toLowerCase() === 'n/a' || s === '-') return null;
+    var x = parseFloat(s.replace(/[^0-9.\-]/g, ''));
+    return isNaN(x) ? null : x;
+  }
+  function normPeriod(v) {
+    if (v === null || v === undefined || v === '') return '';
+    if (v instanceof Date) {
+      if (periodKind === 'month') return MONTH_NAMES_EN[v.getMonth()] + ' ' + v.getFullYear();
+      return 'Week ' + v;
+    }
+    var s = String(v).trim();
+    if (periodKind === 'week') {
+      var m = s.match(/(\d{1,3})/);
+      return m ? 'Week ' + parseInt(m[1], 10) : s;
+    }
+    return s;
+  }
+
+  var rows = [], periodSet = {};
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    var store = idx.store >= 0 ? String(r[idx.store] || '').trim() : '';
+    if (!store) continue;
+    var period = idxPeriod >= 0 ? normPeriod(r[idxPeriod]) : '';
+    if (period) periodSet[period] = true;
+    rows.push({
+      store: store, period: period,
+      safety: num(idx.safety >= 0 ? r[idx.safety] : null),
+      lsv2:   num(idx.lsv2   >= 0 ? r[idx.lsv2]   : null),
+      ibTph:  num(idx.ibTph  >= 0 ? r[idx.ibTph]  : null),
+      tput:   num(idx.tput   >= 0 ? r[idx.tput]   : null),
+      skip:   num(idx.skip   >= 0 ? r[idx.skip]   : null),
+      short:  num(idx.short  >= 0 ? r[idx.short]  : null),
+      irdr:   num(idx.irdr   >= 0 ? r[idx.irdr]   : null),
+      pqa:    num(idx.pqa    >= 0 ? r[idx.pqa]    : null),
+      conc:   num(idx.conc   >= 0 ? r[idx.conc]   : null),
+      whd:    num(idx.whd    >= 0 ? r[idx.whd]    : null),
+      whl:    num(idx.whl    >= 0 ? r[idx.whl]    : null)
+    });
+  }
+  return { rows: rows, periods: Object.keys(periodSet) };
+}
+
+function handleBarometer(e) {
+  var periodKind = String(e.parameter.period || 'month').toLowerCase() === 'week' ? 'week' : 'month';
+  var sheetName  = periodKind === 'week' ? SHEET_BAROMETER_WEEKLY : SHEET_BAROMETER_MTD;
+  var sheet = periodKind === 'week'
+    ? findSheet(['Barometer Weekly', 'BarometerWeekly', 'Weekly Barometer'])
+    : findSheet(['Barometer MTD', 'BarometerMTD', 'Barometer Month', 'Barometer']);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + sheetName + '" not found — check the tab is named exactly "Barometer Weekly" or "Barometer MTD"' };
+  var parsed = parseBarometerSheet(sheet, periodKind);
+  return {
+    status:            'ok',
+    codeVersion:       'BAROMETER_V3',
+    periodKind:        periodKind,
+    sheetNameUsed:     sheet.getName(),
+    rows:              parsed.rows,
+    periods:           parsed.periods,
+    months:            periodKind === 'month' ? parsed.periods : [],
+    sheetLastModified: getSheetLastModified()
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTION 11 — IB FORECAST
+// ═══════════════════════════════════════════════════════════════════
+function handleIBForecast(e) {
+  var sheet = findSheet([SHEET_IB_FORECAST, 'IB FORECAST', 'IBFORECAST', 'IB Forecast']);
+  if (!sheet) return { status: 'error', message: 'Sheet "' + SHEET_IB_FORECAST + '" not found' };
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { status: 'ok', stores: [], categories: [], dates: [], data: {} };
+
+  var p          = e.parameter || {};
+  var year       = parseInt(String(p.year || '').trim(), 10) || new Date().getFullYear();
+  var filterStore= String(p.store || '').trim();
+  var filterFrom = String(p.from  || '').trim();
+  var filterTo   = String(p.to    || '').trim();
+
+  var MONTHS_SH = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+  function parseDateHeader(val) {
+    if (val === null || val === undefined || val === '') return null;
+    if (val instanceof Date) {
+      var iso = Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      return { iso: iso, label: val.getDate() + '-' + capitalize(MONTHS_SH[val.getMonth()]) };
+    }
+    var s = String(val).trim();
+    if (!s) return null;
+    var m;
+    m = s.match(/^(\d{1,2})[\-\s]([A-Za-z]{3,9})(?:[\-\s](\d{2,4}))?$/);
+    if (m) {
+      var mi = MONTHS_SH.indexOf(m[2].slice(0,3).toLowerCase());
+      if (mi < 0) return null;
+      var yr = m[3] ? (m[3].length === 2 ? 2000 + parseInt(m[3],10) : parseInt(m[3],10)) : year;
+      return { iso: yr + '-' + pad2(mi+1) + '-' + pad2(parseInt(m[1],10)),
+               label: parseInt(m[1],10) + '-' + capitalize(MONTHS_SH[mi]) };
+    }
+    m = s.match(/^([A-Za-z]{3,9})[\-\s](\d{1,2})(?:[\-\s](\d{2,4}))?$/);
+    if (m) {
+      var mi2 = MONTHS_SH.indexOf(m[1].slice(0,3).toLowerCase());
+      if (mi2 < 0) return null;
+      var yr2 = m[3] ? (m[3].length === 2 ? 2000 + parseInt(m[3],10) : parseInt(m[3],10)) : year;
+      return { iso: yr2 + '-' + pad2(mi2+1) + '-' + pad2(parseInt(m[2],10)),
+               label: parseInt(m[2],10) + '-' + capitalize(MONTHS_SH[mi2]) };
+    }
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) return { iso: m[1]+'-'+pad2(+m[2])+'-'+pad2(+m[3]),
+                    label: parseInt(m[3],10)+'-'+capitalize(MONTHS_SH[+m[2]-1]) };
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) { var mo=parseInt(m[2],10)-1; if (mo<0||mo>11) return null;
+             return { iso: m[3]+'-'+pad2(mo+1)+'-'+pad2(+m[1]), label: parseInt(m[1],10)+'-'+capitalize(MONTHS_SH[mo]) }; }
+    if (/^\d{4,6}$/.test(s)) {
+      var dt = new Date(Date.UTC(1899,11,30) + parseInt(s,10)*86400000);
+      return { iso: Utilities.formatDate(dt, 'UTC', 'yyyy-MM-dd'),
+               label: dt.getUTCDate() + '-' + capitalize(MONTHS_SH[dt.getUTCMonth()]) };
+    }
+    return null;
+  }
+
+  var headers   = data[0];
+  var dateCols  = [];
+  for (var c = 3; c < headers.length; c++) {
+    var dh = parseDateHeader(headers[c]);
+    if (dh) dateCols.push({ c: c, iso: dh.iso, label: dh.label });
+  }
+  if (!dateCols.length && data.length > 1) {
+    for (var c2 = 3; c2 < data[1].length; c2++) {
+      var dh2 = parseDateHeader(data[1][c2]);
+      if (dh2) dateCols.push({ c: c2, iso: dh2.iso, label: dh2.label });
+    }
+  }
+
+  var STORE_RE = /\b(Q[A-Z]{2}\d)\b/i;
+  function deriveStore(row) {
+    var b = String(row[1] || '').trim();
+    if (b) return b;
+    var a = String(row[0] || '').trim();
+    var m = a.match(STORE_RE);
+    if (m) return m[1].toUpperCase();
+    return '';
+  }
+
+  var model = {}, storeOrder = [], catOrder = [], catSeen = {}, lastStore = '';
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var cat = String(row[2] || '').trim();
+    if (!cat || cat.toLowerCase() === 'ib units') continue;
+
+    var store = deriveStore(row) || lastStore;
+    if (!store) continue;
+    lastStore = store;
+
+    if (filterStore && store.toLowerCase() !== filterStore.toLowerCase()) continue;
+
+    if (!model[store]) { model[store] = {}; storeOrder.push(store); }
+    if (!catSeen[cat]) { catSeen[cat] = true; catOrder.push(cat); }
+
+    for (var d = 0; d < dateCols.length; d++) {
+      var dc = dateCols[d];
+      if (filterFrom && dc.iso < filterFrom) continue;
+      if (filterTo   && dc.iso > filterTo)   continue;
+      var raw = row[dc.c];
+      var num = (typeof raw === 'number') ? raw
+              : parseFloat(String(raw == null ? '' : raw).replace(/[^0-9.\-]/g, ''));
+      if (isNaN(num)) num = 0;
+      if (!model[store][dc.iso]) model[store][dc.iso] = {};
+      model[store][dc.iso][cat] = (model[store][dc.iso][cat] || 0) + num;
+    }
+  }
+
+  var dates = [], dateHeaders = {};
+  for (var k = 0; k < dateCols.length; k++) {
+    var dk = dateCols[k];
+    if (filterFrom && dk.iso < filterFrom) continue;
+    if (filterTo   && dk.iso > filterTo)   continue;
+    if (dates.indexOf(dk.iso) === -1) { dates.push(dk.iso); dateHeaders[dk.iso] = dk.label; }
+  }
+  dates.sort();
+
+  return {
+    status:            'ok',
+    stores:            storeOrder,
+    categories:        catOrder,
+    dates:             dates,
+    dateHeaders:       dateHeaders,
+    data:              model,
+    year:              year,
+    sheetLastModified: getSheetLastModified()
+  };
+}

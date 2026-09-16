@@ -389,15 +389,17 @@ function autoFillDate(){
 
 /* ===================== forecast fetch (Google Sheet via Apps Script JSONP) ===================== */
 const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
-function appsScriptJSONP(params, onSuccess, onError){
+function appsScriptJSONP(params, onSuccess, onError, _attempt){
+  const attempt=_attempt||1;
+  function retryOrFail(err){ if(attempt<2) appsScriptJSONP(params, onSuccess, onError, attempt+1); else onError(err); }
   const cbName='asJSONP_'+Date.now()+'_'+Math.floor(Math.random()*9999);
   const qs=Object.keys(params).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
   const url=APPS_SCRIPT_URL+'?'+qs+'&callback='+cbName;
-  const timer=setTimeout(()=>{cleanup();onError(new Error('Timeout — check connection'));},25000);
+  const timer=setTimeout(()=>{cleanup();retryOrFail(new Error('Timeout — check connection'));},60000);
   function cleanup(){ delete window[cbName]; const s=document.getElementById('jsonp-'+cbName); if(s)s.remove(); clearTimeout(timer); }
   window[cbName]=data=>{ cleanup(); (data&&data.status==='error')?onError(new Error(data.message||'API error')):onSuccess(data); };
   const sc=document.createElement('script'); sc.id='jsonp-'+cbName; sc.src=url;
-  sc.onerror=()=>{cleanup();onError(new Error('Script load error — check Apps Script deployment / internet'));};
+  sc.onerror=()=>{cleanup();retryOrFail(new Error('Script load error — check Apps Script deployment / internet'));};
   document.head.appendChild(sc);
 }
 // keep 30-min slots ("HH:MM") as half-hour slot keys (0..47), matched to the store filter
