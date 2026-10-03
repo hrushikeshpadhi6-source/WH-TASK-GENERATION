@@ -248,9 +248,17 @@
 
   <div class="fc-panel hide" id="fcPanel">
     <h4>30-Minute Forecast &amp; Manpower</h4>
-    <p class="hint">Actual orders are filled automatically. Type the <b>forecast</b> (from your Google Sheet) and <b>Active MP</b> per 30-min slot — Gap % and the export columns update live.</p>
+    <p class="hint">Actual orders are filled automatically. <b>Active MP</b> is auto-counted from distinct pick users in the outbound file (editable). Type the <b>forecast</b> per 30-min slot — Gap % and the export columns update live.</p>
     <div style="overflow-x:auto;">
       <table class="fc-table" id="fcTable"></table>
+    </div>
+  </div>
+
+  <div class="fc-panel hide" id="tzPanel">
+    <h4>Chiller &amp; Freezer Orders</h4>
+    <p class="hint">Orders with picks from <b>P-1-F</b> (Freezer) or <b>P-1-C</b> (Chiller) locations, by 30-min slot. Orders and units per zone.</p>
+    <div style="overflow-x:auto;">
+      <table class="fc-table" id="tzTable"></table>
     </div>
   </div>
 
@@ -262,7 +270,7 @@
   </div>
 
   <div class="foot">
-    <span class="pill" id="colcount">22 columns</span>
+    <span class="pill" id="colcount">26 columns</span>
     <span class="pill" id="rowcount">—</span>
     <span class="empty-hint" id="footHint">Tip: click <b>Copy for Google Sheets</b> → open your sheet → <b>Ctrl/Cmd&nbsp;+&nbsp;V</b>. Colours &amp; headers paste in automatically.</span>
   </div>
@@ -277,7 +285,7 @@ const GROUPS = {
   cls:{label:"Classification",                   h:"#8a1c1c", t:"#fbe7e7", leg:"Late-slam flag"},
   der:{label:"Derived Metrics",                  h:"#8a5a00", t:"#fcf1dd", leg:"Calculated from timestamps"},
   fva:{label:"Forecast vs Actual",               h:"#0f5e57", t:"#e1f1ee", leg:"Forecast sheet + system"},
-  man:{label:"Manual Entry",                     h:"#5b2a86", t:"#f1e8f8", leg:"You fill in"},
+  man:{label:"Tracking",                         h:"#5b2a86", t:"#f1e8f8", leg:"Auto-tracked from outbound pick data"},
 };
 // key: raw column name OR derived id ; src: how value is produced
 const COLS = [
@@ -294,14 +302,18 @@ const COLS = [
   {g:"raw",name:"promise_utr",                   key:"promise_utr",                   src:"raw"},
   {g:"raw",name:"units_picked",                  key:"units_picked",                  src:"raw"},
   {g:"cls",name:"Lateslam Only",      key:"lateslam",      src:"derive", note:"Filter to Lateslam orders only"},
+  {g:"cls",name:"RCA",                key:"rca",           src:"derive", note:"Auto: multiple frozen items → packing delay"},
   {g:"der",name:"Lateslam Time slot", key:"slot",          src:"derive", note:"30-min bucket of pick-list created time"},
   {g:"der",name:"Accepting Time",     key:"accept",        src:"derive", note:"Pick-list created time → pick assignment time"},
+  {g:"der",name:"Temp Zone",          key:"zone",          src:"derive", note:"Freezer (P-1-F) / Chiller (P-1-C) / Ambient"},
+  {g:"der",name:"Freezer Units",      key:"frzUnits",      src:"derive", note:"Units picked from P-1-F locations"},
+  {g:"der",name:"Chiller Units",      key:"chlUnits",      src:"derive", note:"Units picked from P-1-C locations"},
   {g:"fva",name:"Gap %",              key:"gap",           src:"slot",   note:"Forecast vs actual orders gap"},
   {g:"fva",name:"Forecasting Orders", key:"forecast",      src:"slot",   note:"From Google Sheet — 30-min forecast orders"},
   {g:"fva",name:"Actual Orders",      key:"actual",        src:"slot",   note:"Actual orders received in that 30-min slot"},
   {g:"fva",name:"Forecast Units",     key:"forecastUnits", src:"slot",   note:"From Google Sheet — 30-min forecast units"},
   {g:"fva",name:"Actual Units",       key:"actualUnits",   src:"slot",   note:"Sum of units_picked in that 30-min slot"},
-  {g:"man",name:"Active MP",          key:"mp",            src:"slot",   note:"To be filled manually"},
+  {g:"man",name:"Active MP",          key:"mp",            src:"slot",   note:"Auto: distinct pick users active in slot"},
   {g:"man",name:"Picker Name",        key:"picker",        src:"derive", note:"From outbound-pick raw data"},
 ];
 const EMPTY_ROWS = 25;
@@ -454,6 +466,19 @@ function build(){
     (picks[oid]=picks[oid]||[]).push(r); });
   Object.keys(picks).forEach(o=>picks[o].sort((a,b)=>(parseDT(a.Timestamp)||0)-(parseDT(b.Timestamp)||0)));
 
+  // manpower: distinct pick users per 30-min slot (from outbound pick Timestamp)
+  const usersBySlot={}, allUsers=new Set();
+  F2.forEach(r=>{ const u=String(r.User||r.user||"").trim(); const d=parseDT(r.Timestamp||r.timestamp); if(!u) return;
+    allUsers.add(u); if(!d) return; const k=slotKey(d); (usersBySlot[k]=usersBySlot[k]||new Set()).add(u); });
+  totalUsers=allUsers.size;
+
+  // temp zone per order: P-1-F = Freezer, P-1-C = Chiller
+  const zoneOf=oid=>{ let f=0,c=0; (picks[oid]||[]).forEach(p=>{
+      const loc=String(p.LocationId||p.locationid||p.Location||"").trim().toUpperCase();
+      const q=parseInt(p.Quantity||p.quantity||p.Qty||p.qty)||1;
+      if(loc.startsWith("P-1-F")) f+=q; else if(loc.startsWith("P-1-C")) c+=q; });
+    return {f,c}; };
+
   let rows = store==="all" ? F1 : F1.filter(r=>r.delivery_station_code===store);
 
   // actual orders + units per 30-min slot (all orders in scope, before LS filter)
@@ -477,7 +502,11 @@ function build(){
     if(scope==="ls" && !isLS) return;
     const oid=String(r.order_id||"").trim();
     const pk=picks[oid];
+    const z=zoneOf(oid);
     records.push({
+      frzUnits: z.f, chlUnits: z.c,
+      zone: z.f&&z.c?"Freezer + Chiller":z.f?"Freezer":z.c?"Chiller":"Ambient",
+      rca: z.f>=2?"Multiple frozen items caused delay while packing":"",
       raw:r,
       hour: plc?slotKey(plc):null,
       lateslam: isLS?"Lateslam":"On time",
@@ -498,17 +527,18 @@ function build(){
       actualUnits: actualUnitsByHour[h]||0,
       forecast:      fcLoaded ? (fcOrdersByHour[h]!=null?String(fcOrdersByHour[h]):"") : (prev[h]?prev[h].forecast:""),
       forecastUnits: fcLoaded ? (fcUnitsByHour[h]!=null?String(fcUnitsByHour[h]):"")  : (prev[h]?prev[h].forecastUnits:""),
-      mp: prev[h]?prev[h].mp:""
+      mp: usersBySlot[h]?String(usersBySlot[h].size):(prev[h]?prev[h].mp:"")
     };
   });
 
   built=true;
   renderKpis();
   renderFcPanel(hoursPresent);
+  renderTzPanel();
   rebuildExportRows();
   renderGrid();
   $("copyBtn").disabled=false; $("xlsxBtn").disabled=false;
-  $("kpis").classList.remove("hide"); $("fcPanel").classList.remove("hide");
+  $("kpis").classList.remove("hide"); $("fcPanel").classList.remove("hide"); $("tzPanel").classList.remove("hide");
   toast(records.length.toLocaleString()+" rows built");
 }
 
@@ -545,8 +575,27 @@ function renderKpis(){
     {l:"Late Slams", v:ls.toLocaleString(), cls:"alert"},
     {l:"Pickers involved", v:pickers},
     {l:"30-min slots", v:slots},
+    {l:"Users available (period)", v:totalUsers},
+    {l:"Freezer orders", v:records.filter(r=>r.frzUnits>0).length.toLocaleString()},
+    {l:"Chiller orders", v:records.filter(r=>r.chlUnits>0).length.toLocaleString()},
   ];
   $("kpis").innerHTML=k.map(x=>`<div class="kpi ${x.cls||''}"><div class="v">${x.v}</div><div class="l">${x.l}</div></div>`).join("");
+}
+
+/* ===================== chiller / freezer panel ===================== */
+let totalUsers=0;
+function renderTzPanel(){
+  const by={}; const T={fo:0,fu:0,co:0,cu:0,b:0,ls:0};
+  records.forEach(r=>{ if(r.hour==null||(!r.frzUnits&&!r.chlUnits)) return;
+    const o=by[r.hour]=by[r.hour]||{fo:0,fu:0,co:0,cu:0,b:0,ls:0};
+    [o,T].forEach(x=>{ if(r.frzUnits){x.fo++;x.fu+=r.frzUnits;} if(r.chlUnits){x.co++;x.cu+=r.chlUnits;}
+      if(r.frzUnits&&r.chlUnits) x.b++; if(r.isLS) x.ls++; }); });
+  const hrs=Object.keys(by).map(Number).sort((a,b)=>a-b);
+  let h='<thead><tr><th>Time slot</th><th>Freezer Orders</th><th>Freezer Units</th><th>Chiller Orders</th><th>Chiller Units</th><th>Both</th><th>Late Slams</th></tr></thead><tbody>';
+  hrs.forEach(k=>{const o=by[k]; h+=`<tr><td>${slotLabel(k)}</td><td>${o.fo}</td><td>${o.fu}</td><td>${o.co}</td><td>${o.cu}</td><td>${o.b}</td><td>${o.ls}</td></tr>`;});
+  if(!hrs.length) h+='<tr><td colspan="7">No P-1-F / P-1-C picks found for these orders</td></tr>';
+  else h+=`<tr style="font-weight:800"><td>Total</td><td>${T.fo}</td><td>${T.fu}</td><td>${T.co}</td><td>${T.cu}</td><td>${T.b}</td><td>${T.ls}</td></tr>`;
+  $("tzTable").innerHTML=h+'</tbody>';
 }
 
 /* ===================== hourly FC panel ===================== */
