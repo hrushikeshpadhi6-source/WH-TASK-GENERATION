@@ -270,7 +270,7 @@
   </div>
 
   <div class="foot">
-    <span class="pill" id="colcount">26 columns</span>
+    <span class="pill" id="colcount">25 columns</span>
     <span class="pill" id="rowcount">—</span>
     <span class="empty-hint" id="footHint">Tip: click <b>Copy for Google Sheets</b> → open your sheet → <b>Ctrl/Cmd&nbsp;+&nbsp;V</b>. Colours &amp; headers paste in automatically.</span>
   </div>
@@ -302,7 +302,6 @@ const COLS = [
   {g:"raw",name:"promise_utr",                   key:"promise_utr",                   src:"raw"},
   {g:"raw",name:"units_picked",                  key:"units_picked",                  src:"raw"},
   {g:"cls",name:"Lateslam Only",      key:"lateslam",      src:"derive", note:"Filter to Lateslam orders only"},
-  {g:"cls",name:"RCA",                key:"rca",           src:"derive", note:"Auto: multiple frozen items → packing delay"},
   {g:"der",name:"Lateslam Time slot", key:"slot",          src:"derive", note:"30-min bucket of pick-list created time"},
   {g:"der",name:"Accepting Time",     key:"accept",        src:"derive", note:"Pick-list created time → pick assignment time"},
   {g:"der",name:"Temp Zone",          key:"zone",          src:"derive", note:"Freezer (P-1-F) / Chiller (P-1-C) / Ambient"},
@@ -506,7 +505,6 @@ function build(){
     records.push({
       frzUnits: z.f, chlUnits: z.c,
       zone: z.f&&z.c?"Freezer + Chiller":z.f?"Freezer":z.c?"Chiller":"Ambient",
-      rca: z.f>=2?"Multiple frozen items caused delay while packing":"",
       raw:r,
       hour: plc?slotKey(plc):null,
       lateslam: isLS?"Lateslam":"On time",
