@@ -201,6 +201,7 @@
     <button class="btn" id="ptExport" disabled>⬇ Export Excel</button>
   </div>
   <div id="ptMode" style="font-size:12px;font-weight:800;color:#5b2a86;margin-top:14px;"></div>
+  <div id="ptLastUpd" class="hide" style="display:flex;align-items:center;gap:10px;background:#1d1d1b;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;font-size:14px;"><span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;">Last updated · latest picklist created</span><b id="ptLastUpdVal" style="font-size:18px;"></b></div>
   <div class="kpis hide" id="ptKpis"></div>
   <div class="fc-panel hide" id="ptStorePanel">
     <h4>Probable Lateslam · Store-wise <span id="ptTill" style="font-weight:700;color:#5d6b7a;font-size:12px;margin-left:6px;"></span></h4>
@@ -224,10 +225,26 @@ const PROMISE={"QAA1":{"1":120,"2":180,"3":180,"4":180,"5":180,"6":300,"7":300,"
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);}
-function parseDT(s){ if(!s) return null; let d=new Date(s); if(!isNaN(d)) return d; d=new Date(String(s).replace(" ","T")); return isNaN(d)?null:d; }
+function parseDT(s){ if(s==null||s==="") return null;
+  if(s instanceof Date) return isNaN(s)?null:s;
+  const str=String(s).trim();
+  if(/^\d+(\.\d+)?$/.test(str)){ const v=+str; if(v>20000&&v<80000){ const u=new Date(Date.UTC(1899,11,30)+Math.round(v*86400000)); return new Date(u.getUTCFullYear(),u.getUTCMonth(),u.getUTCDate(),u.getUTCHours(),u.getUTCMinutes(),u.getUTCSeconds()); } }
+  let m=str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m) return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));
+  m=str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
+  if(m){ let a=+m[1],b=+m[2],y=+m[3]; if(y<100) y+=2000; let mo=a,da=b; if(a>12){da=a;mo=b;}
+    let h=+(m[4]||0); const ap=(m[7]||"").toUpperCase(); if(ap==="PM"&&h<12) h+=12; if(ap==="AM"&&h===12) h=0;
+    const d=new Date(y,mo-1,da,h,+(m[5]||0),+(m[6]||0)); return isNaN(d)?null:d; }
+  let d=new Date(str); if(!isNaN(d)) return d; d=new Date(str.replace(" ","T")); return isNaN(d)?null:d; }
 function readFile(file,cb){ const ext=(file.name.split('.').pop()||'').toLowerCase();
   if(ext==='xlsx'||ext==='xls'){ const fr=new FileReader(); fr.onload=e=>{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
-      cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false})); }; fr.readAsArrayBuffer(file); }
+      const p=n=>String(n).padStart(2,"0");
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:true});
+      rows.forEach(r=>Object.keys(r).forEach(k=>{ const v=r[k];
+        if(/time|date/i.test(k) && typeof v==="number" && v>20000 && v<80000){ const d=parseDT(v);
+          r[k]=d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds()); }
+        else if(typeof v==="number") r[k]=String(v); }));
+      cb(rows); }; fr.readAsArrayBuffer(file); }
   else Papa.parse(file,{header:true,skipEmptyLines:true,complete:r=>cb(r.data)}); }
 const num=v=>{const n=parseFloat(String(v==null?"":v).replace(/,/g,""));return isNaN(n)?null:n;};
 const storeOf=r=>String(r.delivery_station_code||r.Delivery_Station_Code||r.station||r.store||r.Store||"").trim().toUpperCase();
@@ -251,7 +268,9 @@ function run(rows){
   const fileHasPromise=rows.some(r=>r.__hasP);
   let first=null,last=null; rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(d){ if(!first||d<first) first=d; if(!last||d>last) last=d; } });
   const fmt=d=>d.toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",hour12:false});
-  $("ptTill").textContent=last?"· "+(first?fmt(first)+" → ":"")+"till "+fmt(last):"";
+  const fmtFull=d=>d.toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  $("ptTill").textContent=last?"· till "+fmt(last):"";
+  $("ptLastUpdVal").textContent=last?fmtFull(last):"—"; $("ptLastUpd").classList.toggle("hide",!last);
   rows.forEach(r=>{ const s=storeOf(r), u=unitsOf(r), t=plStage(r), p=r.__hasP?((num(r.promise_utr)||0)>0?num(r.promise_utr):null):lookup(s,u), ls=p!=null&&t!=null&&t>p, acc=accSecs(r);
     const reason=!ls?"":acc!=null&&acc>30?"Late acceptance (PL create → accept > 30s)":"Pick / pack delay";
     const rr=Object.assign({},r); delete rr.__hasP; delete rr.__file;
