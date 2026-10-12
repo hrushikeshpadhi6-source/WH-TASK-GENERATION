@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+body{margin:0;background:#f4f3ef;color:#1d1d1b;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#1f5e4a}a:hover{color:#14402f}
+textarea,input,select,button{font-family:inherit}
+</style>
+</helmet>
+<div style="max-width:1400px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6a64">VOC · Root cause</div>
+      <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">VOC RCA Builder</h1>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#4a4944">
+      <span style="padding:6px 10px;border:1px solid #dcdad3;border-radius:999px;background:#fff">Milk / dairy expiry = stow + {{ dairyDays }} days</span>
+      <span style="padding:6px 10px;border:1px solid #dcdad3;border-radius:999px;background:#fff">Fruit / veg expiry = stow + {{ produceDays }} days</span>
+      <span style="padding:6px 10px;border:1px solid #dcdad3;border-radius:999px;background:#fff">Non-food quality → Vendor to check</span>
+    </div>
+  </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:600;font-size:15px">1. Paste VOC rows</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6b6a64">{{ vocCount }} rows</div>
+      </div>
+      <div style="font-size:13px;color:#6b6a64;line-height:1.45">Copy rows from the sheet (Date → Order ID, header optional) and paste below.</div>
+      <textarea value="{{ vocText }}" onChange="{{ onVoc }}" placeholder="Date	Site	Area	Customer Comment	Issue Category	Week	ASIN	Product Name	Order ID" style="min-height:190px;resize:vertical;border:1px solid #dcdad3;border-radius:8px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;background:#fbfaf8;color:#1d1d1b;outline:none;white-space:pre;overflow:auto"></textarea>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="font-weight:600;font-size:15px">2. Outbound + stow file</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6b6a64">{{ pickCount }} pick · {{ stowCount }} stow</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;border:1px dashed #c9c6bd;border-radius:8px;padding:12px;cursor:pointer;background:#fbfaf8">
+        <span style="background:#1d1d1b;color:#fff;font-size:13px;font-weight:500;padding:7px 12px;border-radius:6px">Upload</span>
+        <span style="font-size:13px;color:#4a4944;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fileName }}</span>
+        <input type="file" accept=".xlsx,.xls,.csv,.txt" onChange="{{ onFile }}" style="display:none">
+      </label>
+      <div style="font-size:12px;color:#6b6a64;line-height:1.45">One file with both processes. Process = Pick → order pick (User = picker). Process = Stow / Receive → receiving (User = stower). Change a column if it was detected wrong.</div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+        <sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+          <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#4a4944">
+            <span>{{ f.label }}</span>
+            <select value="{{ f.value }}" onChange="{{ f.onChange }}" style="border:1px solid #dcdad3;border-radius:6px;padding:6px;font-size:12px;background:#fff;color:#1d1d1b;min-width:0">
+              <sc-for list="{{ f.options }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+            </select>
+          </label>
+        </sc-for>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:sticky;top:0;z-index:5;background:#f4f3ef;padding:10px 0;border-bottom:1px solid #e2e0da">
+    <button onClick="{{ onGenerate }}" style="background:#1f5e4a;color:#fff;border:0;border-radius:8px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#174a3a">Generate RCA</button>
+    <button onClick="{{ onCopyRca }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#1d1d1b">Copy RCA columns (3)</button>
+    <button onClick="{{ onCopyFull }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#1d1d1b">Copy full rows (12)</button>
+    <button onClick="{{ onDownload }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#1d1d1b">Download CSV</button>
+    <div style="flex:1"></div>
+    <div style="font-size:13px;color:#4a4944">{{ summary }}</div>
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:13px;font-weight:500;color:#1f5e4a">{{ toast }}</div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:1100px">
+        <thead>
+          <tr style="background:#f8f7f4;text-align:left;color:#4a4944">
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da;width:36px">#</th>
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da;width:230px">Order / product</th>
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da;width:220px">Customer comment</th>
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da;width:220px">RCA Category</th>
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da">RCA &amp; CAPA</th>
+            <th style="padding:10px 12px;font-weight:500;border-bottom:1px solid #e2e0da;width:110px">Picker ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+            <tr style="vertical-align:top;border-bottom:1px solid #eeece6">
+              <td style="padding:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8880;border-bottom:1px solid #eeece6">{{ r.n }}</td>
+              <td style="padding:12px;border-bottom:1px solid #eeece6">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.order }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6b6a64">{{ r.asin }} · {{ r.typeLabel }}</div>
+                  <div style="font-size:12px;color:#4a4944;line-height:1.4">{{ r.productShort }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#1f5e4a;line-height:1.5;white-space:pre-wrap">{{ r.facts }}</div>
+                </div>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid #eeece6">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span style="align-self:flex-start;font-size:11px;padding:2px 8px;border-radius:999px;background:#efede7;color:#4a4944">{{ r.issue }}</span>
+                  <div style="font-size:13px;line-height:1.45;color:#1d1d1b">{{ r.comment }}</div>
+                </div>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid #eeece6">
+                <select value="{{ r.cat }}" onChange="{{ r.onCat }}" style="width:100%;border:1px solid #dcdad3;border-radius:6px;padding:7px;font-size:12px;background:{{ r.catBg }};color:#1d1d1b">
+                  <sc-for list="{{ catOptions }}" as="c"><option value="{{ c }}">{{ c }}</option></sc-for>
+                </select>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid #eeece6">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <textarea value="{{ r.text }}" onChange="{{ r.onText }}" style="width:100%;box-sizing:border-box;min-height:72px;resize:vertical;border:1px solid #dcdad3;border-radius:6px;padding:8px;font-size:13px;line-height:1.45;color:#1d1d1b;background:#fff"></textarea>
+                  <button onClick="{{ r.onReword }}" style="align-self:flex-start;background:none;border:0;padding:0;font-size:12px;color:#1f5e4a;cursor:pointer;text-decoration:underline">Reword</button>
+                </div>
+              </td>
+              <td style="padding:12px;border-bottom:1px solid #eeece6">
+                <input value="{{ r.picker }}" onChange="{{ r.onPicker }}" style="width:100%;box-sizing:border-box;border:1px solid #dcdad3;border-radius:6px;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:12px">
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </sc-if>
+  <sc-if value="{{ noResults }}" hint-placeholder-val="{{ true }}">
+    <div style="border:1px dashed #cfccc3;border-radius:10px;padding:40px;text-align:center;color:#6b6a64;font-size:14px">Paste VOC rows, upload both files, then press Generate RCA.</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;missingAs&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Picker Mistake&quot;,&quot;OTR to check&quot;],&quot;default&quot;:&quot;Picker Mistake&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Rules&quot;},&quot;dairyDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;produceDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;copyHeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Copy&quot;}}">
+const CAT = {
+  PM:'Ops Controllable - Picker Mistake', OTR:'Ops Controllable - OTR to check', UTR:'Ops Controllable - UTR Expiry Miss',
+  QC:'Ops Controllable - QC Miss', PACK:'Ops Controllable - Packing SOP Failure',
+  VEN:'Non Ops Controllable - Vendor to check', CC:'Non Ops Controllable - Customer confused', COM:'Non Ops Controllable - Change of mind',
+  MDR:'Non Ops Controllable - More details required', CATI:'Non Ops Controllable - Catalog Issue', PAD:'Non Ops Controllable - PAD Time'
+};
+const CAT_LIST = ['', ...Object.values(CAT)];
+const NONE = '—';
+
+const NONFOOD = /(shampoo|conditioner|lotion|serum|toner|cleanser|face ?wash|body ?wash|soap|detergent|softener|stain remover|dishwasher|perfume|parfum|toothpaste|diaper|pampers|huggies|tissue|toilet paper|batter(y|ies)|charger|cable|adapt[eo]r|plug|socket|\bfan\b|steam iron|dryer|headset|thermometer|kitchen scale|mouse|lipstick|primer|hair colou?r|hair spray|nail polish|gift bag|burlap|bags\b|container|spray bottle|mop\b|notebook|books?\b|toy|hot wheels|bucket|hanger|gloves|liner|watch\b|humidifier|compressor|groomer|bidet|shattaf|pool|float|tweezers|spanner|candle|sanitary|tampon|pads\b|cutting board|sieve|strainer|oven glass|collar|ball\b|rope|clay|organizer|burner|bakhoor|scraper|blender|cat food|dog food|wet cat|\d+\s?w\b|watts?|volt|usb|\bled\b|lamp|bulb|air bed|inflatable|deodorant|razor|wipes|cosmetic|makeup|mascara|eyeliner|moisturi[sz]er|sunscreen|chopper)/i;
+const PRODUCE = /\b(bananas?|apples?|oranges?|mandarins?|guavas?|grapes?|mangos?|mangoes|melons?|watermelon|strawberr(y|ies)|avocados?|lemons?|limes?|tomato(es)?|potato(es)?|onions?|carrots?|cucumbers?|lettuce|spinach|gourd|parwal|taro|arbi|coconut|cheera|coriander|mint|cabbage|capsicum|okra|brinjal|eggplant|zucchini|broccoli|cauliflower|ginger|garlic|beans|peach(es)?|pears?|plums?|kiwi|papaya|pineapple|pomegranate|berries|cherr(y|ies))\b/i;
+const NOT_PRODUCE = /(juice|chips|flavou?r|ice ?cream|syrup|paste|sauce|dried|desiccated|candy|powder|cake|cookie|biscuit|\btea\b|soda|drink|gum\b|oil\b|jam\b|wash|gumm|scent|noodle|chocolate|cubes|shells|pasta|flour|yog|milk|chicken|soap|shampoo)/i;
+const DAIRY = /\b(milk|laban|yog(h)?o?urt|labneh|fresh cream|curd|lassi)\b/i;
+const NOT_DAIRY = /(uht|evaporated|powder|condensed|chocolate|milkshake|almond|coconut|\boat|soap|lotion|biscuit|cookie|ice ?cream|cheese)/i;
+
+function productType(name){
+  const n = name || '';
+  if (NONFOOD.test(n)) return 'nonfood';
+  if (DAIRY.test(n) && !NOT_DAIRY.test(n)) return 'dairy';
+  if (PRODUCE.test(n) && !NOT_PRODUCE.test(n)) return 'produce';
+  if (/\beggs?\b/i.test(n)) return 'eggs';
+  return 'food';
+}
+const TYPE_LABEL = {nonfood:'Non-food', dairy:'Dairy (fresh)', produce:'Fruit / veg', eggs:'Eggs', food:'Packaged food'};
+
+function intent(comment, issue){
+  const c = (comment||'').toLowerCase();
+  if (/(i made (a )?mistake|my mistake|my own mistake|wrong selection|ordered by mistake|i ordered the wrong|made mistake)/.test(c)) return 'com';
+  if (/(expir|expire|best before|days old|manufactur|mfg|old stock|short shelf)/.test(c)) return 'expiry';
+  if (/(cheaper|price|expensive for|found cheaper)/.test(c) && !/only (one|1)/.test(c)) return 'price';
+  if (/(late|delay|after one hour|arrived after)/.test(c)) return 'late';
+  if (/address/.test(c)) return 'address';
+  if (/(only (one|1)|got only|received only|one piece|1 less|less quantity|ordered (two|2|3|three|4|four)|instead of (four|4|two|2)|shows 2|set of|pack of|only received one|i got only|\d+ pcs|\d+ sachets|10 pieces)/.test(c)) return 'qty';
+  if (/(missing|not received|didn'?t receive|did not receive|didnt receive|dnt recieve|not deliver|didn'?t deliver|didnt deliver|not in the bag|not there in|didn'?t come|not coming|didn'?t get|did not get|nonexistent|not included|not shipped|didn'?t bring|not get this)/.test(c)) return 'missing';
+  if (/(broken|leak|spill|crack|burst|bulge|swollen)/.test(c)) return 'leak';
+  if (/(wrong|instead|different|not the right|not as per|not this one|not what i|another brand|other brand|not matching|doesn'?t match|sent .* when|ordered .* (but|and) (got|received)|i paid for|not as described)/.test(c)) return 'wrong';
+  if (/(not work|doesn'?t work|didn'?t work|charg|heating|battery|turn on|not cool|display|connect|hear me|inflate|burning|stinging|alcohol)/.test(c)) return 'function';
+  if (/(open|seal|tape|damaged|torn|hole|crushed|dirty|used)/.test(c)) return 'unsealed';
+  if (/(spoil|rotten|rettun|fung|mold|mould|smell|stink|bad|sour|not fresh|perish|quality|taste|ripe|green|black spot|bruis|soft|insect|ants|lumps|refrozen|runny|frozen|watery|not healthy|colou?r|dropping|roots|stick together|hard)/.test(c)) return 'quality';
+  if (/(small|big|size|too long|large|bigger|smaller|expected|expectation|not suitable|i thought|need|needed|wanted|want|i ordered|tried to order)/.test(c)) return 'size';
+  const i = (issue||'').toLowerCase();
+  if (i.includes('missing')) return 'missing';
+  if (i.includes('wrong')) return 'wrong';
+  if (i.includes('quantity')) return 'qty';
+  if (i.includes('expiry')) return 'expiry';
+  if (i.includes('leak')) return 'leak';
+  if (i.includes('unseal')) return 'unsealed';
+  if (i.includes('spoil') || i.includes('hygiene')) return 'quality';
+  return 'unknown';
+}
+
+const S = {
+  missOTR:[
+    'The item was picked{pk} and packed with the rest of the order. It was handed over to the rider complete, so OTR needs to check.',
+    'Pick data shows the item was picked{pk} and placed in the order bag. Nothing was left behind at packing; OTR to check the delivery side.',
+    'As per the outbound record, the item was picked{pk} and dispatched with the order. The gap looks to have happened after rider handover.',
+    'The item was scanned and picked{pk}, then packed in the same bag as the other items. OTR to verify with the rider.',
+    'Outbound data confirms the item was picked{pk}. The order went out complete, so the missing item needs to be checked by OTR.'
+  ],
+  missPM:[
+    'This item has no pick entry against the order, while the other items were picked. It was missed by the picker before handover.',
+    'The order was processed but this item was not picked. The final check before handing the order to the rider was missed.',
+    'Outbound data shows the rest of the order was picked but not this item. The picker left it out during picking and packing.',
+    'No pick record was found for this item in the order. It was likely left on the packing table or in another bin.'
+  ],
+  missMDR:[
+    'No pick record was found for this order in the outbound file. More details are needed to confirm what was sent.',
+    'The order could not be matched in the outbound data. CCTV and order details need to be checked further.',
+    'Outbound data for this order is not available, so the pick could not be confirmed. More details are required.'
+  ],
+  wrongCC:[
+    'The same ASIN that was ordered was picked{pk} and packed. No picking error was found, so the customer may have expected a different variant.',
+    'Pick data matches the ordered ASIN{pk}. The correct item was sent and the customer seems to have mixed it up.',
+    'We picked the exact item that was ordered{pk}. The product sent matches the order details.',
+    'The ordered ASIN and the picked ASIN are the same{pk}. The item delivered is as per the order.',
+    'The correct product was picked{pk} and sent as ordered. The complaint looks like a mismatch with what the customer expected.'
+  ],
+  wrongCat:[
+    'The correct ASIN was picked{pk}. The difference is between the app image and the actual product, so the catalog needs to be reviewed.',
+    'We sent the same item that was ordered{pk}. The product picture on the app does not match the current packaging.',
+    'Pick data matches the order{pk}. The customer went by the catalog image, which shows a different look from the actual item.'
+  ],
+  wrongPM:[
+    'The ordered ASIN has no pick entry for this order, so a different item was picked by mistake. The error was not caught at packing.',
+    'Pick data does not show the ordered ASIN. The picker picked a similar looking item and it was sent to the customer.',
+    'A different item was picked against this order line. The packing check did not catch the mismatch before dispatch.'
+  ],
+  com:[
+    'The correct item was sent as per the order. The customer mentioned they ordered it by mistake.',
+    'The customer confirmed they selected the wrong item while ordering. The item dispatched matches the order.',
+    'No fulfilment issue was found. The customer changed their mind after receiving the item.',
+    'The item sent matches the order. The customer admitted the selection was their own mistake.'
+  ],
+  qtyOTR:[
+    'The full quantity was picked{pk}{q} and packed together. OTR to check if anything was lost after handover.',
+    'Pick data shows the complete pack was picked{pk}{q}. The order was sent complete, so OTR needs to check.',
+    'The item was picked{pk}{q} as one full pack and handed over to the rider. OTR to verify on delivery.'
+  ],
+  qtyCC:[
+    'The listing is for a single unit and one unit was sent{pk}. The customer expected a multi-pack.',
+    'One unit was ordered and one unit was picked{pk}. The product name does not mention a pack, so the customer got confused.',
+    'The item sent{pk} matches the product description, which is for a single piece. No short pick was found.'
+  ],
+  qtyCat:[
+    'One unit was picked{pk} as per the listing. The app image shows a multi-pack, so the catalog needs to be corrected.',
+    'The item was sent as listed{pk}. The picture on the app shows more units than the product description, which confused the customer.'
+  ],
+  leakEggs:[
+    'The eggs were checked at picking, wrapped in bubble wrap and packed separately. There was no damage at staging, so OTR to check.',
+    'The tray was in good condition when picked and was packed with bubble wrap. The breakage likely happened in transit.',
+    'Eggs were packed with bubble wrap and placed on top of the bag. No crack was seen before handover; OTR needs to check.',
+    'No broken eggs were seen during picking and packing. The tray was wrapped properly, so the damage looks to be during delivery.'
+  ],
+  leakLiquid:[
+    'The bottle was checked for leaks at picking and packed upright in a separate bag. There was no damage at staging, so OTR to check.',
+    'The item was sealed and dry when picked{pk}. It was packed separately and handed over in good condition.',
+    'No leakage was seen during packing. The item was placed upright in its own bag, so the damage likely happened in transit.',
+    'The pack was intact when it left the store. OTR needs to check how it was handled during delivery.'
+  ],
+  leakOther:[
+    'The item was in good condition when picked{pk} and packed. No damage was seen at staging, so OTR to check.',
+    'Packing was done without any damage to the item. The damage likely happened during transportation.',
+    'The item left the store intact. OTR needs to check handling during delivery.'
+  ],
+  expUTR:[
+    'The item was stowed on {rd}, so its expiry was {exp}. It was dispatched on {pd}, after expiry, and the expiry removal was missed.',
+    'Stow date was {rd} and expiry fell on {exp}. The item was still dispatched on {pd}; the expiry check at the store was missed.',
+    'As per stow date {rd}, the item expired on {exp}. It was picked on {pd}{same}, which means the expiry task was not done.'
+  ],
+  expPAD:[
+    'The item was stowed on {rd} with expiry on {exp}. It was dispatched on {pd}, inside the PAD window but not expired.',
+    'Stowed on {rd} and picked on {pd}{same}. It had {rem} left before expiry on {exp}, so it was within PAD time.',
+    'The item was close to expiry ({exp}) but still valid when sent on {pd}. It was within the PAD window.'
+  ],
+  expCC:[
+    'The item was stowed on {rd} and dispatched on {pd}, with {rem} left before expiry on {exp}. It was within shelf life when sent.',
+    'Stow date was {rd}, so expiry is {exp}. It was picked on {pd}{same} with {rem} of shelf life remaining.',
+    'As per receiving, the item came in on {rd}{rq}. It was sent on {pd} and still had {rem} before expiry.'
+  ],
+  expMDR:[
+    'The item was dispatched within the system expiry. A photo of the printed expiry date is needed to check further.',
+    'No expiry issue was found in the system for this item. More details from the customer are needed.',
+    'The stock was within expiry as per inventory. The customer needs to share the expiry date shown on the pack.'
+  ],
+  expNF:[
+    'This is a non-food item and it was sent within its shelf life. The expiry concern is not related to fulfilment.',
+    'The item was dispatched as received from the vendor and was within its shelf life.'
+  ],
+  qFacts:[
+    'The item was received on {rd}{rq}{rl} and picked on {pd}{same}, with {rem} of shelf life left.',
+    'It was received on {rd}{rq}{rl}. It was picked on {pd}{same} and still had {rem} before expiry.',
+    'As per receiving data it came in on {rd}{rq}{rl}. It was picked on {pd}{same} with {rem} remaining.',
+    'Stock was received on {rd}{rq}{rl} and the order was picked on {pd}{same}, leaving {rem} of shelf life.'
+  ],
+  qFactsNoRec:[
+    'The item was dispatched within its shelf life.',
+    'The item was within shelf life at the time of dispatch.',
+    'The stock was within its shelf life when the order was picked.'
+  ],
+  qVendor:[
+    'QC is done four times a day and no outer defect was seen. The issue seems to be inside the product, so the vendor needs to check.',
+    'The batch passed the daily QC rounds with no visible issue. Vendor to check the internal quality.',
+    'No defect was found during the routine QC checks. This looks like an internal quality issue from the supplier.',
+    'The item looked fine from outside during QC. The vendor needs to review the batch quality.'
+  ],
+  qCC:[
+    'QC is done four times a day and no defect was found. The marks or ripeness level are natural for this product.',
+    'The item passed QC before dispatch. The customer expectation on ripeness or look did not match the product.',
+    'No quality issue was found during the daily QC checks. Natural marks on the produce were taken as spoilage.'
+  ],
+  qQC:[
+    'The item was past its shelf life at dispatch and should have been removed during QC.',
+    'The stock had crossed its shelf life by the pick date. The QC check missed it.'
+  ],
+  qDairy:[
+    'The pack was sealed and kept in the chiller until picking. The quality issue needs to be checked by the vendor.',
+    'It was stored at the right temperature and was sealed when sent. Vendor to check the product quality.',
+    'No damage or swelling was seen at picking. The vendor needs to review this batch.'
+  ],
+  pkgVendor:[
+    'The item comes sealed from the manufacturer and was received in good condition. Quality inside the pack needs to be checked by the vendor.',
+    'This is a sealed packaged item, so it cannot be opened for checks at the store. The vendor needs to check.',
+    'The item was sent in its original sealed pack. The quality concern is from the manufacturer side.',
+    'We receive this item pre-packed and it was intact at picking. Vendor to check the product.'
+  ],
+  nfVendor:[
+    'This is a sealed non-food item and it was sent as received. The issue is with product quality or function, so the vendor needs to check.',
+    'The item was picked{pk} in its original packaging with no damage. The performance issue needs to be checked by the vendor.',
+    'The product was sent sealed as it came from the supplier. The vendor needs to look into the quality concern.',
+    'No handling issue was found during picking or packing. The complaint relates to the product itself, so vendor to check.'
+  ],
+  unsealedVendor:[
+    'The item was received sealed and was intact at picking{pk}. The packaging issue needs to be checked by the vendor.',
+    'We get this item pre-packed and it was not opened at the store. Vendor to check the packaging.',
+    'No damage to the outer pack was seen during packing. The vendor needs to review the seal.'
+  ],
+  sizeCC:[
+    'The correct item was sent as per the order{pk}. The size or variant did not match what the customer expected.',
+    'The item delivered matches the product listing. The customer seems to have selected a different size or variant.',
+    'No picking error was found; the item sent is as ordered. The product did not meet the customer expectation.',
+    'We picked the same item that was ordered{pk}. The customer was confused about the product details.'
+  ],
+  priceCC:[
+    'The complaint is about pricing. The item was picked and sent as ordered.',
+    'This relates to product price, not to picking or packing. The correct item was delivered.'
+  ],
+  late:[
+    'The order was picked and handed over on time. The delay happened on the delivery side, so OTR to check.',
+    'Store processing was completed within time. OTR needs to check the delivery delay.'
+  ],
+  address:[
+    'The order was packed and handed over correctly. The address issue needs to be checked by OTR.'
+  ],
+  mdr:[
+    'The comment does not explain the issue clearly. More details are needed from the customer.',
+    'The complaint is not clear enough to find a cause. The customer needs to share more details or a photo.',
+    'No clear issue was mentioned. More information is required to check further.'
+  ],
+  missPMpicked:[
+    'The item was picked{pk} but was left on the packing table during packing. The final check before rider handover was missed.',
+    'The picker picked the item{pk} but did not move it into the order bag. It stayed on the packing table and the order went out without it.',
+    'Due to high order volume, the item was picked{pk} and kept aside on the packing table. It was not re-checked against the order before handover.',
+    'The item was picked{pk} and placed in another bin by mistake. The order was handed over without it as the final verification was missed.',
+    'The item was picked{pk} but left in the trolley after packing. The picker did not verify the bag against the order before dispatch.'
+  ],
+  wrongLoc:[
+    'The item was stowed at {rloc} but picked from {ploc}. The picker took the item from the wrong bin and the mismatch was not caught at packing.',
+    'Pick location {ploc} does not match the stow location {rloc}. A similar looking item was picked from the wrong bin and sent to the customer.',
+    'The picker scanned the order but picked from {ploc} while the stock was stowed at {rloc}. The wrong item went out as the packing check was missed.'
+  ],
+  qtyPM:[
+    'The picker picked less than the ordered quantity{pk}. The short pick was not caught during the final packing check.',
+    'Only part of the ordered quantity was put in the bag. The picker missed the remaining units before handover.'
+  ],
+  pmGeneric:[
+    'The issue happened during picking{pk}. The picker did not follow the final verification before handing the order to the rider.',
+    'This was a picker error at the store. The order was not re-checked against the pick list before dispatch.'
+  ],
+  packSOP:[
+    'The item was not packed as per the packing SOP. It was placed without proper protection and got damaged in the bag.',
+    'Packing SOP was not followed for this item. It should have been packed separately to avoid damage.'
+  ],
+  dup:['Duplicate Complaint']
+};
+
+function fill(s, v){ return s.replace(/\{(\w+)\}/g, (m,k) => v[k] == null ? '' : v[k]); }
+function hash(str){ let h = 0; for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0; return h; }
+
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function parseDate(v){
+  if (v == null || v === '') return null;
+  if (v instanceof Date && !isNaN(v)) return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+  if (typeof v === 'number') { if (v > 20000 && v < 80000) { const d = new Date(Math.round((v-25569)*864e5)); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); } return null; }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+  if (m) { let y = +m[3]; if (y < 100) y += 2000; let d = +m[1], mo = +m[2]; if (mo > 12 && d <= 12) { const t = d; d = mo; mo = t; } return new Date(y, mo-1, d); }
+  m = s.match(/^(\d{1,2})[\s\-]([A-Za-z]{3})[A-Za-z]*[\s\-,]*(\d{2,4})?/);
+  if (m) { const mo = MON.findIndex(x => x.toLowerCase() === m[2].toLowerCase()); if (mo >= 0) { let y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; return new Date(y, mo, +m[1]); } }
+  const t = Date.parse(s); if (!isNaN(t)) { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  return null;
+}
+function dayNum(d){ return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
+function addDays(d, n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+function fd(d){ return d ? d.getDate() + ' ' + MON[d.getMonth()] : ''; }
+function days(n){ return n + (n === 1 ? ' day' : ' days'); }
+const norm = v => String(v == null ? '' : v).trim();
+const normU = v => norm(v).toUpperCase();
+
+function parseTSV(text){
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i=0;i<text.length;i++){
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i+1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+    else if (ch === '"' && cell === '') q = true;
+    else if (ch === '\t') { row.push(cell); cell = ''; }
+    else if (ch === '\n') { row.push(cell.replace(/\r$/,'')); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell.replace(/\r$/,'')); rows.push(row); }
+  while (rows.length && rows[rows.length-1].every(c => !c.trim())) rows.pop();
+  return rows;
+}
+
+const FIELDS = [
+  {key:'process', label:'Process (pick / stow)', re:[/process/i, /activity/i, /transaction/i, /event/i, /\btype\b/i, /action/i]},
+  {key:'order', label:'Order ID', re:[/order/i, /shipment/i]},
+  {key:'asin', label:'ASIN / SKU', re:[/asin/i, /\bsku\b/i, /fnsku/i, /item ?(id|code)/i]},
+  {key:'user', label:'User (picker / stower)', re:[/user/i, /login/i, /picker/i, /associate/i, /employee/i, /operator/i, /\bby\b/i]},
+  {key:'loc', label:'Location / bin', re:[/location/i, /\bbin\b/i, /slot/i]},
+  {key:'date', label:'Date', re:[/date/i, /time/i]},
+  {key:'qty', label:'Qty', re:[/qty/i, /quantity/i, /units/i]},
+  {key:'exp', label:'Expiry (optional)', re:[/expir/i, /best ?before/i, /\bbbd\b/i]}
+];
+const PICK_RE = /pick|outbound/i, STOW_RE = /stow|receiv|inbound|putaway|grn/i;
+const REC_FIELDS = [
+  {key:'asin', label:'ASIN / SKU', re:[/asin/i, /\bsku\b/i, /fnsku/i, /item ?(id|code)/i]},
+  {key:'date', label:'Receive / stow date', re:[/stow.*(date|time)/i, /receiv.*(date|time)/i, /inbound.*date/i, /grn.*date/i, /date/i, /time/i]},
+  {key:'loc', label:'Stow location', re:[/stow.*(loc|bin)/i, /location/i, /\bbin\b/i, /slot/i, /dest/i]},
+  {key:'qty', label:'Qty', re:[/qty/i, /quantity/i, /units/i]},
+  {key:'exp', label:'Expiry (optional)', re:[/expir/i, /best ?before/i, /\bbbd\b/i]},
+  {key:'type', label:'Row type column', re:[/process/i, /activity/i, /transaction/i, /event/i, /\btype\b/i, /action/i]}
+];
+function matchType(val, filter){
+  const f = norm(filter); if (!f) return true;
+  const v = norm(val).toLowerCase();
+  return f.toLowerCase().split('|').map(s => s.trim()).filter(Boolean).some(s => v.includes(s));
+}
+function detect(headers, fields){
+  const map = {}, used = new Set();
+  fields.forEach(f => {
+    let hit = NONE;
+    for (const re of f.re) { const h = headers.find(x => !used.has(x) && re.test(x)); if (h) { hit = h; break; } }
+    if (hit !== NONE) used.add(hit);
+    map[f.key] = hit;
+  });
+  return map;
+}
+
+class Component extends DCLogic {
+  state = { vocText:'', out:null, rec:null, file:null, map:{}, results:[], toast:'' };
+
+  readFile(e, which){
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const wb = window.XLSX.read(new Uint8Array(ev.target.result), {type:'array', cellDates:true});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = window.XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
+        const headers = rows.length ? Object.keys(rows[0]) : [];
+        const data = {name:file.name, rows, headers};
+this.setState({file:data, map:detect(headers, FIELDS)});
+      } catch (err) { this.flash('Could not read ' + file.name); }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  }
+
+  flash(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t = setTimeout(() => this.setState({toast:''}), 2200); }
+
+  vocRows(){
+    const rows = parseTSV(this.state.vocText || '');
+    return rows.filter((r, i) => !(i === 0 && /^date$/i.test(norm(r[0]))) && !(norm(r[0]) === '' && r.slice(1).some(c => /picker id/i.test(c)) ));
+  }
+
+  indexes(){
+    const {file, map} = this.state;
+    const out = file, rec = file, outMap = map, recMap = map;
+    const pick = {}, orders = new Set(), recv = {};
+    const hasProc = map.process && map.process !== NONE;
+    const isPick = r => hasProc ? PICK_RE.test(norm(r[map.process])) : !!norm(r[map.order]);
+    const isStow = r => hasProc ? STOW_RE.test(norm(r[map.process])) : !norm(r[map.order]);
+    if (out) out.rows.forEach(r => {
+      if (!isPick(r)) return;
+      const o = normU(r[outMap.order]), a = normU(r[outMap.asin]);
+      if (!o) return; orders.add(o);
+      const k = o + '|' + a;
+      const p = {picker: norm(r[outMap.user]), loc: norm(r[outMap.loc]), date: parseDate(r[outMap.date]), qty: norm(r[outMap.qty])};
+      if (!pick[k]) pick[k] = p; else if (p.qty && pick[k].qty && !isNaN(+p.qty)) pick[k].qty = String(+pick[k].qty + +p.qty);
+    });
+    if (rec) rec.rows.forEach(r => {
+      if (!isStow(r)) return;
+      const a = normU(r[recMap.asin]); if (!a) return;
+      (recv[a] = recv[a] || []).push({date: parseDate(r[recMap.date]), loc: norm(r[recMap.loc]), qty: norm(r[recMap.qty]), user: norm(r[recMap.user]), exp: parseDate(r[recMap.exp])});
+    });
+    Object.values(recv).forEach(l => l.sort((x, y) => (x.date ? +x.date : 0) - (y.date ? +y.date : 0)));
+    return {pick, orders, recv, hasOut: !!out, hasRec: !!rec};
+  }
+
+  build(row, idx, ctx, seed){
+    const [date, , , comment, issue, , asinRaw, product, orderRaw] = row;
+    const order = normU(orderRaw), asin = normU(asinRaw);
+    if (!order && !asin && !norm(comment)) return {cat:'', text:'', picker:'', facts:'', type:'', blank:true};
+    const type = productType(product);
+    const ix = ctx.ix;
+    const key = order + '|' + asin;
+    const o = ix.pick[key];
+    const picker = o ? o.picker : '';
+    const h = hash(key + idx);
+    const P = (k, vars) => { ctx.count[k] = (ctx.count[k] || 0) + 1; const arr = S[k]; return fill(arr[(h + ctx.count[k] + seed) % arr.length], vars || V); };
+
+    if (ctx.seen.has(key) && order) return {cat:'', text:'Duplicate Complaint', picker, facts:'Repeat of an earlier row', type};
+    ctx.seen.add(key);
+
+    const pd = (o && o.date) || parseDate(date);
+    let r = null;
+    const list = ix.recv[asin] || [];
+    if (list.length) { r = list.filter(x => x.date && pd && dayNum(x.date) <= dayNum(pd)).pop() || list[list.length-1]; }
+    const shelf = type === 'dairy' ? ctx.dairyDays : type === 'produce' ? ctx.produceDays : null;
+    let exp = r && r.exp ? r.exp : (r && r.date && shelf != null ? addDays(r.date, shelf) : null);
+    const rem = exp && pd ? dayNum(exp) - dayNum(pd) : null;
+    const sameLoc = o && r && o.loc && r.loc ? (o.loc.toUpperCase() === r.loc.toUpperCase()) : null;
+
+    const V = {
+      pk: o ? (o.date ? ' on ' + fd(o.date) : '') + (o.loc ? ' from ' + o.loc : '') : '',
+      q: o && o.qty ? ' (' + o.qty + ' qty)' : '',
+      rd: r && r.date ? fd(r.date) : '', rq: r && r.qty ? ' with ' + r.qty + ' qty' : '', rl: r && r.loc ? ' at ' + r.loc : '',
+      pd: fd(pd), exp: fd(exp), rem: rem != null ? days(Math.max(rem, 0)) : '',
+      ploc: o && o.loc ? o.loc : '', rloc: r && r.loc ? r.loc : '',
+      same: sameLoc === true ? ' from the same location' : sameLoc === false ? ' from ' + o.loc + ' (stowed at ' + r.loc + ')' : (o && o.loc ? ' from ' + o.loc : '')
+    };
+    const facts = [
+      o ? 'Pick: ' + [fd(o.date), o.loc, o.picker, o.qty && o.qty + ' qty'].filter(Boolean).join(' · ') : (ix.hasOut ? (ix.orders.has(order) ? 'Order found, ASIN not picked' : 'No pick record') : ''),
+      r ? 'Stow: ' + [fd(r.date), r.loc, r.qty && r.qty + ' qty', r.user && 'by ' + r.user].filter(Boolean).join(' · ') : (ix.hasRec && (type === 'dairy' || type === 'produce') ? 'No stow record' : ''),
+      exp ? 'Exp: ' + fd(exp) + (rem != null ? ' (' + rem + 'd left at pick)' : '') : '',
+      sameLoc === false ? 'Location mismatch' : ''
+    ].filter(Boolean).join('\n');
+
+    const it = intent(comment, issue);
+    const c = (comment || '').toLowerCase();
+    const res = (cat, text) => ({cat, text, picker, facts, type, vars:V, it, autoCat:cat});
+    const fresh = (type === 'dairy' || type === 'produce') && r && r.date;
+
+    switch (it) {
+      case 'com': return res(CAT.COM, P('com'));
+      case 'price': return res(CAT.CC, P('priceCC'));
+      case 'late': return res(CAT.OTR, P('late'));
+      case 'address': return res(CAT.OTR, P('address'));
+      case 'missing':
+        if (o) return (this.props.missingAs ?? 'Picker Mistake') === 'OTR to check' ? res(CAT.OTR, P('missOTR')) : res(CAT.PM, P('missPMpicked'));
+        if (ix.hasOut && ix.orders.has(order)) return res(CAT.PM, P('missPM'));
+        return res(CAT.MDR, P('missMDR'));
+      case 'wrong':
+        if (ix.hasOut && !o && ix.orders.has(order)) return res(CAT.PM, P('wrongPM'));
+        if (sameLoc === false) return res(CAT.PM, P('wrongLoc'));
+        if (/(picture|image|photo|packshot|shown|shows)/.test(c)) return res(CAT.CATI, P('wrongCat'));
+        return res(CAT.CC, P('wrongCC'));
+      case 'qty': {
+        if (/(picture|image|photo|shows|showing)/.test(c)) return res(CAT.CATI, P('qtyCat'));
+        const multi = /(pack of|\d+\s?x\s?\d+|x\s?\d+|\d+\s?(pcs|pieces|pack|sachets|tabs|count|rolls|bars)|tray|twin)/i.test(product || '');
+        return multi ? res(CAT.OTR, P('qtyOTR')) : res(CAT.CC, P('qtyCC'));
+      }
+      case 'leak':
+        if (type === 'eggs') return res(CAT.OTR, P('leakEggs'));
+        if (type === 'nonfood' && /(bulge|swollen)/.test(c)) return res(CAT.VEN, P('nfVendor'));
+        if (/(milk|laban|water|juice|bottle|oil|yog|drink|syrup|paste|sauce|gallon|litre|liter|ml\b)/i.test(product || '')) return res(CAT.OTR, P('leakLiquid'));
+        return res(CAT.OTR, P('leakOther'));
+      case 'expiry':
+        if (type === 'nonfood') return res(CAT.CC, P('expNF'));
+        if (fresh && rem != null) {
+          if (rem < 0) return res(CAT.UTR, P('expUTR'));
+          if (rem <= 1) return res(CAT.PAD, P('expPAD'));
+          return res(CAT.CC, P('expCC'));
+        }
+        return res(CAT.MDR, P('expMDR'));
+      case 'function': return res(CAT.VEN, P('nfVendor'));
+      case 'unsealed':
+        if (type === 'nonfood' || type === 'food') return res(CAT.VEN, P('unsealedVendor'));
+        return res(CAT.OTR, P('leakOther'));
+      case 'quality': {
+        if (type === 'nonfood') return res(CAT.VEN, P('nfVendor'));
+        if (type === 'dairy' || type === 'produce') {
+          if (fresh && rem != null && rem < 0) return res(CAT.QC, P('qFacts') + ' ' + P('qQC'));
+          const a = fresh && rem != null ? P('qFacts') : P('qFactsNoRec');
+          if (type === 'dairy') return res(CAT.VEN, a + ' ' + P('qDairy'));
+          if (/(ripe|green|black spot|marks|small|size|not fresh|old|soft|colou?r|bruis|roots|hard)/.test(c) && !/(fung|mold|mould|rotten|smell|inside|internal)/.test(c)) return res(CAT.CC, a + ' ' + P('qCC'));
+          return res(CAT.VEN, a + ' ' + P('qVendor'));
+        }
+        return res(CAT.VEN, P('pkgVendor'));
+      }
+      case 'size': return res(CAT.CC, P('sizeCC'));
+      default:
+        if (type === 'nonfood') return res(CAT.VEN, P('nfVendor'));
+        return res(CAT.MDR, P('mdr'));
+    }
+  }
+
+  ctx(){
+    return {ix: this.indexes(), count:{}, seen:new Set(), dairyDays: this.props.dairyDays ?? 5, produceDays: this.props.produceDays ?? 6};
+  }
+
+  generate(){
+    const rows = this.vocRows();
+    if (!rows.length) { this.flash('Paste VOC rows first'); return; }
+    const ctx = this.ctx();
+    const results = rows.map((row, i) => ({row, seed:0, ...this.build(row, i, ctx, 0)}));
+    this.setState({results});
+    this.flash('Generated ' + results.filter(r => !r.blank).length + ' RCAs');
+  }
+
+  catText(r, cat, seed){
+    const it = r.it || '', t = r.type || '';
+    let k;
+    if (cat === CAT.PM) k = it === 'missing' ? 'missPMpicked' : it === 'wrong' ? (r.vars && r.vars.ploc && r.vars.rloc && r.vars.ploc !== r.vars.rloc ? 'wrongLoc' : 'wrongPM') : it === 'qty' ? 'qtyPM' : 'pmGeneric';
+    else if (cat === CAT.OTR) k = it === 'missing' ? 'missOTR' : it === 'qty' ? 'qtyOTR' : it === 'late' ? 'late' : t === 'eggs' ? 'leakEggs' : 'leakOther';
+    else if (cat === CAT.UTR) k = 'expUTR';
+    else if (cat === CAT.QC) k = 'qQC';
+    else if (cat === CAT.PACK) k = 'packSOP';
+    else if (cat === CAT.VEN) k = t === 'nonfood' ? 'nfVendor' : (t === 'produce' ? 'qVendor' : 'pkgVendor');
+    else if (cat === CAT.CC) k = it === 'wrong' ? 'wrongCC' : it === 'qty' ? 'qtyCC' : it === 'quality' && t === 'produce' ? 'qCC' : 'sizeCC';
+    else if (cat === CAT.COM) k = 'com';
+    else if (cat === CAT.MDR) k = 'mdr';
+    else if (cat === CAT.CATI) k = it === 'qty' ? 'qtyCat' : 'wrongCat';
+    else if (cat === CAT.PAD) k = 'expPAD';
+    else return r.text;
+    const arr = S[k];
+    return fill(arr[(hash(r.row.join('|')) + (seed || 0)) % arr.length], r.vars || {});
+  }
+
+  reword(i){
+    const cur = this.state.results[i];
+    if (cur && cur.cat !== cur.autoCat) { const seed = cur.seed + 1; this.update(i, {seed, text: this.catText(cur, cur.cat, seed)}); return; }
+    const ctx = this.ctx();
+    const results = this.state.results.slice();
+    results.forEach((r, j) => {
+      if (j < i) { this.build(r.row, j, ctx, r.seed); return; }
+      if (j === i) { const seed = r.seed + 1; const b = this.build(r.row, j, ctx, seed); results[j] = {...r, seed, text: b.text}; }
+    });
+    this.setState({results});
+  }
+
+  update(i, patch){ const results = this.state.results.slice(); results[i] = {...results[i], ...patch}; this.setState({results}); }
+
+  clean(s){ return norm(s).replace(/[\t\r\n]+/g, ' '); }
+  lines(full){
+    const header = this.props.copyHeader ?? false;
+    const out = this.state.results.map(r => {
+      const rca = [r.cat, r.text, r.picker].map(x => this.clean(x));
+      if (!full) return rca.join('\t');
+      const base = []; for (let k=0;k<9;k++) base.push(this.clean(r.row[k]));
+      return base.concat(rca).join('\t');
+    });
+    if (header) out.unshift(full ? 'Date\tSite\tArea\tCustomer Comment\tIssue Category\tWeek\tASIN\tProduct Name\tOrder ID\tRCA Category\tRCA & CAPA\tPicker ID' : 'RCA Category\tRCA & CAPA\tPicker ID');
+    return out.join('\n');
+  }
+  copy(text){
+    if (!this.state.results.length) { this.flash('Generate first'); return; }
+    const done = () => this.flash('Copied — paste into the sheet');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => this.fallbackCopy(text, done));
+    else this.fallbackCopy(text, done);
+  }
+  fallbackCopy(text, done){ const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); done(); }
+  download(){
+    if (!this.state.results.length) { this.flash('Generate first'); return; }
+    const esc = v => { const s = this.clean(v); return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const head = ['Date','Site','Area','Customer Comment','Issue Category','Week','ASIN','Product Name','Order ID','RCA Category','RCA & CAPA','Picker ID'];
+    const body = this.state.results.map(r => { const b = []; for (let k=0;k<9;k++) b.push(r.row[k]); return b.concat([r.cat, r.text, r.picker]).map(esc).join(','); });
+    const blob = new Blob(['\ufeff' + [head.join(',')].concat(body).join('\n')], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'VOC_RCA.csv'; a.click();
+  }
+
+  fields(defs, data, map, key){
+    const options = [NONE].concat(data ? data.headers : []);
+    return defs.map(f => ({label:f.label, value: map[f.key] || NONE, options, onChange: e => this.setState({[key]: {...this.state[key], [f.key]: e.target.value}})}));
+  }
+
+  renderVals(){
+    const {vocText, file, map, results, toast} = this.state;
+    let pickCount = 0, stowCount = 0;
+    if (file) { const hp = map.process && map.process !== NONE; file.rows.forEach(r => { const p = norm(r[map.process]); if (hp ? PICK_RE.test(p) : norm(r[map.order])) pickCount++; else if (hp ? STOW_RE.test(p) : true) stowCount++; }); }
+    const vocCount = vocText ? this.vocRows().filter(r => r.some(c => norm(c))).length : 0;
+    const counts = {};
+    results.forEach(r => { if (!r.blank) { const k = r.text === 'Duplicate Complaint' ? 'Duplicate' : (r.cat.split(' - ')[1] || 'Blank'); counts[k] = (counts[k] || 0) + 1; } });
+    const summary = Object.entries(counts).sort((a,b) => b[1]-a[1]).map(([k,v]) => k + ' ' + v).join(' · ');
+    const rows = results.map((r, i) => ({
+      n: i + 1,
+      order: norm(r.row[8]) || '—', asin: norm(r.row[6]) || '—',
+      productShort: norm(r.row[7]).length > 80 ? norm(r.row[7]).slice(0, 80) + '…' : norm(r.row[7]),
+      typeLabel: TYPE_LABEL[r.type] || '—',
+      comment: norm(r.row[3]), issue: norm(r.row[4]) || '—',
+      facts: r.facts || '',
+      cat: r.cat, text: r.text, picker: r.picker,
+      catBg: r.cat.startsWith('Ops') ? '#fbf1e4' : r.cat ? '#eef2f0' : '#fff',
+      onCat: e => { const cat = e.target.value; this.update(i, {cat, text: cat === r.autoCat ? r.text : this.catText(r, cat, r.seed)}); },
+      onText: e => this.update(i, {text: e.target.value}),
+      onPicker: e => this.update(i, {picker: e.target.value}),
+      onReword: () => this.reword(i)
+    }));
+    return {
+      dairyDays: this.props.dairyDays ?? 5, produceDays: this.props.produceDays ?? 6,
+      vocText, vocCount,
+      onVoc: e => this.setState({vocText: e.target.value}),
+      fileName: file ? file.name : 'No file — .xlsx or .csv', pickCount, stowCount,
+      onFile: e => this.readFile(e),
+      fields: this.fields(FIELDS, file, map, 'map'),
+      onGenerate: () => this.generate(),
+      onCopyRca: () => this.copy(this.lines(false)),
+      onCopyFull: () => this.copy(this.lines(true)),
+      onDownload: () => this.download(),
+      summary, toast,
+      hasResults: results.length > 0, noResults: results.length === 0,
+      rows, catOptions: CAT_LIST
+    };
+  }
+}
+</script>
+</body>
+</html>

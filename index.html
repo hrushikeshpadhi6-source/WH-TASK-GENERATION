@@ -2500,6 +2500,13 @@ window.feedbackAdminClear=async function(){
       <span class="card-arrow">→</span>
     </div>
 
+    <div class="task-card" data-tool="voc-rca" data-tool-label="VOC RCA Builder" style="--card-color:#1f5e4a;" onclick="window.open('VOC RCA Builder.dc.html','_blank')">
+      <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🧾</span>
+      <h3 style="background:linear-gradient(135deg,#1f5e4a,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">VOC RCA Builder</h3>
+      <p>Paste VOC rows + outbound / stow file → auto root cause per complaint.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
     <div class="task-card" data-tool="smart-stow" data-tool-label="Smart Stowing" style="--card-color:#EA580C;" onclick="openTask('smart-stow')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🎯</span>
       <h3 style="background:linear-gradient(135deg,#EA580C,#DC2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Smart Stowing</h3>
@@ -16424,7 +16431,7 @@ var MAINT_TOOLS = [
   ['consolidation','Consolidation'],['slow-moving','Slow Moving Items'],
   ['audit-loc','Audit by Location'],['audit-asin','Audit by ASIN'],['report','Inventory Report'],
   ['ysm','YSM Barcode Task'],['catalog-issue','Catalog Issue Items'],['scanning-issue','Scanning Issue Items'],
-  ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],
+  ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],['voc-rca','VOC RCA Builder'],
   ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
   ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
