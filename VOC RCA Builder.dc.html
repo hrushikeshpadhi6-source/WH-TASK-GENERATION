@@ -8,6 +8,18 @@
 <body>
 <x-dc>
 <helmet>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -18,7 +30,8 @@ textarea,input,select,button{font-family:inherit}
 </style>
 </helmet>
 <div style="max-width:1400px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:24px">
-  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+  <div style="display:flex"><a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #dcdad3;color:#4a4944;font-size:13px;font-weight:600;padding:8px 16px;border-radius:9px;text-decoration:none" style-hover="background:#1d1d1b;color:#fff;border-color:#1d1d1b">← Back to Dashboard</a></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px">
     <div style="display:flex;flex-direction:column;gap:6px">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6a64">VOC · Root cause</div>
       <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">VOC RCA Builder</h1>
