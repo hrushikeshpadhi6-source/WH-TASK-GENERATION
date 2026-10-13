@@ -147,7 +147,7 @@ textarea,input,select,button{font-family:inherit}
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;missingAs&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Picker Mistake&quot;,&quot;OTR to check&quot;],&quot;default&quot;:&quot;Picker Mistake&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Rules&quot;},&quot;dairyDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;produceDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;copyHeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Copy&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;missingAs&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Mixed&quot;,&quot;Picker Mistake&quot;,&quot;OTR to check&quot;],&quot;default&quot;:&quot;Mixed&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Rules&quot;},&quot;pmShare&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:50,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Rules&quot;},&quot;dairyDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;produceDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:6,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Expiry rules&quot;},&quot;copyHeader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Copy&quot;}}">
 const CAT = {
   PM:'Ops Controllable - Picker Mistake', OTR:'Ops Controllable - OTR to check', UTR:'Ops Controllable - UTR Expiry Miss',
   QC:'Ops Controllable - QC Miss', PACK:'Ops Controllable - Packing SOP Failure',
@@ -214,9 +214,24 @@ const S = {
     'No pick record was found for this item in the order. It was likely left on the packing table or in another bin.'
   ],
   missMDR:[
-    'No pick record was found for this order in the outbound file. More details are needed to confirm what was sent.',
-    'The order could not be matched in the outbound data. CCTV and order details need to be checked further.',
-    'Outbound data for this order is not available, so the pick could not be confirmed. More details are required.'
+    'The item was not placed in the order bag during packing. The picker did not complete the final verification against the order before rider handover. Corrective action: picker to be briefed on the final bag check SOP.',
+    'During peak volume, the item was left on the packing table and the order was dispatched without it. The final check before handover was missed by the picker.',
+    'The item was missed by the picker while consolidating the order. The bag was not re-checked against the order list before dispatch. Picker to be re-trained on order verification.',
+    'The item was picked but placed in another order bin by mistake. The order was handed over without it as the final verification was not followed.'
+  ],
+  missOTRgen:[
+    'The order was picked complete and all items were packed in the same bag, which was sealed before rider handover. The item appears to have been lost after dispatch; OTR to check with the rider.',
+    'All items were verified against the order at packing and the bag was handed over sealed. As no store-side gap was identified, OTR to investigate the delivery handling.',
+    'The order was consolidated and checked before handover to the rider. The missing item needs to be verified by OTR on the delivery leg.'
+  ],
+  wrongGen:[
+    'A similar looking item was picked from the adjacent bin by mistake. The scan mismatch was not caught at packing before dispatch. Corrective action: picker to be briefed on scan verification.',
+    'The picker selected a different variant from the same shelf. The item was not verified against the order at the packing stage.',
+    'The wrong item was picked due to similar packaging. The final check before rider handover was missed. Picker to be re-trained on ASIN verification.'
+  ],
+  qtyGen:[
+    'The picker picked less than the ordered quantity. The short pick was not caught during the final packing check. Corrective action: picker to be briefed on quantity verification.',
+    'Only part of the ordered quantity was placed in the bag. The remaining units were missed before handover as the final check was not followed.'
   ],
   wrongCC:[
     'The same ASIN that was ordered was picked{pk} and packed. No picking error was found, so the customer may have expected a different variant.',
@@ -550,8 +565,8 @@ this.setState({file:data, map:detect(headers, FIELDS)});
       same: sameLoc === true ? ' from the same location' : sameLoc === false ? ' from ' + o.loc + ' (stowed at ' + r.loc + ')' : (o && o.loc ? ' from ' + o.loc : '')
     };
     const facts = [
-      o ? 'Pick: ' + [fd(o.date), o.loc, o.picker, o.qty && o.qty + ' qty'].filter(Boolean).join(' · ') : (ix.hasOut ? (ix.orders.has(order) ? 'Order found, ASIN not picked' : 'No pick record') : ''),
-      r ? 'Stow: ' + [fd(r.date), r.loc, r.qty && r.qty + ' qty', r.user && 'by ' + r.user].filter(Boolean).join(' · ') : (ix.hasRec && (type === 'dairy' || type === 'produce') ? 'No stow record' : ''),
+      o ? 'Pick: ' + [fd(o.date), o.loc, o.picker, o.qty && o.qty + ' qty'].filter(Boolean).join(' · ') : (ix.hasOut && ix.orders.has(order) ? 'Order found, ASIN not picked' : ''),
+      r ? 'Stow: ' + [fd(r.date), r.loc, r.qty && r.qty + ' qty', r.user && 'by ' + r.user].filter(Boolean).join(' · ') : (''),
       exp ? 'Exp: ' + fd(exp) + (rem != null ? ' (' + rem + 'd left at pick)' : '') : '',
       sameLoc === false ? 'Location mismatch' : ''
     ].filter(Boolean).join('\n');
@@ -560,6 +575,8 @@ this.setState({file:data, map:detect(headers, FIELDS)});
     const c = (comment || '').toLowerCase();
     const res = (cat, text) => ({cat, text, picker, facts, type, vars:V, it, autoCat:cat});
     const fresh = (type === 'dairy' || type === 'produce') && r && r.date;
+    const noData = !o && !(ix.hasOut && ix.orders.has(order));
+    const pmPick = (h % 100) < (this.props.pmShare ?? 50);
 
     switch (it) {
       case 'com': return res(CAT.COM, P('com'));
@@ -567,17 +584,23 @@ this.setState({file:data, map:detect(headers, FIELDS)});
       case 'late': return res(CAT.OTR, P('late'));
       case 'address': return res(CAT.OTR, P('address'));
       case 'missing':
-        if (o) return (this.props.missingAs ?? 'Picker Mistake') === 'OTR to check' ? res(CAT.OTR, P('missOTR')) : res(CAT.PM, P('missPMpicked'));
-        if (ix.hasOut && ix.orders.has(order)) return res(CAT.PM, P('missPM'));
-        return res(CAT.MDR, P('missMDR'));
+      {
+        const mode = this.props.missingAs ?? 'Mixed';
+        const asPM = mode === 'Picker Mistake' || (mode === 'Mixed' && pmPick);
+        if (ix.hasOut && !o && ix.orders.has(order)) return res(CAT.PM, P('missPM'));
+        if (o) return asPM ? res(CAT.PM, P('missPMpicked')) : res(CAT.OTR, P('missOTR'));
+        return asPM ? res(CAT.PM, P('missMDR')) : res(CAT.OTR, P('missOTRgen'));
+      }
       case 'wrong':
         if (ix.hasOut && !o && ix.orders.has(order)) return res(CAT.PM, P('wrongPM'));
         if (sameLoc === false) return res(CAT.PM, P('wrongLoc'));
         if (/(picture|image|photo|packshot|shown|shows)/.test(c)) return res(CAT.CATI, P('wrongCat'));
+        if (noData && pmPick) return res(CAT.PM, P('wrongGen'));
         return res(CAT.CC, P('wrongCC'));
       case 'qty': {
         if (/(picture|image|photo|shows|showing)/.test(c)) return res(CAT.CATI, P('qtyCat'));
         const multi = /(pack of|\d+\s?x\s?\d+|x\s?\d+|\d+\s?(pcs|pieces|pack|sachets|tabs|count|rolls|bars)|tray|twin)/i.test(product || '');
+        if (noData && pmPick && !multi) return res(CAT.PM, P('qtyGen'));
         return multi ? res(CAT.OTR, P('qtyOTR')) : res(CAT.CC, P('qtyCC'));
       }
       case 'leak':
