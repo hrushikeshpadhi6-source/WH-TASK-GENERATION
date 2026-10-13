@@ -387,9 +387,9 @@ const S = {
     'The item was picked{pk} but left in the trolley after packing. The picker did not verify the bag against the order before dispatch.'
   ],
   wrongLoc:[
-    'The item was stowed at {rloc} but picked from {ploc}. The picker took the item from the wrong bin and the mismatch was not caught at packing.',
-    'Pick location {ploc} does not match the stow location {rloc}. A similar looking item was picked from the wrong bin and sent to the customer.',
-    'The picker scanned the order but picked from {ploc} while the stock was stowed at {rloc}. The wrong item went out as the packing check was missed.'
+    'The correct item was left on the packing table during packing and a similar item from another order was placed in the bag. The final verification before rider handover was missed by the picker.',
+    'During packing, the picker mixed up items between two orders. The bag was not re-checked against the order list before dispatch. Corrective action: picker to be briefed on the final bag check SOP.',
+    'The ordered item was left aside on the packing table and a different item was packed in its place. The picker did not complete the final verification before handover.'
   ],
   qtyPM:[
     'The picker picked less than the ordered quantity{pk}. The short pick was not caught during the final packing check.',
@@ -562,13 +562,12 @@ this.setState({file:data, map:detect(headers, FIELDS)});
       rd: r && r.date ? fd(r.date) : '', rq: r && r.qty ? ' with ' + r.qty + ' qty' : '', rl: r && r.loc ? ' at ' + r.loc : '',
       pd: fd(pd), exp: fd(exp), rem: rem != null ? days(Math.max(rem, 0)) : '',
       ploc: o && o.loc ? o.loc : '', rloc: r && r.loc ? r.loc : '',
-      same: sameLoc === true ? ' from the same location' : sameLoc === false ? ' from ' + o.loc + ' (stowed at ' + r.loc + ')' : (o && o.loc ? ' from ' + o.loc : '')
+      same: sameLoc === true ? ' from the same location' : (o && o.loc ? ' from ' + o.loc : '')
     };
     const facts = [
       o ? 'Pick: ' + [fd(o.date), o.loc, o.picker, o.qty && o.qty + ' qty'].filter(Boolean).join(' · ') : (ix.hasOut && ix.orders.has(order) ? 'Order found, ASIN not picked' : ''),
       r ? 'Stow: ' + [fd(r.date), r.loc, r.qty && r.qty + ' qty', r.user && 'by ' + r.user].filter(Boolean).join(' · ') : (''),
       exp ? 'Exp: ' + fd(exp) + (rem != null ? ' (' + rem + 'd left at pick)' : '') : '',
-      sameLoc === false ? 'Location mismatch' : ''
     ].filter(Boolean).join('\n');
 
     const it = intent(comment, issue);
