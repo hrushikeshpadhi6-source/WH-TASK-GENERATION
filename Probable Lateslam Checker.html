@@ -310,8 +310,10 @@ function run(rows){
 const inp=$("pf"), zone=$("pz");
 const load=files=>{ files=[...files]; if(!files.length) return; $("ps").textContent="reading…"; const all=[], modes=[]; let done=0;
   files.forEach(file=>readFile(file,rows=>{ const pRows=rows.filter(r=>(num(r.promise_utr)||0)>0), pc=pRows.length, ps=new Set(pRows.map(storeOf).filter(Boolean)).size, hasP=ps>6;
-    rows.forEach(r=>{ r.__hasP=hasP; r.__file=file.name; all.push(r); });
-    modes.push(file.name+" — "+ps+" store"+(ps===1?"":"s")+" with promise_utr ("+pc.toLocaleString()+" rows) → "+(hasP?"using file promise_utr (blank not counted)":"treated as blank, using fixed promise table"));
+    const sc={}; pRows.forEach(r=>{ const s=storeOf(r); if(s) sc[s]=(sc[s]||0)+1; });
+    const own=new Set(Object.keys(sc).filter(s=>sc[s]>500));
+    rows.forEach(r=>{ r.__hasP=hasP||own.has(storeOf(r)); r.__file=file.name; all.push(r); });
+    modes.push(file.name+" — "+ps+" store"+(ps===1?"":"s")+" with promise_utr ("+pc.toLocaleString()+" rows) → "+(!hasP&&own.size?"own promise_utr for "+[...own].join(", ")+" (>500 rows); rest use fixed promise table":hasP?"using file promise_utr (blank not counted)":"treated as blank, using fixed promise table"));
     if(++done===files.length){ zone.classList.add("loaded");
       $("ps").textContent="✓ "+files.length+" file"+(files.length>1?"s":"")+" · "+all.length.toLocaleString()+" rows";
       $("ptMode").innerHTML=modes.map(esc).join("<br>"); run(all); } })); };
