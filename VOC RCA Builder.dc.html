@@ -297,35 +297,33 @@ const S = {
     'The item was dispatched as received from the vendor and was within its shelf life.'
   ],
   qFacts:[
-    'The item was received on {rd}{rq}{rl} and picked on {pd}{same}, with {rem} of shelf life left.',
-    'It was received on {rd}{rq}{rl}. It was picked on {pd}{same} and still had {rem} before expiry.',
-    'As per receiving data it came in on {rd}{rq}{rl}. It was picked on {pd}{same} with {rem} remaining.',
-    'Stock was received on {rd}{rq}{rl} and the order was picked on {pd}{same}, leaving {rem} of shelf life.'
+    'As per receiving records, the item was received on {rd}{rq}{rl} and picked on {pd}{same}, with {rem} of valid shelf life remaining at dispatch.',
+    'Receiving data confirms the stock was inwarded on {rd}{rq}{rl}. The order was picked on {pd}{same}, with {rem} of shelf life remaining.',
+    'The item was received on {rd}{rq}{rl} and dispatched on {pd}{same}, within its valid shelf life ({rem} remaining).'
   ],
   qFactsNoRec:[
-    'The item was dispatched within its shelf life.',
-    'The item was within shelf life at the time of dispatch.',
-    'The stock was within its shelf life when the order was picked.'
+    'The item was dispatched within its valid shelf life.',
+    'Records confirm the item was within its valid shelf life at the time of dispatch.',
+    'The stock was within its approved shelf life when the order was picked.'
   ],
   qVendor:[
-    'QC is done four times a day and no outer defect was seen. The issue seems to be inside the product, so the vendor needs to check.',
-    'The batch passed the daily QC rounds with no visible issue. Vendor to check the internal quality.',
-    'No defect was found during the routine QC checks. This looks like an internal quality issue from the supplier.',
-    'The item looked fine from outside during QC. The vendor needs to review the batch quality.'
+    'The product was stored at the required temperature throughout storage and handling, and passed the scheduled QC checks (four times daily) with no visible defect. The reported issue appears to be internal to the product; the matter has been escalated to the vendor for batch review.',
+    'Temperature compliance was maintained from receipt to dispatch, and no external defect was identified during routine QC inspections. As the concern relates to internal product quality, the vendor has been requested to investigate the batch.',
+    'The item met storage temperature and shelf-life requirements and showed no visible defect at QC or picking. The quality concern has been referred to the supplier for root cause verification.'
   ],
   qCC:[
-    'QC is done four times a day and no defect was found. The marks or ripeness level are natural for this product.',
-    'The item passed QC before dispatch. The customer expectation on ripeness or look did not match the product.',
-    'No quality issue was found during the daily QC checks. Natural marks on the produce were taken as spoilage.'
+    'The product was maintained at the required temperature, was within its valid shelf life, and passed the scheduled QC checks with no defect noted. The ripeness level and surface characteristics observed are natural for this produce; the product may not have met the customer\'s expectation.',
+    'Storage temperature and shelf-life compliance were confirmed, and the item cleared QC prior to dispatch. The reported concern relates to natural variation in appearance or ripeness, which may not have aligned with the customer\'s expectation.',
+    'No quality deviation was identified: the item was stored at the correct temperature, within valid shelf life, and passed routine QC. The natural marks or ripeness level may have been perceived as a quality issue and did not meet the customer\'s expectation.'
   ],
   qQC:[
-    'The item was past its shelf life at dispatch and should have been removed during QC.',
-    'The stock had crossed its shelf life by the pick date. The QC check missed it.'
+    'The item had exceeded its shelf life at the time of dispatch and should have been identified and removed during the QC check. Corrective action: QC team to be retrained on shelf-life verification and FEFO compliance.',
+    'Records show the stock had passed its shelf life by the pick date, indicating a gap in the QC process. Corrective action: reinforce daily expiry checks and FEFO adherence with the QC team.'
   ],
   qDairy:[
-    'The pack was sealed and kept in the chiller until picking. The quality issue needs to be checked by the vendor.',
-    'It was stored at the right temperature and was sealed when sent. Vendor to check the product quality.',
-    'No damage or swelling was seen at picking. The vendor needs to review this batch.'
+    'The product remained sealed and was stored in the chiller at the required temperature until picking, with cold-chain compliance maintained through dispatch. As no handling deviation was identified, the concern has been escalated to the vendor for batch quality review.',
+    'Cold-chain temperature was maintained from receipt to dispatch, and the pack was intact with no swelling or damage at picking. The item was within valid shelf life; the vendor has been requested to investigate the batch.',
+    'The item was stored at the correct chiller temperature, within valid shelf life, and dispatched in sealed condition. If no internal defect is confirmed, the product may not have met the customer\'s expectation; the vendor has been informed for review.'
   ],
   pkgVendor:[
     'The item comes sealed from the manufacturer and was received in good condition. Quality inside the pack needs to be checked by the vendor.',
