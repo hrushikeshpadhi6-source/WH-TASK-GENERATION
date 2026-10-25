@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+body{margin:0;background:#f4f3ef;color:#1d1d1b;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#1f5e4a}a:hover{color:#14402f}
+textarea,input,select,button{font-family:inherit}
+</style>
+</helmet>
+<div style="max-width:1400px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex"><a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #dcdad3;color:#4a4944;font-size:13px;font-weight:600;padding:8px 16px;border-radius:9px;text-decoration:none" style-hover="background:#1d1d1b;color:#fff;border-color:#1d1d1b">← Back to Dashboard</a></div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6a64">Loss · Concessions · Root cause</div>
+    <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.01em">WH Loss &amp; Concession RCA</h1>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+      <div style="font-weight:600;font-size:15px">1. Upload files</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6b6a64">{{ loadedTxt }}</div>
+    </div>
+    <label style="display:flex;align-items:center;gap:10px;border:1px dashed #c9c6bd;border-radius:8px;padding:12px;cursor:pointer;background:#fbfaf8">
+      <span style="background:#1d1d1b;color:#fff;font-size:13px;font-weight:500;padding:7px 12px;border-radius:6px">Upload</span>
+      <span style="font-size:13px;color:#4a4944;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fileNames }}</span>
+      <input type="file" multiple="multiple" accept=".xlsx,.xls,.csv" onChange="{{ onFiles }}" style="display:none">
+    </label>
+    <div style="font-size:12px;color:#6b6a64;line-height:1.45">Select the Concession, WHD and WHL files together. Each file is detected automatically, and GMS is read from the summary sheet.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:12px;color:#4a4944">Metric</span>
+      <div style="display:flex;gap:4px;background:#fff;border:1px solid #dcdad3;border-radius:9px;padding:3px">
+        <sc-for list="{{ metricTabs }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.onClick }}" style="border:0;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#4a4944">
+      <span>Store</span>
+      <select value="{{ store }}" onChange="{{ onStore }}" style="border:1px solid #dcdad3;border-radius:8px;padding:9px 10px;font-size:13px;background:#fff;color:#1d1d1b;min-width:140px">
+        <sc-for list="{{ storeOptions }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+      </select>
+    </label>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#4a4944">
+      <span>Week</span>
+      <select value="{{ week }}" onChange="{{ onWeek }}" style="border:1px solid #dcdad3;border-radius:8px;padding:9px 10px;font-size:13px;background:#fff;color:#1d1d1b;min-width:110px">
+        <sc-for list="{{ weekOptions }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+      </select>
+    </label>
+    <sc-if value="{{ showPerish }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:12px;color:#4a4944">Perishable</span>
+        <div style="display:flex;gap:4px;background:#fff;border:1px solid #dcdad3;border-radius:9px;padding:3px">
+          <sc-for list="{{ perishTabs }}" as="t" hint-placeholder-count="3">
+            <button onClick="{{ t.onClick }}" style="border:0;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span style="font-size:12px;color:#4a4944">Top by USD value</span>
+      <div style="display:flex;gap:4px;background:#fff;border:1px solid #dcdad3;border-radius:9px;padding:3px">
+        <sc-for list="{{ topTabs }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.onClick }}" style="border:0;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+    <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+      <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:12px;color:#6b6a64">{{ s.label }}</div>
+        <div style="font-size:22px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:-.01em">{{ s.value }}</div>
+        <div style="font-size:12px;color:#6b6a64">{{ s.note }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,2.2fr) minmax(280px,1fr);gap:16px;align-items:start">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #e2e0da">
+        <div style="font-weight:600;font-size:15px">2. {{ topTitle }}</div>
+        <div style="font-size:12px;color:#6b6a64">{{ topNote }}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:820px">
+        <thead>
+          <tr style="background:#f8f7f4;text-align:left;color:#4a4944">
+            <th style="padding:9px 12px;font-weight:500;width:28px">#</th>
+            <th style="padding:9px 12px;font-weight:500">{{ idHead }} / item</th>
+            <th style="padding:9px 12px;font-weight:500;width:90px;text-align:right">USD</th>
+            <th style="padding:9px 12px;font-weight:500;width:170px">Reason</th>
+            <th style="padding:9px 12px;font-weight:500;width:200px">Sub-reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+            <tr style="vertical-align:top;border-top:1px solid #eeece6">
+              <td style="padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8880">{{ r.n }}</td>
+              <td style="padding:10px 12px">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.id }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b6a64">{{ r.meta }}</div>
+                  <div style="font-size:12px;color:#4a4944;line-height:1.4">{{ r.name }}</div>
+                  <div style="font-size:12px;color:#1f5e4a;line-height:1.45">{{ r.line }}</div>
+                </div>
+              </td>
+              <td style="padding:10px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">
+                <div>{{ r.usd }}</div>
+                <div style="color:#8a8880;font-size:11px">{{ r.share }}</div>
+              </td>
+              <td style="padding:10px 12px">
+                <select value="{{ r.reason }}" onChange="{{ r.onReason }}" style="width:100%;border:1px solid #dcdad3;border-radius:6px;padding:6px;font-size:12px;background:{{ r.bg }};color:#1d1d1b">
+                  <sc-for list="{{ reasonOptions }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+                </select>
+              </td>
+              <td style="padding:10px 12px">
+                <input list="subs" value="{{ r.sub }}" onChange="{{ r.onSub }}" placeholder="Optional" style="width:100%;box-sizing:border-box;border:1px solid #dcdad3;border-radius:6px;padding:6px 8px;font-size:12px">
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <datalist id="subs"><sc-for list="{{ subOptions }}" as="o"><option value="{{ o }}"></option></sc-for></datalist>
+      <sc-if value="{{ noRows }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:36px;text-align:center;color:#6b6a64;font-size:14px">Upload the files to see the top cases.</div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-weight:600;font-size:15px">3. Paste checked data</div>
+        <div style="font-size:12px;color:#6b6a64;line-height:1.45">One row per case: {{ idHead }} · Reason · Sub-reason (copied from Excel). Reasons are matched by keyword, e.g. "picker", "OTR", "duplicate".</div>
+        <textarea value="{{ pasteText }}" onChange="{{ onPaste }}" placeholder="406-1234567-1234567	Picker mistake	Left on packing table" style="min-height:150px;resize:vertical;border:1px solid #dcdad3;border-radius:8px;padding:10px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;background:#fbfaf8;color:#1d1d1b;outline:none;white-space:pre;overflow:auto"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button onClick="{{ onApply }}" style="background:#1f5e4a;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#174a3a">Apply to cases</button>
+          <button onClick="{{ onClearTags }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer" style-hover="border-color:#1d1d1b">Clear reasons</button>
+          <span style="font-size:12px;color:#1f5e4a">{{ pasteMsg }}</span>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-weight:600;font-size:15px">Sub-reason list</div>
+        <div style="font-size:12px;color:#6b6a64;line-height:1.45">One per line. Shown as suggestions in the sub-reason column.</div>
+        <textarea value="{{ subText }}" onChange="{{ onSubText }}" style="min-height:110px;resize:vertical;border:1px solid #dcdad3;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;background:#fbfaf8;color:#1d1d1b;outline:none"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showNP }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #e2e0da;flex-wrap:wrap">
+        <div style="font-weight:600;font-size:15px">Non-perishable contribution</div>
+        <div style="font-size:12px;color:#6b6a64">{{ npNote }}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+        <thead>
+          <tr style="background:#f8f7f4;text-align:left;color:#4a4944">
+            <th style="padding:9px 12px;font-weight:500;width:28px">#</th>
+            <th style="padding:9px 12px;font-weight:500;width:130px">ASIN</th>
+            <th style="padding:9px 12px;font-weight:500">Item</th>
+            <th style="padding:9px 12px;font-weight:500;width:70px;text-align:right">Cases</th>
+            <th style="padding:9px 12px;font-weight:500;width:100px;text-align:right">USD</th>
+            <th style="padding:9px 12px;font-weight:500;width:110px;text-align:right">% of quality</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ npRows }}" as="r" hint-placeholder-count="5">
+            <tr style="border-top:1px solid #eeece6">
+              <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8880">{{ r.n }}</td>
+              <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.asin }}</td>
+              <td style="padding:9px 12px;font-size:12px;color:#4a4944">{{ r.name }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.cases }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.usd }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.share }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </sc-if>
+
+  <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-weight:600;font-size:15px">4. RCA report</div>
+      <div style="flex:1"></div>
+      <span style="font-size:12px;color:#1f5e4a">{{ toast }}</span>
+      <button onClick="{{ onRegen }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer" style-hover="border-color:#1d1d1b">Regenerate</button>
+      <button onClick="{{ onExcel }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer" style-hover="border-color:#1d1d1b">Download Excel</button>
+      <button onClick="{{ onCopy }}" style="background:#1f5e4a;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#174a3a">Copy RCA</button>
+    </div>
+    <textarea value="{{ report }}" onChange="{{ onReport }}" style="min-height:520px;resize:vertical;border:1px solid #dcdad3;border-radius:8px;padding:14px;font-size:13px;line-height:1.6;background:#fbfaf8;color:#1d1d1b;outline:none"></textarea>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const METRICS = {
+  missing: { label: 'Item Missing', kind: 'conc', match: 'missing', title: 'Concessions – Item Missing', noun: 'item-missing' },
+  wrong: { label: 'Wrong Item', kind: 'conc', match: 'wrong', title: 'Concessions – Wrong Item', noun: 'wrong-item' },
+  quality: { label: 'Quality', kind: 'conc', match: 'quality', title: 'Concessions – Quality', noun: 'quality' },
+  whd: { label: 'WHD', kind: 'whd', title: 'Warehouse Damage (WHD)', noun: 'warehouse damage' },
+  whl: { label: 'WHL', kind: 'whl', title: 'Warehouse Loss (WHL)', noun: 'warehouse loss' }
+};
+const REASONS = {
+  missing: ['Picker Mistake', 'OTR Mistake', 'Duplicate Order', 'Not Identified'],
+  wrong: ['Picker Mistake', 'OTR Mistake', 'Catalog Issue', 'Customer Confused', 'Not Identified'],
+  quality: ['Vendor Issue', 'Customer Expectation', 'Picker Mistake', 'Expiry / Shelf Life', 'OTR Mistake', 'Not Identified'],
+  whd: ['Handling Damage', 'Vendor Damage', 'Expiry', 'Leakage', 'Not Identified'],
+  whl: ['Stow Error', 'Pick Error', 'Inventory Adjustment', 'Transship Loss', 'Not Identified']
+};
+const PENDING = 'Pending review';
+const OTHER = ['Duplicate Order', 'Not Identified', PENDING];
+const DEFAULT_SUBS = 'Left on packing table\nNew associate forgot to pack\nShort pick (qty)\nPlaced in another order bag\nSimilar item from wrong bin\nDamaged unit packed\nShort expiry picked';
+
+const n2 = v => (Math.round(v * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const usd = v => 'USD ' + n2(v);
+const pct = x => { const p = x * 100; return (isFinite(p) ? p.toFixed(p < 10 ? 1 : 0) : '0') + '%'; };
+const pct2 = x => (x * 100).toFixed(2) + '%';
+const shortName = s => { s = String(s || '').split('|')[0].trim(); return s ? (s.length > 75 ? s.slice(0, 72).trim() + '…' : s) : 'Item description unavailable'; };
+const cap = s => { s = String(s || '').trim(); return s ? s[0].toUpperCase() + s.slice(1) : s; };
+const sent = s => { s = cap(s); return s && !/[.!?]$/.test(s) ? s + '.' : s; };
+const FOOD_GL = /grocery|prepared|perishable|produce|fresh|food|beverage/i;
+const isNP = p => /non/i.test(String(p || ''));
+
+function mapReason(t, m) {
+  const s = String(t || '').toLowerCase().trim(), opts = REASONS[m];
+  if (!s) return '';
+  const exact = opts.find(o => o.toLowerCase() === s); if (exact) return exact;
+  const has = o => opts.includes(o) ? o : null;
+  if (/otr|\bda\b|delivery|rider|driver|transit|handover|dsp/.test(s)) return has('OTR Mistake') || has('Transship Loss') || 'Not Identified';
+  if (/dup/.test(s)) return has('Duplicate Order') || 'Not Identified';
+  if (/stow/.test(s)) return has('Stow Error') || has('Picker Mistake');
+  if (/pick|associate|store|packing|packer/.test(s)) return has('Picker Mistake') || has('Pick Error') || has('Handling Damage');
+  if (/vendor|supplier|batch/.test(s)) return has('Vendor Issue') || has('Vendor Damage') || 'Not Identified';
+  if (/catalog|image|listing|detail page/.test(s)) return has('Catalog Issue') || 'Not Identified';
+  if (/expect/.test(s)) return has('Customer Expectation') || has('Customer Confused');
+  if (/confus|customer/.test(s)) return has('Customer Confused') || has('Customer Expectation') || 'Not Identified';
+  if (/expir|shelf|fefo/.test(s)) return has('Expiry / Shelf Life') || has('Expiry') || 'Not Identified';
+  if (/handl|drop|broke|crush/.test(s)) return has('Handling Damage') || has('Picker Mistake');
+  if (/leak/.test(s)) return has('Leakage') || 'Not Identified';
+  if (/transship|transfer/.test(s)) return has('Transship Loss') || 'Not Identified';
+  if (/adjust|cycle|count/.test(s)) return has('Inventory Adjustment') || 'Not Identified';
+  return 'Not Identified';
+}
+
+function pickerLine(sub, it, m) {
+  const s = String(sub || '').toLowerCase();
+  if (/similar|variant|adjacent|wrong bin|location/.test(s)) return 'A similar item was picked from the wrong bin, and the mismatch was not identified during packing verification.';
+  if (/new/.test(s)) return m === 'missing' ? 'A new associate forgot to place the picked item in the order bag and left it on the packing table.' : 'A new associate did not complete the item verification before packing, and the error was not identified before dispatch.';
+  if (/left|forgot|table|behind/.test(s)) return 'The associate forgot to pack the item and left it behind on the packing table, resulting in a missing-item complaint.';
+  if (/short|qty|quantity|partial|unit/.test(s)) return it.units > 1 ? `The order required ${it.units} units, but the full quantity was not picked and packed.` : 'The full ordered quantity was not picked and packed.';
+  if (/another|other order|mix|swap/.test(s)) return 'The item was placed in another order bag during packing and was not dispatched with this order.';
+  if (/scan|skip|not picked/.test(s)) return 'The item was not fully processed during picking and packing and was not dispatched with the remaining order items.';
+  if (/damage|broken|leak|crush/.test(s)) return 'A damaged unit was picked and packed without a visual quality check before dispatch.';
+  if (/expir|shelf|fefo/.test(s)) return 'A unit with short shelf life was picked without following FEFO, and the expiry was not checked before dispatch.';
+  if (s) return 'Picker mistake confirmed: ' + sent(sub);
+  if (m === 'wrong') return 'An incorrect item was picked, and the mismatch was not identified at packing.';
+  if (m === 'quality') return 'The item was picked and packed without a visual quality check before dispatch.';
+  return 'The associate left the item behind during fulfilment, and it was not included in the customer\u2019s order.';
+}
+
+function lineFor(m, it, reason, sub) {
+  const np = isNP(it.perish, it.gl);
+  const note = sub ? ' ' + sent(sub) : '';
+  switch (reason) {
+    case 'Picker Mistake': return pickerLine(sub, it, m);
+    case 'OTR Mistake':
+      if (m === 'quality') return 'The item was handed over to the DA in good condition. The damage appears to have occurred during delivery; OTR investigation required.' + note;
+      if (m === 'wrong') return 'CCTV confirmed the correct item was picked, packed, and handed over to the DA. OTR investigation required to identify the item mix-up.' + note;
+      return 'CCTV confirmed correct picking, packing, and handover to the DA. OTR/post-handover validation required.' + note;
+    case 'Duplicate Order': return 'Duplicate entry recorded for this order. Entries must be reconciled before final defect reporting.' + note;
+    case 'Not Identified': return 'CCTV review was not conclusive. The case remains under investigation.' + note;
+    case 'Catalog Issue': return 'The item dispatched matches the ordered ASIN; the product image or description on the detail page differs from the physical item. Catalog team to review.' + note;
+    case 'Customer Confused': return 'CCTV confirmed the ordered ASIN was picked and packed. The customer may have confused the item with a similar variant.' + note;
+    case 'Vendor Issue': return (np ? 'The item was dispatched sealed with no visible damage. The concern relates to product performance and has been escalated to the vendor.' : 'The item was stored at the required temperature and within valid shelf life. The concern relates to internal product quality and has been escalated to the vendor.') + note;
+    case 'Customer Expectation': return (np ? 'The item was dispatched in sealed, undamaged condition and matched the listing. The product may not have met the customer\u2019s expectation.' : 'The item was stored at the required temperature, within valid shelf life, and passed scheduled QC checks. The product may not have met the customer\u2019s expectation.') + note;
+    case 'Expiry / Shelf Life': return 'The item was dispatched with short remaining shelf life, as FEFO was not followed during picking.' + note;
+    case 'Handling Damage': return 'The units were damaged during internal handling (stow, pick or replenishment).' + note;
+    case 'Vendor Damage': return 'The units were received damaged from the vendor and were not identified at receiving. A claim is to be raised with the vendor.' + note;
+    case 'Expiry': return 'The stock expired in the bin before sale, as FEFO and expiry checks were not followed.' + note;
+    case 'Leakage': return 'Product leakage was identified during storage; affected units were removed and the bins cleaned.' + note;
+    case 'Stow Error': return 'The units were stowed in an incorrect bin and could not be located during the cycle count.' + note;
+    case 'Pick Error': return 'The units were picked against the wrong bin, creating a system inventory mismatch.' + note;
+    case 'Inventory Adjustment': return 'The adjustment was raised during the cycle count; the root cause is to be validated against stow and pick history.' + note;
+    case 'Transship Loss': return 'The units were lost during transshipment between sites. Transfer records are to be reconciled.' + note;
+    default: return 'Pending CCTV review.' + note;
+  }
+}
+
+const ACTIONS = {
+  'Picker Mistake': { missing: 'Picker mistakes: Ensure all picked items are packed into the correct order bags. Associates must verify the item count and check the packing table before closing each order.', wrong: 'Picker mistakes: Associates must scan and verify each item against the order before packing. Similar-looking items are to be separated in the bins.', quality: 'Picker mistakes: Associates must visually check fresh and fragile items before packing and follow FEFO.' },
+  'OTR Mistake': 'OTR mistakes: Investigate CCTV-verified cases through DA handover records and delivery evidence to identify the point of loss.',
+  'Duplicate Order': 'Duplicate orders: Reconcile duplicate entries before final defect reporting.',
+  'Not Identified': 'Not identified: Complete the CCTV review for open cases and update the classification.',
+  'Catalog Issue': 'Catalog issues: Raise detail-page corrections with the catalog team.',
+  'Customer Confused': 'Customer confusion: Share variant details with Customer Service to support customer communication.',
+  'Vendor Issue': 'Vendor issues: Share batch details with the vendor and request a quality investigation.',
+  'Customer Expectation': 'Customer expectation: Continue scheduled QC checks and share feedback with the category team.',
+  'Expiry / Shelf Life': 'Shelf life: Reinforce FEFO and daily expiry checks before picking.',
+  'Handling Damage': 'Handling damage: Associates to follow safe handling and stacking standards during stow, pick and replenishment.',
+  'Vendor Damage': 'Vendor damage: Strengthen receiving inspection and raise claims with the vendor.',
+  'Expiry': 'Expiry: Reinforce FEFO, daily expiry checks and early markdown of short-dated stock.',
+  'Leakage': 'Leakage: Segregate liquid items, check seals at receiving and clean affected bins.',
+  'Stow Error': 'Stow errors: Associates to scan the bin before every stow; run spot audits on high-value bins.',
+  'Pick Error': 'Pick errors: Enforce bin scan confirmation at pick and investigate repeat locations.',
+  'Inventory Adjustment': 'Adjustments: Validate cycle-count adjustments against stow and pick history before approval.',
+  'Transship Loss': 'Transship losses: Reconcile transfer manifests with the receiving site and follow up on open shipments.',
+  [PENDING]: 'Pending: Complete the CCTV review for the remaining top cases.'
+};
+
+function weekText(ws) {
+  ws = [...ws].filter(w => w !== '' && w != null).map(Number).filter(isFinite).sort((a, b) => a - b);
+  if (!ws.length) return 'the reporting period';
+  if (ws.length === 1) return 'Week ' + ws[0];
+  return 'Weeks ' + ws[0] + '–' + ws[ws.length - 1];
+}
+
+class Component extends DCLogic {
+  state = { conc: [], whd: [], whl: [], gms: {}, whdTarget: null, files: '', metric: 'missing', store: '', week: 'All weeks', perish: 'All', topN: 10, tags: {}, pasteText: '', pasteMsg: '', subText: DEFAULT_SUBS, report: null, toast: '' };
+
+  async loadFiles(files) {
+    const next = { gms: { ...this.state.gms } }; let whdTarget = this.state.whdTarget;
+    for (const f of files) {
+      const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      for (const sn of wb.SheetNames) {
+        const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '', raw: true });
+        for (let i = 0; i < Math.min(aoa.length, 30); i++) {
+          const low = (aoa[i] || []).map(x => String(x).trim().toLowerCase());
+          const gi = low.indexOf('gms (usd)');
+          if (gi < 0) continue;
+          let si = -1; for (let k = gi - 1; k >= 0; k--) if (low[k] === 'store') { si = k; break; }
+          const ti = low.indexOf('target', gi), isWhd = low.includes('whd (usd)');
+          if (si < 0) break;
+          for (let j = i + 1; j < aoa.length; j++) {
+            const st = String(aoa[j][si] || '').trim(), g = +aoa[j][gi];
+            if (st && g > 0 && !/total/i.test(st)) next.gms[st] = g;
+            if (isWhd && ti >= 0 && +aoa[j][ti] > 0 && whdTarget == null) whdTarget = +aoa[j][ti];
+          }
+          break;
+        }
+        const hdr = (aoa[0] || []).map(x => String(x).trim().toLowerCase());
+        if (!hdr.includes('asin')) continue;
+        const c = n => hdr.indexOf(n);
+        const g = (r, n) => { const k = c(n); return k >= 0 ? r[k] : ''; };
+        const body = aoa.slice(1).filter(r => r.some(v => v !== ''));
+        if (c('conc_reason_new') >= 0) {
+          next.conc = body.map(r => ({ reason: String(g(r, 'conc_reason_new')), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'ship_week'), order: String(g(r, 'conceded_order_id')).trim(), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), usd: +g(r, 'usd_val') || 0, units: +g(r, 'total_units_conceded') || 1, perish: g(r, 'perishable_flag'), picker: String(g(r, 'picker_id') || ''), creason: g(r, 'concession_reason'), gl: g(r, 'wbr_gl_description') }));
+        } else if (c('bucket') >= 0) {
+          const hasUSD = (aoa[0] || []).findIndex(x => String(x).trim() === 'USD');
+          const base = r => ({ store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
+          const whd = body.filter(r => /whd/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: +g(r, 'usd_val') || 0 }));
+          const whl = body.filter(r => /whl/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: hasUSD >= 0 ? (+r[hasUSD] || 0) : -(+g(r, 'usd_val') || 0) }));
+          if (whd.length) next.whd = whd;
+          if (whl.length) next.whl = whl;
+        }
+      }
+    }
+    const merged = { ...this.state, ...next, whdTarget };
+    const stores = [...new Set([...merged.conc, ...merged.whd, ...merged.whl].map(r => r.store).filter(Boolean))].sort();
+    let store = this.state.store; if (!stores.includes(store)) store = stores[0] || '';
+    this.setState({ ...next, whdTarget, store, files: files.map(f => f.name).join(', '), report: null, week: 'All weeks' });
+  }
+
+  scope() {
+    const { metric, store, week, perish } = this.state;
+    let M = METRICS[metric];
+    const pf = metric === 'quality' && perish !== 'All' ? perish : '';
+    if (pf) M = { ...M, label: M.label + ' (' + pf + ')', title: M.title + ' (' + pf + ')', noun: pf.toLowerCase() + ' quality' };
+    const inS = r => (store === 'All stores' || r.store === store) && (week === 'All weeks' || String(r.week) === String(week));
+    const src = M.kind === 'conc' ? this.state.conc : this.state[M.kind];
+    const scoped = src.filter(inS);
+    let rows = scoped, items = [];
+    if (M.kind === 'conc') {
+      rows = scoped.filter(r => r.reason.toLowerCase().includes(M.match) && (!pf || (pf === 'Non-perishable') === isNP(r.perish)));
+      const map = new Map();
+      rows.forEach(r => { const k = r.order + '|' + r.asin; const o = map.get(k) || { key: k, id: r.order, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, pickers: new Set(), creason: r.creason }; o.usd += r.usd; o.units += r.units; if (r.picker && r.picker !== '-1') o.pickers.add(r.picker); map.set(k, o); });
+      items = [...map.values()];
+    } else {
+      if (M.kind === 'whl') rows = scoped.filter(r => r.usd < 0);
+      const map = new Map();
+      rows.forEach(r => { const o = map.get(r.asin) || { key: r.asin, id: r.asin, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, procs: new Set(), adjs: new Set() }; o.usd += M.kind === 'whl' ? -r.usd : r.usd; o.units += Math.abs(r.qty); if (r.process) o.procs.add(r.process); if (r.adj) o.adjs.add(r.adj); map.set(r.asin, o); });
+      items = [...map.values()];
+    }
+    items.sort((a, b) => b.usd - a.usd);
+    const total = items.reduce((s, x) => s + x.usd, 0);
+    const gms = store === 'All stores' ? Object.values(this.state.gms).reduce((a, b) => a + b, 0) : (this.state.gms[store] || 0);
+    return { M, scoped, rows, items, total, gms, weeks: new Set(rows.map(r => r.week)) };
+  }
+
+  tagOf(it) { const t = this.state.tags[this.state.metric + '|' + it.key] || {}; return { reason: t.reason || PENDING, sub: t.sub || '' }; }
+  setTag(key, patch) { const k = this.state.metric + '|' + key; this.setState(s => ({ tags: { ...s.tags, [k]: { ...(s.tags[k] || {}), ...patch } }, report: null })); }
+
+  applyPaste() {
+    const { metric, pasteText } = this.state, sc = this.scope(), top = sc.items.slice(0, this.state.topN);
+    const tags = { ...this.state.tags }; let hit = 0, miss = 0;
+    pasteText.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(l => {
+      const cols = l.split(/\t|\s{2,}|,(?=\s*[A-Za-z])/).map(x => x.trim());
+      const id = cols[0].replace(/^'/, '').toLowerCase();
+      if (/^(order|asin|conceded)/.test(id)) return;
+      const reason = mapReason(cols[1], metric), sub = cols.slice(2).filter(Boolean).join(' ');
+      const match = sc.items.filter(it => it.id.toLowerCase() === id || it.asin.toLowerCase() === id);
+      if (!match.length) { miss++; return; }
+      hit++;
+      match.forEach(it => { tags[metric + '|' + it.key] = { reason: reason || (tags[metric + '|' + it.key] || {}).reason || '', sub }; });
+    });
+    const inTop = top.filter(it => tags[metric + '|' + it.key] && tags[metric + '|' + it.key].reason).length;
+    this.setState({ tags, report: null, pasteMsg: `${hit} matched${miss ? ', ' + miss + ' not found' : ''} · ${inTop}/${top.length} top cases tagged` });
+  }
+
+  buildReport(sc, top) {
+    const { M, items, total, gms } = sc, m = this.state.metric, store = this.state.store === 'All stores' ? 'all stores' : this.state.store;
+    const wk = weekText(sc.weeks), L = [];
+    const tagged = top.map(it => ({ it, ...this.tagOf(it) }));
+    const topV = top.reduce((s, x) => s + x.usd, 0);
+    const byReason = {}; tagged.forEach(t => { (byReason[t.reason] = byReason[t.reason] || []).push(t); });
+    const sumOf = arr => (arr || []).reduce((s, t) => s + t.it.usd, 0);
+    const bullet = t => `• ${t.it.asin} – ${shortName(t.it.item)} – ${usd(t.it.usd)}${M.kind === 'conc' ? '' : ` (${t.it.units} units)`}\n${lineFor(m, t.it, t.reason, t.sub)}`;
+    const subsTop = r => { const c = {}; (byReason[r] || []).forEach(t => { if (t.sub) c[t.sub] = (c[t.sub] || 0) + 1; }); return Object.keys(c).sort((a, b) => c[b] - c[a]).slice(0, 3); };
+    const gmsTxt = gms > 0 ? `, equal to ${pct2(total / gms)} of GMS (${usd(gms)})` : '';
+    L.push(M.title, '', 'SUMMARY');
+    if (M.kind === 'conc') {
+      const allConc = sc.scoped.reduce((s, r) => s + r.usd, 0);
+      const contrib = allConc ? total / allConc : 0;
+      L.push(`In ${wk}, ${store} recorded ${M.noun} concessions with a total concession value of ${usd(total)} across ${items.length} cases. ${cap(M.noun)} defects contributed ${pct(contrib)} of the total concession value (${usd(allConc)})${gmsTxt}.`);
+      L.push(`The top ${top.length} cases by value account for ${usd(topV)} (${pct(total ? topV / total : 0)} of the ${M.noun} value) and were reviewed through CCTV.`);
+      const pk = byReason['Picker Mistake'], ot = byReason['OTR Mistake'];
+      if (pk) { const s = subsTop('Picker Mistake'); L.push(`The review identified ${pk.length} store-side picker mistake${pk.length > 1 ? 's' : ''} (${usd(sumOf(pk))})${s.length ? ', mainly: ' + s.join('; ').toLowerCase() : ''}. ${m === 'missing' ? 'Associates, particularly new associates, did not place all picked items inside the order bags, resulting in missing-item complaints.' : m === 'wrong' ? 'Items were not verified against the order before packing, resulting in wrong-item complaints.' : 'Items were packed without a visual quality check before dispatch.'}`); }
+      if (ot) L.push(`CCTV verification confirmed that in ${ot.length} case${ot.length > 1 ? 's' : ''} (${usd(sumOf(ot))}) the correct items were picked, packed, and handed over to the DA. For these cases, store-side fulfilment was completed correctly, and the OTR team must investigate the handover and delivery process.`);
+      if (m === 'quality') {
+        const ve = (byReason['Vendor Issue'] || []).length + (byReason['Customer Expectation'] || []).length;
+        if (ve) L.push(`In ${ve} case${ve > 1 ? 's' : ''}, the items were stored correctly and within valid shelf life; these relate to vendor product quality or the product not meeting the customer\u2019s expectation.`);
+      }
+      const oth = OTHER.reduce((s, r) => s + (byReason[r] || []).length, 0);
+      if (oth) L.push(`The remaining ${oth} top case${oth > 1 ? 's are' : ' is'} classified as duplicate, not identified, or pending review and require${oth > 1 ? '' : 's'} separate classification.`);
+      const store_ = tagged.filter(t => !['OTR Mistake', ...OTHER].includes(t.reason));
+      L.push('', 'TOP COST DRIVERS'); (store_.length ? store_ : []).forEach(t => L.push(bullet(t))); if (!store_.length) L.push('• No store-side cases identified in the reviewed top cases.');
+      if (ot) { L.push('', 'OTR-RELATED CASES'); ot.forEach(t => L.push(bullet(t))); }
+      const othT = tagged.filter(t => OTHER.includes(t.reason));
+      if (othT.length) { L.push('', 'OTHER / PENDING CASES'); othT.forEach(t => L.push(bullet(t))); }
+      if (m === 'quality' && this.state.perish === 'All') {
+        const npRows = sc.rows.filter(r => isNP(r.perish, r.gl)), npV = npRows.reduce((s, r) => s + r.usd, 0);
+        L.push('', 'NON-PERISHABLE CONTRIBUTION');
+        L.push(`Non-perishable items contributed ${usd(npV)} (${pct(total ? npV / total : 0)}) of the total quality concession value; perishable items contributed ${usd(total - npV)} (${pct(total ? (total - npV) / total : 0)}).`);
+        this.npAsins(sc).slice(0, this.state.topN).forEach(a => L.push(`• ${a.asin} – ${shortName(a.item)} – ${usd(a.usd)} (${pct(total ? a.usd / total : 0)} of quality, ${a.cases} case${a.cases > 1 ? 's' : ''})`));
+      }
+      L.push('', 'DEFECT CONTRIBUTION SUMMARY', `• Total ${M.noun} concession value: ${usd(total)}`, `• Contribution to total concessions: ${pct(contrib)}`);
+      if (gms > 0) L.push(`• ${cap(M.noun)} value as % of GMS: ${pct2(total / gms)}`);
+      Object.keys(byReason).forEach(r => L.push(`• ${r}: ${byReason[r].length} case${byReason[r].length > 1 ? 's' : ''}, ${usd(sumOf(byReason[r]))} (${pct(topV ? sumOf(byReason[r]) / topV : 0)} of reviewed value)`));
+      L.push('', 'CONCLUSION AND ACTION PLAN');
+      let c = `${cap(M.noun)} defects contributed ${pct(contrib)} of the total concession value in ${wk}, with a total value of ${usd(total)}.`;
+      if (pk) c += ` CCTV verification identified picker-related errors (${usd(sumOf(pk))}) where ${m === 'missing' ? 'associates did not pack items into the correct order bags and left them on the packing table' : m === 'wrong' ? 'items were not verified against the order before packing' : 'items were packed without a quality check'}.`;
+      if (ot) c += ' For cases where CCTV confirmed correct picking, packing, and handover to the DA, the OTR team must investigate the handover and delivery process to determine where the issue occurred.';
+      L.push(c);
+    } else if (M.kind === 'whd') {
+      const units = items.reduce((s, x) => s + x.units, 0), tgt = this.state.whdTarget;
+      const status = gms > 0 && tgt ? (total / gms > tgt ? 'BREACH' : 'ON TRACK') : '';
+      L.push(`In ${wk}, ${store} recorded warehouse damage of ${usd(total)} across ${units} units and ${items.length} ASINs${gmsTxt}${tgt && gms > 0 ? `, against a target of ${pct2(tgt)} (${status})` : ''}.`);
+      L.push(`The top ${top.length} ASINs account for ${usd(topV)} (${pct(total ? topV / total : 0)} of the WHD value).`);
+      const npV = sc.rows.filter(r => isNP(r.perish, r.gl)).reduce((s, r) => s + r.usd, 0);
+      L.push(`Non-perishable items contributed ${usd(npV)} (${pct(total ? npV / total : 0)}) and perishable items ${usd(total - npV)} (${pct(total ? (total - npV) / total : 0)}).`);
+      L.push('', 'TOP COST DRIVERS'); tagged.forEach(t => L.push(bullet(t)));
+      L.push('', 'DEFECT CONTRIBUTION SUMMARY', `• Total WHD value: ${usd(total)} (${units} units)`);
+      if (gms > 0) L.push(`• WHD % of GMS: ${pct2(total / gms)}${tgt ? ` vs target ${pct2(tgt)} – ${status}` : ''}`);
+      Object.keys(byReason).forEach(r => L.push(`• ${r}: ${byReason[r].length} ASIN${byReason[r].length > 1 ? 's' : ''}, ${usd(sumOf(byReason[r]))}`));
+      L.push('', 'CONCLUSION AND ACTION PLAN', `Warehouse damage reached ${usd(total)} in ${wk}${gms > 0 ? ` (${pct2(total / gms)} of GMS)` : ''}. The top ${top.length} ASINs drive ${pct(total ? topV / total : 0)} of the damage value and are the focus of the corrective actions below.`);
+    } else {
+      const sAll = sc.scoped, sum = f => sAll.filter(f).reduce((s, r) => s + r.usd, 0);
+      const found = sum(r => r.usd > 0), miss = -sum(r => r.usd < 0 && !/transship/i.test(r.adj)), ts = -sum(r => r.usd < 0 && /transship/i.test(r.adj)), net = found - miss - ts;
+      L.push(`In ${wk}, ${store} recorded missing adjustments of ${usd(miss)} and transship losses of ${usd(ts)}, against found adjustments of ${usd(found)}. The net inventory result is ${net < 0 ? '-' : ''}${usd(Math.abs(net))}${gms > 0 ? ` (${pct2(net / gms)} of GMS)` : ''}, ${net >= 0 ? 'with no net loss' : 'a net loss'}.`);
+      L.push(`The top ${top.length} loss ASINs account for ${usd(topV)} (${pct(total ? topV / total : 0)} of gross losses of ${usd(total)}).`);
+      L.push('', 'TOP LOSS DRIVERS'); tagged.forEach(t => L.push(bullet(t)));
+      L.push('', 'LOSS CONTRIBUTION SUMMARY', `• Found (+): ${usd(found)}`, `• Missing (-): ${usd(miss)}`, `• Transship losses (-): ${usd(ts)}`, `• Net: ${net < 0 ? '-' : ''}${usd(Math.abs(net))}`);
+      Object.keys(byReason).forEach(r => L.push(`• ${r}: ${byReason[r].length} ASIN${byReason[r].length > 1 ? 's' : ''}, ${usd(sumOf(byReason[r]))}`));
+      L.push('', 'CONCLUSION AND ACTION PLAN', `Gross losses reached ${usd(total)} in ${wk}, with a net result of ${net < 0 ? '-' : ''}${usd(Math.abs(net))}. The top ${top.length} ASINs drive ${pct(total ? topV / total : 0)} of the gross loss value.`);
+    }
+    L.push('Action Required:');
+    const acts = Object.keys(byReason).map(r => { const a = ACTIONS[r]; return typeof a === 'object' ? (a[m] || a.missing) : a; }).filter(Boolean);
+    acts.forEach(a => L.push('• ' + a));
+    return L.join('\n');
+  }
+
+  npAsins(sc) {
+    const map = new Map();
+    sc.rows.filter(r => isNP(r.perish, r.gl)).forEach(r => { const o = map.get(r.asin) || { asin: r.asin, item: r.item, usd: 0, cases: 0 }; o.usd += r.usd; o.cases++; map.set(r.asin, o); });
+    return [...map.values()].sort((a, b) => b.usd - a.usd);
+  }
+
+  flash(t) { this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
+
+  renderVals() {
+    const st = this.state, m = st.metric, sc = this.scope(), top = sc.items.slice(0, st.topN), M = sc.M;
+    const stores = [...new Set([...st.conc, ...st.whd, ...st.whl].map(r => r.store).filter(Boolean))].sort();
+    const weeks = [...new Set((M.kind === 'conc' ? st.conc : st[M.kind]).map(r => r.week).filter(w => w !== ''))].map(String).sort((a, b) => a - b);
+    const tab = (on) => ({ bg: on ? '#1d1d1b' : 'transparent', color: on ? '#fff' : '#4a4944' });
+    const bgFor = r => r === 'Picker Mistake' || r === 'Pick Error' || r === 'Stow Error' || r === 'Handling Damage' ? '#fbe9e4' : r === 'OTR Mistake' || r === 'Transship Loss' ? '#e6eefa' : r === PENDING ? '#fff' : '#f1efe8';
+    const stats = [];
+    if (M.kind === 'conc') {
+      const allConc = sc.scoped.reduce((s, r) => s + r.usd, 0);
+      stats.push({ label: M.label + ' value', value: usd(sc.total), note: sc.items.length + ' cases' });
+      stats.push({ label: 'Share of total concessions', value: pct(allConc ? sc.total / allConc : 0), note: 'of ' + usd(allConc) });
+      if (sc.gms > 0) stats.push({ label: '% of GMS', value: pct2(sc.total / sc.gms), note: 'GMS ' + usd(sc.gms) });
+      if (m === 'quality' && st.perish === 'All') { const npV = sc.rows.filter(r => isNP(r.perish, r.gl)).reduce((s, r) => s + r.usd, 0); stats.push({ label: 'Non-perishable share', value: pct(sc.total ? npV / sc.total : 0), note: usd(npV) + ' of quality' }); }
+    } else if (M.kind === 'whd') {
+      stats.push({ label: 'WHD value', value: usd(sc.total), note: sc.items.reduce((s, x) => s + x.units, 0) + ' units · ' + sc.items.length + ' ASINs' });
+      if (sc.gms > 0) stats.push({ label: 'WHD % of GMS', value: pct2(sc.total / sc.gms), note: st.whdTarget ? 'Target ' + pct2(st.whdTarget) + ' · ' + (sc.total / sc.gms > st.whdTarget ? 'BREACH' : 'ON TRACK') : 'GMS ' + usd(sc.gms) });
+      const npV = sc.rows.filter(r => isNP(r.perish, r.gl)).reduce((s, r) => s + r.usd, 0); stats.push({ label: 'Non-perishable share', value: pct(sc.total ? npV / sc.total : 0), note: usd(npV) });
+    } else {
+      const found = sc.scoped.filter(r => r.usd > 0).reduce((s, r) => s + r.usd, 0), net = found - sc.total;
+      stats.push({ label: 'Gross loss', value: usd(sc.total), note: 'Missing + transship' });
+      stats.push({ label: 'Found', value: usd(found), note: 'Positive adjustments' });
+      stats.push({ label: 'Net', value: (net < 0 ? '-' : '') + usd(Math.abs(net)), note: sc.gms > 0 ? pct2(net / sc.gms) + ' of GMS' : (net >= 0 ? 'No net loss' : 'Net loss') });
+    }
+    const topV = top.reduce((s, x) => s + x.usd, 0);
+    stats.push({ label: 'Top ' + st.topN + ' share', value: pct(sc.total ? topV / sc.total : 0), note: usd(topV) });
+    const report = st.report != null ? st.report : (top.length ? this.buildReport(sc, top) : '');
+    const np = m === 'quality' && st.perish === 'All' ? this.npAsins(sc) : [];
+    const npV = np.reduce((s, a) => s + a.usd, 0);
+    return {
+      loadedTxt: [st.conc.length ? st.conc.length.toLocaleString() + ' concession' : '', st.whd.length ? st.whd.length + ' WHD' : '', st.whl.length ? st.whl.length.toLocaleString() + ' WHL' : '', Object.keys(st.gms).length ? Object.keys(st.gms).length + ' stores GMS' : ''].filter(Boolean).join(' · ') || 'No files loaded',
+      fileNames: st.files || 'Concession, WHD and WHL .xlsx',
+      onFiles: e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) this.loadFiles(f).catch(err => this.flash('Could not read file: ' + err.message)); },
+      metricTabs: Object.keys(METRICS).map(k => ({ label: METRICS[k].label, ...tab(k === m), onClick: () => this.setState({ metric: k, report: null, week: 'All weeks', pasteMsg: '' }) })),
+      showPerish: m === 'quality',
+      perishTabs: ['All', 'Perishable', 'Non-perishable'].map(p => ({ label: p, ...tab(p === st.perish), onClick: () => this.setState({ perish: p, report: null }) })),
+      topTabs: [5, 10, 15, 20].map(n => ({ label: 'Top ' + n, ...tab(n === st.topN), onClick: () => this.setState({ topN: n, report: null }) })),
+      store: st.store, storeOptions: stores.length ? [...stores, 'All stores'] : [''], onStore: e => this.setState({ store: e.target.value, report: null }),
+      week: st.week, weekOptions: ['All weeks', ...weeks], onWeek: e => this.setState({ week: e.target.value, report: null }),
+      stats,
+      topTitle: `Top ${st.topN} ${M.label} ${M.kind === 'conc' ? 'cases' : 'ASINs'} by USD value`,
+      topNote: sc.items.length ? `${sc.items.length} total · ${usd(sc.total)}` : '',
+      idHead: M.kind === 'conc' ? 'Order ID' : 'ASIN',
+      reasonOptions: [PENDING, ...REASONS[m]],
+      subOptions: st.subText.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
+      rows: top.map((it, i) => { const t = this.tagOf(it); return {
+        n: i + 1, id: it.id,
+        meta: M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
+        name: shortName(it.item) + (it.creason ? ' — ' + it.creason : ''),
+        line: lineFor(m, it, t.reason, t.sub),
+        usd: n2(it.usd), share: pct(sc.total ? it.usd / sc.total : 0),
+        reason: t.reason, bg: bgFor(t.reason), sub: t.sub,
+        onReason: e => this.setTag(it.key, { reason: e.target.value }),
+        onSub: e => this.setTag(it.key, { sub: e.target.value })
+      }; }),
+      noRows: !top.length,
+      pasteText: st.pasteText, onPaste: e => this.setState({ pasteText: e.target.value }), onApply: () => this.applyPaste(), pasteMsg: st.pasteMsg,
+      onClearTags: () => { const tags = {}; Object.keys(st.tags).forEach(k => { if (!k.startsWith(m + '|')) tags[k] = st.tags[k]; }); this.setState({ tags, report: null, pasteMsg: 'Reasons cleared' }); },
+      subText: st.subText, onSubText: e => this.setState({ subText: e.target.value }),
+      showNP: m === 'quality' && np.length > 0,
+      npNote: `${usd(npV)} · ${pct(sc.total ? npV / sc.total : 0)} of quality value · showing top ${Math.min(st.topN, np.length)} of ${np.length} ASINs`,
+      npRows: np.slice(0, st.topN).map((a, i) => ({ n: i + 1, asin: a.asin, name: shortName(a.item), cases: a.cases, usd: n2(a.usd), share: pct(sc.total ? a.usd / sc.total : 0) })),
+      report, onReport: e => this.setState({ report: e.target.value }),
+      onRegen: () => { this.setState({ report: null }); this.flash('Regenerated'); },
+      onCopy: () => { navigator.clipboard.writeText(report).then(() => this.flash('RCA copied'), () => this.flash('Copy blocked — select the text and copy')); },
+      onExcel: () => {
+        if (!top.length) return this.flash('Nothing to export');
+        const rows = top.map((it, i) => { const t = this.tagOf(it); return { Rank: i + 1, [M.kind === 'conc' ? 'Order ID' : 'ASIN']: it.id, ASIN: it.asin, Item: String(it.item || ''), 'USD': +it.usd.toFixed(2), 'Share %': +((sc.total ? it.usd / sc.total : 0) * 100).toFixed(1), Units: it.units, Perishable: isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', 'Picker ID': it.pickers ? [...it.pickers].join(', ') : '', Reason: t.reason, 'Sub-reason': t.sub, RCA: lineFor(m, it, t.reason, t.sub) }; });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Top ' + st.topN);
+        if (np.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(np.map((a, i) => ({ Rank: i + 1, ASIN: a.asin, Item: String(a.item || ''), Cases: a.cases, USD: +a.usd.toFixed(2), '% of quality': +((sc.total ? a.usd / sc.total : 0) * 100).toFixed(1) }))), 'Non-perishable');
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(report.split('\n').map(l => [l])), 'RCA');
+        XLSX.writeFile(wb, `${M.label.replace(/\s/g, '_')}_RCA_${st.store || 'store'}.xlsx`);
+      },
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
