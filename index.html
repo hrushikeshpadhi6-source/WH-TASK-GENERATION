@@ -2507,6 +2507,13 @@ window.feedbackAdminClear=async function(){
       <span class="card-arrow">→</span>
     </div>
 
+    <div class="task-card" data-tool="freezer-draw" data-tool-label="Freezer Lucky Draw" style="--card-color:#0891b2;" onclick="fdOpen()">
+      <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">🎡</span>
+      <h3 style="background:linear-gradient(135deg,#0891b2,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Freezer Lucky Draw</h3>
+      <p>Enter associate names → spin the wheel → picked name gets the freezer inventory.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
     <div class="task-card" data-tool="wh-loss-rca" data-tool-label="WH Loss & Concession RCA" style="--card-color:#9a3b2e;" onclick="window.open('WH Loss and Concession RCA.dc.html','_blank')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📉</span>
       <h3 style="background:linear-gradient(135deg,#9a3b2e,#c2410c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">WH Loss &amp; Concession RCA</h3>
@@ -2543,6 +2550,65 @@ window.feedbackAdminClear=async function(){
     </div>
   </div>
 
+  </div>
+</div>
+
+<!-- ── GREETING POPUP + GIFT BUTTON ── -->
+<style>
+@keyframes grtPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes grtBounce{0%,100%{transform:translateY(0) rotate(0)}8%{transform:translateY(-8px) rotate(-10deg)}16%{transform:translateY(0) rotate(10deg)}24%{transform:rotate(0)}}
+@keyframes grtFall{to{transform:translateY(110vh) rotate(720deg)}}
+</style>
+<div id="grt-overlay" onclick="if(event.target===this)grtClose()" style="display:none;position:fixed;inset:0;z-index:10060;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.8);backdrop-filter:blur(6px);">
+  <div style="position:relative;width:100%;max-width:440px;background:rgba(18,17,30,0.99);border:1px solid #2e2c45;border-radius:24px;overflow:hidden;box-shadow:0 32px 96px rgba(0,0,0,0.75);animation:grtPop .45s cubic-bezier(.2,1.4,.4,1);">
+    <button onclick="grtClose()" aria-label="Close" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.35);background:rgba(0,0,0,0.25);color:#fff;font-size:20px;line-height:1;cursor:pointer;z-index:2;">×</button>
+    <div id="grt-head" style="padding:38px 24px 28px;text-align:center;background:#f97316;"><div id="grt-emoji" style="font-size:68px;line-height:1;">🎉</div></div>
+    <div style="padding:24px 28px 28px;text-align:center;font-family:'Syne',sans-serif;">
+      <div id="grt-title" style="font-size:24px;font-weight:800;letter-spacing:-0.3px;color:#fff;margin-bottom:10px;"></div>
+      <div id="grt-msg" style="font-size:14px;line-height:1.7;color:#c9c6e8;white-space:pre-wrap;margin-bottom:22px;"></div>
+      <button id="grt-ok" onclick="grtClose()" style="padding:12px 30px;border-radius:12px;border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:#f97316;">Thank you!</button>
+    </div>
+  </div>
+</div>
+<button id="grt-gift" onclick="grtOpen()" title="Open message" aria-label="Open message" style="display:none;position:fixed;top:9px;right:300px;z-index:10001;width:40px;height:40px;padding:0;border-radius:11px;border:1px solid rgba(255,255,255,0.3);background:#f97316;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);align-items:center;justify-content:center;animation:grtBounce 2.6s ease-in-out infinite;">🎁</button>
+<div id="dms-confetti" style="position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:10070;"></div>
+
+<!-- ── FREEZER LUCKY DRAW ── -->
+<div id="fd-overlay" onclick="if(event.target===this)fdClose()" style="display:none;position:fixed;inset:0;z-index:10040;background:rgba(6,5,14,0.94);backdrop-filter:blur(10px);padding:16px;box-sizing:border-box;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:1000px;max-height:100%;overflow:auto;box-sizing:border-box;background:rgba(18,17,30,0.99);border:1px solid #2e2c45;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:20px;font-family:'Syne',sans-serif;color:#e8e6ff;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:20px;font-weight:800;color:#fff;">🎡 Freezer Lucky Draw</div>
+        <div style="font-size:12px;color:#8b8aad;">Add associate names, press Play, and the wheel picks who takes the task.</div>
+      </div>
+      <button onclick="fdClose()" aria-label="Close" style="width:38px;height:38px;border-radius:50%;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#fff;font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Task to assign</div><input id="fd-task" oninput="fdSave()" value="Freezer Inventory" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;"></div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Associate names (one per line)</div><div id="fd-count" style="font-size:11px;color:#8b8aad;font-family:'DM Mono',monospace;">0 names</div></div>
+          <textarea id="fd-names" rows="9" oninput="fdNamesChanged()" placeholder="Rishi&#10;Jubid&#10;Dharun&#10;Harish&#10;Ashutosh&#10;Sachitra&#10;Chamila" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;resize:vertical;line-height:1.6;"></textarea>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:#c9c6e8;cursor:pointer;"><input type="checkbox" id="fd-remove" onchange="fdSave()" checked style="width:18px;height:18px;accent-color:#10B981;"> Remove picked name from the next spin</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="fdShuffle()" style="padding:8px 14px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">Shuffle</button>
+          <button onclick="fdClearNames()" style="padding:8px 14px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">Clear names</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #2e2c45;padding-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Assignment history</div><button onclick="fdClearHistory()" style="background:none;border:none;color:#8b8aad;font-size:11px;cursor:pointer;text-decoration:underline;font-family:'Syne',sans-serif;">Clear</button></div>
+          <div id="fd-history" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow:auto;font-size:12.5px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div style="position:relative;width:100%;max-width:440px;aspect-ratio:1;">
+          <div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid #ffd60a;z-index:2;filter:drop-shadow(0 3px 4px rgba(0,0,0,0.5));"></div>
+          <canvas id="fd-wheel" width="880" height="880" style="width:100%;height:100%;display:block;"></canvas>
+          <button id="fd-play" onclick="fdSpin()" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:92px;height:92px;border-radius:50%;border:4px solid #fff;background:#1D4ED8;color:#fff;font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,0.5);">PLAY</button>
+        </div>
+        <div id="fd-result" style="min-height:74px;width:100%;max-width:440px;box-sizing:border-box;text-align:center;border:1px dashed #2e2c45;border-radius:14px;padding:14px;color:#8b8aad;font-size:13px;display:flex;flex-direction:column;justify-content:center;gap:4px;">Press PLAY to pick a name.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -16438,7 +16504,7 @@ var MAINT_TOOLS = [
   ['consolidation','Consolidation'],['slow-moving','Slow Moving Items'],
   ['audit-loc','Audit by Location'],['audit-asin','Audit by ASIN'],['report','Inventory Report'],
   ['ysm','YSM Barcode Task'],['catalog-issue','Catalog Issue Items'],['scanning-issue','Scanning Issue Items'],
-  ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],['voc-rca','VOC RCA Builder'],['wh-loss-rca','WH Loss & Concession RCA'],
+  ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],['voc-rca','VOC RCA Builder'],['wh-loss-rca','WH Loss & Concession RCA'],['freezer-draw','Freezer Lucky Draw'],
   ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
   ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
@@ -17009,6 +17075,190 @@ function announceAdminSave(){
   }
 }
 document.addEventListener('DOMContentLoaded', announceInit);
+
+// ── Greeting popup + gift button ───────────────────────────────────
+var _grtSettings={ popup:false, gift:false, emoji:'🏹', title:'Happy Dussehra!', message:'Wishing you and your family a joyful Dussehra. May good always win over evil, at work and in life.\n\n— Team DMS Pro', btn:'Thank you!', color:'#f97316', confetti:true };
+var _grtShown=false, _grtUnsub=null;
+var GRT_TEMPLATES={
+  dussehra:{emoji:'🏹',title:'Happy Dussehra!',message:'Wishing you and your family a joyful Dussehra. May good always win over evil, at work and in life.\n\n— Team DMS Pro',color:'#f97316'},
+  diwali:{emoji:'🪔',title:'Happy Diwali!',message:'May the festival of lights bring happiness, health and success to you and your family.\n\n— Team DMS Pro',color:'#eab308'},
+  birthday:{emoji:'🎂',title:'Happy Birthday!',message:'Wishing you a wonderful birthday and a great year ahead. Thank you for everything you do for the team.\n\n— Team DMS Pro',color:'#f72585'},
+  eid:{emoji:'🌙',title:'Eid Mubarak!',message:'Wishing you and your loved ones peace, joy and blessings this Eid.\n\n— Team DMS Pro',color:'#10B981'},
+  newyear:{emoji:'🎆',title:'Happy New Year!',message:'Thank you for a great year. Wishing you health and success in the year ahead.\n\n— Team DMS Pro',color:'#2563EB'}
+};
+function _grtEl(id){ return document.getElementById(id); }
+function grtLoadLocal(){ try{ var s=localStorage.getItem('dms_greeting'); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function grtSaveLocal(s){ try{ localStorage.setItem('dms_greeting',JSON.stringify(s)); }catch(e){} }
+function dmsConfetti(){
+  var box=_grtEl('dms-confetti'); if(!box) return;
+  var cols=['#f97316','#ffd60a','#f72585','#10B981','#2563EB','#7c3aed','#fff'];
+  for(var i=0;i<90;i++){
+    var d=document.createElement('div'), sz=6+Math.random()*8;
+    d.style.cssText='position:absolute;top:-20px;left:'+(Math.random()*100)+'%;width:'+sz+'px;height:'+(sz*0.45)+'px;background:'+cols[i%cols.length]+';border-radius:2px;opacity:.95;animation:grtFall '+(2.4+Math.random()*2)+'s '+(Math.random()*0.6)+'s cubic-bezier(.3,.6,.6,1) forwards;';
+    box.appendChild(d);
+  }
+  setTimeout(function(){ box.innerHTML=''; }, 5200);
+}
+function grtOpen(s){
+  _dmsToBody();
+  s=s||_grtSettings; var c=s.color||'#f97316';
+  _grtEl('grt-emoji').textContent=s.emoji||'🎉';
+  _grtEl('grt-title').textContent=s.title||'';
+  _grtEl('grt-msg').textContent=s.message||'';
+  _grtEl('grt-ok').textContent=s.btn||'Thank you!';
+  _grtEl('grt-head').style.background=c;
+  _grtEl('grt-ok').style.background=c;
+  _grtEl('grt-overlay').style.display='flex';
+  if(s.confetti!==false) dmsConfetti();
+}
+function grtClose(){ var o=_grtEl('grt-overlay'); if(o) o.style.display='none'; }
+function grtApply(){
+  var g=_grtEl('grt-gift'); if(!g) return;
+  var app=_grtEl('app-shell'), loggedIn=!app || getComputedStyle(app).display!=='none';
+  var on=!!(_grtSettings.gift || _grtSettings.popup);
+  g.style.display=(on && loggedIn)?'flex':'none';
+  if(on && !loggedIn) setTimeout(grtApply,1500);
+  grtPlace();
+  g.style.background=_grtSettings.color||'#f97316';
+}
+function grtPlace(){
+  var g=_grtEl('grt-gift'); if(!g || g.style.display==='none') return;
+  var b=_grtEl('session-badge'), t=_grtEl('theme-toggle');
+  var ref=(b && getComputedStyle(b).display!=='none' && b.offsetWidth) ? b : t; if(!ref) return;
+  var r=ref.getBoundingClientRect(); if(!r.width) return;
+  g.style.top=Math.round(r.top+(r.height-g.offsetHeight)/2)+'px';
+  g.style.right=Math.round(window.innerWidth-r.left+10)+'px';
+}
+window.addEventListener('resize', grtPlace);
+setInterval(grtPlace, 1500);
+function grtAutoShow(){
+  if(_grtShown || !_grtSettings.popup) return;
+  var app=_grtEl('app-shell');
+  if(app && getComputedStyle(app).display==='none'){ setTimeout(grtAutoShow,1000); return; }
+  _grtShown=true; grtOpen();
+}
+function grtAdminRefreshUI(){
+  if(!_grtEl('grt-popup-t')) return;
+  var s=_grtSettings;
+  _grtEl('grt-popup-t').checked=!!s.popup; _grtEl('grt-gift-t').checked=!!s.gift;
+  _grtEl('grt-emoji-i').value=s.emoji||''; _grtEl('grt-title-i').value=s.title||'';
+  _grtEl('grt-btn-i').value=s.btn||''; _grtEl('grt-msg-i').value=s.message||'';
+  _grtEl('grt-color-i').value=s.color||'#f97316'; _grtEl('grt-confetti-t').checked=s.confetti!==false;
+}
+function grtForm(){
+  return { popup:_grtEl('grt-popup-t').checked, gift:_grtEl('grt-gift-t').checked, emoji:_grtEl('grt-emoji-i').value.trim()||'🎉', title:_grtEl('grt-title-i').value.trim(), message:_grtEl('grt-msg-i').value, btn:_grtEl('grt-btn-i').value.trim()||'Thank you!', color:_grtEl('grt-color-i').value, confetti:_grtEl('grt-confetti-t').checked };
+}
+function grtSetColor(c){ _grtEl('grt-color-i').value=c; }
+function grtTemplate(k){ var t=GRT_TEMPLATES[k]; if(!t) return; _grtEl('grt-emoji-i').value=t.emoji; _grtEl('grt-title-i').value=t.title; _grtEl('grt-msg-i').value=t.message; _grtEl('grt-color-i').value=t.color; }
+function grtPreview(){ grtOpen(grtForm()); }
+function grtAdminSave(){
+  var s=grtForm(); _grtSettings=s; grtSaveLocal(s); grtApply();
+  var status=_grtEl('grt-save-status');
+  if(window.FIREBASE_READY && window.fbDB){
+    fbDB.collection('app_settings').doc('greeting').set(s).then(function(){
+      if(status){ status.textContent='✅ Published — live for all users'; setTimeout(function(){status.textContent='';},3000); }
+    }).catch(function(err){ if(status) status.textContent='⚠️ '+err.message; });
+  } else if(status){ status.textContent='✅ Saved locally (offline mode)'; setTimeout(function(){status.textContent='';},3000); }
+}
+function grtInit(){
+  var cached=grtLoadLocal(); if(cached) _grtSettings=cached;
+  grtApply(); grtAdminRefreshUI(); grtAutoShow();
+  if(window.FIREBASE_READY && window.fbDB){
+    if(_grtUnsub) try{_grtUnsub();}catch(e){}
+    _grtUnsub=fbDB.collection('app_settings').doc('greeting').onSnapshot(function(doc){
+      if(!doc.exists) return;
+      var d=doc.data();
+      _grtSettings={ popup:!!d.popup, gift:!!d.gift, emoji:d.emoji||'🎉', title:d.title||'', message:d.message||'', btn:d.btn||'Thank you!', color:d.color||'#f97316', confetti:d.confetti!==false };
+      grtSaveLocal(_grtSettings); grtApply(); grtAdminRefreshUI(); grtAutoShow();
+    }, function(){});
+  }
+}
+document.addEventListener('DOMContentLoaded', grtInit);
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ grtClose(); } });
+
+// ── Freezer lucky draw wheel ───────────────────────────────────────
+var _fd={ rot:0, spinning:false };
+var FD_COLORS=['#2563EB','#f72585','#10B981','#f97316','#7c3aed','#0891b2','#eab308','#ef4444'];
+function fdNames(){ return (_grtEl('fd-names').value||'').split(/\r?\n/).map(function(s){return s.trim();}).filter(Boolean); }
+function fdLoad(){ try{ return JSON.parse(localStorage.getItem('dms_freezer_draw')||'{}'); }catch(e){ return {}; } }
+function fdSave(extra){
+  var d=fdLoad(); d.names=_grtEl('fd-names').value; d.task=_grtEl('fd-task').value; d.remove=_grtEl('fd-remove').checked;
+  if(extra) for(var k in extra) d[k]=extra[k];
+  try{ localStorage.setItem('dms_freezer_draw',JSON.stringify(d)); }catch(e){}
+}
+function _dmsToBody(){ ['fd-overlay','grt-overlay','grt-gift','dms-confetti'].forEach(function(id){ var el=_grtEl(id); if(el && el.parentNode!==document.body) document.body.appendChild(el); }); }
+document.addEventListener('DOMContentLoaded', _dmsToBody);
+function fdOpen(){
+  _dmsToBody();
+  window.scrollTo(0, window.scrollY);
+  var d=fdLoad();
+  _grtEl('fd-names').value=(d.names!=null && d.names.trim()) ? d.names : 'Rishi\nJubid\nDharun\nHarish\nAshutosh\nSachitra\nChamila';
+  if(d.task) _grtEl('fd-task').value=d.task;
+  if(d.remove!=null) _grtEl('fd-remove').checked=!!d.remove;
+  _grtEl('fd-overlay').style.display='flex';
+  fdNamesChanged(true); fdRenderHistory();
+}
+function fdClose(){ if(_fd.spinning) return; _grtEl('fd-overlay').style.display='none'; }
+function fdNamesChanged(noSave){ var n=fdNames().length; _grtEl('fd-count').textContent=n+' name'+(n===1?'':'s'); fdDraw(); if(!noSave) fdSave(); }
+function fdShuffle(){ if(_fd.spinning) return; var a=fdNames(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } _grtEl('fd-names').value=a.join('\n'); fdNamesChanged(); }
+function fdClearNames(){ if(_fd.spinning) return; _grtEl('fd-names').value=''; fdNamesChanged(); }
+function fdClearHistory(){ fdSave({history:[]}); fdRenderHistory(); }
+function fdRenderHistory(){
+  var box=_grtEl('fd-history'), h=fdLoad().history||[];
+  if(!h.length){ box.innerHTML='<div style="color:#5a5878;">No assignments yet.</div>'; return; }
+  box.innerHTML=h.slice().reverse().map(function(x){
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 10px;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:8px;"><span><b style="color:#fff;">'+x.name.replace(/</g,'&lt;')+'</b> → '+x.task.replace(/</g,'&lt;')+'</span><span style="color:#8b8aad;font-family:\'DM Mono\',monospace;font-size:11px;white-space:nowrap;">'+x.time+'</span></div>';
+  }).join('');
+}
+function fdDraw(){
+  var cv=_grtEl('fd-wheel'); if(!cv) return;
+  var ctx=cv.getContext('2d'), W=cv.width, R=W/2-12, names=fdNames(), n=names.length;
+  ctx.clearRect(0,0,W,W);
+  ctx.save(); ctx.translate(W/2,W/2);
+  ctx.beginPath(); ctx.arc(0,0,R+8,0,Math.PI*2); ctx.fillStyle='#ffffff'; ctx.fill();
+  if(!n){ ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fillStyle='#1a1928'; ctx.fill(); ctx.fillStyle='#8b8aad'; ctx.font='600 30px Syne, sans-serif'; ctx.textAlign='center'; ctx.fillText('Add names',0,-90); ctx.restore(); return; }
+  var seg=Math.PI*2/n;
+  ctx.rotate(_fd.rot);
+  for(var i=0;i<n;i++){
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,i*seg,(i+1)*seg); ctx.closePath();
+    ctx.fillStyle=FD_COLORS[(n>1 && i===n-1 && n%FD_COLORS.length===1)?2:i%FD_COLORS.length]; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=3; ctx.stroke();
+    ctx.save(); ctx.rotate((i+0.5)*seg); ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillStyle='#fff';
+    var fs=Math.max(18,Math.min(38,Math.floor(560/Math.max(n,6)+10)));
+    ctx.font='700 '+fs+'px Syne, sans-serif';
+    var label=names[i]; while(label.length>3 && ctx.measureText(label).width>R-120) label=label.slice(0,-2);
+    if(label!==names[i]) label=label+'…';
+    ctx.fillText(label,R-28,0); ctx.restore();
+  }
+  ctx.restore();
+}
+function fdSpin(){
+  var names=fdNames();
+  if(_fd.spinning) return;
+  var res=_grtEl('fd-result');
+  if(names.length<2){ res.innerHTML='Add at least 2 names to spin.'; return; }
+  _fd.spinning=true; _grtEl('fd-play').style.opacity='.6';
+  res.innerHTML='Spinning…';
+  var n=names.length, seg=Math.PI*2/n, pick=Math.floor(Math.random()*n), TAU=Math.PI*2;
+  var jitter=(Math.random()-0.5)*seg*0.7;
+  var target=-Math.PI/2-(pick+0.5)*seg+jitter;
+  var cur=_fd.rot, delta=((target-cur)%TAU+TAU)%TAU;
+  var end=cur+TAU*(6+Math.floor(Math.random()*3))+delta, start=performance.now(), dur=5200;
+  function step(t){
+    var p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,4);
+    _fd.rot=cur+(end-cur)*e; fdDraw();
+    if(p<1){ requestAnimationFrame(step); return; }
+    _fd.rot=end%TAU; _fd.spinning=false; _grtEl('fd-play').style.opacity='1';
+    var name=names[pick], task=_grtEl('fd-task').value.trim()||'Freezer Inventory';
+    res.innerHTML='<div style="font-size:12px;color:#8b8aad;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Assigned to '+task.replace(/</g,'&lt;')+'</div><div style="font-size:28px;font-weight:800;color:#ffd60a;">🎉 '+name.replace(/</g,'&lt;')+'</div>';
+    var d=new Date(), time=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    var hist=(fdLoad().history||[]); hist.push({name:name,task:task,time:time}); if(hist.length>50) hist=hist.slice(-50);
+    dmsConfetti();
+    if(_grtEl('fd-remove').checked){ var rest=names.slice(); rest.splice(pick,1); _grtEl('fd-names').value=rest.join('\n'); }
+    fdSave({history:hist}); fdNamesChanged(true); fdRenderHistory();
+  }
+  requestAnimationFrame(step);
+}
 
 
 // ── EmailJS (optional) — for the email ALERT to the admin ──────
@@ -18561,6 +18811,40 @@ function handleScanningASIN(e) {
   </div>
 
   <div id="dstpro-admin-dash" style="display:none;padding:32px;max-width:1200px;margin:0 auto;">
+    <!-- ── GREETING POPUP ── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">🎁 Greeting Popup</div>
+          <div style="font-size:11px;color:#8b8aad;">Festival or birthday wish shown as a popup when users refresh, and a gift button they can tap to open it again.</div>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#e8e6ff;cursor:pointer;"><input type="checkbox" id="grt-popup-t" onchange="grtAdminSave()" style="width:18px;height:18px;accent-color:#10B981;"> Popup on refresh</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#e8e6ff;cursor:pointer;"><input type="checkbox" id="grt-gift-t" onchange="grtAdminSave()" style="width:18px;height:18px;accent-color:#10B981;"> Show gift button (always on while popup is on)</label>
+        </div>
+      </div>
+      <div style="padding:18px 24px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;margin-right:8px;">Templates</div><button onclick="grtTemplate('dussehra')" style="padding:7px 12px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">🏹 Dussehra</button><button onclick="grtTemplate('diwali')" style="padding:7px 12px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">🪔 Diwali</button><button onclick="grtTemplate('birthday')" style="padding:7px 12px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">🎂 Birthday</button><button onclick="grtTemplate('eid')" style="padding:7px 12px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">🌙 Eid</button><button onclick="grtTemplate('newyear')" style="padding:7px 12px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;cursor:pointer;">🎆 New Year</button></div>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 170px;gap:12px;">
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Emoji</div><input id="grt-emoji-i" maxlength="4" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;text-align:center;font-size:20px;padding:6px;"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Title</div><input id="grt-title-i" placeholder="Happy Dussehra!" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Button text</div><input id="grt-btn-i" placeholder="Thank you!" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Message</div><textarea id="grt-msg-i" rows="4" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 12px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;resize:vertical;line-height:1.6;"></textarea></div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8b8aad;">Theme color</div>
+          <input type="color" id="grt-color-i" value="#f97316" style="width:40px;height:32px;border:1px solid #2e2c45;border-radius:8px;background:none;cursor:pointer;padding:0;">
+          <div style="display:flex;gap:6px;"><span onclick="grtSetColor('#f97316')" style="width:22px;height:22px;border-radius:6px;background:#f97316;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span><span onclick="grtSetColor('#eab308')" style="width:22px;height:22px;border-radius:6px;background:#eab308;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span><span onclick="grtSetColor('#f72585')" style="width:22px;height:22px;border-radius:6px;background:#f72585;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span><span onclick="grtSetColor('#10B981')" style="width:22px;height:22px;border-radius:6px;background:#10B981;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span><span onclick="grtSetColor('#2563EB')" style="width:22px;height:22px;border-radius:6px;background:#2563EB;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span><span onclick="grtSetColor('#7c3aed')" style="width:22px;height:22px;border-radius:6px;background:#7c3aed;cursor:pointer;border:2px solid rgba(255,255,255,0.2);"></span></div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e8e6ff;cursor:pointer;margin-left:8px;"><input type="checkbox" id="grt-confetti-t" checked style="width:16px;height:16px;accent-color:#10B981;"> Confetti</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button onclick="grtPreview()" style="padding:10px 18px;border-radius:8px;border:1px solid #2e2c45;background:rgba(15,14,23,0.7);color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Preview</button>
+          <button onclick="grtAdminSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Save &amp; publish</button>
+          <span id="grt-save-status" style="font-size:12px;color:#10B981;"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- ── ANNOUNCEMENT ───────────────────────────────────────── -->
     <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
       <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
