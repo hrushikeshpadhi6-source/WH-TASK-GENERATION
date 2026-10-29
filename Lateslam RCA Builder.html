@@ -254,6 +254,25 @@
     </div>
   </div>
 
+  <div class="fc-panel hide" id="fmPanel">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:10px;">
+      <div>
+        <h4>5-Minute Drops · Forecast vs Actual</h4>
+        <p class="hint" style="margin:0;">Each 30-min forecast from the Google Sheet is split into six 5-min drops. Each drop gets the whole-number share (e.g. 32 ÷ 6 = 5 each); the leftover (2) goes 1 per drop to the 5-min drops that have a late slam first, then to the next drops in time order. Drops always add back exactly to the sheet's 30-min orders &amp; units. Actuals are counted from <b>picklist_created_time</b> (all orders in the store filter).</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="ctrl"><label>Split method</label>
+          <select id="fmMode"><option value="even">Even (÷ 6) · extra to late-slam drops</option><option value="actual">Follow actual pattern</option></select></div>
+        <button class="btn ghost" id="fmCopyBtn"><span class="dot"></span>Copy 5-min for Google Sheets</button>
+        <button class="btn ghost" id="fmXlsxBtn">⤓ 5-min Excel</button>
+      </div>
+    </div>
+    <div id="fmSum" style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;font-weight:700;margin-bottom:10px;"></div>
+    <div style="overflow:auto;max-height:520px;">
+      <table class="fc-table" id="fmTable"></table>
+    </div>
+  </div>
+
   <div class="fc-panel hide" id="tzPanel">
     <h4>Chiller &amp; Freezer Orders</h4>
     <p class="hint">Orders with picks from <b>P-1-F</b> (Freezer) or <b>P-1-C</b> (Chiller) locations, by 30-min slot. Orders and units per zone.</p>
@@ -270,7 +289,7 @@
   </div>
 
   <div class="foot">
-    <span class="pill" id="colcount">25 columns</span>
+    <span class="pill" id="colcount">31 columns</span>
     <span class="pill" id="rowcount">—</span>
     <span class="empty-hint" id="footHint">Tip: click <b>Copy for Google Sheets</b> → open your sheet → <b>Ctrl/Cmd&nbsp;+&nbsp;V</b>. Colours &amp; headers paste in automatically.</span>
   </div>
@@ -285,6 +304,7 @@ const GROUPS = {
   cls:{label:"Classification",                   h:"#8a1c1c", t:"#fbe7e7", leg:"Late-slam flag"},
   der:{label:"Derived Metrics",                  h:"#8a5a00", t:"#fcf1dd", leg:"Calculated from timestamps"},
   fva:{label:"Forecast vs Actual",               h:"#0f5e57", t:"#e1f1ee", leg:"Forecast sheet + system"},
+  f5:{label:"5-Min Drop · Forecast vs Actual",    h:"#0b5c7a", t:"#e0eff6", leg:"30-min forecast split into 5-min drops"},
   man:{label:"Tracking",                         h:"#5b2a86", t:"#f1e8f8", leg:"Auto-tracked from outbound pick data"},
 };
 // key: raw column name OR derived id ; src: how value is produced
@@ -312,6 +332,12 @@ const COLS = [
   {g:"fva",name:"Actual Orders",      key:"actual",        src:"slot",   note:"Actual orders received in that 30-min slot"},
   {g:"fva",name:"Forecast Units",     key:"forecastUnits", src:"slot",   note:"From Google Sheet — 30-min forecast units"},
   {g:"fva",name:"Actual Units",       key:"actualUnits",   src:"slot",   note:"Sum of units_picked in that 30-min slot"},
+  {g:"f5",name:"5-min Drop",          key:"f5drop", src:"f5", note:"5-min bucket of pick-list created time"},
+  {g:"f5",name:"5-min FC Orders",     key:"f5fO",   src:"f5", note:"30-min FC orders split into 5-min drops"},
+  {g:"f5",name:"5-min Actual Orders", key:"f5aO",   src:"f5", note:"Actual orders created in that 5-min drop"},
+  {g:"f5",name:"5-min FC Units",      key:"f5fU",   src:"f5", note:"30-min FC units split into 5-min drops"},
+  {g:"f5",name:"5-min Actual Units",  key:"f5aU",   src:"f5", note:"Units picked for orders in that 5-min drop"},
+  {g:"f5",name:"5-min Gap %",         key:"f5gap",  src:"f5", note:"5-min actual vs forecast orders gap"},
   {g:"man",name:"Active MP",          key:"mp",            src:"slot",   note:"Auto: distinct pick users active in slot"},
   {g:"man",name:"Picker Name",        key:"picker",        src:"derive", note:"From outbound-pick raw data"},
 ];
@@ -466,9 +492,10 @@ function build(){
   Object.keys(picks).forEach(o=>picks[o].sort((a,b)=>(parseDT(a.Timestamp)||0)-(parseDT(b.Timestamp)||0)));
 
   // manpower: distinct pick users per 30-min slot (from outbound pick Timestamp)
-  const usersBySlot={}, allUsers=new Set();
+  const usersBySlot={}, users5={}, allUsers=new Set();
   F2.forEach(r=>{ const u=String(r.User||r.user||"").trim(); const d=parseDT(r.Timestamp||r.timestamp); if(!u) return;
-    allUsers.add(u); if(!d) return; const k=slotKey(d); (usersBySlot[k]=usersBySlot[k]||new Set()).add(u); });
+    allUsers.add(u); if(!d) return; const k=slotKey(d); (usersBySlot[k]=usersBySlot[k]||new Set()).add(u);
+    const k5=d.getHours()*12+Math.floor(d.getMinutes()/5); (users5[k5]=users5[k5]||new Set()).add(u); });
   totalUsers=allUsers.size;
 
   // temp zone per order: P-1-F = Freezer, P-1-C = Chiller
@@ -485,6 +512,14 @@ function build(){
   rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(!d) return;
     const h=slotKey(d); actualByHour[h]=(actualByHour[h]||0)+1;
     actualUnitsByHour[h]=(actualUnitsByHour[h]||0)+(parseInt(r.units_picked)||0); });
+
+  // actual orders + units per 5-min drop (0..287)
+  const act5O={}, act5U={}, ls5={};
+  rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(!d) return;
+    const k=d.getHours()*12+Math.floor(d.getMinutes()/5);
+    const hp=r.promise_utr!=null&&String(r.promise_utr).trim()!=="";
+    if(hp && (parseInt(r.pl_create_to_stage)||0)>(parseInt(r.promise_utr)||0)) ls5[k]=(ls5[k]||0)+1;
+    act5O[k]=(act5O[k]||0)+1; act5U[k]=(act5U[k]||0)+(parseInt(r.units_picked)||0); });
 
   // forecast (orders + units) per 30-min slot from fetched sheet, matched to store filter
   const storesInData=[...new Set(rows.map(r=>r.delivery_station_code).filter(Boolean))];
@@ -507,6 +542,7 @@ function build(){
       zone: z.f&&z.c?"Freezer + Chiller":z.f?"Freezer":z.c?"Chiller":"Ambient",
       raw:r,
       hour: plc?slotKey(plc):null,
+      k5: plc?plc.getHours()*12+Math.floor(plc.getMinutes()/5):null,
       lateslam: isLS?"Lateslam":"On time",
       slot: plc?(hourSlot(plc)+" · "+fmtClock(plc)):"",
       accept: (plc&&asg)?fmtDur((asg-plc)/1000):"",
@@ -529,14 +565,16 @@ function build(){
     };
   });
 
+  fm={users5,usersBySlot,act5O,act5U,ls5,fcO:fcOrdersByHour,fcU:fcUnitsByHour,actO:actualByHour,actU:actualUnitsByHour};
   built=true;
   renderKpis();
+  renderFmPanel();
   renderFcPanel(hoursPresent);
   renderTzPanel();
   rebuildExportRows();
   renderGrid();
   $("copyBtn").disabled=false; $("xlsxBtn").disabled=false;
-  $("kpis").classList.remove("hide"); $("fcPanel").classList.remove("hide"); $("tzPanel").classList.remove("hide");
+  $("kpis").classList.remove("hide"); $("fcPanel").classList.remove("hide"); $("fmPanel").classList.remove("hide"); $("tzPanel").classList.remove("hide");
   toast(records.length.toLocaleString()+" rows built");
 }
 
@@ -549,6 +587,12 @@ function rebuildExportRows(){
     return COLS.map(c=>{
       if(c.src==="raw")    return c.dateOnly?stripMidnight(rec.raw[c.key]):(rec.raw[c.key]!=null?String(rec.raw[c.key]):"");
       if(c.src==="derive") return rec[c.key]!=null?String(rec[c.key]):"";
+      if(c.src==="f5"){ if(rec.k5==null) return "";
+        const d=fm5[rec.k5]||{fO:0,aO:(fm&&fm.act5O[rec.k5])||0,fU:0,aU:(fm&&fm.act5U[rec.k5])||0};
+        if(c.key==="f5drop") return fmLabel(rec.k5);
+        if(c.key==="f5fO") return String(d.fO); if(c.key==="f5aO") return String(d.aO);
+        if(c.key==="f5fU") return String(d.fU); if(c.key==="f5aU") return String(d.aU);
+        if(c.key==="f5gap") return fmGap(d.aO,d.fO); return ""; }
       // slot-level
       if(c.key==="actual")        return slot.actual!=null?String(slot.actual):"";
       if(c.key==="forecast")      return slot.forecast!=null?String(slot.forecast):"";
@@ -579,6 +623,104 @@ function renderKpis(){
   ];
   $("kpis").innerHTML=k.map(x=>`<div class="kpi ${x.cls||''}"><div class="v">${x.v}</div><div class="l">${x.l}</div></div>`).join("");
 }
+
+/* ===================== 5-minute drops ===================== */
+let fm=null, fmRows=[], fm5={};
+// split an integer total over weights; largest-remainder so the parts sum exactly to total
+function splitInt(total, w){
+  total=Math.round(total||0); const n=w.length; let sw=w.reduce((a,b)=>a+b,0);
+  if(sw<=0){ w=w.map(()=>1); sw=n; }
+  const raw=w.map(x=>total*x/sw), base=raw.map(Math.floor);
+  let left=total-base.reduce((a,b)=>a+b,0);
+  raw.map((x,i)=>({i,r:x-base[i]})).sort((a,b)=>b.r-a.r||a.i-b.i).slice(0,left).forEach(o=>base[o.i]++);
+  return base;
+}
+// even split: floor(total/6) to every drop; the leftover goes 1 each to late-slam drops first, then the remaining drops in time order
+function splitLS(total, lsFlags){
+  total=Math.round(total||0); const base=Math.floor(total/6), out=[0,1,2,3,4,5].map(()=>base);
+  let left=total-base*6;
+  const order=[0,1,2,3,4,5].filter(i=>lsFlags[i]).concat([0,1,2,3,4,5].filter(i=>!lsFlags[i]));
+  for(let j=0;left>0;j=(j+1)%6){ out[order[j]]++; left--; }
+  return out;
+}
+function fmLabel(k){ const p=n=>String(n).padStart(2,"0"); const h=Math.floor(k/12), m=(k%12)*5;
+  return `${p(h)}:${p(m)} - ${p(h)}:${p(m+4)}`; }
+function fmGap(a,f){ return f>0 ? (((a-f)/f)*100).toFixed(1)+"%" : ""; }
+function computeFm(){
+  fmRows=[]; fm5={}; if(!fm) return fmRows;
+  const mode=$("fmMode").value;
+  const slots=[...new Set([...Object.keys(fm.fcO),...Object.keys(fm.fcU),...Object.keys(fm.actO)].map(Number))]
+    .filter(s=>(fm.fcO[s]||0)||(fm.fcU[s]||0)||(fm.actO[s]||0)).sort((a,b)=>a-b);
+  slots.forEach(s=>{
+    const ks=[0,1,2,3,4,5].map(i=>s*6+i);
+    const wO=mode==="actual"?ks.map(k=>fm.act5O[k]||0):ks.map(()=>1);
+    const wU=mode==="actual"?ks.map(k=>fm.act5U[k]||0):ks.map(()=>1);
+    const lsF=ks.map(k=>(fm.ls5[k]||0)>0);
+    const fO=mode==="actual"?splitInt(fm.fcO[s]||0,wO):splitLS(fm.fcO[s]||0,lsF);
+    const fU=mode==="actual"?splitInt(fm.fcU[s]||0,wU):splitLS(fm.fcU[s]||0,lsF);
+    ks.forEach((k,i)=>{ const o={k,slot:s,fO:fO[i],aO:fm.act5O[k]||0,fU:fU[i],aU:fm.act5U[k]||0}; fmRows.push(o); fm5[k]=o; });
+  });
+  return fmRows;
+}
+function renderFmPanel(){
+  computeFm();
+  const T={fO:0,aO:0,fU:0,aU:0};
+  const cell=(a,f)=>{ const d=a-f; const c=d<0?'gap-neg':d>0?'gap-pos':''; return `<td class="${c}" style="font-weight:800">${d>0?'+':''}${d}</td>`; };
+  const pct=(a,f)=>{ const g=fmGap(a,f); return g?`<td class="${parseFloat(g)<0?'gap-neg':'gap-pos'}" style="font-weight:800">${g}</td>`:'<td style="color:#9aa6b2">—</td>'; };
+  let h='<thead><tr><th>5-min drop</th><th>30-min slot</th><th>FC Orders</th><th>Actual Ord</th><th>Var</th><th>FC Units</th><th>Actual Units</th><th>Var</th><th>Gap %</th></tr></thead><tbody>';
+  fmRows.forEach(r=>{ T.fO+=r.fO; T.aO+=r.aO; T.fU+=r.fU; T.aU+=r.aU;
+    const first=r.k%6===0;
+    h+=`<tr style="${first?'border-top:2px solid #d5dde6':''}"><td>${fmLabel(r.k)}</td><td style="color:var(--muted);font-weight:600">${slotLabel(r.slot)}</td><td>${r.fO}</td><td>${r.aO}</td>${cell(r.aO,r.fO)}<td>${r.fU}</td><td>${r.aU}</td>${cell(r.aU,r.fU)}${pct(r.aO,r.fO)}</tr>`; });
+  if(!fmRows.length) h+='<tr><td colspan="9">No forecast or actual orders in view — fetch the forecast, then Build RCA.</td></tr>';
+  else h+=`<tr style="font-weight:800;border-top:2px solid #b9c4d0"><td>Total</td><td></td><td>${T.fO}</td><td>${T.aO}</td>${cell(T.aO,T.fO)}<td>${T.fU}</td><td>${T.aU}</td>${cell(T.aU,T.fU)}${pct(T.aO,T.fO)}</tr>`;
+  $("fmTable").innerHTML=h+'</tbody>';
+  $("fmSum").innerHTML=fmRows.length?`<span>${fmRows.length} drops</span><span>FC orders ${T.fO} · actual ${T.aO}</span><span>FC units ${T.fU} · actual ${T.aU}</span>`+(fcLoaded?'':'<span style="color:#b8730a">Forecast not fetched — FC columns are 0</span>'):'';
+}
+$("fmMode").addEventListener("change",()=>{ if(built){ renderFmPanel(); rebuildExportRows(); renderGrid(); } });
+// grouped rows: one 30-min slot row, then its six 5-min drops
+const FM_HEAD=["Time","Level","FC Orders","Actual Orders","Orders Var","FC Units","Actual Units","Units Var","Gap %"];
+function fmGrouped(){
+  const out=[], T={fO:0,aO:0,fU:0,aU:0};
+  for(let i=0;i<fmRows.length;i+=6){
+    const g=fmRows.slice(i,i+6), s=g[0].slot;
+    const t=g.reduce((a,r)=>({fO:a.fO+r.fO,aO:a.aO+r.aO,fU:a.fU+r.fU,aU:a.aU+r.aU}),{fO:0,aO:0,fU:0,aU:0});
+    ["fO","aO","fU","aU"].forEach(k=>T[k]+=t[k]);
+    out.push({type:"slot",v:[slotLabel(s),"30-min slot",t.fO,t.aO,t.aO-t.fO,t.fU,t.aU,t.aU-t.fU,fmGap(t.aO,t.fO)]});
+    g.forEach(r=>out.push({type:"drop",v:["   "+fmLabel(r.k),"5-min drop",r.fO,r.aO,r.aO-r.fO,r.fU,r.aU,r.aU-r.fU,fmGap(r.aO,r.fO)]}));
+  }
+  out.push({type:"total",v:["Total","",T.fO,T.aO,T.aO-T.fO,T.fU,T.aU,T.aU-T.fU,fmGap(T.aO,T.fO)]});
+  return out;
+}
+$("fmCopyBtn").addEventListener("click",async()=>{
+  if(!built||!fmRows.length){ toast("Build RCA first"); return; }
+  const bd="1px solid #b9c4d0", rows=fmGrouped();
+  const td=(v,st)=>`<td style="border:${bd};padding:3px 6px;${st}">${esc(v)}</td>`;
+  const varSt=v=>typeof v==="number"&&v!==0?(v<0?"color:#c0392b;":"color:#0f8a4f;"):"";
+  let t=`<table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;"><tr>`+
+    FM_HEAD.map(hh=>`<th style="border:${bd};padding:4px 6px;background:#0f5e57;color:#fff;font-weight:bold;">${hh}</th>`).join("")+"</tr>";
+  rows.forEach(r=>{
+    const bg=r.type==="slot"?"background:#e1f1ee;font-weight:bold;":r.type==="total"?"background:#33414f;color:#fff;font-weight:bold;":"background:#fff;";
+    t+="<tr>"+r.v.map((v,i)=>td(v,bg+(i>=2?"text-align:center;":"")+(r.type!=="total"&&(i===4||i===7||i===8)?varSt(i===8?parseFloat(v)||0:v):""))).join("")+"</tr>";
+  });
+  t+="</table>";
+  const tsv=[FM_HEAD.join("\t")].concat(rows.map(r=>r.v.join("\t"))).join("\n");
+  try{
+    await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([t],{type:"text/html"}),"text/plain":new Blob([tsv],{type:"text/plain"})})]);
+  }catch(e){
+    const d=document.createElement("div"); d.contentEditable="true"; d.style.cssText="position:fixed;left:-9999px"; d.innerHTML=t;
+    document.body.appendChild(d); const rg=document.createRange(); rg.selectNodeContents(d);
+    const s=getSelection(); s.removeAllRanges(); s.addRange(rg); document.execCommand("copy"); s.removeAllRanges(); d.remove();
+  }
+  toast("Copied "+rows.length+" rows — paste into Google Sheets");
+});
+$("fmXlsxBtn").addEventListener("click",()=>{
+  if(!built||!fmRows.length){ toast("Build RCA first"); return; }
+  const aoa=[FM_HEAD].concat(fmGrouped().map(r=>r.v));
+  const ws=XLSX.utils.aoa_to_sheet(aoa); ws["!cols"]=[{wch:15},{wch:15},{wch:11},{wch:13},{wch:11},{wch:10},{wch:12},{wch:10},{wch:9}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"5-min Drops");
+  const st=$("storeFilter").value, dt=$("fcDate").value||"date";
+  XLSX.writeFile(wb,`5min_FC_vs_Actual_${st}_${dt}.xlsx`);
+});
 
 /* ===================== chiller / freezer panel ===================== */
 let totalUsers=0;
@@ -726,7 +868,7 @@ $("xlsxBtn").addEventListener("click",async()=>{
 });
 const colL=n=>{let s='';n++;while(n>0){let m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26;}return s;};
 async function makeXlsx(dataRows){
-  const order=["raw","cls","der","fva","man"];
+  const order=["raw","cls","der","fva","f5","man"]; const N=order.length;
   const fills=[`<fill><patternFill patternType="none"/></fill>`,`<fill><patternFill patternType="gray125"/></fill>`];
   order.forEach(k=>fills.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${GROUPS[k].h.slice(1)}"/></patternFill></fill>`));
   order.forEach(k=>fills.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${GROUPS[k].t.slice(1)}"/></patternFill></fill>`));
@@ -737,9 +879,9 @@ async function makeXlsx(dataRows){
     `<border><left style="thin"><color rgb="FFB9C4D0"/></left><right style="thin"><color rgb="FFB9C4D0"/></right><top style="thin"><color rgb="FFB9C4D0"/></top><bottom style="thin"><color rgb="FFB9C4D0"/></bottom></border>`];
   const xfs=[`<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>`];
   order.forEach((k,i)=>xfs.push(`<xf fontId="1" fillId="${2+i}" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>`)); //1-5 band
-  order.forEach((k,i)=>xfs.push(`<xf fontId="2" fillId="${7+i}" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>`)); //6-10 hdr
-  order.forEach((k,i)=>xfs.push(`<xf fontId="0" fillId="${7+i}" borderId="1" applyFill="1" applyBorder="1"/>`)); //11-15 data
-  const bandIdx={raw:1,cls:2,der:3,fva:4,man:5}, hdrIdx={raw:6,cls:7,der:8,fva:9,man:10}, dataIdx={raw:11,cls:12,der:13,fva:14,man:15};
+  order.forEach((k,i)=>xfs.push(`<xf fontId="2" fillId="${2+N+i}" borderId="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>`)); //6-10 hdr
+  order.forEach((k,i)=>xfs.push(`<xf fontId="0" fillId="${2+N+i}" borderId="1" applyFill="1" applyBorder="1"/>`)); // data
+  const bandIdx={}, hdrIdx={}, dataIdx={}; order.forEach((k,i)=>{ bandIdx[k]=1+i; hdrIdx[k]=1+N+i; dataIdx[k]=1+2*N+i; });
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills>
