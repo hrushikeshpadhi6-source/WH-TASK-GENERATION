@@ -911,7 +911,7 @@ to{width:65%;} }
   border:1px solid #c2c5d6; padding:24px;
 }
 #page-gatepass .gp-doc .gp-doc-title-cell {
-  background:#1F3864; color:#fff; text-align:center;
+  background:#fff; color:#000; text-align:center;
   padding:18px 12px; border:2px solid #000;
 }
 #page-gatepass .gp-doc .gp-doc-title-cell h4 {
@@ -2569,11 +2569,17 @@ window.feedbackAdminClear=async function(){
 @keyframes grtPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes grtBounce{0%,100%{transform:translateY(0) rotate(0)}8%{transform:translateY(-8px) rotate(-10deg)}16%{transform:translateY(0) rotate(10deg)}24%{transform:rotate(0)}}
 @keyframes grtFall{to{transform:translateY(110vh) rotate(720deg)}}
+@keyframes grtBurst{0%{transform:rotate(var(--a)) translateX(0) scale(1);opacity:1}70%{opacity:1}100%{transform:rotate(var(--a)) translateX(var(--r)) translateY(14px) scale(.3);opacity:0}}
+@keyframes grtFlick{0%,100%{transform:scale(1) translateY(0);filter:drop-shadow(0 0 10px #ffb703) drop-shadow(0 0 22px rgba(255,140,0,.7))}30%{transform:scale(1.04) translateY(-2px);filter:drop-shadow(0 0 16px #ffd60a) drop-shadow(0 0 34px rgba(255,140,0,.9))}60%{transform:scale(.98);filter:drop-shadow(0 0 8px #ffb703) drop-shadow(0 0 18px rgba(255,120,0,.6))}}
+@keyframes grtMini{0%,100%{opacity:1;transform:translateY(0)}50%{opacity:.75;transform:translateY(-2px)}}
+@keyframes grtSway{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+@keyframes grtShine{to{background-position:200% center}}
+@keyframes grtTwinkle{0%,100%{opacity:.15}50%{opacity:1}}
 </style>
 <div id="grt-overlay" onclick="if(event.target===this)grtClose()" style="display:none;position:fixed;inset:0;z-index:10060;align-items:center;justify-content:center;padding:20px;background:rgba(6,5,14,0.8);backdrop-filter:blur(6px);">
-  <div style="position:relative;width:100%;max-width:440px;background:rgba(18,17,30,0.99);border:1px solid #2e2c45;border-radius:24px;overflow:hidden;box-shadow:0 32px 96px rgba(0,0,0,0.75);animation:grtPop .45s cubic-bezier(.2,1.4,.4,1);">
+  <div id="grt-card" style="position:relative;width:100%;max-width:440px;background:rgba(18,17,30,0.99);border:1px solid #2e2c45;border-radius:24px;overflow:hidden;box-shadow:0 32px 96px rgba(0,0,0,0.75);animation:grtPop .45s cubic-bezier(.2,1.4,.4,1);">
     <button onclick="grtClose()" aria-label="Close" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,0.35);background:rgba(0,0,0,0.25);color:#fff;font-size:20px;line-height:1;cursor:pointer;z-index:2;">×</button>
-    <div id="grt-head" style="padding:38px 24px 28px;text-align:center;background:#f97316;"><div id="grt-emoji" style="font-size:68px;line-height:1;">🎉</div></div>
+    <div id="grt-head" style="position:relative;overflow:hidden;padding:38px 24px 28px;text-align:center;background:#f97316;"><div id="grt-fx" style="position:absolute;inset:0;pointer-events:none;"></div><div id="grt-emoji" style="position:relative;display:inline-block;font-size:68px;line-height:1;">🎉</div></div>
     <div style="padding:24px 28px 28px;text-align:center;font-family:'Syne',sans-serif;">
       <div id="grt-title" style="font-size:24px;font-weight:800;letter-spacing:-0.3px;color:#fff;margin-bottom:10px;"></div>
       <div id="grt-msg" style="font-size:14px;line-height:1.7;color:#c9c6e8;white-space:pre-wrap;margin-bottom:22px;"></div>
@@ -17100,12 +17106,12 @@ var GRT_TEMPLATES={
 function _grtEl(id){ return document.getElementById(id); }
 function grtLoadLocal(){ try{ var s=localStorage.getItem('dms_greeting'); return s?JSON.parse(s):null; }catch(e){ return null; } }
 function grtSaveLocal(s){ try{ localStorage.setItem('dms_greeting',JSON.stringify(s)); }catch(e){} }
-function dmsConfetti(){
+function dmsConfetti(dw){
   var box=_grtEl('dms-confetti'); if(!box) return;
-  var cols=['#f97316','#ffd60a','#f72585','#10B981','#2563EB','#7c3aed','#fff'];
+  var cols=dw?['#ffd60a','#ff9f1c','#e85d04','#fff3b0','#f72585']:['#f97316','#ffd60a','#f72585','#10B981','#2563EB','#7c3aed','#fff'];
   for(var i=0;i<90;i++){
     var d=document.createElement('div'), sz=6+Math.random()*8;
-    d.style.cssText='position:absolute;top:-20px;left:'+(Math.random()*100)+'%;width:'+sz+'px;height:'+(sz*0.45)+'px;background:'+cols[i%cols.length]+';border-radius:2px;opacity:.95;animation:grtFall '+(2.4+Math.random()*2)+'s '+(Math.random()*0.6)+'s cubic-bezier(.3,.6,.6,1) forwards;';
+    d.style.cssText='position:absolute;top:-20px;left:'+(Math.random()*100)+'%;width:'+(dw?sz*0.6:sz)+'px;height:'+(dw?sz*0.6:sz*0.45)+'px;background:'+cols[i%cols.length]+';border-radius:'+(dw?'50%':'2px')+';'+(dw?'box-shadow:0 0 8px '+cols[i%cols.length]+';':'')+'opacity:.95;animation:grtFall '+(2.4+Math.random()*2)+'s '+(Math.random()*0.6)+'s cubic-bezier(.3,.6,.6,1) forwards;';
     box.appendChild(d);
   }
   setTimeout(function(){ box.innerHTML=''; }, 5200);
@@ -17119,10 +17125,55 @@ function grtOpen(s){
   _grtEl('grt-ok').textContent=s.btn||'Thank you!';
   _grtEl('grt-head').style.background=c;
   _grtEl('grt-ok').style.background=c;
+  var dw=/diwali|deepavali/i.test(s.title||'')||(s.emoji||'').indexOf('🪔')>-1;
+  grtDiwali(dw);
   _grtEl('grt-overlay').style.display='flex';
-  if(s.confetti!==false) dmsConfetti();
+  if(s.confetti!==false) dmsConfetti(dw);
 }
-function grtClose(){ var o=_grtEl('grt-overlay'); if(o) o.style.display='none'; }
+var _grtFxT=null;
+function grtDiwali(on){
+  var h=_grtEl('grt-head'), fx=_grtEl('grt-fx'), e=_grtEl('grt-emoji'), t=_grtEl('grt-title'), b=_grtEl('grt-ok'), cd=_grtEl('grt-card');
+  clearInterval(_grtFxT); _grtFxT=null; if(fx) fx.innerHTML='';
+  if(!on){
+    h.style.padding='38px 24px 28px'; e.style.animation=''; e.style.fontSize='68px';
+    t.style.background=''; t.style.webkitBackgroundClip=''; t.style.backgroundClip=''; t.style.color='#fff'; t.style.animation='';
+    b.style.color='#fff'; b.style.boxShadow=''; cd.style.border='1px solid #2e2c45'; cd.style.boxShadow='0 32px 96px rgba(0,0,0,0.75)';
+    return;
+  }
+  h.style.background='radial-gradient(ellipse at 50% 115%, #9a2d1f 0%, #4a1442 42%, #1a0b2e 78%, #0f0820 100%)';
+  h.style.padding='54px 24px 44px';
+  e.style.fontSize='76px'; e.style.animation='grtFlick 1.6s ease-in-out infinite';
+  cd.style.border='1px solid rgba(255,183,3,0.45)'; cd.style.boxShadow='0 0 0 1px rgba(255,183,3,0.15), 0 0 60px rgba(255,140,0,0.25), 0 32px 96px rgba(0,0,0,0.75)';
+  t.style.background='linear-gradient(90deg,#ffd60a,#fff3b0,#ff9f1c,#ffd60a)'; t.style.backgroundSize='200% auto';
+  t.style.webkitBackgroundClip='text'; t.style.backgroundClip='text'; t.style.color='transparent'; t.style.animation='grtShine 3s linear infinite';
+  b.style.background='linear-gradient(135deg,#ffd60a,#ff9f1c)'; b.style.color='#2a1100'; b.style.boxShadow='0 6px 24px rgba(255,159,28,0.45)';
+  var html='', i;
+  // stars
+  for(i=0;i<26;i++) html+='<span style="position:absolute;left:'+(Math.random()*100)+'%;top:'+(Math.random()*70)+'%;width:2px;height:2px;border-radius:50%;background:#fff;animation:grtTwinkle '+(1.5+Math.random()*2)+'s '+(Math.random()*2)+'s ease-in-out infinite;"></span>';
+  // marigold toran
+  html+='<div style="position:absolute;top:-4px;left:-10px;right:-10px;display:flex;justify-content:space-between;transform-origin:top center;animation:grtSway 4s ease-in-out infinite;">';
+  for(i=0;i<16;i++){ var dp=6+Math.round(Math.sin(i/15*Math.PI*3)*4+4);
+    html+='<span style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:'+dp+'px;"><span style="width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffe066,#ff9f1c 60%,#e85d04);box-shadow:0 0 6px rgba(255,159,28,.6);"></span>'+(i%2?'<span style="width:7px;height:9px;border-radius:0 50% 50% 50%;transform:rotate(45deg);background:#38b000;"></span>':'')+'</span>'; }
+  html+='</div>';
+  // diya row
+  html+='<div style="position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:space-between;padding:0 22px;">';
+  for(i=0;i<5;i++){ if(i===2){ html+='<span style="width:26px;"></span>'; continue; }
+    html+='<span style="font-size:22px;filter:drop-shadow(0 0 8px #ffb703);animation:grtMini '+(1+Math.random()*.8)+'s '+(Math.random())+'s ease-in-out infinite;">🪔</span>'; }
+  html+='</div>';
+  fx.innerHTML=html;
+  var burst=function(){
+    if(_grtEl('grt-overlay').style.display==='none'){ clearInterval(_grtFxT); return; }
+    var cols=['#ffd60a','#ff9f1c','#f72585','#4cc9f0','#ffffff','#b5179e'], c=cols[Math.floor(Math.random()*cols.length)];
+    var w=document.createElement('div'); w.style.cssText='position:absolute;left:'+(10+Math.random()*80)+'%;top:'+(18+Math.random()*38)+'%;width:0;height:0;';
+    var n=16, r=28+Math.random()*26;
+    for(var k=0;k<n;k++){ var p=document.createElement('span');
+      p.style.cssText='position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:'+c+';box-shadow:0 0 6px '+c+';--a:'+(k*360/n)+'deg;--r:'+r+'px;animation:grtBurst 1.2s cubic-bezier(.15,.7,.3,1) forwards;';
+      w.appendChild(p); }
+    fx.appendChild(w); setTimeout(function(){ w.remove(); },1300);
+  };
+  burst(); _grtFxT=setInterval(burst,650);
+}
+function grtClose(){ var o=_grtEl('grt-overlay'); if(o) o.style.display='none'; clearInterval(_grtFxT); _grtFxT=null; }
 function grtApply(){
   var g=_grtEl('grt-gift'); if(!g) return;
   var app=_grtEl('app-shell'), loggedIn=!app || getComputedStyle(app).display!=='none';
@@ -20572,7 +20623,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
   // Helper: a labelled cell (grey) + value cell pair inside a 4-col row.
   function rowKV(k1, v1, k2, v2){
     function cell(text, isLbl, w){
-      var shd = isLbl ? '<w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>' : '';
+      var shd = '';
       var pr  = isLbl ? '<w:rPr><w:b/></w:rPr>' : '';
       return '<w:tc>' +
         '<w:tcPr>' +
@@ -20608,14 +20659,14 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       '<w:tr><w:tc>' +
         '<w:tcPr>' +
           '<w:tcW w:w="9360" w:type="dxa"/>' +
-          '<w:shd w:val="clear" w:color="auto" w:fill="1F3864"/>' +
+          '' +
           '<w:tcMar><w:top w:w="200" w:type="dxa"/><w:left w:w="200" w:type="dxa"/><w:bottom w:w="200" w:type="dxa"/><w:right w:w="200" w:type="dxa"/></w:tcMar>' +
         '</w:tcPr>' +
         '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
-          '<w:r><w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="36"/></w:rPr>' +
+          '<w:r><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="36"/></w:rPr>' +
           '<w:t>REVERSE TRANSSHIPMENT GATE PASS</w:t></w:r></w:p>' +
         '<w:p><w:pPr><w:spacing w:before="60"/><w:jc w:val="center"/></w:pPr>' +
-          '<w:r><w:rPr><w:color w:val="FFFFFF"/><w:sz w:val="22"/></w:rPr>' +
+          '<w:r><w:rPr><w:color w:val="000000"/><w:sz w:val="22"/></w:rPr>' +
           '<w:t xml:space="preserve">Dark Store  \u2192  FC/RDC</w:t></w:r></w:p>' +
       '</w:tc></w:tr></w:tbl>';
   }
@@ -20712,7 +20763,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       '</w:p>' +
       buildSignatureTable() +
       '<w:p><w:pPr><w:spacing w:before="200"/></w:pPr>' +
-        '<w:r><w:rPr><w:color w:val="595959"/><w:sz w:val="16"/></w:rPr>' +
+        '<w:r><w:rPr><w:color w:val="000000"/><w:sz w:val="16"/></w:rPr>' +
           '<w:t xml:space="preserve">Operations  \u2022  Retain copy at Dark Store; original travels with the shipment.</w:t>' +
         '</w:r>' +
       '</w:p>' +
@@ -21207,6 +21258,31 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
     return emptyPara()+heading+sub+dnItemsTableXml(items)+emptyPara();
   }
 
+
+  function dnToteListXml(items, d){
+    if(!items || !items.length) return '';
+    var seen={}, totes=[];
+    items.forEach(function(it){ var t=String(it.tote||'').trim(); if(t && !seen[t]){ seen[t]=1; totes.push(t); } });
+    if(!totes.length) return '';
+    var n=totes.length;
+    var cols = n<=40?4 : n<=120?5 : n<=200?6 : 7;
+    var sz   = n<=40?22 : n<=120?18 : n<=200?15 : 12;
+    var mar  = n<=120?50 : 25;
+    var w=Math.floor(9360/cols);
+    var bd='<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(function(p){return '<w:'+p+' w:val="single" w:sz="4" w:space="0" w:color="000000"/>';}).join('')+'</w:tblBorders>';
+    var grid='<w:tblGrid>'; for(var c=0;c<cols;c++) grid+='<w:gridCol w:w="'+w+'"/>'; grid+='</w:tblGrid>';
+    function cell(txt){
+      return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/><w:tcMar><w:top w:w="'+mar+'" w:type="dxa"/><w:bottom w:w="'+mar+'" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar></w:tcPr>' +
+        '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:color w:val="000000"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr><w:t xml:space="preserve">'+xmlEsc(txt)+'</w:t></w:r></w:p></w:tc>';
+    }
+    var rows=Math.ceil(n/cols), rx='';
+    for(var r=0;r<rows;r++){ rx+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'; for(var c=0;c<cols;c++){ var i=c*rows+r; rx+=cell(i<n ? (i+1)+'.  '+totes[i] : ''); } rx+='</w:tr>'; }
+    var brk='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+    var head='<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="000000"/><w:sz w:val="28"/></w:rPr><w:t>UNIQUE TOTE LIST \u2014 CROSS VERIFICATION</w:t></w:r></w:p>';
+    var sub='<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="160"/></w:pPr><w:r><w:rPr><w:color w:val="000000"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">'+xmlEsc('TS ID: '+((d&&d.tid)||'-')+'     \u00b7     '+n+' unique tote'+(n===1?'':'s'))+'</w:t></w:r></w:p>';
+    return brk+head+sub+'<w:tbl><w:tblPr><w:tblW w:w="9360" w:type="dxa"/>'+bd+'<w:tblLayout w:type="fixed"/></w:tblPr>'+grid+rx+'</w:tbl>';
+  }
+
   window.dnClearForm = function(){
     ['dn-tid','dn-source','dn-dest','dn-date','dn-time','dn-units','dn-totes',
      'rt-vehicle','rt-driver','rt-depart'].forEach(function(id){
@@ -21314,7 +21390,7 @@ function dstproTPExportPDF(){DSTPRO.tpExportPDF();}
       para(d.units, {label:'Number of Units:'}) +
       emptyPara() +
       para(d.totes, {label:'Number of Totes:'}) +
-      dnManifestXml(items) +
+      dnToteListXml(items, d) +
       '<w:sectPr>' +
         '<w:pgSz w:w="12240" w:h="15840"/>' +
         '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>' +
