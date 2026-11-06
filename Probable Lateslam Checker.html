@@ -208,9 +208,9 @@
   <div id="ptLastUpd" class="hide" style="display:flex;align-items:center;gap:10px;background:#1d1d1b;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;font-size:14px;"><span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;">Last updated · latest picklist created</span><b id="ptLastUpdVal" style="font-size:18px;"></b></div>
   <div class="kpis hide" id="ptKpis"></div>
   <style>body.ls-blur .lsv{filter:blur(6px);user-select:none;transition:filter .15s}.lsv{transition:filter .15s}</style>
-  <div class="fc-panel hide" id="ptQuickPanel">
-    <h4>Quick View · Orders, Units, UPO, Lateslam &amp; Throughput <span id="ptQuickTill" style="font-weight:700;color:#5d6b7a;font-size:12px;margin-left:6px;"></span></h4>
-    <div style="overflow-x:auto;"><table class="fc-table" id="ptQuickTable"></table></div>
+  <div class="fc-panel hide" id="ptQuickPanel" style="width:fit-content;max-width:100%;">
+    <h4 style="font-size:19px;">Quick View · Orders, Units, UPO, Lateslam &amp; Throughput <span id="ptQuickTill" style="font-weight:700;color:#5d6b7a;font-size:12px;margin-left:6px;"></span></h4>
+    <div style="overflow-x:auto;"><table class="fc-table" id="ptQuickTable" style="width:auto;min-width:0;font-size:16px;"></table></div>
   </div>
   <div class="fc-panel hide" id="ptStorePanel">
     <h4>Probable Lateslam · Store-wise <span id="ptTill" style="font-weight:700;color:#5d6b7a;font-size:12px;margin-left:6px;"></span></h4>
@@ -317,8 +317,9 @@ function run(rows){
   const secS={}; rows.forEach(r=>{ const v=num(r.assignment_to_stage_time_secs)||0; [storeOf(r),"Total"].forEach(s=>{ secS[s]=(secS[s]||0)+v; }); });
   quickRows=summary.map(r=>{ const hrs=(secS[r.Store]||0)/3600;
     return {Store:r.Store,Orders:r.Orders,Units:r.Units,UPO:r.Orders?+(r.Units/r.Orders).toFixed(2):0,"Late Slams":r["Late Slams"],"LS %":r["Lateslam %"],"Throughput (units/hr)":hrs>0?Math.round(r.Units/hrs):0}; });
-  let qh='<thead><tr><th>Store</th><th>Orders</th><th>Units</th><th>UPO</th><th>Late Slams</th><th>LS %</th><th>Throughput (units/hr)</th></tr></thead><tbody>';
-  quickRows.forEach((r,i)=>{ const last=i===quickRows.length-1; qh+='<tr'+(last?' style="font-weight:800;background:#eef2f7"':'')+'><td>'+esc(r.Store)+'</td><td>'+r.Orders.toLocaleString()+'</td><td>'+r.Units.toLocaleString()+'</td><td>'+r.UPO.toFixed(2)+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"].toLocaleString()+'</td><td class="lsv">'+r["LS %"]+'%</td><td style="font-weight:800;color:'+tpCol(r["Throughput (units/hr)"])+'">'+(r["Throughput (units/hr)"]||'–').toLocaleString()+'</td></tr>'; });
+  const qc='padding:10px 22px;text-align:center;font-size:17px;white-space:nowrap;', qth='padding:10px 22px;text-align:center;font-size:13px;white-space:nowrap;';
+  let qh='<thead><tr>'+['Store','Orders','Units','UPO','Late Slams','LS %','Throughput (units/hr)'].map((h,i)=>'<th style="'+qth+(i?'':'text-align:left;')+'">'+h+'</th>').join('')+'</tr></thead><tbody>';
+  quickRows.forEach((r,i)=>{ const last=i===quickRows.length-1; qh+='<tr'+(last?' style="font-weight:800;background:#eef2f7"':'')+'><td style="'+qc+'text-align:left;font-weight:800;">'+esc(r.Store)+'</td><td style="'+qc+'">'+r.Orders.toLocaleString()+'</td><td style="'+qc+'">'+r.Units.toLocaleString()+'</td><td style="'+qc+'">'+r.UPO.toFixed(2)+'</td><td class="lsv" style="'+qc+'color:#c0392b;font-weight:800">'+r["Late Slams"].toLocaleString()+'</td><td class="lsv" style="'+qc+'">'+r["LS %"]+'%</td><td style="'+qc+'font-weight:800;color:'+tpCol(r["Throughput (units/hr)"])+'">'+(r["Throughput (units/hr)"]||'–').toLocaleString()+'</td></tr>'; });
   $("ptQuickTable").innerHTML=qh+'</tbody>';
   summary.forEach(r=>delete r._n);
   $("ptKpis").innerHTML=[{l:"Orders checked",v:T.o.toLocaleString()},{l:"Probable late slams",v:T.l.toLocaleString(),c:"alert",b:1},

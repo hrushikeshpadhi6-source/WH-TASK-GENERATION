@@ -3954,6 +3954,9 @@ window.feedbackAdminClear=async function(){
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
     <button class="btn btn-green" onclick="lsExportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-outline" id="ls-edit-btn" onclick="lsToggleEdit()">✏️ Edit Orders / Units</button>
+    <button class="btn btn-primary" id="ls-edit-apply" style="display:none" onclick="lsApplyEdits()">✓ Apply Changes</button>
+    <button class="btn btn-outline" id="ls-edit-clear" style="display:none" onclick="lsClearEdits()">↺ Undo All Edits</button>
     <button class="btn" onclick="openTask('ls-deepdive')" style="background:linear-gradient(135deg,#7c3aed,#1D4ED8);color:#fff;border:none;display:inline-flex;align-items:center;gap:8px;font-weight:700;">🔬 Late Slam Deep Dive</button>
   </div>
 
@@ -7612,6 +7615,7 @@ function lsIsLateslam(plToStage, promiseUtr) {
 
 // ── Upload ───────────────────────────────────────────────────
 function lsHandleUpload(input) {
+  window._lsAdj = {}; window._lsEditMode = false;
   var file = input.files[0];
   if (!file) return;
   var ext = file.name.split('.').pop().toLowerCase();
@@ -8331,6 +8335,10 @@ function lsGenerate() {
     });
     var tphByStore = {};
     Object.keys(tphRaw).forEach(function(sid){
+      var a = (window._lsAdj||{})[sid] || {};
+      Object.keys(a).forEach(function(sl){ if (a[sl].dU) tphRaw[sid].units = Math.max(0, tphRaw[sid].units + a[sl].dU); });
+    });
+    Object.keys(tphRaw).forEach(function(sid){
       var base = sid.replace(/[_\s-]*SS$/i, '');
       if (base !== sid && tphRaw[base]) {
         tphByStore[sid] = { ok:false, perHour:0, avgSec:0, secs:0, units:0, merged:base };
@@ -8386,6 +8394,8 @@ function lsGenerate() {
         }
 
         if (slot && slots[slot]) {
+          slots[slot].rawO = (slots[slot].rawO||0) + 1;
+          slots[slot].rawU = (slots[slot].rawU||0) + unitVal;
           slots[slot].orders++;
           slots[slot].units += unitVal;
           // LATESLAM = pl_create_to_stage > promise_utr (both in seconds)
@@ -8399,6 +8409,14 @@ function lsGenerate() {
           var isLS = isFinite(actualSecs) && hasPromise && actualSecs > promiseSecs;
           if (isLS) slots[slot].lateslam++;
         }
+      });
+
+      // Manual Orders / Units edits — LS count stays from raw data; added orders count as eligible (on-time)
+      var adj = (window._lsAdj||{})[storeId] || {};
+      Object.keys(adj).forEach(function(sl){
+        var s = slots[sl]; if (!s) return; var a = adj[sl];
+        if (a.ao != null) { s.elig = Math.max(0, (s.elig||0) + (a.ao - s.orders)); s.orders = a.ao; }
+        if (a.au != null) s.units = a.au;
       });
 
       // Forecast lookup (fuzzy match)
@@ -8451,12 +8469,12 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     var lsPct = el > 0 ? ls/el*100 : 0;   // orders without promise_utr excluded
     var fcVar = fo > 0 ? (ao-fo)/fo*100 : (ao > 0 ? 100 : 0);
     totalAO+=ao; totalAU+=au; totalLS+=ls; totalFO+=fo; totalFU+=fu; totalEL+=el;
-    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, el:el, lsPct:lsPct, fcVar:fcVar });
+    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, el:el, lsPct:lsPct, fcVar:fcVar, rawO:s.rawO||0, rawU:Math.round(s.rawU||0) });
   });
 
   // Only render slots that have ACTUAL orders (not empty FC-only rows)
   // This prevents showing hour 00-07 when all real orders are in 10:00-23:30
-  var toRender = exportRows.filter(function(r) { return r.ao > 0 || r.fo > 0; });
+  var toRender = exportRows.filter(function(r) { return r.ao > 0 || r.fo > 0 || r.rawO > 0 || window._lsEditMode; });
   if (!toRender.length) toRender = exportRows.filter(function(r){ return r.fo>0; });
   if (!toRender.length) toRender = exportRows.slice(0,4);
 
@@ -8490,8 +8508,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
       '<td style="font-family:monospace;font-size:11px;text-align:center;color:#6b7280;">' + lsSlotLabel(r.slot) + '</td>' +
       '<td style="text-align:center;color:#1d4ed8;">' + (window._lsHasForecast ? r.fo : '—') + '</td>' +
       '<td style="text-align:center;color:#0369a1;">' + (window._lsHasForecast ? r.fu : '—') + '</td>' +
-      '<td style="text-align:center;font-weight:' + (r.ao > 0 ? '800' : '400') + ';color:' + (r.ao > 0 ? '#111827' : '#9ca3af') + ';">' + r.ao + '</td>' +
-      '<td style="text-align:center;color:#374151;">' + r.au + '</td>' +
+      lsEditCell(storeId, r, 'ao') + lsEditCell(storeId, r, 'au') +
       '<td style="text-align:center;' + lsStyle + '">' +
         (r.ls > 0 ? r.ls + ' <span style="font-size:10px;opacity:0.8;">(' + lsPctStr + ')</span>' : '0') +
       '</td>' +
@@ -8556,6 +8573,50 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     '</div></div>';
 
   return { html:html, totals:{totalAO:totalAO,totalAU:totalAU,totalLS:totalLS,totalFO:totalFO,totalFU:totalFU,totalEL:totalEL,tLsPct:tLsPct,tFcVar:tFcVar}, exportRows:exportRows };
+}
+
+// ── Manual Orders / Units edits ───────────────────────────────
+window._lsAdj = window._lsAdj || {}; window._lsEditMode = false;
+function lsEditCell(storeId, r, k) {
+  var a = ((window._lsAdj[storeId]||{})[r.slot]||{});
+  var edited = a[k] != null;
+  var raw = k === 'ao' ? r.rawO : r.rawU, val = r[k];
+  var base = 'text-align:center;' + (k === 'ao' ? 'font-weight:' + (val > 0 ? '800' : '400') + ';color:' + (val > 0 ? '#111827' : '#9ca3af') + ';' : 'color:#374151;');
+  if (window._lsEditMode) {
+    return '<td style="text-align:center;padding:4px;"><input type="number" min="0" step="1" class="ls-edit-in" data-store="' + storeId + '" data-slot="' + r.slot + '" data-k="' + k + '" data-raw="' + raw + '" value="' + val + '" style="width:64px;padding:4px 6px;border:1px solid ' + (edited ? '#f59e0b' : '#c7c4e8') + ';border-radius:6px;text-align:center;font-weight:700;background:' + (edited ? '#fffbeb' : '#fff') + ';"></td>';
+  }
+  return '<td style="' + base + (edited ? 'background:#fffbeb;' : '') + '"' + (edited ? ' title="Edited · raw ' + raw + '"' : '') + '>' + val + (edited ? ' <span style="font-size:10px;color:#b45309;">✎</span>' : '') + '</td>';
+}
+function lsToggleEdit() {
+  window._lsEditMode = !window._lsEditMode;
+  document.getElementById('ls-edit-btn').textContent = window._lsEditMode ? '✕ Cancel Edit' : '✏️ Edit Orders / Units';
+  document.getElementById('ls-edit-apply').style.display = window._lsEditMode ? '' : 'none';
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsApplyEdits() {
+  document.querySelectorAll('.ls-edit-in').forEach(function(el){
+    var st = el.dataset.store, sl = el.dataset.slot, k = el.dataset.k, raw = +el.dataset.raw;
+    var v = el.value === '' ? raw : Math.max(0, Math.round(+el.value));
+    var A = window._lsAdj[st] = window._lsAdj[st] || {}, a = A[sl] = A[sl] || {};
+    if (v === raw) delete a[k]; else a[k] = v;
+    if (k === 'au') a.dU = a.au != null ? a.au - raw : 0;
+    if (a.ao == null && a.au == null) delete A[sl];
+  });
+  window._lsEditMode = false;
+  document.getElementById('ls-edit-btn').textContent = '✏️ Edit Orders / Units';
+  document.getElementById('ls-edit-apply').style.display = 'none';
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsClearEdits() {
+  window._lsAdj = {};
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsUpdateClearBtn() {
+  var n = 0; Object.keys(window._lsAdj).forEach(function(s){ n += Object.keys(window._lsAdj[s]).length; });
+  var b = document.getElementById('ls-edit-clear'); if (b) b.style.display = n ? '' : 'none';
 }
 
 function _lsStatCard(val, label, color, small) {
@@ -8879,6 +8940,9 @@ function lsExportExcel() {
 
 // ── Reset ─────────────────────────────────────────────────────
 function lsReset() {
+  window._lsAdj={}; window._lsEditMode=false; lsUpdateClearBtn();
+  var _eb=document.getElementById('ls-edit-btn'); if(_eb) _eb.textContent='✏️ Edit Orders / Units';
+  var _ea=document.getElementById('ls-edit-apply'); if(_ea) _ea.style.display='none';
   lsData=[]; lsHeaders=[]; window._lsForecastFetched=false; window._lsHasForecast=false;
   ['fo-lateslam','ls-mapper','ls-forecast-status','ls-col-info'].forEach(function(id) {
     var el = document.getElementById(id);
