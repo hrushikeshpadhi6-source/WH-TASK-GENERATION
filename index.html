@@ -2539,6 +2539,13 @@ window.feedbackAdminClear=async function(){
       <span class="card-arrow">→</span>
     </div>
 
+    <div class="task-card" data-tool="ib-forecast" data-tool-label="Inbound Forecast vs Actual" style="--card-color:#0f766e;" onclick="openTask('ib-forecast')">
+      <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📥</span>
+      <h3 style="background:linear-gradient(135deg,#0f766e,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h3>
+      <p>Forecast vs stowed units store-wise &amp; node-wise with accuracy % and stow SLA %.</p>
+      <span class="card-arrow">→</span>
+    </div>
+
     <div class="task-section-head" id="sec-ops"><span class="tsh-label">Ops &amp; Support</span><span class="tsh-line"></span></div>
     <div class="task-card" data-tool="deliverynote" data-tool-label="Reverse Transshipment" style="--card-color:#0e7490" onclick="openTask('deliverynote')">
       
@@ -3954,6 +3961,9 @@ window.feedbackAdminClear=async function(){
   <div class="btn-row" id="export-lateslam" style="display:none">
     <button class="btn btn-accent" onclick="lsExportPDF()">⬇ Export PDF</button>
     <button class="btn btn-green" onclick="lsExportExcel()">⬇ Export Excel</button>
+    <button class="btn btn-outline" id="ls-edit-btn" onclick="lsToggleEdit()">✏️ Edit Store Orders / Units</button>
+    <button class="btn btn-primary" id="ls-edit-apply" style="display:none" onclick="lsApplyEdits()">✓ Apply Changes</button>
+    <button class="btn btn-outline" id="ls-edit-clear" style="display:none" onclick="lsClearEdits()">↺ Undo All Edits</button>
     <button class="btn" onclick="openTask('ls-deepdive')" style="background:linear-gradient(135deg,#7c3aed,#1D4ED8);color:#fff;border:none;display:inline-flex;align-items:center;gap:8px;font-weight:700;">🔬 Late Slam Deep Dive</button>
   </div>
 
@@ -4415,24 +4425,15 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
     <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:20px 22px;margin-bottom:14px;">
       <div style="font-weight:700;font-size:13px;color:#1a1830;margin-bottom:6px;">🏷️ Staging Location Label Generator</div>
       <div style="font-size:12px;color:#7b78a8;margin-bottom:16px;">
-        Generates labels like <code style="background:#e0f2fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#0369a1;">STOWAGE_1_A_001</code>
-        — cyan background, two-line text, arrow, QR code.
+        Generates labels like <code style="background:#e0f2fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#0369a1;">GREEN-01</code> <code style="background:#e0f2fe;padding:2px 7px;border-radius:4px;font-family:monospace;color:#0369a1;">BLUE-02</code>
+        — label colour comes from the text, QR encodes the full ID.
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;align-items:end;margin-bottom:14px;">
-        <div>
-          <div class="ctrl-label">Prefix</div>
-          <input class="input-field" id="stg-prefix" value="STOWAGE" style="width:100%;text-transform:uppercase;"
+        <div style="grid-column:span 2;">
+          <div class="ctrl-label">Colour(s) <span style="font-weight:400;text-transform:none;letter-spacing:0;">· comma separated</span></div>
+          <input class="input-field" id="stg-prefix" value="GREEN" list="stg-colour-list" style="width:100%;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase();stgPreview()">
-        </div>
-        <div>
-          <div class="ctrl-label">Zone No.</div>
-          <input class="input-field" id="stg-zone" type="number" value="1" min="1" max="99" style="width:100%;"
-            oninput="stgPreview()">
-        </div>
-        <div>
-          <div class="ctrl-label">Row Letter</div>
-          <input class="input-field" id="stg-row" value="A" maxlength="2" style="width:100%;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase();stgPreview()">
+          <datalist id="stg-colour-list"><option value="GREEN"></option><option value="BLUE"></option><option value="RED"></option><option value="YELLOW"></option><option value="ORANGE"></option><option value="PURPLE"></option><option value="PINK"></option><option value="WHITE"></option><option value="BLACK"></option><option value="GREY"></option><option value="BROWN"></option><option value="GREEN, BLUE, RED, YELLOW"></option></datalist>
         </div>
         <div>
           <div class="ctrl-label">Start No.</div>
@@ -4441,7 +4442,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
         </div>
         <div>
           <div class="ctrl-label">End No.</div>
-          <input class="input-field" id="stg-end" type="number" value="20" min="1" max="999" style="width:100%;"
+          <input class="input-field" id="stg-end" type="number" value="10" min="1" max="999" style="width:100%;"
             oninput="stgPreview()">
         </div>
         <div>
@@ -4455,7 +4456,7 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
         </div>
       </div>
       <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;font-family:'DM Mono',monospace;margin-bottom:14px;" id="stg-preview-text">
-        Preview: STOWAGE_1_A_001 … STOWAGE_1_A_020
+        Preview: GREEN-01 … GREEN-10
       </div>
       <button onclick="stgGenerate()"
         style="padding:12px 24px;border-radius:8px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(2,132,199,0.4);">
@@ -4465,9 +4466,9 @@ B08ABC5678, 5" style="width:100%;background:#f8f7ff;border:1px solid #d5d2f0;bor
 
     <!-- Staging also supports manual single entry -->
     <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:14px;">
-      <div style="font-weight:700;font-size:12px;color:#7b78a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Or add single full ID</div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Or add IDs directly (comma / space separated)</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <input class="input-field" id="stg-single" placeholder="e.g. STOWAGE_1_A_011" style="flex:1;min-width:200px;font-family:'DM Mono',monospace;text-transform:uppercase;"
+        <input class="input-field" id="stg-single" placeholder="e.g. GREEN-01, BLUE-02, RED-05" style="flex:1;min-width:200px;font-family:'DM Mono',monospace;text-transform:uppercase;"
           oninput="this.value=this.value.toUpperCase()"
           onkeydown="if(event.key==='Enter')stgAddSingle()">
         <button onclick="stgAddSingle()"
@@ -7612,6 +7613,7 @@ function lsIsLateslam(plToStage, promiseUtr) {
 
 // ── Upload ───────────────────────────────────────────────────
 function lsHandleUpload(input) {
+  window._lsAdj = {}; window._lsEditMode = false;
   var file = input.files[0];
   if (!file) return;
   var ext = file.name.split('.').pop().toLowerCase();
@@ -8331,6 +8333,10 @@ function lsGenerate() {
     });
     var tphByStore = {};
     Object.keys(tphRaw).forEach(function(sid){
+      var a = (window._lsAdj||{})[sid] || {};
+      if (a.dU) tphRaw[sid].units = Math.max(0, tphRaw[sid].units + a.dU);
+    });
+    Object.keys(tphRaw).forEach(function(sid){
       var base = sid.replace(/[_\s-]*SS$/i, '');
       if (base !== sid && tphRaw[base]) {
         tphByStore[sid] = { ok:false, perHour:0, avgSec:0, secs:0, units:0, merged:base };
@@ -8386,6 +8392,8 @@ function lsGenerate() {
         }
 
         if (slot && slots[slot]) {
+          slots[slot].rawO = (slots[slot].rawO||0) + 1;
+          slots[slot].rawU = (slots[slot].rawU||0) + unitVal;
           slots[slot].orders++;
           slots[slot].units += unitVal;
           // LATESLAM = pl_create_to_stage > promise_utr (both in seconds)
@@ -8400,6 +8408,7 @@ function lsGenerate() {
           if (isLS) slots[slot].lateslam++;
         }
       });
+
 
       // Forecast lookup (fuzzy match)
       function getFc(fcMap) {
@@ -8451,7 +8460,7 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     var lsPct = el > 0 ? ls/el*100 : 0;   // orders without promise_utr excluded
     var fcVar = fo > 0 ? (ao-fo)/fo*100 : (ao > 0 ? 100 : 0);
     totalAO+=ao; totalAU+=au; totalLS+=ls; totalFO+=fo; totalFU+=fu; totalEL+=el;
-    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, el:el, lsPct:lsPct, fcVar:fcVar });
+    exportRows.push({ slot:slot, fo:fo, fu:fu, ao:ao, au:au, ls:ls, el:el, lsPct:lsPct, fcVar:fcVar, rawO:s.rawO||0, rawU:Math.round(s.rawU||0) });
   });
 
   // Only render slots that have ACTUAL orders (not empty FC-only rows)
@@ -8498,6 +8507,11 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
       '<td style="text-align:center;' + varStyle + '">' + (!window._lsHasForecast ? '—' : (r.fo===0 && r.ao===0) ? '—' : varSign + r.fcVar.toFixed(1) + '%') + '</td>' +
       '</tr>';
   });
+
+  // Store-level manual edit (Multi-Store Summary) — LS count unchanged; added orders count as on-time
+  var _adj = (window._lsAdj||{})[storeId] || {}, rawAO = totalAO, rawAU = totalAU;
+  if (_adj.ao != null) { totalEL = Math.max(0, totalEL + _adj.ao - totalAO); totalAO = _adj.ao; }
+  if (_adj.au != null) totalAU = _adj.au;
 
   // Total row (yellow)
   var tFcVar = window._lsHasForecast && totalFO > 0 ? (totalAO-totalFO)/totalFO*100 : 0;
@@ -8555,7 +8569,48 @@ function lsBuildTable(storeId, slots, fcO, fcU, reportDate, tph) {
     '<tbody>' + tableBody + '</tbody></table></div>' +
     '</div></div>';
 
-  return { html:html, totals:{totalAO:totalAO,totalAU:totalAU,totalLS:totalLS,totalFO:totalFO,totalFU:totalFU,totalEL:totalEL,tLsPct:tLsPct,tFcVar:tFcVar}, exportRows:exportRows };
+  return { html:html, totals:{rawAO:rawAO,rawAU:rawAU,totalAO:totalAO,totalAU:totalAU,totalLS:totalLS,totalFO:totalFO,totalFU:totalFU,totalEL:totalEL,tLsPct:tLsPct,tFcVar:tFcVar}, exportRows:exportRows };
+}
+
+// ── Manual Orders / Units edits ───────────────────────────────
+window._lsAdj = window._lsAdj || {}; window._lsEditMode = false;
+function lsEditCell(storeId, k, val, raw, css) {
+  var a = window._lsAdj[storeId] || {}, edited = a[k] != null;
+  if (window._lsEditMode) {
+    return '<td style="text-align:center;padding:4px;"><input type="number" min="0" step="1" class="ls-edit-in" data-store="' + storeId + '" data-k="' + k + '" data-raw="' + raw + '" value="' + val + '" style="width:100%;max-width:84px;padding:5px 6px;border:1px solid ' + (edited ? '#f59e0b' : '#c7c4e8') + ';border-radius:6px;text-align:center;font-weight:700;font-size:12px;background:' + (edited ? '#fffbeb' : '#fff') + ';"></td>';
+  }
+  return '<td style="' + css + (edited ? 'background:#fffbeb;' : '') + '"' + (edited ? ' title="Edited · raw ' + raw + '"' : '') + '>' + val + (edited ? ' <span style="font-size:10px;color:#b45309;">✎</span>' : '') + '</td>';
+}
+function lsToggleEdit() {
+  window._lsEditMode = !window._lsEditMode;
+  document.getElementById('ls-edit-btn').textContent = window._lsEditMode ? '✕ Cancel Edit' : '✏️ Edit Store Orders / Units';
+  document.getElementById('ls-edit-apply').style.display = window._lsEditMode ? '' : 'none';
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsApplyEdits() {
+  document.querySelectorAll('.ls-edit-in').forEach(function(el){
+    var st = el.dataset.store, k = el.dataset.k, raw = +el.dataset.raw;
+    var v = el.value === '' ? raw : Math.max(0, Math.round(+el.value));
+    var a = window._lsAdj[st] = window._lsAdj[st] || {};
+    if (v === raw) delete a[k]; else a[k] = v;
+    if (k === 'au') a.dU = a.au != null ? a.au - raw : 0;
+    if (a.ao == null && a.au == null) delete window._lsAdj[st];
+  });
+  window._lsEditMode = false;
+  document.getElementById('ls-edit-btn').textContent = '✏️ Edit Store Orders / Units';
+  document.getElementById('ls-edit-apply').style.display = 'none';
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsClearEdits() {
+  window._lsAdj = {};
+  lsUpdateClearBtn();
+  lsGenerate();
+}
+function lsUpdateClearBtn() {
+  var n = Object.keys(window._lsAdj).length;
+  var b = document.getElementById('ls-edit-clear'); if (b) b.style.display = n ? '' : 'none';
 }
 
 function _lsStatCard(val, label, color, small) {
@@ -8598,8 +8653,8 @@ function lsBuildSummary(summaryArr, reportDate) {
       '<td style="font-weight:800;color:#e11d48;font-size:12px;padding:8px 6px;">' + item.storeId + '</td>' +
       '<td style="' + C + '">' + (hasFc ? t.totalFO : '—') + '</td>' +
       '<td style="' + C + '">' + (hasFc ? t.totalFU : '—') + '</td>' +
-      '<td style="' + C + 'font-weight:800;">' + t.totalAO + '</td>' +
-      '<td style="' + C + '">' + t.totalAU + '</td>' +
+      lsEditCell(item.storeId, 'ao', t.totalAO, t.rawAO, C + 'font-weight:800;') +
+      lsEditCell(item.storeId, 'au', t.totalAU, t.rawAU, C) +
       '<td style="' + C + lsStyle + '">' + t.totalLS + '</td>' +
       '<td style="' + C + lsStyle + '">' + t.tLsPct.toFixed(1) + '%</td>' +
       '<td style="' + C + vStyle + '">' + (hasFc ? vS + t.tFcVar.toFixed(1) + '%' : '—') + '</td>' +
@@ -8879,6 +8934,9 @@ function lsExportExcel() {
 
 // ── Reset ─────────────────────────────────────────────────────
 function lsReset() {
+  window._lsAdj={}; window._lsEditMode=false; lsUpdateClearBtn();
+  var _eb=document.getElementById('ls-edit-btn'); if(_eb) _eb.textContent='✏️ Edit Store Orders / Units';
+  var _ea=document.getElementById('ls-edit-apply'); if(_ea) _ea.style.display='none';
   lsData=[]; lsHeaders=[]; window._lsForecastFetched=false; window._lsHasForecast=false;
   ['fo-lateslam','ls-mapper','ls-forecast-status','ls-col-info'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -11039,88 +11097,70 @@ locidSetTab = function(tab) {
   }
 };
 
+// ── Colour map (name in ID → label colour) ────────────────────
+var STG_COLOURS = {
+  GREEN:['#2e9e44','#ffffff'], BLUE:['#1e6fd9','#ffffff'], RED:['#d62828','#ffffff'], YELLOW:['#ffd60a','#000000'],
+  ORANGE:['#f77f00','#000000'], PURPLE:['#7b2cbf','#ffffff'], VIOLET:['#7b2cbf','#ffffff'], PINK:['#ff6fae','#000000'],
+  WHITE:['#ffffff','#000000'], BLACK:['#111111','#ffffff'], GREY:['#9ca3af','#000000'], GRAY:['#9ca3af','#000000'],
+  BROWN:['#8b5a2b','#ffffff'], CYAN:['#29b6d8','#000000'], SKY:['#7dd3fc','#000000'], NAVY:['#1e3a8a','#ffffff'],
+  MAROON:['#7f1d1d','#ffffff'], LIME:['#a3e635','#000000'], GOLD:['#e5b80b','#000000'], SILVER:['#cbd5e1','#000000']
+};
+function stgColourOf(id) {
+  var name = String(id||'').toUpperCase().split(/[-_\s]/)[0];
+  return STG_COLOURS[name] || [STAGING_BG, '#001f2e'];
+}
+function stgColourList() {
+  return (document.getElementById('stg-prefix').value || 'GREEN').toUpperCase().split(/[,;\s]+/).filter(Boolean);
+}
+
 // ── Preview line ──────────────────────────────────────────────
 function stgPreview() {
-  var prefix = (document.getElementById('stg-prefix').value || 'STOWAGE').trim().toUpperCase();
-  var zone   = (document.getElementById('stg-zone').value   || '1').trim();
-  var row    = (document.getElementById('stg-row').value    || 'A').trim().toUpperCase();
-  var start  = parseInt(document.getElementById('stg-start').value) || 1;
-  var end    = parseInt(document.getElementById('stg-end').value)   || 20;
-  var count  = Math.max(0, end - start + 1);
-
-  var first = stgBuildId(prefix, zone, row, start);
-  var last  = stgBuildId(prefix, zone, row, end);
-  var el    = document.getElementById('stg-preview-text');
-  if (el) {
-    el.textContent = 'Preview: ' + first + ' … ' + last + ' (' + count + ' labels)';
-  }
+  var cols  = stgColourList();
+  var start = parseInt(document.getElementById('stg-start').value) || 1;
+  var end   = parseInt(document.getElementById('stg-end').value)   || 10;
+  var count = Math.max(0, end - start + 1) * cols.length;
+  var unknown = cols.filter(function(c){ return !STG_COLOURS[c]; });
+  var el = document.getElementById('stg-preview-text');
+  if (el) el.textContent = 'Preview: ' + cols.map(function(c){ return stgBuildId(c, start) + ' … ' + stgBuildId(c, end); }).join('  ·  ') +
+    ' (' + count + ' labels)' + (unknown.length ? '  ⚠ unknown colour: ' + unknown.join(', ') : '');
 }
 
-// ── Build full staging ID ─────────────────────────────────────
-// Format: STOWAGE_1_A_011  (prefix_zone_row_3digitNum)
-function stgBuildId(prefix, zone, row, num) {
-  return prefix + '_' + zone + '_' + row + '_' + String(num).padStart(3, '0');
-}
-
-// ── Parse a full staging ID back to parts ─────────────────────
-// "STOWAGE_1_A_011" → { line1:"STOWAGE_", line2:"1 A 011", full:"STOWAGE_1_A_011" }
+// ── Build / parse ID: COLOUR-NUM ──────────────────────────────
+function stgBuildId(colour, num) { return colour + '-' + String(num).padStart(2, '0'); }
 function stgParseId(fullId) {
   var s = (fullId || '').trim().toUpperCase();
-  var parts = s.split('_');
-  if (parts.length >= 4) {
-    // PREFIX_ZONE_ROW_NUM
-    var prefix = parts[0];
-    var zone   = parts[1];
-    var row    = parts[2];
-    var num    = parts.slice(3).join('_');
-    return {
-      line1: prefix + '_',
-      line2: zone + ' ' + row + ' ' + num,
-      full:  s
-    };
-  } else if (parts.length === 3) {
-    return {
-      line1: parts[0] + '_',
-      line2: parts[1] + ' ' + parts[2],
-      full:  s
-    };
-  } else {
-    return { line1: s, line2: '', full: s };
-  }
+  var m = s.match(/^([A-Z]+)[-_\s]*(.*)$/);
+  return m ? { line1: m[1], line2: m[2], full: s } : { line1: s, line2: '', full: s };
 }
 
 // ── Generate range of staging labels ──────────────────────────
 function stgGenerate() {
-  var prefix = (document.getElementById('stg-prefix').value || 'STOWAGE').trim().toUpperCase();
-  var zone   = (document.getElementById('stg-zone').value   || '1').trim();
-  var row    = (document.getElementById('stg-row').value    || 'A').trim().toUpperCase();
-  var start  = parseInt(document.getElementById('stg-start').value) || 1;
-  var end    = parseInt(document.getElementById('stg-end').value)   || 20;
-  var dir    = document.getElementById('stg-dir').value || '↑';
-
+  var cols  = stgColourList();
+  var start = parseInt(document.getElementById('stg-start').value) || 1;
+  var end   = parseInt(document.getElementById('stg-end').value)   || 10;
+  var dir   = document.getElementById('stg-dir').value || '↑';
   if (end < start) { showToast('⚠️ End must be ≥ Start'); return; }
-  if (end - start > 199) { showToast('⚠️ Max 200 labels at once'); return; }
-
+  if ((end - start + 1) * cols.length > 200) { showToast('⚠️ Max 200 labels at once'); return; }
   var labels = [];
-  for (var n = start; n <= end; n++) {
-    var fullId = stgBuildId(prefix, zone, row, n);
-    var parsed = stgParseId(fullId);
-    labels.push({ full: fullId, line1: parsed.line1, line2: parsed.line2, dir: dir });
-  }
-
+  cols.forEach(function(c){
+    for (var n = start; n <= end; n++) {
+      var p = stgParseId(stgBuildId(c, n));
+      labels.push({ full: p.full, line1: p.line1, line2: p.line2, dir: dir });
+    }
+  });
   stgRenderLabels(labels);
   showToast('✅ ' + labels.length + ' staging labels generated!');
 }
 
-// ── Add single manual staging label ───────────────────────────
+// ── Add IDs directly ──────────────────────────────────────────
 function stgAddSingle() {
-  var val = (document.getElementById('stg-single').value || '').trim().toUpperCase();
-  if (!val) { showToast('⚠️ Enter a staging ID'); return; }
-  var dir    = '↑';
-  var parsed = stgParseId(val);
-  stgRenderLabels([{ full: val, line1: parsed.line1, line2: parsed.line2, dir: dir }]);
+  var ids = (document.getElementById('stg-single').value || '').toUpperCase().split(/[,;\s]+/).filter(Boolean);
+  if (!ids.length) { showToast('⚠️ Enter a staging ID'); return; }
+  if (ids.length > 200) { showToast('⚠️ Max 200 labels at once'); return; }
+  var dir = document.getElementById('stg-dir').value || '↑';
+  stgRenderLabels(ids.map(function(v){ var p = stgParseId(v); return { full: p.full, line1: p.line1, line2: p.line2, dir: dir }; }));
   document.getElementById('stg-single').value = '';
-  showToast('✅ ' + val + ' added');
+  showToast('✅ ' + ids.length + ' label(s) added');
 }
 
 // ── Render staging label sheets ────────────────────────────────
@@ -11174,7 +11214,7 @@ function stgRenderLabels(labels) {
     setTimeout(function() {
       labels.forEach(function(lbl, globalIdx) {
         // Preview QR
-        var pvEl = document.getElementById('stg-qr-' + globalIdx);
+        var pvEl = document.getElementById('out-locid').querySelector('#stg-qr-' + globalIdx);
         if (pvEl && !pvEl.hasChildNodes()) {
           try {
             new QRCode(pvEl, { text: lbl.full, width: 56, height: 56,
@@ -11200,23 +11240,16 @@ function stgRenderLabels(labels) {
 // ── Build one staging label HTML ──────────────────────────────
 // Matches photo: [CYAN | line1 line2 arrow | QR]
 function stgBuildLabelHTML(lbl, idx) {
-  return '<div class="locid-label" id="stg-lbl-' + idx + '">' +
-    // LEFT: cyan background, two text lines
-    '<div style="width:22mm;flex-shrink:0;display:flex;flex-direction:column;' +
-    'align-items:flex-start;justify-content:center;padding:2mm 3mm;' +
-    'background:' + STAGING_BG + ';line-height:1.3;gap:1mm;">' +
-      '<div style="font-size:9pt;font-weight:800;font-family:Arial,sans-serif;' +
-      'color:#003d5c;letter-spacing:0.3pt;white-space:nowrap;">' + (lbl.line1 || '') + '</div>' +
-      '<div style="font-size:11pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;' +
-      'color:#001f2e;letter-spacing:0.5pt;white-space:nowrap;">' + (lbl.line2 || '') + '</div>' +
+  var c = stgColourOf(lbl.full), bg = c[0], fg = c[1];
+  var edge = bg.toLowerCase() === '#ffffff' ? 'border-right:0.3mm solid #000;' : '';
+  return '<div class="locid-label" id="stg-lbl-' + idx + '" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">' +
+    '<div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:3mm;padding:2mm 4mm;background:' + bg + ';color:' + fg + ';' + edge + '">' +
+      '<div style="display:flex;flex-direction:column;line-height:1.05;">' +
+        '<div style="font-size:12pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;letter-spacing:0.5pt;white-space:nowrap;">' + (lbl.line1 || '') + '</div>' +
+        '<div style="font-size:24pt;font-weight:900;font-family:Arial Black,Arial,sans-serif;white-space:nowrap;">' + (lbl.line2 || '') + '</div>' +
+      '</div>' +
+      '<span style="font-size:26pt;font-weight:900;line-height:1;">' + (lbl.dir || '↑') + '</span>' +
     '</div>' +
-    // CENTER: arrow only (no big ID text — matches photo style)
-    '<div style="flex:1;display:flex;align-items:center;justify-content:center;' +
-    'padding:0 4mm;background:' + STAGING_BG + ';">' +
-      '<span style="font-size:26pt;font-weight:900;color:#001f2e;line-height:1;">' +
-      (lbl.dir || '↑') + '</span>' +
-    '</div>' +
-    // RIGHT: white, QR code
     '<div class="locid-right">' +
       '<div id="stg-qr-' + idx + '"></div>' +
     '</div>' +
@@ -16524,7 +16557,7 @@ var MAINT_TOOLS = [
   ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],['voc-rca','VOC RCA Builder'],['wh-loss-rca','WH Loss & Concession RCA'],['freezer-draw','Freezer Lucky Draw'],
   ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
-  ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['deliverynote','Reverse Transshipment'],
+  ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['ib-forecast','Inbound Forecast vs Actual'],['deliverynote','Reverse Transshipment'],
   ['fast-moving','Fast Moving ASIN'],['inv-audit','Inventory Audit'],['top-performer','Top Performer'],
   ['barometer','Barometer'],
   ['feedback','Report & Suggest'],['contact','Support Desk']
@@ -19201,6 +19234,70 @@ We'll be back soon with an improved experience.</textarea>
   </div>
 </div>
 
+
+<!-- ── PAGE: Inbound Forecast vs Actual ───────────────────────── -->
+<div class="page" id="page-ib-forecast" style="background:#f8f7ff;min-height:100vh;">
+<div class="task-page" style="max-width:1200px;">
+  <button class="back-btn" onclick="goHome()" style="background:#fff;border-color:#d5d2f0;color:#3d3a6b;">← Back to Dashboard</button>
+  <div class="task-header" style="border-bottom-color:#d5d2f0;">
+    <span class="task-header-icon">📥</span>
+    <div>
+      <h2 style="background:linear-gradient(135deg,#1a1830,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h2>
+      <p style="color:#3d3a6b;">Upload Forecast + Daily Inbound Stow (actual) + Stow SLA file → store-wise and node-wise forecast accuracy with stow SLA %.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:16px;">
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📈 Step 1 — Inbound Forecast</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;" onclick="document.getElementById('ibf-f-fc').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');IBF.load('fc',event.dataTransfer.files[0])">
+        <input type="file" id="ibf-f-fc" accept=".xlsx,.xls,.csv" style="display:none" onchange="IBF.load('fc',this.files[0])">
+        <div class="u-icon" style="font-size:32px;">📈</div>
+        <h3 style="color:#1a1830;font-size:15px;">Forecast File</h3>
+        <p style="color:#7b78a8;font-size:12px;">Store · Source · Cat · date columns</p>
+      </div>
+      <div id="ibf-fc-ok" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#166534;font-size:12px;font-weight:600;"></div>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📥 Step 2 — Inbound Stow (Actual)</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;" onclick="document.getElementById('ibf-f-inb').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');IBF.load('inb',event.dataTransfer.files[0])">
+        <input type="file" id="ibf-f-inb" accept=".xlsx,.xls,.csv" style="display:none" onchange="IBF.load('inb',this.files[0])">
+        <div class="u-icon" style="font-size:32px;">📥</div>
+        <h3 style="color:#1a1830;font-size:15px;">Daily Inbound Stow File</h3>
+        <p style="color:#7b78a8;font-size:12px;">Station · snapshot_date · Vendor / Transship / Total Stowed</p>
+      </div>
+      <div id="ibf-inb-ok" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#166534;font-size:12px;font-weight:600;"></div>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⏱️ Step 3 — Stow SLA Raw Data</div>
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:28px 16px;" onclick="document.getElementById('ibf-f-stow').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');IBF.load('stow',event.dataTransfer.files[0])">
+        <input type="file" id="ibf-f-stow" accept=".xlsx,.xls,.csv" style="display:none" onchange="IBF.load('stow',this.files[0])">
+        <div class="u-icon" style="font-size:32px;">📦</div>
+        <h3 style="color:#1a1830;font-size:15px;">Stow SLA File</h3>
+        <p style="color:#7b78a8;font-size:12px;">src / dest warehouse · stow_quantity · stowed_within_sla</p>
+      </div>
+      <div id="ibf-stow-ok" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#166534;font-size:12px;font-weight:600;"></div>
+    </div>
+  </div>
+  <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+    <div>
+      <div class="ctrl-label">Forecast Date</div>
+      <select class="select-field" id="ibf-date" style="min-width:200px;"><option value="">Upload forecast first</option></select>
+    </div>
+    <button class="btn btn-accent" onclick="IBF.generate()">⚡ Generate</button>
+    <div id="ibf-actions" style="display:none;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="IBF.exportExcel()">⬇ Export Excel</button>
+      <button class="btn btn-outline" onclick="IBF.copySheets()">📋 Copy for Google Sheets</button>
+    </div>
+  </div>
+  <div id="ibf-out"></div>
+</div>
+</div>
 <!-- ── PAGE: Fast Moving ASIN ──────────────────────────────────── -->
 <div class="page" id="page-fast-moving" style="background:#f8f7ff;min-height:100vh;">
 <div class="task-page">
@@ -21772,5 +21869,218 @@ html[data-theme="light"] .theme-toggle{ border-radius:9px; }
 }
 </style>
 
+
+<script>
+var IBF=(function(){
+  var fc=null, stow=null, inb=null, last=null;
+  var NODE_ALIAS={'VENDOR IB':'Vendors','VENDOR':'Vendors','VENDORS':'Vendors'};
+  function $(i){return document.getElementById(i);}
+  function toast(m){ if(window.showToast) showToast(m); }
+  function readBook(file,cb){
+    var r=new FileReader();
+    r.onload=function(e){ try{ cb(XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true,raw:/\.csv$/i.test(file.name)})); }catch(err){ toast('⚠️ Could not read file: '+err.message); } };
+    r.readAsArrayBuffer(file);
+  }
+  function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function cellDate(v){
+    if(v instanceof Date && !isNaN(v)) return ymd(v);
+    if(typeof v==='number' && v>40000 && v<60000){ var d=new Date(Math.round((v-25569)*86400000)); return ymd(new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())); }
+    var s=String(v||'').trim(); if(!s) return '';
+    var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+    m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/); if(m){ var y=m[3].length===2?'20'+m[3]:m[3]; return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); }
+    if(/^\d{1,4}$/.test(s)) return '';
+    var d2=new Date(s); if(isNaN(d2)||d2.getFullYear()<2000||d2.getFullYear()>2100) return ''; return ymd(d2);
+  }
+  function prettyDate(k){ var p=k.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}); }
+  function normNode(s){ s=String(s||'').trim(); var u=s.toUpperCase(); return NODE_ALIAS[u]||s; }
+
+  function parseForecast(wb){
+    var ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    var hi=rows.findIndex(function(r){ return r.some(function(c){ return /^store$/i.test(String(c).trim()); }); });
+    if(hi<0){ toast('⚠️ Forecast: "Store" header not found'); return null; }
+    var H=rows[hi].map(function(c){return String(c).trim().toLowerCase();});
+    var iS=H.indexOf('store'), iN=H.findIndex(function(h){return h==='source'||h==='node';}), iC=H.findIndex(function(h){return h==='cat'||h==='category';});
+    var dateCols=[];
+    for(var c=0;c<rows[hi].length;c++){ if(c===iS||c===iN||c===iC) continue;
+      var dk=''; for(var r=hi-1;r>=0 && !dk;r--) dk=cellDate(rows[r][c]); if(!dk) dk=cellDate(rows[hi][c]);
+      if(dk) dateCols.push({c:c,d:dk}); }
+    var data={}, cat={}, store='';
+    for(var i=hi+1;i<rows.length;i++){
+      var row=rows[i]; if(row[iS]) store=String(row[iS]).trim(); var node=normNode(row[iN]);
+      if(!store||!node||/total/i.test(node)) continue;
+      if(iC>=0 && row[iC]) cat[node]=String(row[iC]).trim();
+      dateCols.forEach(function(dc){ var v=parseFloat(row[dc.c]); if(!isFinite(v)) return;
+        ((data[dc.d]=data[dc.d]||{})[store]=data[dc.d][store]||{})[node]=(data[dc.d][store][node]||0)+v; });
+    }
+    return { data:data, cat:cat, dates:dateCols.map(function(d){return d.d;}).filter(function(d,i,a){return a.indexOf(d)===i;}).sort() };
+  }
+
+  function parseStow(wb){
+    var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+    if(!rows.length){ toast('⚠️ Stow file is empty'); return null; }
+    var keys=Object.keys(rows[0]); function col(re){ return keys.find(function(k){return re.test(k.trim());}); }
+    var cSrc=col(/^src_warehouse_id$/i)||col(/src|source/i), cDst=col(/^dest_warehouse_id$/i)||col(/dest|store/i),
+        cQty=col(/^stow_quantity$/i)||col(/stow.*qty|stow.*quant/i), cSla=col(/^stowed_within_sla$/i)||col(/sla/i),
+        cDay=col(/^receive_day$/i)||col(/receive.*day|received_on/i), cMin=col(/receive_to_stow_minutes/i);
+    if(!cSrc||!cDst||!cQty||!cSla){ toast('⚠️ Stow file: need src_warehouse_id, dest_warehouse_id, stow_quantity, stowed_within_sla'); return null; }
+    var out={}, days={};
+    rows.forEach(function(r){
+      var d=cellDate(r[cDay])||'_', st=String(r[cDst]).trim(), nd=normNode(r[cSrc]), q=parseFloat(r[cQty])||0;
+      if(!st||!nd) return; days[d]=(days[d]||0)+1;
+      var o=(((out[d]=out[d]||{})[st]=out[d][st]||{})[nd]=out[d][st][nd]||{a:0,ok:0,sa:0,lines:0,mins:0});
+      o.a+=q; o.lines++; if(!/vendor/i.test(nd)){ o.sa+=q; if(/^y/i.test(String(r[cSla]).trim())) o.ok+=q; } if(cMin) o.mins+=(parseFloat(r[cMin])||0);
+    });
+    return { data:out, days:Object.keys(days).sort() };
+  }
+
+  function parseInbound(wb){
+    var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+    if(!rows.length){ toast('⚠️ Inbound file is empty'); return null; }
+    var keys=Object.keys(rows[0]); function col(re){ return keys.find(function(k){return re.test(k.trim());}); }
+    var cSt=col(/^station$/i)||col(/store|station/i), cD=col(/snapshot_date/i)||col(/date/i),
+        cV=col(/vendor.*stow/i), cT=col(/trans.*stow/i), cTot=col(/total.*stow/i);
+    if(!cSt||!cD||(!cTot&&!cV&&!cT)){ toast('⚠️ Inbound file: need Station, snapshot_date, Vendor Stow, Transship Stow, Total Stowed'); return null; }
+    var out={}, days={};
+    rows.forEach(function(r){
+      var st=String(r[cSt]).trim(), d=cellDate(r[cD]); if(!st||!d) return;
+      var v=parseFloat(r[cV])||0, t=parseFloat(r[cT])||0, tot=cTot&&r[cTot]!==''?(parseFloat(r[cTot])||0):v+t;
+      var o=((out[d]=out[d]||{})[st]=out[d][st]||{v:0,t:0,tot:0}); o.v+=v; o.t+=t; o.tot+=tot; days[d]=1;
+    });
+    return { data:out, days:Object.keys(days).sort() };
+  }
+
+  function load(kind,file){
+    if(!file) return;
+    readBook(file,function(wb){
+      if(kind==='fc'){ fc=parseForecast(wb); if(!fc) return;
+        var sel=$('ibf-date'); sel.innerHTML=fc.dates.map(function(d){return '<option value="'+d+'">'+prettyDate(d)+'</option>';}).join('');
+        $('ibf-fc-ok').style.display='block'; $('ibf-fc-ok').textContent='✅ '+file.name+' · '+fc.dates.length+' dates';
+      } else if(kind==='inb'){ inb=parseInbound(wb); if(!inb) return;
+        $('ibf-inb-ok').style.display='block'; $('ibf-inb-ok').textContent='✅ '+file.name+' · '+inb.days.length+' days ('+prettyDate(inb.days[0])+' → '+prettyDate(inb.days[inb.days.length-1])+')';
+      } else { stow=parseStow(wb); if(!stow) return;
+        $('ibf-stow-ok').style.display='block'; $('ibf-stow-ok').textContent='✅ '+file.name+' · receive day: '+stow.days.filter(function(d){return d!=='_';}).map(prettyDate).join(', ');
+      }
+      if(fc && (stow||inb)){ var pool=stow?stow.days:inb.days.slice().reverse(); var sd=pool.find(function(d){return fc.dates.indexOf(d)>=0;}); if(sd) $('ibf-date').value=sd; }
+    });
+  }
+
+  // ── metrics ──
+  function M(f,a,ok,sa){ if(sa==null) sa=a; var v=f>0?(a-f)/f*100:null, acc=f>0?Math.max(0,100-Math.abs(a-f)/f*100):null, sla=sa>0?ok/sa*100:null; return {f:Math.round(f),a:Math.round(a),ok:ok,br:Math.round(sa-ok),v:v,acc:acc,sla:sla}; }
+  function accCol(x){ return x==null?'#9ca3af':x>=90?'#059669':x>=80?'#d97706':'#dc2626'; }
+  function slaCol(x){ return x==null?'#9ca3af':x>=95?'#059669':x>=90?'#d97706':'#dc2626'; }
+  function accBg(x){ return x==null?'':x>=90?'#d1fae5':x>=80?'#fef3c7':'#fee2e2'; }
+  function pct(x){ return x==null?'—':x.toFixed(1)+'%'; }
+  function sp(x){ return x==null?'—':(x>0?'+':'')+x.toFixed(1)+'%'; }
+  function n(x){ return Math.round(x).toLocaleString(); }
+
+  function generate(){
+    if(!fc){ toast('⚠️ Upload the forecast file'); return; }
+    if(!stow && !inb){ toast('⚠️ Upload the Inbound Stow and/or Stow SLA file'); return; }
+    var d=$('ibf-date').value, F=fc.data[d]||{};
+    var I=inb?(inb.data[d]||{}):null; var note=inb&&!inb.data[d]?'No inbound stow data for this date. ':'';
+    var A=stow?stow.data[d]:{};
+    if(stow && !A){ var ks=Object.keys(stow.data); A=ks.length===1?stow.data[ks[0]]:{}; note+=ks.length===1?'Stow SLA file date ('+(ks[0]==='_'?'unknown':prettyDate(ks[0]))+') does not match the forecast date.':'No stow data for this date.'; }
+    var stores={}, nodes={};
+    [F,A].forEach(function(src){ Object.keys(src).forEach(function(s){ stores[s]=1; Object.keys(src[s]).forEach(function(nd){ nodes[nd]=1; }); }); });
+    if(I) Object.keys(I).forEach(function(s){ stores[s]=1; });
+    stores=Object.keys(stores).sort();
+    var order=['Vendors','HDX3','HDX4','AUH7','XD','UAE1','UAEW','UAE0'];
+    nodes=Object.keys(nodes).sort(function(a,b){ var ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b); });
+    function get(s,nd){ var f=(F[s]||{})[nd]||0, x=(A[s]||{})[nd]||{a:0,ok:0,sa:0,lines:0,mins:0}; return {f:f,a:x.a,ok:x.ok,sa:x.sa||0,lines:x.lines,mins:x.mins}; }
+    function sum(list){ var t={f:0,a:0,ok:0,sa:0,lines:0,mins:0}; list.forEach(function(x){ t.f+=x.f;t.a+=x.a;t.ok+=x.ok;t.sa+=x.sa;t.lines+=x.lines;t.mins+=x.mins; }); return t; }
+    var catOf=function(nd){ return fc.cat[nd]||'Other'; };
+    var cats=[]; nodes.forEach(function(nd){ var c=catOf(nd); if(cats.indexOf(c)<0) cats.push(c); });
+    var storeRows=stores.map(function(s){ var t=sum(nodes.map(function(nd){return get(s,nd);})); t.act=I?((I[s]||{}).tot||0):t.a; return {k:s,t:t,m:M(t.f,t.act,t.ok,t.sa)}; });
+    var nodeRows=nodes.map(function(nd){ var t=sum(stores.map(function(s){return get(s,nd);})); return {k:nd,cat:catOf(nd),t:t,m:M(t.f,t.a,t.ok,t.sa)}; });
+    var catRows=cats.map(function(c){ var t=sum(nodeRows.filter(function(r){return r.cat===c;}).map(function(r){return r.t;})); return {k:c,t:t,m:M(t.f,t.a,t.ok,t.sa)}; });
+    var G=sum(storeRows.map(function(r){return r.t;})); G.act=storeRows.reduce(function(x,r){return x+r.t.act;},0); var GM=M(G.f,G.act,G.ok,G.sa);
+    var isV=function(nd){ return /vendor/i.test(nd)||/vendor/i.test(catOf(nd)); };
+    var vtRows=I?stores.map(function(s){ var vf=0,tf=0; nodes.forEach(function(nd){ var f=(F[s]||{})[nd]||0; if(isV(nd)) vf+=f; else tf+=f; }); var x=I[s]||{v:0,t:0}; return {k:s,vf:vf,va:x.v,tf:tf,ta:x.t}; }):null;
+    last={date:d,vtRows:vtRows,stores:stores,nodes:nodes,storeRows:storeRows,nodeRows:nodeRows,catRows:catRows,G:G,GM:GM,get:get};
+
+    var TH='background:#1a1830;color:#e2e8f0;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:10px 12px;text-align:center;white-space:nowrap;';
+    var TD='padding:9px 12px;text-align:center;font-size:13px;border-bottom:1px solid #ece9fb;white-space:nowrap;';
+    function head(first,extra){ return '<thead><tr><th style="'+TH+'text-align:left;">'+first+'</th>'+(extra||'')+['Forecast','Actual','Var','Var %','Accuracy %','Stow SLA %','SLA Breach Units'].map(function(h){return '<th style="'+TH+'">'+h+'</th>';}).join('')+'</tr></thead>'; }
+    function row(label,m,extra,total){
+      var bg=total?'background:#ffd600;font-weight:800;':'';
+      return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(total?'#1a1830':'#0f766e')+';">'+label+'</td>'+(extra||'')+
+        '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td>'+
+        '<td style="'+TD+'color:'+(m.a-m.f>=0?'#dc2626':'#1d4ed8')+';">'+(m.a-m.f>0?'+':'')+n(m.a-m.f)+'</td>'+
+        '<td style="'+TD+'color:'+(m.v==null?'#9ca3af':m.v>=0?'#dc2626':'#1d4ed8')+';font-weight:700;">'+sp(m.v)+'</td>'+
+        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(total?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'+
+        '<td style="'+TD+'font-weight:800;color:'+slaCol(m.sla)+';">'+pct(m.sla)+'</td>'+
+        '<td style="'+TD+'color:#b91c1c;">'+(m.sla==null?'—':n(m.br))+'</td></tr>';
+    }
+    function panel(title,inner){ return '<div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;margin-bottom:18px;overflow:hidden;"><div style="padding:12px 18px;font-weight:800;font-size:15px;color:#1a1830;border-bottom:1px solid #ece9fb;">'+title+'</div><div style="overflow-x:auto;">'+inner+'</div></div>'; }
+    function card(v,l,c){ return '<div style="background:#fff;border:1px solid #d5d2f0;border-radius:12px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;"><div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+c+';"></div><div style="font-size:24px;font-weight:800;color:'+c+';margin-top:4px;">'+v+'</div><div style="font-size:10px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-top:5px;">'+l+'</div></div>'; }
+
+    var h='';
+    if(note) h+='<div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:14px;">⚠️ '+note+'</div>';
+    h+='<div style="font-weight:800;font-size:13px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">'+prettyDate(d)+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px;">'+
+      card(n(GM.f),'Forecast Units','#1d4ed8')+card(n(GM.a),I?'Actual Stowed (Inbound)':'Actual Stowed','#1a1830')+
+      card(sp(GM.v),'Variance %',GM.v>=0?'#dc2626':'#1d4ed8')+card(pct(GM.acc),'Accuracy %',accCol(GM.acc))+
+      card(pct(GM.sla),'Stow SLA %',slaCol(GM.sla))+card(G.lines?(G.mins/G.lines).toFixed(0)+' min':'—','Avg Recv → Stow','#7c3aed')+'</div>';
+    h+=panel('🏪 Store-wise',
+      '<table style="width:100%;border-collapse:collapse;">'+head('Store')+'<tbody>'+storeRows.map(function(r){return row(r.k,r.m);}).join('')+row('TOTAL',GM,'',true)+'</tbody></table>');
+    if(vtRows){
+      var VT=vtRows.reduce(function(a,r){ a.vf+=r.vf;a.va+=r.va;a.tf+=r.tf;a.ta+=r.ta; return a; },{k:'TOTAL',vf:0,va:0,tf:0,ta:0});
+      var vtr=function(r,tot){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,0); var bg=tot?'background:#ffd600;font-weight:800;':'';
+        var c=function(m){ return '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td><td style="'+TD+'color:'+(m.v==null?'#9ca3af':m.v>=0?'#dc2626':'#1d4ed8')+';font-weight:700;">'+sp(m.v)+'</td><td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(tot?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'; };
+        return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(tot?'#1a1830':'#0f766e')+';">'+r.k+'</td>'+c(mv)+c(mt)+'</tr>'; };
+      var gh='<th style="'+TH+'border-left:2px solid #475569;" colspan="4">Vendor</th><th style="'+TH+'border-left:2px solid #475569;" colspan="4">Transship</th>';
+      var sh=['Forecast','Actual','Var %','Accuracy %','Forecast','Actual','Var %','Accuracy %'].map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('');
+      h+=panel('🔀 Vendor vs Transship <span style="font-weight:500;font-size:12px;color:#7b78a8;">· from Daily Inbound Stow file</span>',
+        '<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="'+TH+'text-align:left;" rowspan="2">Store</th>'+gh+'</tr><tr>'+sh+'</tr></thead><tbody>'+vtRows.map(function(r){return vtr(r);}).join('')+vtr(VT,true)+'</tbody></table>');
+    }
+    h+=panel('🚚 Node-wise'+(I?' <span style="font-weight:500;font-size:12px;color:#7b78a8;">· actual from Stow SLA file</span>':''),
+      '<table style="width:100%;border-collapse:collapse;">'+head('Node','<th style="'+TH+'">Cat</th>')+'<tbody>'+nodeRows.map(function(r){return row(r.k,r.m,'<td style="'+TD+'color:#7b78a8;">'+r.cat+'</td>');}).join('')+row('TOTAL',GM,'<td style="'+TD+'"></td>',true)+'</tbody></table>');
+    h+=panel('🗂️ Category (Vendor / RDC / 3P)',
+      '<table style="width:100%;border-collapse:collapse;">'+head('Category')+'<tbody>'+catRows.map(function(r){return row(r.k,r.m);}).join('')+row('TOTAL',GM,'',true)+'</tbody></table>');
+    // matrix
+    var mx='<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="'+TH+'text-align:left;">Store</th>'+nodes.map(function(nd){return '<th style="'+TH+'">'+nd+'</th>';}).join('')+'<th style="'+TH+'">Total</th></tr></thead><tbody>';
+    function mcell(m,bold){ if(!m.f && !m.a) return '<td style="'+TD+'color:#d1d5db;">—</td>';
+      return '<td style="'+TD+'background:'+(accBg(m.acc)||'#f8fafc')+';"><div style="font-weight:800;color:'+accCol(m.acc)+';font-size:14px;">'+pct(m.acc)+'</div><div style="font-size:11px;color:#475569;">'+n(m.a)+' / '+n(m.f)+'</div><div style="font-size:11px;font-weight:700;color:'+slaCol(m.sla)+';">SLA '+pct(m.sla)+'</div></td>'; }
+    stores.forEach(function(s){ mx+='<tr><td style="'+TD+'text-align:left;font-weight:800;color:#0f766e;">'+s+'</td>'+nodes.map(function(nd){ var x=get(s,nd); return mcell(M(x.f,x.a,x.ok,x.sa)); }).join('')+mcell(storeRows.find(function(r){return r.k===s;}).m)+'</tr>'; });
+    mx+='<tr style="background:#fffbe6;"><td style="'+TD+'text-align:left;font-weight:800;">TOTAL</td>'+nodeRows.map(function(r){return mcell(r.m);}).join('')+mcell(GM)+'</tr></tbody></table>';
+    h+=panel('🔢 Store × Node <span style="font-weight:500;font-size:12px;color:#7b78a8;">· accuracy % · actual / forecast · stow SLA %'+(I?' · actual from Stow SLA file':'')+'</span>',mx);
+    h+='<div style="font-size:11px;color:#7b78a8;margin-top:-6px;">Accuracy % = 100 − |Actual − Forecast| ÷ Forecast · Var % = (Actual − Forecast) ÷ Forecast · Stow SLA % = stowed units within SLA ÷ stowed units (Stow SLA file, Vendor excluded). Store-wise &amp; Vendor/Transship actual = Daily Inbound Stow file when uploaded; node-wise actual = stow_quantity. Accuracy: <b style="color:#059669">≥90</b> · <b style="color:#d97706">80–90</b> · <b style="color:#dc2626">&lt;80</b> · SLA: <b style="color:#059669">≥95</b> · <b style="color:#d97706">90–95</b> · <b style="color:#dc2626">&lt;90</b></div>';
+    $('ibf-out').innerHTML=h; $('ibf-actions').style.display='flex';
+    toast('✅ Inbound forecast vs actual ready');
+  }
+
+  function flat(r,first){ var o={}; o[first]=r.k; if(r.cat) o.Cat=r.cat; var m=r.m;
+    o.Forecast=m.f; o.Actual=m.a; o.Var=m.a-m.f; o['Var %']=m.v==null?'':+m.v.toFixed(1); o['Accuracy %']=m.acc==null?'':+m.acc.toFixed(1); o['Stow SLA %']=m.sla==null?'':+m.sla.toFixed(1); o['SLA Breach Units']=m.sla==null?'':m.br; return o; }
+  function exportExcel(){
+    if(!last) return; var wb=XLSX.utils.book_new(), tot={k:'TOTAL',m:last.GM};
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(last.storeRows.concat([tot]).map(function(r){return flat(r,'Store');})),'Store-wise');
+    if(last.vtRows){ var vt=last.vtRows.map(function(r){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,0); return {Store:r.k,'Vendor Forecast':mv.f,'Vendor Actual':mv.a,'Vendor Var %':mv.v==null?'':+mv.v.toFixed(1),'Vendor Accuracy %':mv.acc==null?'':+mv.acc.toFixed(1),'Transship Forecast':mt.f,'Transship Actual':mt.a,'Transship Var %':mt.v==null?'':+mt.v.toFixed(1),'Transship Accuracy %':mt.acc==null?'':+mt.acc.toFixed(1)}; });
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(vt),'Vendor vs Transship'); }
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(last.nodeRows.concat([tot]).map(function(r){return flat(r,'Node');})),'Node-wise');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(last.catRows.concat([tot]).map(function(r){return flat(r,'Category');})),'Category');
+    var mx=[]; last.stores.forEach(function(s){ last.nodes.forEach(function(nd){ var x=last.get(s,nd); if(!x.f&&!x.a) return; mx.push(flat({k:s,cat:nd,m:M(x.f,x.a,x.ok,x.sa)},'Store')); }); });
+    mx=mx.map(function(o){ o.Node=o.Cat; delete o.Cat; return o; });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(mx,{header:['Store','Node','Forecast','Actual','Var','Var %','Accuracy %','Stow SLA %','SLA Breach Units']}),'Store x Node');
+    XLSX.writeFile(wb,'Inbound_Forecast_vs_Actual_'+last.date+'.xlsx');
+  }
+  function copySheets(){
+    var el=$('ibf-out'); if(!el||!last) return;
+    var tables=[].slice.call(el.querySelectorAll('table')), titles=[].slice.call(el.querySelectorAll('table')).map(function(t){ return t.closest('div[style*="border-radius:14px"]').firstChild.textContent; });
+    var html=tables.map(function(t,i){ return '<table><tr><td style="font-weight:bold;font-size:14px;">'+titles[i]+'</td></tr></table>'+t.outerHTML+'<br>'; }).join('');
+    var txt=tables.map(function(t,i){ return titles[i]+'\n'+[].slice.call(t.rows).map(function(r){ return [].slice.call(r.cells).map(function(c){return c.innerText.replace(/\n/g,' ');}).join('\t'); }).join('\n'); }).join('\n\n');
+    try{ navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([txt],{type:'text/plain'})})]).then(function(){toast('✅ Copied — paste into Google Sheets');},function(){fallback();}); }catch(e){ fallback(); }
+    function fallback(){ var d=document.createElement('div'); d.contentEditable=true; d.style.cssText='position:fixed;left:-9999px;'; d.innerHTML=html; document.body.appendChild(d); var r=document.createRange(); r.selectNodeContents(d); var s=getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('copy'); s.removeAllRanges(); d.remove(); toast('✅ Copied — paste into Google Sheets'); }
+  }
+  function injectCard(){
+    var grid=document.querySelector('.task-grid'); if(!grid||document.getElementById('dstpro-card-ib-forecast')) return;
+    var div=document.createElement('div'); div.id='dstpro-card-ib-forecast'; div.className='task-card';
+    div.setAttribute('data-tool','ib-forecast'); div.setAttribute('data-tool-label','Inbound Forecast vs Actual');
+    div.style.setProperty('--card-color','#0f766e'); div.setAttribute('onclick',"openTask('ib-forecast')");
+    div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Inbound Forecast vs Actual</h3><p>Forecast vs stowed units store-wise &amp; node-wise with accuracy % and stow SLA %.</p><span class="card-arrow">→</span>';
+    var fb=grid.querySelector('[onclick*="feedback"]'); if(fb) grid.insertBefore(div,fb); else grid.appendChild(div);
+  }
+  return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets};
+})();
+</script>
 </body>
 </html>
