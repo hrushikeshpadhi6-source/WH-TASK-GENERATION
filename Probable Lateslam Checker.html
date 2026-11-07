@@ -203,6 +203,10 @@
     <button class="btn" id="ptExport" disabled>⬇ Export Excel</button>
     <button class="btn" id="ptBlur" type="button" aria-pressed="false">🙈 Blur Lateslam</button>
     <button class="btn" id="ptView" type="button" disabled>📊 Quick View</button>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1d1d1b;">Drop window
+      <select id="ptDropWin" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;">
+        <option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option><option value="4">4 min</option><option value="5" selected>5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hour</option>
+      </select></label>
   </div>
   <div id="ptMode" style="font-size:12px;font-weight:800;color:#5b2a86;margin-top:14px;"></div>
   <div id="ptLastUpd" class="hide" style="display:flex;align-items:center;gap:10px;background:#1d1d1b;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;font-size:14px;"><span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;">Last updated · latest picklist created</span><b id="ptLastUpdVal" style="font-size:18px;"></b></div>
@@ -218,8 +222,8 @@
     <div style="overflow-x:auto;"><table class="fc-table" id="ptStoreTable"></table></div>
   </div>
   <div class="fc-panel hide" id="ptDropPanel">
-    <h4>Order Drop · 5-min windows (picklist created time)</h4>
-    <p class="hint">Orders dropped in each 5-minute window, store by store in time order, and how many of them became late slams. Only windows with at least one late slam are shown.</p>
+    <h4>Order Drop · <span class="ptWinLbl">5-min</span> windows (picklist created time)</h4>
+    <p class="hint">Orders dropped in each <span class="ptWinLbl">5-min</span> window, store by store in time order, and how many of them became late slams. Only windows with at least one late slam are shown.</p>
     <div style="overflow-x:auto;max-height:520px;"><table class="fc-table" id="ptDropTable"></table></div>
   </div>
   <div class="fc-panel" id="ptRefPanel">
@@ -277,7 +281,9 @@ function applyView(){ const full=["ptKpis","ptStorePanel","ptDropPanel","ptRefPa
 const pct=(l,d)=>d?+(l/d*100).toFixed(1):0;
 function accSecs(r){ const a=parseDT(r.picklist_created_time), b=parseDT(r.pick_assignment_time); return a&&b?(b-a)/1000:null; }
 function topUnits(m){ return Object.keys(m).map(Number).sort((x,y)=>m[y]-m[x]||x-y).slice(0,3).map(u=>u+'u ('+m[u]+')').join(', '); }
+let DROP_MIN=5, lastRows=null; const winLbl=()=>DROP_MIN===60?"1-hour":DROP_MIN+"-min";
 function run(rows){
+  lastRows=rows; document.querySelectorAll(".ptWinLbl").forEach(e=>e.textContent=winLbl()); const WL=winLbl();
   out=[]; const by={}, allU={};
   const fileHasPromise=rows.some(r=>r.__hasP);
   let first=null,last=null; rows.forEach(r=>{ const d=parseDT(r.picklist_created_time); if(d){ if(!first||d<first) first=d; if(!last||d>last) last=d; } });
@@ -296,23 +302,23 @@ function run(rows){
     Units:by[s].u,"Most Lateslam Unit Orders":topUnits(by[s].um),"Late Acceptance >30s":by[s].acc,"Pick / Pack Delay":by[s].l-by[s].acc,_n:by[s].n}));
   const T=summary.reduce((a,r)=>{a.o+=r.Orders;a.l+=r["Late Slams"];a.n+=r._n;a.u+=r.Units;a.acc+=r["Late Acceptance >30s"];return a;},{o:0,l:0,n:0,u:0,acc:0});
   summary.push({Store:"Total",Orders:T.o,"Late Slams":T.l,"Lateslam %":pct(T.l,T.o-T.n),Units:T.u,"Most Lateslam Unit Orders":topUnits(allU),"Late Acceptance >30s":T.acc,"Pick / Pack Delay":T.l-T.acc,_n:T.n});
-  let h='<thead><tr><th>Store</th><th>Orders</th><th>Late Slams</th><th>Lateslam %</th><th>Units</th><th>Most Lateslam Unit Orders</th><th>Late Acceptance &gt;30s</th><th>Pick / Pack Delay</th><th>Peak 5-min Drop</th><th>Late Slams in Peak</th></tr></thead><tbody>';
+  let h='<thead><tr><th>Store</th><th>Orders</th><th>Late Slams</th><th>Lateslam %</th><th>Units</th><th>Most Lateslam Unit Orders</th><th>Late Acceptance &gt;30s</th><th>Pick / Pack Delay</th><th>Peak '+WL+' Drop</th><th>Late Slams in Peak</th></tr></thead><tbody>';
   const W={}, pad=n=>String(n).padStart(2,"0");
   rows.forEach((r,i)=>{ const d=parseDT(r.picklist_created_time); if(!d) return; const s=storeOf(r);
-    const b=new Date(d); b.setSeconds(0,0); b.setMinutes(Math.floor(b.getMinutes()/5)*5);
+    const b=new Date(d); b.setSeconds(0,0); const mm=Math.floor((b.getHours()*60+b.getMinutes())/DROP_MIN)*DROP_MIN; b.setHours(Math.floor(mm/60),mm%60,0,0);
     const k=s+"|"+b.getTime(); const w=W[k]=W[k]||{s,b,o:0,l:0,u:0,ids:[],lsIds:[]}; w.o++; w.u+=unitsOf(r); const oid=String(r.order_id||"").trim(); w.ids.push(oid); if(out[i].probable_lateslam==="Yes") w.lsIds.push(oid); if(out[i].probable_lateslam==="Yes") w.l++; });
   const wl=Object.values(W); const peak={};
   wl.forEach(w=>{ if(!peak[w.s]||w.o>peak[w.s].o) peak[w.s]=w; });
-  const lab=b=>{ const e=new Date(b.getTime()+5*60000); return b.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+pad(b.getHours())+":"+pad(b.getMinutes())+"–"+pad(e.getHours())+":"+pad(e.getMinutes()); };
-  dropRows=wl.filter(w=>w.l>0).sort((x,y)=>x.s.localeCompare(y.s)||x.b-y.b).map(w=>({Store:w.s,"5-min Window":lab(w.b),"Orders Dropped":w.o,"Units Dropped":w.u,"Late Slams":w.l,"Lateslam %":pct(w.l,w.o),"Late Slam Order IDs":w.lsIds.join(", "),"All Order IDs":w.ids.join(", ")}));
-  summary.forEach(r=>{ const p=peak[r.Store]; if(p){ r["Peak 5-min Drop"]=p.o+" orders · "+p.u+" units @ "+lab(p.b).slice(7); r["Late Slams in Peak"]=p.l; } });
-  let dh='<thead><tr><th>Store</th><th>5-min Window</th><th>Orders Dropped</th><th>Units Dropped</th><th>Late Slams</th><th>Lateslam %</th></tr></thead><tbody>';
+  const lab=b=>{ const e=new Date(b.getTime()+DROP_MIN*60000); return b.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+pad(b.getHours())+":"+pad(b.getMinutes())+"–"+pad(e.getHours())+":"+pad(e.getMinutes()); };
+  dropRows=wl.filter(w=>w.l>0).sort((x,y)=>x.s.localeCompare(y.s)||x.b-y.b).map(w=>({Store:w.s,[WL+" Window"]:lab(w.b),"Orders Dropped":w.o,"Units Dropped":w.u,"Late Slams":w.l,"Lateslam %":pct(w.l,w.o),"Late Slam Order IDs":w.lsIds.join(", "),"All Order IDs":w.ids.join(", ")}));
+  summary.forEach(r=>{ const p=peak[r.Store]; if(p){ r["Peak "+WL+" Drop"]=p.o+" orders · "+p.u+" units @ "+lab(p.b).slice(7); r["Late Slams in Peak"]=p.l; } });
+  let dh='<thead><tr><th>Store</th><th>'+WL+' Window</th><th>Orders Dropped</th><th>Units Dropped</th><th>Late Slams</th><th>Lateslam %</th></tr></thead><tbody>';
   let cur=null; dropRows.forEach(r=>{ if(r.Store!==cur){ cur=r.Store; const st=dropRows.filter(x=>x.Store===cur);
       dh+='<tr style="background:#eef2f7;"><td colspan="6" style="text-align:left;font-weight:900;font-size:13px;">'+esc(cur)+' · '+st.length+' windows · <span class="lsv">'+st.reduce((a,x)=>a+x["Late Slams"],0)+'</span> late slams</td></tr>'; }
-    dh+='<tr><td>'+esc(r.Store)+'</td><td>'+r["5-min Window"]+'</td><td>'+r["Orders Dropped"]+'</td><td>'+r["Units Dropped"]+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td></tr>'; });
+    dh+='<tr><td>'+esc(r.Store)+'</td><td>'+r[WL+" Window"]+'</td><td>'+r["Orders Dropped"]+'</td><td>'+r["Units Dropped"]+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td></tr>'; });
   if(!dropRows.length) dh+='<tr><td colspan="6">No late slams</td></tr>';
   $("ptDropTable").innerHTML=dh+'</tbody>';
-  summary.forEach((r,i)=>{ const last=i===summary.length-1; h+='<tr'+(last?' style="font-weight:800"':'')+'><td>'+esc(r.Store)+'</td><td>'+r.Orders+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td><td>'+r.Units+'</td><td>'+(r["Most Lateslam Unit Orders"]||'–')+'</td><td class="lsv">'+r["Late Acceptance >30s"]+'</td><td class="lsv">'+r["Pick / Pack Delay"]+'</td><td>'+(r["Peak 5-min Drop"]||'–')+'</td><td class="lsv">'+(r["Late Slams in Peak"]??'')+'</td></tr>'; });
+  summary.forEach((r,i)=>{ const last=i===summary.length-1; h+='<tr'+(last?' style="font-weight:800"':'')+'><td>'+esc(r.Store)+'</td><td>'+r.Orders+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td><td>'+r.Units+'</td><td>'+(r["Most Lateslam Unit Orders"]||'–')+'</td><td class="lsv">'+r["Late Acceptance >30s"]+'</td><td class="lsv">'+r["Pick / Pack Delay"]+'</td><td>'+(r["Peak "+WL+" Drop"]||'–')+'</td><td class="lsv">'+(r["Late Slams in Peak"]??'')+'</td></tr>'; });
   $("ptStoreTable").innerHTML=h+'</tbody>';
   const secS={}; rows.forEach(r=>{ const v=num(r.assignment_to_stage_time_secs)||0; [storeOf(r),"Total"].forEach(s=>{ secS[s]=(secS[s]||0)+v; }); });
   quickRows=summary.map(r=>{ const hrs=(secS[r.Store]||0)/3600;
@@ -347,10 +353,11 @@ $("ptExport").addEventListener("click",()=>{ const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(quickRows),"Quick View");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Store Summary");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(out),"Order Detail");
-  if(dropRows.length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dropRows),"5-min Drops");
+  if(dropRows.length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dropRows),winLbl()+" Drops");
   const ref=[]; Object.keys(PROMISE).forEach(s=>Object.keys(PROMISE[s]).forEach(u=>ref.push({Store:s,Units:+u,"promise_utr (sec)":PROMISE[s][u]})));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ref),"Promise Table");
   XLSX.writeFile(wb,"Probable_Lateslam_"+new Date().toISOString().slice(0,10)+".xlsx"); toast("Excel downloaded"); });
+$("ptDropWin").addEventListener("change",e=>{ DROP_MIN=+e.target.value; if(lastRows){ run(lastRows); applyView&&applyView(); } });
 </script>
 </body>
 </html>
