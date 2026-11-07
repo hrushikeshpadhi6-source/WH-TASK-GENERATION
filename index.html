@@ -21870,7 +21870,7 @@ html[data-theme="light"] .theme-toggle{ border-radius:9px; }
 <script>
 var IBF=(function(){
   var fc=null, stow=null, inb=null, last=null;
-  var NODE_ALIAS={'VENDOR IB':'Vendors','VENDOR':'Vendors','VENDORS':'Vendors'};
+  var NODE_ALIAS={'VENDOR IB':'Vendors','VENDOR':'Vendors','VENDORS':'Vendors','VENDOR ARRIVALS':'Vendors','VENDOR ARRIVAL':'Vendors'};
   function $(i){return document.getElementById(i);}
   function toast(m){ if(window.showToast) showToast(m); }
   function readBook(file,cb){
@@ -21891,8 +21891,37 @@ var IBF=(function(){
   function prettyDate(k){ var p=k.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}); }
   function normNode(s){ s=String(s||'').trim(); var u=s.toUpperCase(); return NODE_ALIAS[u]||s; }
 
+  var DEF_CAT={Vendors:'Vendor',HDX3:'RDC',HDX4:'RDC',XD:'RDC',AUH7:'RDC',UAE1:'3P',UAEW:'3P',UAE0:'3P',AUH1:'FC transfer',DXB3:'FC transfer',DXB5:'FC transfer',DXB6:'FC transfer'};
+  var MON={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  function dayMonDate(v){
+    var m=String(v||'').trim().match(/^(\d{1,2})[\s\-\/]([A-Za-z]{3})[A-Za-z]*\.?(?:[\s\-\/](\d{2,4}))?$/); if(!m||MON[m[2].toLowerCase()]==null) return cellDate(v);
+    var mo=MON[m[2].toLowerCase()], y;
+    if(m[3]) y=m[3].length===2?2000+(+m[3]):+m[3];
+    else { var now=new Date(); y=now.getFullYear(); var diff=mo-now.getMonth(); if(diff>6) y--; else if(diff<-6) y++; }
+    return ymd(new Date(y,mo,+m[1]));
+  }
+  // Format B: "UTR Partner | Indicator | 08-Nov …" — store row (Indicator = store code), then node rows, "<store> Total" rows skipped
+  function parseForecastBlocks(rows){
+    var hi=rows.findIndex(function(r){ return r.some(function(c){ return /^indicator$/i.test(String(c).trim()); }); });
+    if(hi<0) return null;
+    var H=rows[hi], iI=H.findIndex(function(c){return /^indicator$/i.test(String(c).trim());}), dateCols=[];
+    for(var c=0;c<H.length;c++){ if(c===iI||/total/i.test(String(H[c]))) continue; var dk=dayMonDate(H[c]); if(dk) dateCols.push({c:c,d:dk}); }
+    if(!dateCols.length){ toast('⚠️ Forecast: no date columns found'); return null; }
+    var data={}, cat={}, store='';
+    for(var i=hi+1;i<rows.length;i++){
+      var row=rows[i], ind=String(row[iI]||'').trim(); if(!ind || /total/i.test(ind)) continue;
+      var hasNum=dateCols.some(function(dc){ return String(row[dc.c]).trim()!=='' && isFinite(parseFloat(row[dc.c])); });
+      if(!hasNum){ store=ind; continue; }
+      if(!store) continue; var node=normNode(ind); if(DEF_CAT[node]&&!cat[node]) cat[node]=DEF_CAT[node];
+      dateCols.forEach(function(dc){ var v=parseFloat(row[dc.c]); if(!isFinite(v)) return;
+        ((data[dc.d]=data[dc.d]||{})[store]=data[dc.d][store]||{})[node]=(data[dc.d][store][node]||0)+v; });
+    }
+    return { data:data, cat:cat, dates:dateCols.map(function(d){return d.d;}).filter(function(d,i,a){return a.indexOf(d)===i;}).sort() };
+  }
   function parseForecast(wb){
     var ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    var hasStore=rows.some(function(r){ return r.some(function(c){ return /^store$/i.test(String(c).trim()); }); });
+    if(!hasStore){ var b=parseForecastBlocks(rows); if(b) return b; }
     var hi=rows.findIndex(function(r){ return r.some(function(c){ return /^store$/i.test(String(c).trim()); }); });
     if(hi<0){ toast('⚠️ Forecast: "Store" header not found'); return null; }
     var H=rows[hi].map(function(c){return String(c).trim().toLowerCase();});
@@ -21905,7 +21934,7 @@ var IBF=(function(){
     for(var i=hi+1;i<rows.length;i++){
       var row=rows[i]; if(row[iS]) store=String(row[iS]).trim(); var node=normNode(row[iN]);
       if(!store||!node||/total/i.test(node)) continue;
-      if(iC>=0 && row[iC]) cat[node]=String(row[iC]).trim();
+      if(iC>=0 && row[iC]) cat[node]=String(row[iC]).trim(); else if(DEF_CAT[node]&&!cat[node]) cat[node]=DEF_CAT[node];
       dateCols.forEach(function(dc){ var v=parseFloat(row[dc.c]); if(!isFinite(v)) return;
         ((data[dc.d]=data[dc.d]||{})[store]=data[dc.d][store]||{})[node]=(data[dc.d][store][node]||0)+v; });
     }
