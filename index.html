@@ -8332,10 +8332,7 @@ function lsGenerate() {
       tphRaw[sid] = { secs:secs, units:units };
     });
     var tphByStore = {};
-    Object.keys(tphRaw).forEach(function(sid){
-      var a = (window._lsAdj||{})[sid] || {};
-      if (a.dU) tphRaw[sid].units = Math.max(0, tphRaw[sid].units + a.dU);
-    });
+    // Throughput always from raw upload — manual Orders/Units edits do not affect it
     Object.keys(tphRaw).forEach(function(sid){
       var base = sid.replace(/[_\s-]*SS$/i, '');
       if (base !== sid && tphRaw[base]) {
