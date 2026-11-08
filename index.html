@@ -12904,7 +12904,7 @@ async function vocCheckAccess() {
   if (!uname) { _vocMsg('voc-gate-msg','⚠️ Please enter your username.','err'); return; }
 
   _vocMsg('voc-gate-msg','⏳ Checking access…','info');
-  var status = await _vocLookupStatus(uname);
+  var status = window._dmsFullAccess ? 'approved' : await _vocLookupStatus(uname);
 
   if (status === 'blocked') { _vocMsg('voc-gate-msg','🚫 Your access has been blocked by the administrator.','err'); return; }
   if (status === 'pending') { _vocMsg('voc-gate-msg','⏳ Your request is <b>under review</b>. Please wait for the administrator to approve it.','warn'); return; }
@@ -12928,6 +12928,7 @@ var _vocStatusUnsub = null;
 function _vocStopStatusWatch(){ if(_vocStatusUnsub){ try{ _vocStatusUnsub(); }catch(e){} _vocStatusUnsub=null; } }
 function _vocStartStatusWatch(uname){
   _vocStopStatusWatch();
+  if (window._dmsFullAccess) return;   // full-access users are not tied to a VOC username
   var isLegacy = VOC_ALLOWED_USERS.map(function(u){return u.toLowerCase();}).indexOf(uname)!==-1;
   if (typeof FIREBASE_READY !== 'undefined' && FIREBASE_READY && fbDB) {
     _vocStatusUnsub = fbDB.collection('voc_users').doc(uname).onSnapshot(function(doc){
@@ -16617,7 +16618,7 @@ function maintCurrentIsAdmin(){
 }
 
 function maintIsBlocked(toolId){
-  if(maintCurrentIsAdmin()) return false;
+  if(maintCurrentIsAdmin() || window._dmsFullAccess) return false;
   var s=_maintSettings||{};
   // Auto-expiry: once the maintenance timer has passed, nobody stays blocked
   // even if the admin's browser hasn't written the OFF state yet.
@@ -16640,7 +16641,7 @@ function maintApply(){
   var cards=document.querySelectorAll('.task-card[data-tool]');
   if(!overlay||!banner) return;
   var expired = !!(s.autoOffAt && Date.now()>=s.autoOffAt);
-  if(maintCurrentIsAdmin()){
+  if(maintCurrentIsAdmin() || window._dmsFullAccess){
     overlay.style.display='none'; banner.style.display='none';
     cards.forEach(function(c){ c.style.display=''; c.classList.remove('task-card-maint'); var chip=c.querySelector('.maint-chip'); if(chip) chip.remove(); });
     // Self-heal: if the timer ran out, the admin's own client writes the OFF
@@ -17577,6 +17578,8 @@ function _dmsWatchMyStatus(user){
     var d = {}, st;
     if (!doc.exists) { st = 'removed'; }      // admin deleted the account
     else { d = doc.data() || {}; st = d.status || 'approved'; }
+    var fa = st === 'approved' && !!d.fullAccess;
+    if (fa !== !!window._dmsFullAccess) { window._dmsFullAccess = fa; try { if (typeof maintApply==='function') maintApply(); } catch(e){} }
     if (st === 'approved') return;            // still allowed — do nothing
     // No longer approved (blocked / rejected / removed) → lock out instantly.
     try { _dmsStatusUnsub && _dmsStatusUnsub(); } catch(e){}
@@ -18057,16 +18060,21 @@ function _dmsUserCard(u){
   else if (cat === 'active')  actions = '<button class="dms-ubtn" style="color:#f72585;" onclick="window.dmsUserBlock(\''+id+'\')">🚫 Block</button><button class="dms-ubtn" style="color:#3B82F6;" onclick="window.dmsUserRemind(\''+id+'\')">📣 Remind</button>';
   else if (cat === 'blocked') actions = '<button class="dms-ubtn" style="background:linear-gradient(135deg,#10B981,#049e77);color:#fff;border:none;" onclick="window.dmsUserUnblock(\''+id+'\')">✓ Unblock</button>';
   else                        actions = '<button class="dms-ubtn" style="color:#10B981;" onclick="window.dmsUserApprove(\''+id+'\')">↺ Re-approve</button>';
+  var faTag = (!isAdmin && u.fullAccess) ? '<span style="font-size:9px;background:rgba(255,214,10,0.15);border:1px solid rgba(255,214,10,0.5);color:#ffd60a;padding:2px 7px;border-radius:10px;margin-left:6px;font-family:\'DM Mono\',monospace;">⭐ FULL ACCESS</span>' : '';
+  var faBtn = (!isAdmin && cat === 'active') ? (u.fullAccess
+      ? '<button onclick="window.dmsSetFullAccess(\''+id+'\',false)" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,214,10,0.5);border-radius:8px;background:rgba(255,214,10,0.12);color:#ffd60a;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">⭐ Full access ON · click to remove</button>'
+      : '<button onclick="window.dmsSetFullAccess(\''+id+'\',true)" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(255,214,10,0.4);border-radius:8px;background:transparent;color:#ffd60a;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">⭐ Give full tool access</button>') : '';
   var adminTag = isAdmin ? '<span style="font-size:9px;background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);color:#2563EB;padding:2px 7px;border-radius:10px;margin-left:6px;font-family:\'DM Mono\',monospace;">ADMIN</span>' : '';
   return '<div class="dms-ucard"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">'
-    + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+'</div>'
+    + '<div style="font-size:15px;font-weight:700;color:#fff;">'+_esc(u.name||'—')+adminTag+faTag+'</div>'
     + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;">'+badge+'</div></div>'
-    + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>'
+    + rows + (isAdmin ? '' : '<div style="display:flex;gap:8px;margin-top:12px;">'+actions+'</div>' + faBtn
 
         + '<button onclick="window.dmsCreateLoginUser(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(37,99,235,0.45);border-radius:8px;background:rgba(37,99,235,0.1);color:#2563EB;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\udd11 Set / create password</button>'
         + '<button onclick="window.dmsUserRemove(\''+id+'\')" style="width:100%;margin-top:8px;padding:8px;border:1px solid rgba(247,37,133,0.4);border-radius:8px;background:rgba(247,37,133,0.08);color:#f72585;font-family:Syne,sans-serif;font-weight:700;font-size:11px;cursor:pointer;">\ud83d\uddd1 Remove user</button>') + '</div>';
 }
 function _dmsPaintUsers(){
+  try { _dmsPaintFullAccess(); } catch(e){}
   var box = document.getElementById('dms-users-list'); if (!box) return;
   var groups = { pending:[], active:[], blocked:[], rejected:[] };
   _dmsUsersCache.forEach(function(u){ groups[_dmsCat(u)].push(u); });
@@ -18116,6 +18124,34 @@ async function _dmsSetStatus(id, status){
   }
   window.dmsRenderUsers();
 }
+window.dmsSetFullAccess = async function(id, on){
+  var u = _dmsUsersCache.find(function(x){ return x.id === id; }) || {};
+  if (on && !confirm('Give FULL tool access to '+(u.name||u.email||id)+'?\nThey can open every tool, even during maintenance, and VOC without a VOC username.')) return;
+  if (FIREBASE_READY) {
+    try { await fbDB.collection('users').doc(id).update({ fullAccess: !!on, fullAccessAt: firebase.firestore.FieldValue.serverTimestamp() }); }
+    catch(e){ alert('Failed: '+e.message); return; }
+  } else {
+    var users = JSON.parse(localStorage.getItem(DEMO_USERS_KEY)||'[]');
+    users.forEach(function(x){ if (x.email === id) x.fullAccess = !!on; });
+    localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+  }
+  if (typeof showToast === 'function') showToast(on ? '⭐ Full access given to '+(u.name||id) : 'Full access removed for '+(u.name||id));
+  window.dmsRenderUsers();
+};
+function _dmsPaintFullAccess(){
+  var box = document.getElementById('dms-fa-chips'); if (!box) return;
+  var fa = _dmsUsersCache.filter(function(u){ return u.fullAccess && (u.email||'').toLowerCase() !== ADMIN_EMAIL; });
+  box.innerHTML = fa.length ? fa.map(function(u){ return '<span style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.45);color:#ffd60a;border-radius:20px;padding:6px 8px 6px 14px;font-size:12.5px;font-weight:700;">⭐ '+_esc(u.name||u.email)+'<button onclick="window.dmsSetFullAccess(\''+_esc(u.id)+'\',false)" title="Remove full access" style="border:none;background:rgba(255,214,10,0.2);color:#ffd60a;width:20px;height:20px;border-radius:50%;cursor:pointer;font-weight:800;line-height:1;">×</button></span>'; }).join('')
+    : '<span style="color:#8b8aad;font-size:12px;">Nobody has full access yet.</span>';
+  window.dmsFaSearch((document.getElementById('dms-fa-search')||{}).value||'');
+}
+window.dmsFaSearch = function(q){
+  var out = document.getElementById('dms-fa-results'); if (!out) return;
+  q = String(q||'').trim().toLowerCase(); if (!q) { out.innerHTML=''; return; }
+  var hits = _dmsUsersCache.filter(function(u){ return !u.fullAccess && _dmsCat(u)==='active' && (u.email||'').toLowerCase()!==ADMIN_EMAIL && ((u.name||'').toLowerCase().indexOf(q)>=0 || (u.email||'').toLowerCase().indexOf(q)>=0); }).slice(0,6);
+  out.innerHTML = hits.length ? hits.map(function(u){ return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border:1px solid #2e2c45;border-radius:8px;background:rgba(15,14,23,0.6);"><span style="font-size:13px;color:#e8e6ff;font-weight:700;">'+_esc(u.name||'—')+' <span style="color:#8b8aad;font-weight:400;font-size:12px;">'+_esc(u.email||'')+'</span></span><button onclick="window.dmsSetFullAccess(\''+_esc(u.id)+'\',true)" style="padding:6px 12px;border-radius:7px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1830;font-family:Syne,sans-serif;font-weight:800;font-size:11.5px;cursor:pointer;">⭐ Give full access</button></div>'; }).join('')
+    : '<div style="color:#8b8aad;font-size:12px;">No matching active user.</div>';
+};
 window.dmsUserApprove = function(id){ _dmsSetStatus(id, 'approved'); };
 window.dmsUserReject  = function(id){ if (confirm('Reject this sign-up?\nThey will NOT be able to log in, and this email stays locked.')) _dmsSetStatus(id, 'rejected'); };
 window.dmsUserBlock   = function(id){ if (confirm('Block this user?\nThey cannot log in until you unblock them.')) _dmsSetStatus(id, 'blocked'); };
@@ -18391,7 +18427,7 @@ document.addEventListener('click', function(e) {
       var u = users.find(function(x){ return x.email === email; });
       if (u) {
         var st = (email === ADMIN_EMAIL) ? 'approved' : (u.status || 'approved');
-        if (st === 'approved') { authShowApp(u.name); _maybeShowReminder(null, u); return; }
+        if (st === 'approved') { window._dmsFullAccess = !!u.fullAccess; authShowApp(u.name); _maybeShowReminder(null, u); return; }
         localStorage.removeItem(DEMO_SESSION_KEY);
         authShowStatus(st, u.name, u); return;
       }
@@ -19129,6 +19165,13 @@ We'll be back soon with an improved experience.</textarea>
         <button onclick="window.dmsRenderUsers&&window.dmsRenderUsers()"
           style="padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#1D4ED8,#2f4bd4);
           color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+      </div>
+      <div style="padding:16px 24px;border-bottom:1px solid #2e2c45;background:rgba(255,214,10,0.04);">
+        <div style="font-size:13px;font-weight:800;color:#ffd60a;margin-bottom:4px;">⭐ Full Tool Access</div>
+        <div style="font-size:11px;color:#8b8aad;margin-bottom:12px;">These users can open every tool, including during maintenance, and VOC Analysis without a VOC username. They do not get the Admin Panel.</div>
+        <div id="dms-fa-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+        <input id="dms-fa-search" type="text" placeholder="Search a user to give full access (e.g. Pooja Arora, Krishna Kalyan)…" oninput="window.dmsFaSearch(this.value)" style="width:100%;box-sizing:border-box;background:rgba(15,14,23,0.7);border:1px solid #2e2c45;border-radius:10px;padding:10px 14px;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:13px;outline:none;margin-bottom:8px;">
+        <div id="dms-fa-results" style="display:flex;flex-direction:column;gap:6px;"></div>
       </div>
       <div style="display:flex;gap:6px;padding:14px 24px 0;flex-wrap:wrap;" id="dms-user-tabs">
         <button class="dms-utab" data-tab="pending"  onclick="window.dmsSetUserTab('pending')">⏳ Pending <span class="dms-utab-n" data-n="pending">0</span></button>
