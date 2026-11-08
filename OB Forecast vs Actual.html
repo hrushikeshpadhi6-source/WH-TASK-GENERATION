@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  var framed=false; try{framed=window.self!==window.top;}catch(e){framed=true;}
+  if(framed) return;
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OB Forecast vs Actual</title>
+<script>
+(function(){
+  function load(urls,test){ var i=0; (function next(){ if(test()||i>=urls.length) return; var s=document.createElement('script'); s.src=urls[i++]; s.async=true; s.onerror=next; s.onload=function(){ if(!test()) next(); }; document.head.appendChild(s); })(); }
+  load(["https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js","https://unpkg.com/papaparse@5.4.1/papaparse.min.js","https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"],function(){return !!window.Papa;});
+  load(["https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"],function(){return !!window.XLSX;});
+})();
+</script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  a{color:#4361ee;} a:hover{color:#1a1830;}
+  body{background:#e8ecf3;color:#11161c;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:30px 28px 90px;}
+</style>
+</head>
+<body>
+<div style="max-width:1320px;margin:0 auto;">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #d7dee6;color:#5d6b7a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;text-decoration:none;margin-bottom:18px;white-space:nowrap;">← Back to dashboard</a>
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:2px solid #11161c;padding-bottom:16px;">
+    <div>
+      <p style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#5d6b7a;font-weight:700;margin:0 0 6px;">Outbound · Multi-Store</p>
+      <h1 style="font-size:26px;line-height:1.1;margin:0;font-weight:800;">OB Forecast vs Actual</h1>
+      <p style="font-size:13px;color:#5d6b7a;margin:7px 0 0;max-width:640px;line-height:1.5;">Forecast from the S&amp;OP file · actual orders &amp; units from the Daily Order and Unit file · late slam, LS % and throughput from the Late Slam UTR raw file.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:#1a1830;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;">
+      Throughput target
+      <input id="tgt" type="number" value="170" min="1" style="width:70px;padding:6px 8px;border-radius:6px;border:none;font-size:14px;font-weight:800;text-align:center;" />
+      <span style="opacity:.7;font-weight:400;">units/hr</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:22px 0 14px;">
+    <label id="c-fc" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-fc" accept=".xlsx,.xls" multiple style="display:none;" />
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 1</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">Forecast file(s)</div>
+      <div style="font-size:12px;color:#5d6b7a;">S&amp;OP .xlsx · select one or more weeks</div>
+      <div id="s-fc" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
+    <label id="c-ou" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-ou" accept=".csv,.xlsx,.xls" style="display:none;" />
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 2</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">Order &amp; Unit file</div>
+      <div style="font-size:12px;color:#5d6b7a;">Daily Order and Unit .csv (actuals)</div>
+      <div id="s-ou" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
+    <label id="c-ls" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-ls" accept=".csv,.xlsx,.xls" style="display:none;" />
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 3</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">Late Slam file</div>
+      <div style="font-size:12px;color:#5d6b7a;">Late Slam UTR raw data .csv</div>
+      <div id="s-ls" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;">Date
+      <select id="dt" disabled style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;min-width:150px;"><option>Upload Order &amp; Unit file</option></select>
+    </label>
+    <button id="b-xl" disabled style="padding:9px 18px;border-radius:9px;border:none;background:#059669;color:#fff;font-size:13px;font-weight:800;cursor:pointer;opacity:.5;">⬇ Export Excel</button>
+    <span id="msg" style="font-size:12px;color:#5d6b7a;"></span>
+  </div>
+
+  <div id="out"></div>
+
+  <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#5d6b7a;margin-top:14px;">
+    <span><b style="color:#11161c;">LS %</b> &nbsp;below 3% white · 3–5% yellow · above 5% red</span>
+    <span><b style="color:#11161c;">Unit Var %</b> &nbsp;0–10% yellow · above 10% red</span>
+    <span><b style="color:#11161c;">Thru Put</b> &nbsp;≥ target green · below target plain</span>
+  </div>
+</div>
+
+<script>
+var $=function(id){return document.getElementById(id);};
+var FC=null, OU=null, LS=null, ROWS=null, DATE='';
+var YEL='#fef3c7', YELT='#92400e', RED='#fee2e2', REDT='#991b1b';
+
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function serialYmd(n){ var d=new Date(Math.round((n-25569)*864e5)); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+function toYmd(v){
+  if(v==null||v==='') return '';
+  if(v instanceof Date) return ymd(v);
+  if(typeof v==='number') return v>20000&&v<80000?serialYmd(v):'';
+  var s=String(v).trim(), m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  if(/^\d{5}(\.\d+)?$/.test(s)) return serialYmd(+s);
+  var d=new Date(s); return isNaN(d)?'':ymd(d);
+}
+function nkey(k){ return String(k).toLowerCase().replace(/[^a-z]/g,''); }
+function col(row,cands){ var ks=Object.keys(row||{}); for(var c=0;c<cands.length;c++){ for(var i=0;i<ks.length;i++){ if(nkey(ks[i])===cands[c]) return ks[i]; } } for(var c2=0;c2<cands.length;c2++){ for(var j=0;j<ks.length;j++){ if(nkey(ks[j]).indexOf(cands[c2])>=0) return ks[j]; } } return ''; }
+function setStatus(k,ok,text){ $('s-'+k).textContent=text; $('s-'+k).style.color=ok?'#059669':'#e11d48'; $('c-'+k).style.borderColor=ok?'#059669':'#d7dee6'; $('c-'+k).style.borderStyle=ok?'solid':'dashed'; }
+function waitLibs(cb){ (function t(){ if(window.XLSX&&window.Papa) cb(); else setTimeout(t,120); })(); }
+
+function readTable(file,cb){
+  waitLibs(function(){
+    if(/\.csv$/i.test(file.name)){ Papa.parse(file,{header:true,skipEmptyLines:true,dynamicTyping:false,complete:function(r){cb(r.data);}}); return; }
+    var fr=new FileReader(); fr.onload=function(e){ var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}); cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''})); }; fr.readAsArrayBuffer(file);
+  });
+}
+
+// S&OP: per sheet find header row with "Date" + serial date columns; take store total rows
+function parseSop(wb,out){
+  out=out||{orders:{},units:{},dates:{}};
+  function scan(ws,kind){
+    var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}), hi=-1, dc=[], sc=0;
+    for(var i=0;i<Math.min(rows.length,20)&&hi<0;i++){
+      var r=rows[i]; if(!r.some(function(c){return /^date$/i.test(String(c).trim());})) continue;
+      var cols=[]; for(var c=0;c<r.length;c++){ var d=(r[c] instanceof Date)?ymd(r[c]):(typeof r[c]==='number'&&r[c]>40000&&r[c]<80000?serialYmd(r[c]):''); if(d) cols.push({c:c,d:d}); }
+      if(cols.length){ hi=i; dc=cols; sc=Math.max(0,r.findIndex(function(c){return /^store$/i.test(String(c).trim());})); }
+    }
+    if(hi<0) return false;
+    var pri = kind==='orders' ? [/^total orders final$/i,/^total orders$/i,/^total orders forecast$/i] : [/^final units forecast$/i,/^units forecast$/i];
+    var found={};
+    for(var j=hi+1;j<rows.length;j++){
+      var st=String(rows[j][sc]||'').trim(), lb=String(rows[j][sc+1]||'').trim(); if(!st) continue;
+      var p=-1; pri.forEach(function(re,ix){ if(p<0&&re.test(lb)) p=ix; }); if(p<0) continue;
+      if(found[st]!=null && found[st]<=p) continue; found[st]=p;
+      dc.forEach(function(x){ var v=parseFloat(rows[j][x.c]); if(!isFinite(v)) return; ((out[kind][x.d]=out[kind][x.d]||{}))[st]=v; out.dates[x.d]=1; });
+    }
+    return Object.keys(found).length>0;
+  }
+  var gotO=false, gotU=false;
+  wb.SheetNames.forEach(function(n){
+    var ws=wb.Sheets[n], u=/unit/i.test(n), cap=/cap/i.test(n);
+    if(cap) return;
+    if(u){ if(!gotU) gotU=scan(ws,'units'); } else if(!gotO) gotO=scan(ws,'orders');
+  });
+  return (gotO||gotU)?out:null;
+}
+
+$('f-fc').addEventListener('change',function(e){ var files=[].slice.call(e.target.files||[]); if(!files.length) return;
+  waitLibs(function(){
+    var acc={orders:{},units:{},dates:{}}, ok=0, bad=[], left=files.length, bufs=[];
+    // later week files (by name) override overlapping dates
+    files.sort(function(x,y){ return x.name.localeCompare(y.name,undefined,{numeric:true}); });
+    files.forEach(function(f,fi){ var fr=new FileReader(); fr.onload=function(ev){
+      bufs[fi]=ev.target.result; if(--left) return;
+      files.forEach(function(ff,i){ try{ var r=parseSop(XLSX.read(new Uint8Array(bufs[i]),{type:'array'}),acc); if(r) ok++; else bad.push(ff.name); }catch(err){ bad.push(ff.name); } });
+      if(!ok){ FC=null; setStatus('fc',false,'Could not read forecast rows'); return; }
+      FC=acc; var ds=Object.keys(FC.dates).sort();
+      setStatus('fc',true,'✓ '+ok+' file'+(ok>1?'s':'')+' · '+ds[0]+' → '+ds[ds.length-1]+(bad.length?' · skipped: '+bad.join(', '):'')); render();
+    }; fr.readAsArrayBuffer(f); });
+  });
+});
+$('f-ou').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return;
+  readTable(f,function(data){
+    var r0=data[0]||{}, cS=col(r0,['station','store','deliverystationcode']), cD=col(r0,['snapshotdate','date']), cO=col(r0,['outboundorders','orders']), cU=col(r0,['outboundunits','units']);
+    if(!cS||!cD||!cO||!cU){ setStatus('ou',false,'Missing Station / snapshot_date / Outbound Orders / Outbound Units'); return; }
+    OU={};
+    data.forEach(function(r){ var s=String(r[cS]||'').trim(), d=toYmd(r[cD]); if(!s||!d) return; var o=(OU[d]=OU[d]||{})[s]=OU[d][s]||{o:0,u:0}; o.o+=parseFloat(r[cO])||0; o.u+=parseFloat(r[cU])||0; });
+    setStatus('ou',true,'✓ '+f.name+' · '+Object.keys(OU).length+' day(s)'); fillDates(); render();
+  });
+});
+$('f-ls').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return;
+  readTable(f,function(data){
+    var r0=data[0]||{};
+    var c={s:col(r0,['deliverystationcode','station','store']), d:col(r0,['snapshotdate']), a:col(r0,['plcreatetostage']), p:col(r0,['promiseutr']), u:col(r0,['unitspicked','units']), t:col(r0,['assignmenttostagetimesecs','assignmenttostage'])};
+    if(!c.s||!c.a||!c.p){ setStatus('ls',false,'Missing delivery_station_code / pl_create_to_stage / promise_utr'); return; }
+    LS={rows:data,c:c}; var n={}; if(c.d) data.forEach(function(r){ var d=toYmd(r[c.d]); if(d) n[d]=(n[d]||0)+1; });
+    LS.dates=n; DATE='';
+    setStatus('ls',true,'✓ '+f.name+' · '+data.length+' orders'+(c.t?'':' · no assignment_to_stage column (throughput blank)')); fillDates(); render();
+  });
+});
+
+function fillDates(){
+  var ds=Object.keys(OU||{}).sort().reverse(); if(!ds.length) return;
+  var pref=DATE;
+  if(!pref||ds.indexOf(pref)<0){ pref=ds[0]; if(LS&&LS.dates){ var best='',bn=0; Object.keys(LS.dates).forEach(function(d){ if(LS.dates[d]>bn&&ds.indexOf(d)>=0){bn=LS.dates[d];best=d;} }); if(best) pref=best; } }
+  DATE=pref;
+  $('dt').innerHTML=ds.map(function(d){ var x=new Date(d+'T12:00:00'); return '<option value="'+d+'"'+(d===pref?' selected':'')+'>'+x.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+'</option>'; }).join('');
+  $('dt').disabled=false;
+}
+$('dt').addEventListener('change',function(e){ DATE=e.target.value; render(); });
+$('tgt').addEventListener('input',function(){ render(); });
+function target(){ var v=+$('tgt').value; return v>0?v:170; }
+
+function compute(D){
+  D=D||DATE;
+  var act=(OU&&OU[D])||{}, fo=(FC&&FC.orders[D])||{}, fu=(FC&&FC.units[D])||{};
+  var lsS={}, tph={};
+  if(LS){
+    var c=LS.c, useDate=!!c.d;
+    LS.rows.forEach(function(r){
+      if(useDate && toYmd(r[c.d])!==D) return;
+      var s=String(r[c.s]||'').trim(); if(!s) return;
+      var x=lsS[s]=lsS[s]||{ls:0,el:0,n:0};
+      x.n++;
+      var a=String(r[c.a]==null?'':r[c.a]).trim(), p=String(r[c.p]==null?'':r[c.p]).trim();
+      var av=a===''?NaN:parseFloat(a), pv=p===''?NaN:parseFloat(p);
+      if(isFinite(pv)&&pv>0){ x.el++; if(isFinite(av)&&av>pv) x.ls++; }
+      if(c.t&&c.u){ var sc=parseFloat(r[c.t]), un=parseFloat(r[c.u]); if(isFinite(sc)&&isFinite(un)&&un>0){ var t=tph[s]=tph[s]||{secs:0,units:0}; t.secs+=sc; t.units+=un; } }
+    });
+  }
+  // satellite (_SS) throughput rolls into its parent store
+  var merged={};
+  Object.keys(tph).forEach(function(s){ var b=s.replace(/[_\s-]*SS$/i,''); if(b!==s&&tph[b]){ tph[b].secs+=tph[s].secs; tph[b].units+=tph[s].units; merged[s]=1; } });
+  var stores={}; Object.keys(act).forEach(function(s){stores[s]=1;}); Object.keys(lsS).forEach(function(s){stores[s]=1;});
+  var T={fo:0,fu:0,ao:0,au:0,ls:0,el:0,secs:0,units:0,hasFo:false,hasFu:false};
+  var rows=Object.keys(stores).sort().map(function(s){
+    var a=act[s]||{o:0,u:0}, l=lsS[s]||{ls:0,el:0}, t=merged[s]?null:tph[s];
+    var r={store:s, fo:fo[s]!=null?Math.round(fo[s]):null, fu:fu[s]!=null?Math.round(fu[s]):null, ao:Math.round(a.o), au:Math.round(a.u), ls:l.ls, el:l.el};
+    r.lsPct=r.el?r.ls/r.el*100:null;
+    r.uVar=r.fu?(r.au-r.fu)/r.fu*100:null;
+    r.secs=t?t.secs:0; r.units=t?t.units:0;
+    r.avg=t&&t.units?t.secs/t.units:null; r.tph=r.avg?3600/r.avg:null;
+    if(r.fo!=null){T.fo+=r.fo;T.hasFo=true;} if(r.fu!=null){T.fu+=r.fu;T.hasFu=true;}
+    T.ao+=r.ao; T.au+=r.au; T.ls+=r.ls; T.el+=r.el; if(t&&!merged[s]){ T.secs+=t.secs; T.units+=t.units; }
+    return r;
+  });
+  T.lsPct=T.el?T.ls/T.el*100:null; T.uVar=T.hasFu&&T.fu?(T.au-T.fu)/T.fu*100:null; T.avg=T.units?T.secs/T.units:null; T.tph=T.avg?3600/T.avg:null;
+  if(!T.hasFo) T.fo=null; if(!T.hasFu) T.fu=null;
+  return {rows:rows,T:T};
+}
+
+function lsCol(p){ if(p==null) return null; return p>5?[RED,REDT]:p>=3?[YEL,YELT]:null; }
+function varCol(v){ if(v==null) return null; return Math.abs(v)>10?[RED,REDT]:[YEL,YELT]; }
+function tphCol(v){ if(v==null) return ''; var t=target(); v=Math.round(v); return v>=t?'#059669':'#11161c'; }
+function pct(v,sign){ return v==null?'—':(sign&&v>0?'+':'')+v.toFixed(1)+'%'; }
+function num(v){ return v==null?'—':v.toLocaleString('en-US'); }
+
+function render(){
+  if(!OU||!DATE){ $('out').innerHTML=''; return; }
+  ROWS=compute(); var R=ROWS.rows, T=ROWS.T, tg=target();
+  $('b-xl').disabled=false; $('b-xl').style.opacity=1;
+  var notes=[]; if(!FC) notes.push('no forecast file'); else if(!FC.orders[DATE]&&!FC.units[DATE]) notes.push('forecast file has no data for this date');
+  if(!LS) notes.push('no late slam file'); else if(LS.c.d&&!LS.dates[DATE]) notes.push('late slam file has no rows for this snapshot date');
+  $('msg').textContent=notes.length?'⚠ '+notes.join(' · '):'';
+  var th='padding:12px 10px;font-size:11px;letter-spacing:.08em;font-weight:800;text-align:center;text-transform:uppercase;';
+  var td='padding:11px 10px;text-align:center;font-size:15px;border-bottom:1px solid #d7dee6;';
+  var h='<div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;">'+
+    '<div style="background:linear-gradient(135deg,#1a1830,#2d2b5e);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'+
+    '<div style="font-size:18px;font-weight:800;">📊 OB Forecast vs Actual · '+new Date(DATE+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>'+
+    '<div style="font-size:13px;opacity:.75;">'+R.length+' stores · '+num(T.ao)+' orders · '+T.ls+' lateslams ('+pct(T.lsPct)+') · '+(T.tph?Math.round(T.tph):'—')+' units/hr · Target '+tg+'/hr</div></div>'+
+    '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:960px;">'+
+    '<thead><tr style="background:#1a1830;">'+
+    '<th style="'+th+'color:#c7c9d9;text-align:left;padding-left:16px;">Store</th>'+
+    '<th style="'+th+'color:#7dd3fc;">OB Forecast Order</th>'+
+    '<th style="'+th+'color:#fcd34d;">OB Actual Order</th>'+
+    '<th style="'+th+'color:#7dd3fc;">OB Forecast Units</th>'+
+    '<th style="'+th+'color:#fcd34d;">OB Actual Units</th>'+
+    '<th style="'+th+'color:#fda4af;">Late Slam</th>'+
+    '<th style="'+th+'color:#fda4af;">LS %</th>'+
+    '<th style="'+th+'color:#6ee7b7;">Unit Var %</th>'+
+    '<th style="'+th+'color:#6ee7b7;">Thru Put / Hr<div style="font-size:10px;color:#c7c9d9;letter-spacing:.04em;margin-top:2px;">Target '+tg+'</div></th>'+
+    '<th style="'+th+'color:#c4b5fd;">Avg Sec / Unit</th>'+
+    '</tr></thead><tbody>';
+  R.forEach(function(r){
+    var lc=lsCol(r.lsPct), vc=varCol(r.uVar), lsBg=lc?'background:'+lc[0]+';color:'+lc[1]+';font-weight:800;':'color:#374151;';
+    h+='<tr>'+
+      '<td style="'+td+'text-align:left;padding-left:16px;font-weight:800;color:#e11d48;">'+r.store+'</td>'+
+      '<td style="'+td+'color:#374151;">'+num(r.fo)+'</td>'+
+      '<td style="'+td+'font-weight:800;">'+num(r.ao)+'</td>'+
+      '<td style="'+td+'color:#374151;">'+num(r.fu)+'</td>'+
+      '<td style="'+td+'font-weight:800;">'+num(r.au)+'</td>'+
+      '<td style="'+td+lsBg+'">'+r.ls+'</td>'+
+      '<td style="'+td+lsBg+'">'+pct(r.lsPct)+'</td>'+
+      '<td style="'+td+(vc?'background:'+vc[0]+';color:'+vc[1]+';font-weight:800;':'color:#9aa5b1;')+'">'+pct(r.uVar,true)+'</td>'+
+      '<td style="'+td+'font-weight:800;color:'+tphCol(r.tph)+';">'+(r.tph?Math.round(r.tph):'')+'</td>'+
+      '<td style="'+td+'color:#7c3aed;">'+(r.avg?r.avg.toFixed(1)+'s':'')+'</td>'+
+      '</tr>';
+  });
+  var tl='padding:13px 10px;text-align:center;font-size:15px;font-weight:800;';
+  h+='<tr style="background:#ffd600;color:#1a1830;">'+
+    '<td style="'+tl+'text-align:left;padding-left:16px;font-size:13px;letter-spacing:.05em;">GRAND TOTAL</td>'+
+    '<td style="'+tl+'">'+num(T.fo)+'</td><td style="'+tl+'font-size:17px;">'+num(T.ao)+'</td>'+
+    '<td style="'+tl+'">'+num(T.fu)+'</td><td style="'+tl+'">'+num(T.au)+'</td>'+
+    '<td style="'+tl+'color:#b91c1c;">'+T.ls+'</td><td style="'+tl+'">'+pct(T.lsPct)+'</td>'+
+    '<td style="'+tl+'">'+pct(T.uVar,true)+'</td>'+
+    '<td style="'+tl+'color:'+tphCol(T.tph)+';">'+(T.tph?Math.round(T.tph):'—')+'</td>'+
+    '<td style="'+tl+'">'+(T.avg?T.avg.toFixed(1)+'s':'—')+'</td></tr>';
+  h+='</tbody></table></div></div>';
+  $('out').innerHTML=h;
+}
+
+function weekNo(d){ var x=new Date(d+'T12:00:00'), j=new Date(x.getFullYear(),0,1); var doy=Math.round((new Date(x.getFullYear(),x.getMonth(),x.getDate())-j)/864e5); return Math.floor((doy+j.getDay())/7)+1; }
+function weekKey(d){ return 'Wk'+String(weekNo(d)).padStart(2,'0')+' '+d.slice(0,4); }
+function agg(list,name){
+  var t={store:name,fo:0,fu:0,ao:0,au:0,ls:0,el:0,secs:0,units:0,hf:0,hu:0};
+  list.forEach(function(r){ if(r.fo!=null){t.fo+=r.fo;t.hf=1;} if(r.fu!=null){t.fu+=r.fu;t.hu=1;} t.ao+=r.ao;t.au+=r.au;t.ls+=r.ls;t.el+=r.el;t.secs+=r.secs||0;t.units+=r.units||0; });
+  if(!t.hf) t.fo=null; if(!t.hu) t.fu=null;
+  t.lsPct=t.el?t.ls/t.el*100:null; t.uVar=t.fu?(t.au-t.fu)/t.fu*100:null; t.avg=t.units?t.secs/t.units:null; t.tph=t.avg?3600/t.avg:null;
+  return t;
+}
+function byStore(rows){ var m={}; rows.forEach(function(r){ (m[r.store]=m[r.store]||[]).push(r); }); return Object.keys(m).sort().map(function(s){ return agg(m[s],s); }); }
+
+$('b-xl').addEventListener('click',function(){
+  if(!ROWS) return;
+  var tg=target(), wb=XLSX.utils.book_new();
+  var border={top:{style:'thin',color:{rgb:'D7DEE6'}},bottom:{style:'thin',color:{rgb:'D7DEE6'}},left:{style:'thin',color:{rgb:'D7DEE6'}},right:{style:'thin',color:{rgb:'D7DEE6'}}};
+  var METRIC=['OB Forecast Order','OB Actual Order','OB Forecast Units','OB Actual Units','Late Slam','LS %','Unit Var %','Thru Put / Hr (Target '+tg+')','Avg Sec / Unit'];
+  function hex(c){ return c.replace('#','').toUpperCase(); }
+  // lead = leading label columns (e.g. Date, Week, Store); rows: {lead:[...], r:metricRow, kind:'total'|'sub'|''}
+  function sheet(name,title,leadHead,items){
+    var head=leadHead.concat(METRIC), nl=leadHead.length;
+    var aoa=[[title],[],head];
+    items.forEach(function(it){ var r=it.r; aoa.push(it.lead.concat([r.fo,r.ao,r.fu,r.au,r.ls,r.lsPct==null?null:+(r.lsPct/100).toFixed(4),r.uVar==null?null:+(r.uVar/100).toFixed(4),r.tph?Math.round(r.tph):null,r.avg?+r.avg.toFixed(1):null])); });
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=leadHead.map(function(){return {wch:14};}).concat([{wch:17},{wch:16},{wch:17},{wch:16},{wch:11},{wch:9},{wch:11},{wch:22},{wch:14}]);
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:head.length-1}}];
+    function st(r,c,s){ var a=XLSX.utils.encode_cell({r:r,c:c}); if(!ws[a]) ws[a]={t:'s',v:''}; ws[a].s=s; }
+    st(0,0,{font:{bold:true,sz:13}});
+    for(var c=0;c<head.length;c++) st(2,c,{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A1830'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:border});
+    items.forEach(function(it,i){
+      var ri=3+i, r=it.r, tot=it.kind==='total', sub=it.kind==='sub';
+      for(var c=0;c<head.length;c++){
+        var m=c-nl, s={alignment:{horizontal:c<nl?'left':'center'},border:border,font:{bold:tot||sub||c<nl||m===1||m===3}};
+        if(m===5||m===6){ var a=XLSX.utils.encode_cell({r:ri,c:c}); if(ws[a]&&ws[a].t==='n') ws[a].z=m===6?'+0.0%;-0.0%;0.0%':'0.0%'; }
+        if(!tot&&!sub){ var cc=m===4||m===5?lsCol(r.lsPct):m===6?varCol(r.uVar):null; if(cc){ s.fill={fgColor:{rgb:hex(cc[0])}}; s.font={bold:true,color:{rgb:hex(cc[1])}}; } }
+        if(m===7&&r.tph) s.font={bold:true,color:{rgb:hex(tphCol(r.tph))}};
+        if(tot) s.fill={fgColor:{rgb:'FFD600'}}; else if(sub) s.fill={fgColor:{rgb:'EDE9FE'}};
+        st(ri,c,s);
+      }
+    });
+    XLSX.utils.book_append_sheet(wb,ws,name);
+  }
+  // 1. selected date
+  var cur=ROWS.rows.map(function(r){return {lead:[r.store],r:r};}); cur.push({lead:['GRAND TOTAL'],r:ROWS.T,kind:'total'});
+  sheet('Summary '+DATE,'OB Forecast vs Actual · '+DATE+' · Throughput target '+tg+' units/hr',['Store'],cur);
+  // all dates in the Order & Unit file
+  var dates=Object.keys(OU||{}).sort(), all=[];
+  dates.forEach(function(d){ compute(d).rows.forEach(function(r){ r.date=d; r.week=weekKey(d); all.push(r); }); });
+  // 2. date-wise
+  var dw=[]; dates.forEach(function(d){ var rs=all.filter(function(r){return r.date===d;}); var day=new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short'});
+    rs.forEach(function(r){ dw.push({lead:[d,day,r.week,r.store],r:r}); }); dw.push({lead:[d,day,rs.length?rs[0].week:'','DAY TOTAL'],r:agg(rs,''),kind:'sub'}); });
+  dw.push({lead:['','','','GRAND TOTAL'],r:agg(all,''),kind:'total'});
+  sheet('Date-wise','OB Forecast vs Actual · Date-wise · '+dates[0]+' → '+dates[dates.length-1],['Date','Day','Week','Store'],dw);
+  // 3. week-wise
+  var weeks=[]; all.forEach(function(r){ if(weeks.indexOf(r.week)<0) weeks.push(r.week); });
+  var ww=[]; weeks.forEach(function(w){ var rs=all.filter(function(r){return r.week===w;});
+    byStore(rs).forEach(function(r){ ww.push({lead:[w,r.store],r:r}); }); ww.push({lead:[w,'WEEK TOTAL'],r:agg(rs,''),kind:'sub'}); });
+  ww.push({lead:['','GRAND TOTAL'],r:agg(all,''),kind:'total'});
+  sheet('Week-wise','OB Forecast vs Actual · Week-wise',['Week','Store'],ww);
+  // 4. store-wise (each store: every date, then store total)
+  var sw=[]; byStore(all).forEach(function(t){ all.filter(function(r){return r.store===t.store;}).forEach(function(r){ sw.push({lead:[r.store,r.date,r.week],r:r}); }); sw.push({lead:[t.store,'STORE TOTAL',''],r:t,kind:'sub'}); });
+  sw.push({lead:['GRAND TOTAL','',''],r:agg(all,''),kind:'total'});
+  sheet('Store-wise','OB Forecast vs Actual · Store-wise · all dates',['Store','Date','Week'],sw);
+  XLSX.writeFile(wb,'OB_Forecast_vs_Actual_'+DATE+'.xlsx');
+});
+</script>
+</body>
+</html>
