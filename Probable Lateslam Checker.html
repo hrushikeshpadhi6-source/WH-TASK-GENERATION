@@ -210,6 +210,17 @@
   </div>
   <div id="ptMode" style="font-size:12px;font-weight:800;color:#5b2a86;margin-top:14px;"></div>
   <div id="ptLastUpd" class="hide" style="display:flex;align-items:center;gap:10px;background:#1d1d1b;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;font-size:14px;"><span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;">Last updated · latest picklist created</span><b id="ptLastUpdVal" style="font-size:18px;"></b></div>
+  <div class="fc-panel" id="ptManPanel" style="margin-bottom:14px;">
+    <h4 style="margin-bottom:4px;">➕ Add store manually</h4>
+    <p class="hint" style="margin:0 0 10px;">For a store with no raw data. Enter orders and units; Late Slam, LS %, throughput and other metrics show N/A. Orders and units are added to the Total.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">STORE<input id="ptManS" type="text" placeholder="e.g. QDB1" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;width:130px;text-transform:uppercase;" /></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">ORDERS<input id="ptManO" type="number" min="0" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;width:120px;" /></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">UNITS<input id="ptManU" type="number" min="0" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;width:120px;" /></label>
+      <button class="btn" id="ptManAdd" type="button">Add / Update</button>
+    </div>
+    <div id="ptManList" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+  </div>
   <div class="kpis hide" id="ptKpis"></div>
   <style>body.ls-blur .lsv{filter:blur(6px);user-select:none;transition:filter .15s}.lsv{transition:filter .15s}</style>
   <div class="fc-panel hide" id="ptQuickPanel" style="width:fit-content;max-width:100%;">
@@ -301,7 +312,10 @@ function run(rows){
   summary=Object.keys(by).sort().map(s=>({Store:s,Orders:by[s].o,"Late Slams":by[s].l,"Lateslam %":pct(by[s].l,by[s].o-by[s].n),
     Units:by[s].u,"Most Lateslam Unit Orders":topUnits(by[s].um),"Late Acceptance >30s":by[s].acc,"Pick / Pack Delay":by[s].l-by[s].acc,_n:by[s].n}));
   const T=summary.reduce((a,r)=>{a.o+=r.Orders;a.l+=r["Late Slams"];a.n+=r._n;a.u+=r.Units;a.acc+=r["Late Acceptance >30s"];return a;},{o:0,l:0,n:0,u:0,acc:0});
-  summary.push({Store:"Total",Orders:T.o,"Late Slams":T.l,"Lateslam %":pct(T.l,T.o-T.n),Units:T.u,"Most Lateslam Unit Orders":topUnits(allU),"Late Acceptance >30s":T.acc,"Pick / Pack Delay":T.l-T.acc,_n:T.n});
+  const MANL=manList().filter(m=>!by[m.s]), mO=MANL.reduce((a,m)=>a+m.o,0), mU=MANL.reduce((a,m)=>a+m.u,0);
+  MANL.forEach(m=>summary.push({Store:m.s,Orders:m.o,"Late Slams":"N/A","Lateslam %":"N/A",Units:m.u,"Most Lateslam Unit Orders":"N/A","Late Acceptance >30s":"N/A","Pick / Pack Delay":"N/A",_n:0,_man:1}));
+  summary.sort((a,b)=>a.Store.localeCompare(b.Store));
+  summary.push({Store:"Total",Orders:T.o+mO,"Late Slams":T.l,"Lateslam %":pct(T.l,T.o-T.n),Units:T.u+mU,"Most Lateslam Unit Orders":topUnits(allU),"Late Acceptance >30s":T.acc,"Pick / Pack Delay":T.l-T.acc,_n:T.n,_rawU:T.u});
   let h='<thead><tr><th>Store</th><th>Orders</th><th>Late Slams</th><th>Lateslam %</th><th>Units</th><th>Most Lateslam Unit Orders</th><th>Late Acceptance &gt;30s</th><th>Pick / Pack Delay</th><th>Peak '+WL+' Drop</th><th>Late Slams in Peak</th></tr></thead><tbody>';
   const W={}, pad=n=>String(n).padStart(2,"0");
   rows.forEach((r,i)=>{ const d=parseDT(r.picklist_created_time); if(!d) return; const s=storeOf(r);
@@ -318,20 +332,20 @@ function run(rows){
     dh+='<tr><td>'+esc(r.Store)+'</td><td>'+r[WL+" Window"]+'</td><td>'+r["Orders Dropped"]+'</td><td>'+r["Units Dropped"]+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td></tr>'; });
   if(!dropRows.length) dh+='<tr><td colspan="6">No late slams</td></tr>';
   $("ptDropTable").innerHTML=dh+'</tbody>';
-  summary.forEach((r,i)=>{ const last=i===summary.length-1; h+='<tr'+(last?' style="font-weight:800"':'')+'><td>'+esc(r.Store)+'</td><td>'+r.Orders+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+r["Lateslam %"]+'%</td><td>'+r.Units+'</td><td>'+(r["Most Lateslam Unit Orders"]||'–')+'</td><td class="lsv">'+r["Late Acceptance >30s"]+'</td><td class="lsv">'+r["Pick / Pack Delay"]+'</td><td>'+(r["Peak "+WL+" Drop"]||'–')+'</td><td class="lsv">'+(r["Late Slams in Peak"]??'')+'</td></tr>'; });
+  summary.forEach((r,i)=>{ const last=i===summary.length-1; h+='<tr'+(last?' style="font-weight:800"':'')+'><td>'+esc(r.Store)+'</td><td>'+r.Orders+'</td><td class="lsv" style="color:#c0392b;font-weight:800">'+r["Late Slams"]+'</td><td class="lsv">'+(r._man?'N/A':r["Lateslam %"]+'%')+'</td><td>'+r.Units+'</td><td>'+(r["Most Lateslam Unit Orders"]||'–')+'</td><td class="lsv">'+r["Late Acceptance >30s"]+'</td><td class="lsv">'+r["Pick / Pack Delay"]+'</td><td>'+(r["Peak "+WL+" Drop"]||'–')+'</td><td class="lsv">'+(r._man?'N/A':(r["Late Slams in Peak"]??''))+'</td></tr>'; });
   $("ptStoreTable").innerHTML=h+'</tbody>';
   const secS={}; rows.forEach(r=>{ const v=num(r.assignment_to_stage_time_secs)||0; [storeOf(r),"Total"].forEach(s=>{ secS[s]=(secS[s]||0)+v; }); });
   // satellite stores (e.g. QDG5_SS) roll units + seconds into their parent store's throughput
   const baseOf=s=>String(s).replace(/[_\s-]*SS$/i,""), names=new Set(summary.map(r=>r.Store));
   const isSat=s=>s!=="Total"&&baseOf(s)!==s&&names.has(baseOf(s));
-  const tU={}, tS={}; summary.forEach(r=>{ const k=isSat(r.Store)?baseOf(r.Store):r.Store; tU[k]=(tU[k]||0)+r.Units; tS[k]=(tS[k]||0)+(secS[r.Store]||0); });
+  const tU={}, tS={}; summary.forEach(r=>{ const k=isSat(r.Store)?baseOf(r.Store):r.Store; tU[k]=(tU[k]||0)+(r._man?0:(r._rawU??r.Units)); tS[k]=(tS[k]||0)+(secS[r.Store]||0); });
   quickRows=summary.map(r=>{ const sat=isSat(r.Store), hrs=(tS[r.Store]||0)/3600;
-    return {Store:r.Store,Orders:r.Orders,Units:r.Units,UPO:r.Orders?+(r.Units/r.Orders).toFixed(2):0,"Late Slams":r["Late Slams"],"LS %":r["Lateslam %"],"Throughput (units/hr)":sat?"incl. in "+baseOf(r.Store):hrs>0?Math.round(tU[r.Store]/hrs):0}; });
+    return {Store:r.Store,Orders:r.Orders,Units:r.Units,UPO:r.Orders?+(r.Units/r.Orders).toFixed(2):0,"Late Slams":r["Late Slams"],"LS %":r["Lateslam %"],"Throughput (units/hr)":r._man?"N/A":sat?"incl. in "+baseOf(r.Store):hrs>0?Math.round(tU[r.Store]/hrs):0}; });
   const qc='padding:10px 22px;text-align:center;font-size:17px;white-space:nowrap;', qth='padding:10px 22px;text-align:center;font-size:13px;white-space:nowrap;';
   let qh='<thead><tr>'+['Store','Orders','Units','UPO','Late Slams','LS %','Throughput (units/hr)'].map((h,i)=>'<th style="'+qth+(i?'':'text-align:left;')+'">'+h+'</th>').join('')+'</tr></thead><tbody>';
-  quickRows.forEach((r,i)=>{ const last=i===quickRows.length-1; qh+='<tr'+(last?' style="font-weight:800;background:#eef2f7"':'')+'><td style="'+qc+'text-align:left;font-weight:800;">'+esc(r.Store)+'</td><td style="'+qc+'">'+r.Orders.toLocaleString()+'</td><td style="'+qc+'">'+r.Units.toLocaleString()+'</td><td style="'+qc+'">'+r.UPO.toFixed(2)+'</td><td class="lsv" style="'+qc+'color:#c0392b;font-weight:800">'+r["Late Slams"].toLocaleString()+'</td><td class="lsv" style="'+qc+'">'+r["LS %"]+'%</td>'+(typeof r["Throughput (units/hr)"]==="string"?'<td style="'+qc+'font-size:12px;color:#9aa5b1;">'+esc(r["Throughput (units/hr)"])+'</td>':'<td style="'+qc+'font-weight:800;color:'+tpCol(r["Throughput (units/hr)"])+'">'+(r["Throughput (units/hr)"]||'–').toLocaleString()+'</td>')+'</tr>'; });
+  quickRows.forEach((r,i)=>{ const last=i===quickRows.length-1; qh+='<tr'+(last?' style="font-weight:800;background:#eef2f7"':'')+'><td style="'+qc+'text-align:left;font-weight:800;">'+esc(r.Store)+'</td><td style="'+qc+'">'+r.Orders.toLocaleString()+'</td><td style="'+qc+'">'+r.Units.toLocaleString()+'</td><td style="'+qc+'">'+r.UPO.toFixed(2)+'</td><td class="lsv" style="'+qc+'color:#c0392b;font-weight:800">'+r["Late Slams"].toLocaleString()+'</td><td class="lsv" style="'+qc+'">'+(r["LS %"]==="N/A"?"N/A":r["LS %"]+'%')+'</td>'+(typeof r["Throughput (units/hr)"]==="string"?'<td style="'+qc+'font-size:12px;color:#9aa5b1;">'+esc(r["Throughput (units/hr)"])+'</td>':'<td style="'+qc+'font-weight:800;color:'+tpCol(r["Throughput (units/hr)"])+'">'+(r["Throughput (units/hr)"]||'–').toLocaleString()+'</td>')+'</tr>'; });
   $("ptQuickTable").innerHTML=qh+'</tbody>';
-  summary.forEach(r=>delete r._n);
+  summary.forEach(r=>{ delete r._n; delete r._man; delete r._rawU; });
   $("ptKpis").innerHTML=[{l:"Orders checked",v:T.o.toLocaleString()},{l:"Probable late slams",v:T.l.toLocaleString(),c:"alert",b:1},
     {l:"Lateslam %",v:pct(T.l,T.o-T.n)+"%",b:1},{l:"Late acceptance >30s",v:T.acc.toLocaleString(),c:"warn",b:1},{l:"Stores",v:summary.length-1}]
     .concat(T.n?[{l:"No promise (store not in table)",v:T.n,c:"warn"}]:[])
@@ -359,6 +373,14 @@ $("ptExport").addEventListener("click",()=>{ const wb=XLSX.utils.book_new();
   const ref=[]; Object.keys(PROMISE).forEach(s=>Object.keys(PROMISE[s]).forEach(u=>ref.push({Store:s,Units:+u,"promise_utr (sec)":PROMISE[s][u]})));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ref),"Promise Table");
   XLSX.writeFile(wb,"Probable_Lateslam_"+new Date().toISOString().slice(0,10)+".xlsx"); toast("Excel downloaded"); });
+function manList(){ try{ return JSON.parse(localStorage.getItem("plc_manual")||"[]")||[]; }catch(e){ return []; } }
+function manSave(l){ try{ localStorage.setItem("plc_manual",JSON.stringify(l)); }catch(e){} manPaint(); if(lastRows){ run(lastRows); applyView&&applyView(); } }
+function manPaint(){ $("ptManList").innerHTML=manList().map(m=>'<span style="display:inline-flex;align-items:center;gap:8px;background:#eef2f7;border-radius:20px;padding:5px 6px 5px 12px;font-size:12px;font-weight:700;">'+esc(m.s)+' · '+m.o.toLocaleString()+' orders · '+m.u.toLocaleString()+' units<button type="button" data-rm="'+esc(m.s)+'" style="border:none;background:#d7dee6;width:20px;height:20px;border-radius:50%;cursor:pointer;font-weight:800;">×</button></span>').join(""); }
+$("ptManAdd").addEventListener("click",()=>{ const s=$("ptManS").value.trim().toUpperCase(), o=parseFloat($("ptManO").value), u=parseFloat($("ptManU").value);
+  if(!s){ $("ptManS").focus(); return; } if(!isFinite(o)&&!isFinite(u)){ $("ptManO").focus(); return; }
+  const l=manList().filter(m=>m.s!==s); l.push({s,o:isFinite(o)?o:0,u:isFinite(u)?u:0}); $("ptManS").value=$("ptManO").value=$("ptManU").value=""; manSave(l); });
+$("ptManList").addEventListener("click",e=>{ const s=e.target.getAttribute("data-rm"); if(s) manSave(manList().filter(m=>m.s!==s)); });
+manPaint();
 $("ptDropWin").addEventListener("change",e=>{ DROP_MIN=+e.target.value; if(lastRows){ run(lastRows); applyView&&applyView(); } });
 </script>
 </body>
