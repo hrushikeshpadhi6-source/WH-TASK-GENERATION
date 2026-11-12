@@ -81,6 +81,18 @@
     <span id="msg" style="font-size:12px;color:#5d6b7a;"></span>
   </div>
 
+  <div id="man-box" style="display:none;background:#fff;border:1px solid #d7dee6;border-radius:14px;padding:16px 20px;margin-bottom:18px;">
+    <div style="font-size:14px;font-weight:800;margin-bottom:4px;">➕ Add store manually</div>
+    <div style="font-size:12px;color:#5d6b7a;margin-bottom:12px;">For a store that is in the forecast file but not in the Order &amp; Unit / Late Slam files. Enter its actuals; Late Slam, LS %, throughput and Avg Sec show N/A. Saved per date.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">STORE<select id="man-st" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;min-width:150px;"></select></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">ACTUAL ORDERS<input id="man-o" type="number" min="0" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;width:130px;" /></label>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;">ACTUAL UNITS<input id="man-u" type="number" min="0" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;width:130px;" /></label>
+      <button id="man-add" type="button" style="padding:9px 18px;border-radius:9px;border:none;background:#1a1830;color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Add / Update</button>
+    </div>
+    <div id="man-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+  </div>
+
   <div id="out"></div>
 
   <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#5d6b7a;margin-top:14px;">
@@ -93,6 +105,8 @@
 <script>
 var $=function(id){return document.getElementById(id);};
 var FC=null, OU=null, LS=null, ROWS=null, DATE='';
+var MAN={}; try{ MAN=JSON.parse(localStorage.getItem('obfva_manual')||'{}')||{}; }catch(e){ MAN={}; }
+function saveMan(){ try{ localStorage.setItem('obfva_manual',JSON.stringify(MAN)); }catch(e){} }
 var YEL='#fef3c7', YELT='#92400e', RED='#fee2e2', REDT='#991b1b';
 
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -158,7 +172,7 @@ $('f-fc').addEventListener('change',function(e){ var files=[].slice.call(e.targe
       files.forEach(function(ff,i){ try{ var r=parseSop(XLSX.read(new Uint8Array(bufs[i]),{type:'array'}),acc); if(r) ok++; else bad.push(ff.name); }catch(err){ bad.push(ff.name); } });
       if(!ok){ FC=null; setStatus('fc',false,'Could not read forecast rows'); return; }
       FC=acc; var ds=Object.keys(FC.dates).sort();
-      setStatus('fc',true,'✓ '+ok+' file'+(ok>1?'s':'')+' · '+ds[0]+' → '+ds[ds.length-1]+(bad.length?' · skipped: '+bad.join(', '):'')); render();
+      setStatus('fc',true,'✓ '+ok+' file'+(ok>1?'s':'')+' · '+ds[0]+' → '+ds[ds.length-1]+(bad.length?' · skipped: '+bad.join(', '):'')); fillDates(); render();
     }; fr.readAsArrayBuffer(f); });
   });
 });
@@ -183,7 +197,9 @@ $('f-ls').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f)
 });
 
 function fillDates(){
-  var ds=Object.keys(OU||{}).sort().reverse(); if(!ds.length) return;
+  var dm={}; Object.keys(OU||{}).forEach(function(d){dm[d]=1;}); if(FC) Object.keys(FC.dates).forEach(function(d){dm[d]=1;});
+  var ds=Object.keys(dm).sort().reverse(); if(!ds.length) return;
+  if(!DATE&&OU){ var od=Object.keys(OU).sort().reverse(); if(od.length) DATE=od[0]; }
   var pref=DATE;
   if(!pref||ds.indexOf(pref)<0){ pref=ds[0]; if(LS&&LS.dates){ var best='',bn=0; Object.keys(LS.dates).forEach(function(d){ if(LS.dates[d]>bn&&ds.indexOf(d)>=0){bn=LS.dates[d];best=d;} }); if(best) pref=best; } }
   DATE=pref;
@@ -193,6 +209,24 @@ function fillDates(){
 $('dt').addEventListener('change',function(e){ DATE=e.target.value; render(); });
 $('tgt').addEventListener('input',function(){ render(); });
 function target(){ var v=+$('tgt').value; return v>0?v:170; }
+
+function manUI(){
+  var box=$('man-box'); if(!FC||!DATE){ box.style.display='none'; return; } box.style.display='block';
+  var act=(OU&&OU[DATE])||{}, md=MAN[DATE]||{}, fs={};
+  Object.keys(FC.orders[DATE]||{}).concat(Object.keys(FC.units[DATE]||{})).forEach(function(s){ fs[s]=1; });
+  var opts=Object.keys(fs).filter(function(s){ return !act[s]; }).sort();
+  var cur=$('man-st').value;
+  $('man-st').innerHTML=opts.length?opts.map(function(s){ return '<option'+(s===cur?' selected':'')+'>'+s+'</option>'; }).join(''):'<option value="">No forecast-only store</option>';
+  $('man-list').innerHTML=Object.keys(md).sort().map(function(s){ return '<span style="display:inline-flex;align-items:center;gap:8px;background:#eef2f7;border-radius:20px;padding:5px 6px 5px 12px;font-size:12px;font-weight:700;">'+s+' · '+(md[s].o||0).toLocaleString()+' orders · '+(md[s].u||0).toLocaleString()+' units<button type="button" data-rm="'+s+'" style="border:none;background:#d7dee6;width:20px;height:20px;border-radius:50%;cursor:pointer;font-weight:800;">×</button></span>'; }).join('');
+}
+$('man-add').addEventListener('click',function(){
+  var s=$('man-st').value, o=parseFloat($('man-o').value), u=parseFloat($('man-u').value);
+  if(!s||!DATE) return; if(!isFinite(o)&&!isFinite(u)){ $('man-o').focus(); return; }
+  (MAN[DATE]=MAN[DATE]||{})[s]={o:isFinite(o)?o:0,u:isFinite(u)?u:0}; saveMan();
+  $('man-o').value=''; $('man-u').value=''; render();
+});
+$('man-list').addEventListener('click',function(e){ var s=e.target.getAttribute('data-rm'); if(!s) return; delete (MAN[DATE]||{})[s]; if(MAN[DATE]&&!Object.keys(MAN[DATE]).length) delete MAN[DATE]; saveMan(); render(); });
+$('man-st').addEventListener('change',function(){ var m=(MAN[DATE]||{})[this.value]; $('man-o').value=m?m.o:''; $('man-u').value=m?m.u:''; });
 
 function compute(D){
   D=D||DATE;
@@ -216,15 +250,17 @@ function compute(D){
   Object.keys(tph).forEach(function(s){ var b=s.replace(/[_\s-]*SS$/i,''); if(b!==s&&tph[b]){ tph[b].secs+=tph[s].secs; tph[b].units+=tph[s].units; merged[s]=1; } });
   var stores={}; Object.keys(act).forEach(function(s){stores[s]=1;}); Object.keys(lsS).forEach(function(s){stores[s]=1;});
   var T={fo:0,fu:0,ao:0,au:0,ls:0,el:0,secs:0,units:0,hasFo:false,hasFu:false};
+  var md=MAN[D]||{}; Object.keys(md).forEach(function(s){ if(!stores[s]) stores[s]='m'; });
   var rows=Object.keys(stores).sort().map(function(s){
-    var a=act[s]||{o:0,u:0}, l=lsS[s]||{ls:0,el:0}, t=merged[s]?null:tph[s];
-    var r={store:s, fo:fo[s]!=null?Math.round(fo[s]):null, fu:fu[s]!=null?Math.round(fu[s]):null, ao:Math.round(a.o), au:Math.round(a.u), ls:l.ls, el:l.el};
+    var man=stores[s]==='m'?md[s]:null;
+    var a=man?{o:man.o||0,u:man.u||0}:(act[s]||{o:0,u:0}), l=man?{ls:null,el:0}:(lsS[s]||{ls:0,el:0}), t=man||merged[s]?null:tph[s];
+    var r={store:s, manual:!!man, fo:fo[s]!=null?Math.round(fo[s]):null, fu:fu[s]!=null?Math.round(fu[s]):null, ao:Math.round(a.o), au:Math.round(a.u), ls:l.ls, el:l.el};
     r.lsPct=r.el?r.ls/r.el*100:null;
     r.uVar=r.fu?(r.au-r.fu)/r.fu*100:null;
     r.secs=t?t.secs:0; r.units=t?t.units:0;
     r.avg=t&&t.units?t.secs/t.units:null; r.tph=r.avg?3600/r.avg:null;
     if(r.fo!=null){T.fo+=r.fo;T.hasFo=true;} if(r.fu!=null){T.fu+=r.fu;T.hasFu=true;}
-    T.ao+=r.ao; T.au+=r.au; T.ls+=r.ls; T.el+=r.el; if(t&&!merged[s]){ T.secs+=t.secs; T.units+=t.units; }
+    T.ao+=r.ao; T.au+=r.au; T.ls+=r.ls||0; T.el+=r.el; if(t&&!merged[s]){ T.secs+=t.secs; T.units+=t.units; }
     return r;
   });
   T.lsPct=T.el?T.ls/T.el*100:null; T.uVar=T.hasFu&&T.fu?(T.au-T.fu)/T.fu*100:null; T.avg=T.units?T.secs/T.units:null; T.tph=T.avg?3600/T.avg:null;
@@ -239,7 +275,8 @@ function pct(v,sign){ return v==null?'—':(sign&&v>0?'+':'')+v.toFixed(1)+'%'; 
 function num(v){ return v==null?'—':v.toLocaleString('en-US'); }
 
 function render(){
-  if(!OU||!DATE){ $('out').innerHTML=''; return; }
+  manUI();
+  if(!(OU||FC)||!DATE){ $('out').innerHTML=''; return; }
   ROWS=compute(); var R=ROWS.rows, T=ROWS.T, tg=target();
   $('b-xl').disabled=false; $('b-xl').style.opacity=1;
   var notes=[]; if(!FC) notes.push('no forecast file'); else if(!FC.orders[DATE]&&!FC.units[DATE]) notes.push('forecast file has no data for this date');
@@ -250,7 +287,7 @@ function render(){
   var h='<div style="background:#fff;border:1px solid #d5d2f0;border-radius:14px;overflow:hidden;">'+
     '<div style="background:linear-gradient(135deg,#1a1830,#2d2b5e);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'+
     '<div style="font-size:18px;font-weight:800;">📊 OB Forecast vs Actual · '+new Date(DATE+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>'+
-    '<div style="font-size:13px;opacity:.75;">'+R.length+' stores · '+num(T.ao)+' orders · '+T.ls+' lateslams ('+pct(T.lsPct)+') · '+(T.tph?Math.round(T.tph):'—')+' units/hr · Target '+tg+'/hr</div></div>'+
+    '<div style="font-size:13px;opacity:.75;">'+R.filter(function(r){ var bs=r.store.replace(/[_\s-]*SS$/i,''); return bs===r.store||!R.some(function(x){return x.store===bs;}); }).length+' stores · '+num(T.ao)+' orders · '+T.ls+' lateslams ('+pct(T.lsPct)+') · '+(T.tph?Math.round(T.tph):'—')+' units/hr · Target '+tg+'/hr</div></div>'+
     '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;min-width:960px;">'+
     '<thead><tr style="background:#1a1830;">'+
     '<th style="'+th+'color:#c7c9d9;text-align:left;padding-left:16px;">Store</th>'+
@@ -272,11 +309,10 @@ function render(){
       '<td style="'+td+'font-weight:800;">'+num(r.ao)+'</td>'+
       '<td style="'+td+'color:#374151;">'+num(r.fu)+'</td>'+
       '<td style="'+td+'font-weight:800;">'+num(r.au)+'</td>'+
-      '<td style="'+td+lsBg+'">'+r.ls+'</td>'+
-      '<td style="'+td+lsBg+'">'+pct(r.lsPct)+'</td>'+
+      (r.manual?'<td style="'+td+'color:#9aa5b1;font-weight:700;">N/A</td><td style="'+td+'color:#9aa5b1;font-weight:700;">N/A</td>':'<td style="'+td+lsBg+'">'+r.ls+'</td><td style="'+td+lsBg+'">'+pct(r.lsPct)+'</td>')+
       '<td style="'+td+(vc?'background:'+vc[0]+';color:'+vc[1]+';font-weight:800;':'color:#9aa5b1;')+'">'+pct(r.uVar,true)+'</td>'+
-      '<td style="'+td+'font-weight:800;color:'+tphCol(r.tph)+';">'+(r.tph?Math.round(r.tph):'')+'</td>'+
-      '<td style="'+td+'color:#7c3aed;">'+(r.avg?r.avg.toFixed(1)+'s':'')+'</td>'+
+      (r.manual?'<td style="'+td+'color:#9aa5b1;font-weight:700;">N/A</td>':'<td style="'+td+'font-weight:800;color:'+tphCol(r.tph)+';">'+(r.tph?Math.round(r.tph):'')+'</td>')+
+      (r.manual?'<td style="'+td+'color:#9aa5b1;font-weight:700;">N/A</td>':'<td style="'+td+'color:#7c3aed;">'+(r.avg?r.avg.toFixed(1)+'s':'')+'</td>')+
       '</tr>';
   });
   var tl='padding:13px 10px;text-align:center;font-size:15px;font-weight:800;';
@@ -296,9 +332,10 @@ function weekNo(d){ var x=new Date(d+'T12:00:00'), j=new Date(x.getFullYear(),0,
 function weekKey(d){ return 'Wk'+String(weekNo(d)).padStart(2,'0')+' '+d.slice(0,4); }
 function agg(list,name){
   var t={store:name,fo:0,fu:0,ao:0,au:0,ls:0,el:0,secs:0,units:0,hf:0,hu:0};
-  list.forEach(function(r){ if(r.fo!=null){t.fo+=r.fo;t.hf=1;} if(r.fu!=null){t.fu+=r.fu;t.hu=1;} t.ao+=r.ao;t.au+=r.au;t.ls+=r.ls;t.el+=r.el;t.secs+=r.secs||0;t.units+=r.units||0; });
+  list.forEach(function(r){ if(r.fo!=null){t.fo+=r.fo;t.hf=1;} if(r.fu!=null){t.fu+=r.fu;t.hu=1;} t.ao+=r.ao;t.au+=r.au;t.ls+=r.ls||0;t.el+=r.el;t.secs+=r.secs||0;t.units+=r.units||0; });
   if(!t.hf) t.fo=null; if(!t.hu) t.fu=null;
   t.lsPct=t.el?t.ls/t.el*100:null; t.uVar=t.fu?(t.au-t.fu)/t.fu*100:null; t.avg=t.units?t.secs/t.units:null; t.tph=t.avg?3600/t.avg:null;
+  t.manual=!!name&&list.length>0&&list.every(function(r){return r.manual;});
   return t;
 }
 function byStore(rows){ var m={}; rows.forEach(function(r){ (m[r.store]=m[r.store]||[]).push(r); }); return Object.keys(m).sort().map(function(s){ return agg(m[s],s); }); }
@@ -313,7 +350,7 @@ $('b-xl').addEventListener('click',function(){
   function sheet(name,title,leadHead,items){
     var head=leadHead.concat(METRIC), nl=leadHead.length;
     var aoa=[[title],[],head];
-    items.forEach(function(it){ var r=it.r; aoa.push(it.lead.concat([r.fo,r.ao,r.fu,r.au,r.ls,r.lsPct==null?null:+(r.lsPct/100).toFixed(4),r.uVar==null?null:+(r.uVar/100).toFixed(4),r.tph?Math.round(r.tph):null,r.avg?+r.avg.toFixed(1):null])); });
+    items.forEach(function(it){ var r=it.r; if(r.manual){ aoa.push(it.lead.concat([r.fo,r.ao,r.fu,r.au,'N/A','N/A',r.uVar==null?null:+(r.uVar/100).toFixed(4),'N/A','N/A'])); return; } aoa.push(it.lead.concat([r.fo,r.ao,r.fu,r.au,r.ls,r.lsPct==null?null:+(r.lsPct/100).toFixed(4),r.uVar==null?null:+(r.uVar/100).toFixed(4),r.tph?Math.round(r.tph):null,r.avg?+r.avg.toFixed(1):null])); });
     var ws=XLSX.utils.aoa_to_sheet(aoa);
     ws['!cols']=leadHead.map(function(){return {wch:14};}).concat([{wch:17},{wch:16},{wch:17},{wch:16},{wch:11},{wch:9},{wch:11},{wch:22},{wch:14}]);
     ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:head.length-1}}];
@@ -337,7 +374,7 @@ $('b-xl').addEventListener('click',function(){
   var cur=ROWS.rows.map(function(r){return {lead:[r.store],r:r};}); cur.push({lead:['GRAND TOTAL'],r:ROWS.T,kind:'total'});
   sheet('Summary '+DATE,'OB Forecast vs Actual · '+DATE+' · Throughput target '+tg+' units/hr',['Store'],cur);
   // all dates in the Order & Unit file
-  var dates=Object.keys(OU||{}).sort(), all=[];
+  var dm={}; Object.keys(OU||{}).concat(Object.keys(MAN)).forEach(function(d){dm[d]=1;}); var dates=Object.keys(dm).sort(), all=[];
   dates.forEach(function(d){ compute(d).rows.forEach(function(r){ r.date=d; r.week=weekKey(d); all.push(r); }); });
   // 2. date-wise
   var dw=[]; dates.forEach(function(d){ var rs=all.filter(function(r){return r.date===d;}); var day=new Date(d+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short'});

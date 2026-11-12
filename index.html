@@ -19300,7 +19300,7 @@ We'll be back soon with an improved experience.</textarea>
         <input type="file" id="ibf-f-fc" accept=".xlsx,.xls,.csv" multiple style="display:none" onchange="IBF.load('fc',this.files)">
         <div class="u-icon" style="font-size:32px;">📈</div>
         <h3 style="color:#1a1830;font-size:15px;">Forecast File</h3>
-        <p style="color:#7b78a8;font-size:12px;">One or more weeks · both formats supported</p>
+        <p style="color:#7b78a8;font-size:12px;">One or more weeks · all 3 formats supported</p>
       </div>
       <div id="ibf-fc-ok" style="display:none;margin-top:8px;padding:10px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#166534;font-size:12px;font-weight:600;"></div>
     </div>
@@ -19332,13 +19332,24 @@ We'll be back soon with an improved experience.</textarea>
   <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
     <div>
       <div class="ctrl-label">Forecast Date</div>
-      <select class="select-field" id="ibf-date" style="min-width:200px;"><option value="">Upload forecast first</option></select>
+      <select class="select-field" id="ibf-date" style="min-width:200px;" onchange="IBF.manUI()"><option value="">Upload forecast first</option></select>
     </div>
     <button class="btn btn-accent" onclick="IBF.generate()">⚡ Generate</button>
     <div id="ibf-actions" style="display:none;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-green" onclick="IBF.exportExcel()">⬇ Export Excel</button>
       <button class="btn btn-outline" onclick="IBF.copySheets()">📋 Copy for Google Sheets</button>
     </div>
+  </div>
+  <div id="ibf-man" style="display:none;background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+    <div style="font-size:14px;font-weight:800;color:#1a1830;margin-bottom:4px;">➕ Add store manually</div>
+    <div style="font-size:12px;color:#7b78a8;margin-bottom:12px;">For a store that is in the forecast file but not in the stow files. Enter its Vendor (and Transship, if known) actual units; Stow SLA shows N/A. Saved per date — click Generate after adding.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div><div class="ctrl-label">Store</div><select class="select-field" id="ibf-man-st" style="min-width:150px;" onchange="IBF.manPick()"></select></div>
+      <div><div class="ctrl-label">Vendor Actual</div><input id="ibf-man-v" type="number" min="0" class="select-field" style="width:140px;"></div>
+      <div><div class="ctrl-label">Transship Actual</div><input id="ibf-man-t" type="number" min="0" class="select-field" style="width:140px;" placeholder="optional"></div>
+      <button class="btn btn-accent" onclick="IBF.manAdd()">Add / Update</button>
+    </div>
+    <div id="ibf-man-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
   </div>
   <div id="ibf-out"></div>
 </div>
@@ -21966,8 +21977,16 @@ var IBF=(function(){
     }
     return { data:data, cat:cat, dates:dateCols.map(function(d){return d.d;}).filter(function(d,i,a){return a.indexOf(d)===i;}).sort() };
   }
+  function pickForecastSheet(wb){
+    var n=wb.SheetNames.find(function(x){ return /store.?ib.?daily/i.test(x); });
+    if(n) return wb.Sheets[n];
+    for(var i=0;i<wb.SheetNames.length;i++){ var rs=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]],{header:1,defval:'',raw:true}).slice(0,15);
+      if(rs.some(function(r){ var t=r.map(function(c){return String(c).trim().toLowerCase();}); return t.indexOf('store')>=0 && (t.indexOf('source')>=0||t.indexOf('node')>=0); })) return wb.Sheets[wb.SheetNames[i]];
+      if(rs.some(function(r){ return r.some(function(c){ return /^indicator$/i.test(String(c).trim()); }); })) return wb.Sheets[wb.SheetNames[i]]; }
+    return wb.Sheets[wb.SheetNames[0]];
+  }
   function parseForecast(wb){
-    var ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+    var ws=pickForecastSheet(wb), rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
     var hasStore=rows.some(function(r){ return r.some(function(c){ return /^store$/i.test(String(c).trim()); }); });
     if(!hasStore){ var b=parseForecastBlocks(rows); if(b) return b; }
     var hi=rows.findIndex(function(r){ return r.some(function(c){ return /^store$/i.test(String(c).trim()); }); });
@@ -22038,6 +22057,7 @@ var IBF=(function(){
         var sel=$('ibf-date'); sel.innerHTML=fc.dates.map(function(d){return '<option value="'+d+'">'+prettyDate(d)+'</option>';}).join('');
         $('ibf-fc-ok').style.display='block'; $('ibf-fc-ok').textContent='✅ '+ok.length+' file'+(ok.length>1?'s':'')+' · '+fc.dates.length+' dates ('+prettyDate(fc.dates[0])+' → '+prettyDate(fc.dates[fc.dates.length-1])+')';
         if(stow||inb){ var pool=stow?stow.days:inb.days.slice().reverse(); var sd=pool.find(function(d){return fc.dates.indexOf(d)>=0;}); if(sd) sel.value=sd; }
+        manUI();
       }); });
       return;
     }
@@ -22061,37 +22081,69 @@ var IBF=(function(){
   function sp(x){ return x==null?'—':(x>0?'+':'')+x.toFixed(1)+'%'; }
   function n(x){ return Math.round(x).toLocaleString(); }
 
+  var MANI={}; try{ MANI=JSON.parse(localStorage.getItem('ibfva_manual')||'{}')||{}; }catch(e){ MANI={}; }
+  function manSave(){ try{ localStorage.setItem('ibfva_manual',JSON.stringify(MANI)); }catch(e){} }
+  function manHasActual(d,s){ if(inb&&inb.data[d]&&inb.data[d][s]) return true; if(stow&&stow.data[d]&&stow.data[d][s]) return true; return false; }
+  function manUI(){
+    var box=$('ibf-man'); if(!box) return; var d=$('ibf-date').value;
+    if(!fc||!d){ box.style.display='none'; return; } box.style.display='block';
+    var md=MANI[d]||{}, cur=$('ibf-man-st').value;
+    var opts=Object.keys(fc.data[d]||{}).filter(function(s){ return !manHasActual(d,s); }).sort();
+    $('ibf-man-st').innerHTML=opts.length?opts.map(function(s){ return '<option'+(s===cur?' selected':'')+'>'+s+'</option>'; }).join(''):'<option value="">No forecast-only store</option>';
+    $('ibf-man-list').innerHTML=Object.keys(md).sort().map(function(s){ return '<span style="display:inline-flex;align-items:center;gap:8px;background:#f1effc;border:1px solid #d5d2f0;border-radius:20px;padding:5px 6px 5px 12px;font-size:12px;font-weight:700;color:#1a1830;">'+s+' · Vendor '+n(md[s].v||0)+(md[s].t!=null?' · Transship '+n(md[s].t):'')+'<button onclick="IBF.manRemove(\''+s+'\')" style="border:none;background:#d5d2f0;width:20px;height:20px;border-radius:50%;cursor:pointer;font-weight:800;">×</button></span>'; }).join('');
+  }
+  function manPick(){ var d=$('ibf-date').value, m=(MANI[d]||{})[$('ibf-man-st').value]; $('ibf-man-v').value=m?m.v:''; $('ibf-man-t').value=m&&m.t!=null?m.t:''; }
+  function manAdd(){
+    var d=$('ibf-date').value, s=$('ibf-man-st').value, v=parseFloat($('ibf-man-v').value), t=parseFloat($('ibf-man-t').value);
+    if(!d||!s) return; if(!isFinite(v)&&!isFinite(t)){ toast('⚠️ Enter the vendor actual'); return; }
+    (MANI[d]=MANI[d]||{})[s]={v:isFinite(v)?v:0,t:isFinite(t)?t:null}; manSave();
+    $('ibf-man-v').value=''; $('ibf-man-t').value=''; manUI(); generate();
+  }
+  function manRemove(s){ var d=$('ibf-date').value; if(MANI[d]){ delete MANI[d][s]; if(!Object.keys(MANI[d]).length) delete MANI[d]; } manSave(); manUI(); if(last) generate(); }
   function generate(){
     if(!fc){ toast('⚠️ Upload the forecast file'); return; }
-    if(!stow && !inb){ toast('⚠️ Upload the Inbound Stow and/or Stow SLA file'); return; }
-    var d=$('ibf-date').value, F=fc.data[d]||{};
+    var d=$('ibf-date').value, F=fc.data[d]||{}, MD=MANI[d]||{};
+    manUI();
+    if(!stow && !inb && !Object.keys(MD).length){ toast('⚠️ Upload the Inbound Stow and/or Stow SLA file, or add a store manually'); return; }
     var I=inb?(inb.data[d]||{}):null; var note=inb&&!inb.data[d]?'No inbound stow data for this date. ':'';
     var A=stow?stow.data[d]:{};
     if(stow && !A){ var ks=Object.keys(stow.data); A=ks.length===1?stow.data[ks[0]]:{}; note+=ks.length===1?'Stow SLA file date ('+(ks[0]==='_'?'unknown':prettyDate(ks[0]))+') does not match the forecast date.':'No stow data for this date.'; }
     var stores={}, nodes={};
     [F,A].forEach(function(src){ Object.keys(src).forEach(function(s){ stores[s]=1; Object.keys(src[s]).forEach(function(nd){ nodes[nd]=1; }); }); });
     if(I) Object.keys(I).forEach(function(s){ stores[s]=1; });
-    stores=Object.keys(stores).sort();
+    // only stores that have actuals (stow files) or a manual entry — forecast-only stores are left out of every total
+    var actS={}; Object.keys(A||{}).forEach(function(s){ actS[s]=1; }); if(I) Object.keys(I).forEach(function(s){ actS[s]=1; }); Object.keys(MD).forEach(function(s){ actS[s]=1; });
+    stores=Object.keys(stores).filter(function(s){ return actS[s]; }).sort();
+    nodes={}; stores.forEach(function(s){ [F[s]||{},(A||{})[s]||{}].forEach(function(o){ Object.keys(o).forEach(function(nd){ nodes[nd]=1; }); }); });
     var order=['Vendors','HDX3','HDX4','AUH7','XD','UAE1','UAEW','UAE0'];
     nodes=Object.keys(nodes).sort(function(a,b){ var ia=order.indexOf(a),ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b); });
     function get(s,nd){ var f=(F[s]||{})[nd]||0, x=(A[s]||{})[nd]||{a:0,ok:0,sa:0,lines:0,mins:0}; return {f:f,a:x.a,ok:x.ok,sa:x.sa||0,lines:x.lines,mins:x.mins}; }
     function sum(list){ var t={f:0,a:0,ok:0,sa:0,lines:0,mins:0}; list.forEach(function(x){ t.f+=x.f;t.a+=x.a;t.ok+=x.ok;t.sa+=x.sa;t.lines+=x.lines;t.mins+=x.mins; }); return t; }
     var catOf=function(nd){ return fc.cat[nd]||'Other'; };
     var cats=[]; nodes.forEach(function(nd){ var c=catOf(nd); if(cats.indexOf(c)<0) cats.push(c); });
-    var storeRows=stores.map(function(s){ var t=sum(nodes.map(function(nd){return get(s,nd);})); t.act=I?((I[s]||{}).tot||0):t.a; return {k:s,t:t,m:M(t.f,t.act,t.ok,t.sa)}; });
+    var isManS=function(s){ return !!MD[s] && !manHasActual(d,s); };
+    var storeRows=stores.map(function(s){ var t=sum(nodes.map(function(nd){return get(s,nd);})); t.act=I?((I[s]||{}).tot||0):t.a;
+      if(isManS(s)){ t.act=(MD[s].v||0)+(MD[s].t||0); t.ok=0; t.sa=0; } var m=M(t.f,t.act,t.ok,t.sa); return {k:s,t:t,m:m,manual:isManS(s)}; });
     var nodeRows=nodes.map(function(nd){ var t=sum(stores.map(function(s){return get(s,nd);})); return {k:nd,cat:catOf(nd),t:t,m:M(t.f,t.a,t.ok,t.sa)}; });
     var catRows=cats.map(function(c){ var t=sum(nodeRows.filter(function(r){return r.cat===c;}).map(function(r){return r.t;})); return {k:c,t:t,m:M(t.f,t.a,t.ok,t.sa)}; });
     var G=sum(storeRows.map(function(r){return r.t;})); G.act=storeRows.reduce(function(x,r){return x+r.t.act;},0); var GM=M(G.f,G.act,G.ok,G.sa);
     var isV=function(nd){ return /vendor/i.test(nd)||/vendor/i.test(catOf(nd)); };
     var vtRows=stores.map(function(s){ var vf=0,tf=0,va=0,ta=0,ok=0,sa=0; nodes.forEach(function(nd){ var x=get(s,nd); if(isV(nd)){ vf+=x.f; va+=x.a; } else { tf+=x.f; ta+=x.a; ok+=x.ok; sa+=x.sa; } });
-      if(I){ var y=I[s]||{v:0,t:0}; va=y.v; ta=y.t; } return {k:s,vf:vf,va:va,tf:tf,ta:ta,ok:ok,sa:sa}; });
+      if(I){ var y=I[s]||{v:0,t:0}; va=y.v; ta=y.t; }
+      if(isManS(s)){ va=MD[s].v||0; ta=MD[s].t||0; ok=0; sa=0; return {k:s,vf:vf,va:va,tf:tf,ta:ta,ok:0,sa:0,manual:true,noT:MD[s].t==null}; }
+      return {k:s,vf:vf,va:va,tf:tf,ta:ta,ok:ok,sa:sa}; });
+    if(Object.keys(MD).some(isManS)) note+=(note?' ':'')+'Manual stores: '+Object.keys(MD).filter(isManS).join(', ')+' (Stow SLA N/A; not in node / category / matrix views).';
     last={date:d,vtRows:vtRows,stores:stores,nodes:nodes,storeRows:storeRows,nodeRows:nodeRows,catRows:catRows,G:G,GM:GM,get:get};
 
     var TH='background:#1a1830;color:#e2e8f0;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:10px 12px;text-align:center;white-space:nowrap;';
     var TD='padding:9px 12px;text-align:center;font-size:13px;border-bottom:1px solid #ece9fb;white-space:nowrap;';
     function head(first,extra){ return '<thead><tr><th style="'+TH+'text-align:left;">'+first+'</th>'+(extra||'')+['Forecast','Actual','Accuracy %','Stow SLA %','SLA Breach Units'].map(function(h){return '<th style="'+TH+'">'+h+'</th>';}).join('')+'</tr></thead>'; }
-    function row(label,m,extra,total){
+    function row(label,m,extra,total,manual){
       var bg=total?'background:#ffd600;font-weight:800;':'';
+      if(manual) return '<tr><td style="'+TD+'text-align:left;font-weight:800;color:#0f766e;">'+label+'</td>'+(extra||'')+
+        '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td>'+
+        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';background:'+accBg(m.acc)+';">'+pct(m.acc)+'</td>'+
+        '<td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td><td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td></tr>';
       return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(total?'#1a1830':'#0f766e')+';">'+label+'</td>'+(extra||'')+
         '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td>'+
         '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(total?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'+
@@ -22114,13 +22166,15 @@ var IBF=(function(){
     last.VT=VT;
     var vtr=function(r,tot){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); var bg=tot?'background:#ffd600;font-weight:800;':'';
       var c=function(m,bl){ var b=bl?'border-left:2px solid #d5d2f0;':''; return '<td style="'+TD+b+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td><td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(tot?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'; };
-      return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(tot?'#1a1830':'#0f766e')+';">'+r.k+'</td>'+c(mv,1)+c(mt,1)+'<td style="'+TD+'font-weight:800;color:'+slaCol(mt.sla)+';">'+pct(mt.sla)+'</td>'+c(ma,1)+'</tr>'; };
+      var NA='<td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td>', tag='';
+      var tc=r.noT?'<td style="'+TD+'border-left:2px solid #d5d2f0;">'+n(mt.f)+'</td>'+NA+NA:c(mt,1);
+      return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(tot?'#1a1830':'#0f766e')+';">'+r.k+tag+'</td>'+c(mv,1)+tc+(r.manual?NA:'<td style="'+TD+'font-weight:800;color:'+slaCol(mt.sla)+';">'+pct(mt.sla)+'</td>')+c(ma,1)+'</tr>'; };
     var gh='<th style="'+TH+'border-left:2px solid #475569;" colspan="3">Vendor</th><th style="'+TH+'border-left:2px solid #475569;" colspan="4">Transship</th><th style="'+TH+'border-left:2px solid #475569;background:#2d2b5e;" colspan="3">Total (Vendor + Transship)</th>';
     var sh=['Forecast','Actual','Accuracy %','Forecast','Actual','Accuracy %','Stow SLA %','Forecast','Actual','Accuracy %'].map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('');
     h+=panel('🔀 Vendor + Transship · Total <span style="font-weight:500;font-size:12px;color:#7b78a8;">· actual from '+(I?'Daily Inbound Stow file':'Stow SLA file')+' · SLA = transship only</span>',
       '<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="'+TH+'text-align:left;" rowspan="2">Store</th>'+gh+'</tr><tr>'+sh+'</tr></thead><tbody>'+vtRows.map(function(r){return vtr(r);}).join('')+vtr(VT,true)+'</tbody></table>');
     h+=panel('🏪 Store-wise',
-      '<table style="width:100%;border-collapse:collapse;">'+head('Store')+'<tbody>'+storeRows.map(function(r){return row(r.k,r.m);}).join('')+row('TOTAL',GM,'',true)+'</tbody></table>');
+      '<table style="width:100%;border-collapse:collapse;">'+head('Store')+'<tbody>'+storeRows.map(function(r){return row(r.k,r.m,'',false,r.manual);}).join('')+row('TOTAL',GM,'',true)+'</tbody></table>');
     h+=panel('🚚 Node-wise'+(I?' <span style="font-weight:500;font-size:12px;color:#7b78a8;">· actual from Stow SLA file</span>':''),
       '<table style="width:100%;border-collapse:collapse;">'+head('Node','<th style="'+TH+'">Cat</th>')+'<tbody>'+nodeRows.map(function(r){return row(r.k,r.m,'<td style="'+TD+'color:#7b78a8;">'+r.cat+'</td>');}).join('')+row('TOTAL',GM,'<td style="'+TD+'"></td>',true)+'</tbody></table>');
     h+=panel('🗂️ Category (Vendor / RDC / 3P)',
@@ -22138,7 +22192,7 @@ var IBF=(function(){
   }
 
   function flat(r,first){ var o={}; o[first]=r.k; if(r.cat) o.Cat=r.cat; var m=r.m;
-    o.Forecast=m.f; o.Actual=m.a; o['Accuracy %']=m.acc==null?'':+m.acc.toFixed(1); o['Stow SLA %']=m.sla==null?'':+m.sla.toFixed(1); o['SLA Breach Units']=m.sla==null?'':m.br; return o; }
+    o.Forecast=m.f; o.Actual=m.a; o['Accuracy %']=m.acc==null?'':+m.acc.toFixed(1); o['Stow SLA %']=r.manual?'N/A':m.sla==null?'':+m.sla.toFixed(1); o['SLA Breach Units']=r.manual?'N/A':m.sla==null?'':m.br; if(r.manual) o[first]=r.k; return o; }
   // styled-export library loaded on demand into its own global so the dashboard's XLSX is untouched
   function withStyleLib(cb){
     if(window.XLSXS) return cb(window.XLSXS);
@@ -22178,7 +22232,7 @@ var IBF=(function(){
     var _app=XLSX.utils.book_append_sheet; var app=function(w,ws,n){ _app(w,styleSheet(XLSX,ws),n); };
     app(wb,XLSX.utils.json_to_sheet(last.storeRows.concat([tot]).map(function(r){return flat(r,'Store');})),'Store-wise');
     if(last.vtRows){ var f1=function(x){return x==null?'':+x.toFixed(1);};
-      var vt=last.vtRows.concat([last.VT]).map(function(r){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); return {Store:r.k,'Vendor Forecast':mv.f,'Vendor Actual':mv.a,'Vendor Accuracy %':f1(mv.acc),'Transship Forecast':mt.f,'Transship Actual':mt.a,'Transship Accuracy %':f1(mt.acc),'Transship Stow SLA %':f1(mt.sla),'Total Forecast':ma.f,'Total Actual':ma.a,'Total Accuracy %':f1(ma.acc)}; });
+      var vt=last.vtRows.concat([last.VT]).map(function(r){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); return {Store:r.k,'Vendor Forecast':mv.f,'Vendor Actual':mv.a,'Vendor Accuracy %':f1(mv.acc),'Transship Forecast':mt.f,'Transship Actual':mt.a,'Transship Accuracy %':f1(mt.acc),'Transship Stow SLA %':r.manual?'N/A':f1(mt.sla),'Transship Actual':r.noT?'N/A':mt.a,'Total Forecast':ma.f,'Total Actual':ma.a,'Total Accuracy %':f1(ma.acc)}; });
       app(wb,XLSX.utils.json_to_sheet(vt),'Vendor + Transship'); }
     app(wb,XLSX.utils.json_to_sheet(last.nodeRows.concat([tot]).map(function(r){return flat(r,'Node');})),'Node-wise');
     app(wb,XLSX.utils.json_to_sheet(last.catRows.concat([tot]).map(function(r){return flat(r,'Category');})),'Category');
@@ -22203,7 +22257,7 @@ var IBF=(function(){
     div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Inbound Forecast vs Actual</h3><p>Forecast vs stowed units store-wise &amp; node-wise with accuracy % and stow SLA %.</p><span class="card-arrow">→</span>';
     var fb=grid.querySelector('[onclick*="feedback"]'); if(fb) grid.insertBefore(div,fb); else grid.appendChild(div);
   }
-  return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets};
+  return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets,manAdd:manAdd,manRemove:manRemove,manPick:manPick,manUI:manUI};
 })();
 </script>
 </body>
