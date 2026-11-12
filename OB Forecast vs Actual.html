@@ -40,7 +40,7 @@
     <div>
       <p style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#5d6b7a;font-weight:700;margin:0 0 6px;">Outbound · Multi-Store</p>
       <h1 style="font-size:26px;line-height:1.1;margin:0;font-weight:800;">OB Forecast vs Actual</h1>
-      <p style="font-size:13px;color:#5d6b7a;margin:7px 0 0;max-width:640px;line-height:1.5;">Forecast from the S&amp;OP file · actual orders &amp; units from the Daily Order and Unit file · late slam, LS % and throughput from the Late Slam UTR raw file.</p>
+      <p style="font-size:13px;color:#5d6b7a;margin:7px 0 0;max-width:640px;line-height:1.5;">Forecast from the S&amp;OP file · actual orders &amp; units from the Daily Order and Unit file · late slam, LS % and throughput from the Late Slam UTR raw file. Orders with a blank promise_utr use the fixed promise table (store × units), same as Probable Lateslam Checker.</p>
     </div>
     <div style="display:flex;align-items:center;gap:10px;background:#1a1830;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;">
       Throughput target
@@ -104,6 +104,11 @@
 
 <script>
 var $=function(id){return document.getElementById(id);};
+// Fixed promise table (same as Probable Lateslam Checker) — used only when an order's promise_utr is blank / 0
+var PROMISE={"QAA1":{"1":120,"2":180,"3":180,"4":180,"5":180,"6":300,"7":300,"8":300,"9":300,"10":300,"11":360,"12":360,"13":360,"14":420,"15":420,"16":420,"17":480,"18":480,"19":480,"20":540,"21":540,"22":540,"23":540,"24":600,"25":600,"26":600,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":780,"34":780,"35":780,"36":780,"39":840,"40":900,"48":960,"49":960},"QAA6":{"1":152,"2":152,"3":211,"4":211,"5":212,"6":273,"7":270,"8":330,"9":329,"10":330,"11":390,"12":395,"13":390,"14":447,"15":451,"16":454,"17":447,"18":514,"19":507,"20":515,"21":574,"22":573,"23":576,"24":569,"25":633,"26":646,"27":639,"28":692,"29":682,"30":693,"31":677,"32":761,"33":758,"34":762,"36":816,"38":808,"40":853,"41":892,"42":868,"44":924,"46":1025,"47":1014,"48":1017,"54":1028,"64":1220,"82":1481,"84":1550},"QAA7":{"1":60,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":420,"15":420,"16":420,"17":420,"18":480,"19":480,"20":480,"21":540,"22":540,"23":540,"24":600,"25":600,"26":600,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":720,"34":780,"36":780,"48":1020,"50":1020},"QDC6":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":360,"15":420,"16":420,"17":420,"18":420,"19":480,"20":480,"21":480,"22":540,"23":540,"24":540,"25":540,"26":600,"27":600,"28":600,"29":600,"30":660,"31":660,"32":660,"34":720,"35":720,"38":780},"QDD3":{"1":120,"2":120,"3":180,"4":180,"5":240,"6":240,"7":240,"8":300,"9":300,"10":300,"11":360,"12":360,"13":420,"14":420,"15":420,"16":420,"17":480,"18":480,"19":480,"20":540,"21":540,"22":540,"23":600,"24":600,"25":600,"26":660,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":780,"34":780,"36":780,"44":960},"QDG5":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":360,"15":420,"16":420,"17":420,"18":420,"19":480,"20":480,"21":480,"22":540,"23":540,"24":540,"25":540,"26":600,"27":600,"28":600,"30":660,"31":660,"33":720,"34":720,"35":720,"40":780},"QDG5_SS":{"1":120,"2":120,"3":180,"4":180,"5":240},"QDG8":{"1":120,"2":180,"3":180,"4":240,"5":300,"6":300,"7":360,"8":420,"9":420,"10":480,"11":540,"12":540,"13":600,"14":660,"15":660,"16":720,"17":720,"18":780,"19":840,"20":840,"21":900,"22":900,"23":960,"24":1020,"25":1020,"26":1080,"27":1080,"28":1140,"29":1140,"30":1200,"31":1260,"32":1260,"37":1440,"40":1560,"43":1620},"QHA5":{"1":120,"2":120,"3":180,"4":180,"5":240,"6":240,"7":360,"8":360,"9":420,"10":420,"11":480,"12":480,"13":600,"14":600,"15":660,"16":660,"17":840,"18":840,"19":840,"20":840,"21":1200,"22":1200,"23":1200,"24":1200,"25":1200,"26":1200,"27":1200,"34":2040,"37":2040}};
+function lookupPromise(s,u){ var t=PROMISE[s]; if(!t) return null; if(t[u]) return t[u];
+  var ks=Object.keys(t).map(Number).sort(function(a,b){return a-b;}), best=null; ks.forEach(function(k){ if(k<=u) best=t[k]; });
+  return best!=null?best:t[ks[0]]; }
 var FC=null, OU=null, LS=null, ROWS=null, DATE='';
 var MAN={}; try{ MAN=JSON.parse(localStorage.getItem('obfva_manual')||'{}')||{}; }catch(e){ MAN={}; }
 function saveMan(){ try{ localStorage.setItem('obfva_manual',JSON.stringify(MAN)); }catch(e){} }
@@ -241,6 +246,7 @@ function compute(D){
       x.n++;
       var a=String(r[c.a]==null?'':r[c.a]).trim(), p=String(r[c.p]==null?'':r[c.p]).trim();
       var av=a===''?NaN:parseFloat(a), pv=p===''?NaN:parseFloat(p);
+      if(!(isFinite(pv)&&pv>0)){ var uu=c.u?parseInt(r[c.u],10):NaN; var fb=lookupPromise(s,uu); pv=fb!=null?fb:NaN; if(fb!=null) x.fb=(x.fb||0)+1; }
       if(isFinite(pv)&&pv>0){ x.el++; if(isFinite(av)&&av>pv) x.ls++; }
       if(c.t&&c.u){ var sc=parseFloat(r[c.t]), un=parseFloat(r[c.u]); if(isFinite(sc)&&isFinite(un)&&un>0){ var t=tph[s]=tph[s]||{secs:0,units:0}; t.secs+=sc; t.units+=un; } }
     });
