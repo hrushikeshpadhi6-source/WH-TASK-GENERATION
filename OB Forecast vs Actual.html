@@ -204,9 +204,11 @@ $('f-ls').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f)
 function fillDates(){
   var dm={}; Object.keys(OU||{}).forEach(function(d){dm[d]=1;}); if(FC) Object.keys(FC.dates).forEach(function(d){dm[d]=1;});
   var ds=Object.keys(dm).sort().reverse(); if(!ds.length) return;
-  if(!DATE&&OU){ var od=Object.keys(OU).sort().reverse(); if(od.length) DATE=od[0]; }
+  // default to the latest date that has actuals (Order & Unit file), never a future forecast-only date
+  var od=Object.keys(OU||{}).sort().reverse();
+  if(od.length && (!DATE || !OU[DATE])) DATE='';
   var pref=DATE;
-  if(!pref||ds.indexOf(pref)<0){ pref=ds[0]; if(LS&&LS.dates){ var best='',bn=0; Object.keys(LS.dates).forEach(function(d){ if(LS.dates[d]>bn&&ds.indexOf(d)>=0){bn=LS.dates[d];best=d;} }); if(best) pref=best; } }
+  if(!pref||ds.indexOf(pref)<0){ pref=od.length?od[0]:ds[ds.length-1]; if(LS&&LS.dates){ var best='',bn=0; Object.keys(LS.dates).forEach(function(d){ if(LS.dates[d]>bn&&ds.indexOf(d)>=0){bn=LS.dates[d];best=d;} }); if(best) pref=best; } }
   DATE=pref;
   $('dt').innerHTML=ds.map(function(d){ var x=new Date(d+'T12:00:00'); return '<option value="'+d+'"'+(d===pref?' selected':'')+'>'+x.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+'</option>'; }).join('');
   $('dt').disabled=false;
