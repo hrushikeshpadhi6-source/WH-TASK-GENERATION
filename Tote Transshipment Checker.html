@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  var framed=false; try{framed=window.self!==window.top;}catch(e){framed=true;}
+  if(framed) return;
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tote vs Transshipment Checker</title>
+<script>
+(function(){
+  function load(urls,test){ var i=0; (function next(){ if(test()||i>=urls.length) return; var s=document.createElement('script'); s.src=urls[i++]; s.async=true; s.onerror=next; s.onload=function(){ if(!test()) next(); }; document.head.appendChild(s); })(); }
+  load(["https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js","https://unpkg.com/papaparse@5.4.1/papaparse.min.js","https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"],function(){return !!window.Papa;});
+  load(["https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"],function(){return !!window.XLSX;});
+})();
+</script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  a{color:#4361ee;} a:hover{color:#1a1830;}
+  body{background:#e8ecf3;color:#11161c;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:30px 28px 90px;}
+  .card{background:#fff;border:1px solid #d7dee6;border-radius:14px;padding:20px 22px;}
+  .lbl{font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;}
+  .seg{display:flex;gap:4px;background:#eef1f6;border-radius:9px;padding:4px;}
+  .seg button{flex:1;border:none;background:transparent;padding:8px 12px;border-radius:7px;font:700 12px inherit;font-family:inherit;color:#5d6b7a;cursor:pointer;}
+  .seg button.on{background:#fff;color:#11161c;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .drop{display:block;border:2px dashed #d7dee6;border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+  .drop:hover,.drop.drag{border-color:#1a1830;background:#f7f8fb;}
+  .drop.ok{border-style:solid;border-color:#16a34a;background:#f0fdf4;}
+  textarea{width:100%;min-height:150px;border:1px solid #d7dee6;border-radius:10px;padding:12px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none;color:#11161c;}
+  textarea:focus{border-color:#1a1830;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:10px;border:none;font:800 13px inherit;font-family:inherit;cursor:pointer;letter-spacing:.3px;}
+  .btn-dark{background:#1a1830;color:#fff;} .btn-dark:hover{background:#11161c;}
+  .btn-line{background:#fff;color:#11161c;border:1.5px solid #d7dee6;} .btn-line:hover{border-color:#1a1830;}
+  .kpi{background:#fff;border:1px solid #d7dee6;border-radius:12px;padding:14px 16px;}
+  .kpi .v{font-size:26px;font-weight:800;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kpi .k{font-size:11px;font-weight:700;color:#5d6b7a;letter-spacing:.08em;text-transform:uppercase;}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;}
+  .tab{border:1.5px solid #d7dee6;background:#fff;border-radius:30px;padding:8px 16px;font:700 12px inherit;font-family:inherit;cursor:pointer;color:#5d6b7a;display:inline-flex;gap:8px;align-items:center;}
+  .tab .n{background:#eef1f6;color:#11161c;border-radius:20px;padding:1px 8px;font-size:11px;}
+  .tab.on{background:#1a1830;border-color:#1a1830;color:#fff;} .tab.on .n{background:rgba(255,255,255,.18);color:#fff;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{position:sticky;top:0;background:#f3f5f9;text-align:left;padding:10px 12px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#5d6b7a;border-bottom:1px solid #d7dee6;white-space:nowrap;}
+  td{padding:9px 12px;border-bottom:1px solid #eef1f6;vertical-align:top;}
+  tr:hover td{background:#fafbfd;}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;white-space:nowrap;}
+  .p-red{background:#fee2e2;color:#b91c1c;} .p-amb{background:#fef3c7;color:#92400e;} .p-grn{background:#dcfce7;color:#166534;} .p-blu{background:#e0e7ff;color:#3730a3;}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #fecaca;color:#b91c1c;border-radius:8px;padding:6px 10px;font:700 12px ui-monospace,Menlo,Consolas,monospace;}
+  .chip span{color:#5d6b7a;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:600;font-size:11px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#11161c;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;display:none;z-index:99;}
+</style>
+</head>
+<body>
+<div style="max-width:1320px;margin:0 auto;">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #d7dee6;color:#5d6b7a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;text-decoration:none;margin-bottom:18px;white-space:nowrap;">← Back to dashboard</a>
+
+  <div style="border-bottom:2px solid #11161c;padding-bottom:16px;">
+    <p style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#5d6b7a;font-weight:700;margin:0 0 6px;">Reverse · Transshipment</p>
+    <h1 style="font-size:26px;line-height:1.1;margin:0;font-weight:800;">Tote vs Transshipment Checker</h1>
+    <p style="font-size:13px;color:#5d6b7a;margin:7px 0 0;max-width:720px;line-height:1.5;">Finds reversal-picked items that were not attached to a transshipment. Totes come from the Real Time Inventory (TransferTote locations) or from tote IDs / ASINs you paste. Each tote + ASIN is matched against the transshipment file.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin:22px 0 16px;">
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div><div class="lbl">STEP 1</div><div style="font-size:16px;font-weight:800;margin-top:4px;">Totes to check</div></div>
+        <div class="seg" style="min-width:240px;"><button id="m-file" class="on" onclick="setMode('file')">Upload inventory</button><button id="m-paste" onclick="setMode('paste')">Paste tote / ASIN</button></div>
+      </div>
+      <div id="p-file">
+        <label class="drop" id="d-inv"><input type="file" id="f-inv" accept=".csv,.xlsx,.xls" style="display:none;" />
+          <div style="font-size:15px;font-weight:800;">Real Time Inventory file</div>
+          <div style="font-size:12px;color:#5d6b7a;margin-top:4px;">.csv / .xlsx · only <span class="mono">TransferTote:</span> locations are used</div>
+          <div id="s-inv" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+        </label>
+      </div>
+      <div id="p-paste" style="display:none;">
+        <textarea id="t-paste" placeholder="One per line — tab, comma or space separated&#10;&#10;tsX09edeur3  B07PP1BNNP  10     ← tote + ASIN + qty&#10;tsX09edeur3  B07PP1BNNP         ← tote + ASIN&#10;tsX09egb8rt                     ← whole tote&#10;B07BXZSCRL                      ← ASIN only (any tote)"></textarea>
+        <div style="font-size:12px;color:#5d6b7a;margin-top:6px;">You can paste straight from Excel. ASINs are detected automatically.</div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div><div class="lbl">STEP 2</div><div style="font-size:16px;font-weight:800;margin-top:4px;">Transshipment file(s)</div></div>
+      <label class="drop" id="d-ts"><input type="file" id="f-ts" accept=".csv,.xlsx,.xls" multiple style="display:none;" />
+        <div style="font-size:15px;font-weight:800;">Outbound transshipment export</div>
+        <div style="font-size:12px;color:#5d6b7a;margin-top:4px;">Needs TOTE_ID, ASIN, QUANTITY · TRANSSHIP_ID optional · select one or more files</div>
+        <div id="s-ts" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+      </label>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-dark" onclick="run()">Fetch &amp; Match</button>
+    <button class="btn btn-line" id="b-exp" onclick="exportXlsx()" style="display:none;">Export Excel</button>
+    <button class="btn btn-line" onclick="resetAll()">Reset</button>
+    <span id="msg" style="font-size:13px;font-weight:700;color:#b91c1c;"></span>
+  </div>
+
+  <div id="out" style="display:none;margin-top:26px;">
+    <div id="kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;"></div>
+
+    <div id="miss-wrap" class="card" style="margin-top:16px;border-color:#fecaca;background:#fffafa;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div><div style="font-size:15px;font-weight:800;color:#b91c1c;">Totes not attached to any transshipment</div><div style="font-size:12px;color:#5d6b7a;margin-top:2px;">Attach these totes before dispatch</div></div>
+        <button class="btn btn-line" style="padding:8px 14px;font-size:12px;" onclick="copyTotes()">Copy tote IDs</button>
+      </div>
+      <div id="miss-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 12px;">
+      <div class="tabs" id="tabs"></div>
+      <input id="q" placeholder="Search tote / ASIN / title" oninput="renderTable()" style="border:1px solid #d7dee6;border-radius:9px;padding:9px 12px;font-size:13px;min-width:240px;outline:none;font-family:inherit;" />
+    </div>
+    <div class="card" style="padding:0;overflow:auto;max-height:640px;"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var MODE='file', INV=null, TSF=[], RES=null, TAB='miss';
+var ASIN_RE=/^(B0[A-Z0-9]{8}|\d{9}[\dX])$/i;
+function $(id){return document.getElementById(id);}
+function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(function(){e.style.display='none';},2200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function nk(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function pick(keys,names){for(var i=0;i<names.length;i++)for(var j=0;j<keys.length;j++)if(nk(keys[j])===names[i])return keys[j];return null;}
+function num(v){var n=parseFloat(String(v).replace(/,/g,''));return isNaN(n)?0:n;}
+function U(s){return String(s||'').trim().toUpperCase();}
+
+function setMode(m){MODE=m;$('m-file').className=m==='file'?'on':'';$('m-paste').className=m==='paste'?'on':'';$('p-file').style.display=m==='file'?'':'none';$('p-paste').style.display=m==='paste'?'':'none';}
+
+function readFile(file,cb){
+  var ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){ if(!window.Papa) return cb(null,'CSV parser still loading — try again'); Papa.parse(file,{header:true,skipEmptyLines:true,complete:function(r){cb(r.data);},error:function(e){cb(null,e.message);}}); return; }
+  if(!window.XLSX) return cb(null,'Excel parser still loading — try again');
+  var fr=new FileReader(); fr.onload=function(){try{var wb=XLSX.read(fr.result,{type:'array'});cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}));}catch(e){cb(null,e.message);}}; fr.readAsArrayBuffer(file);
+}
+function wireDrop(dropId,inputId,handler){
+  var d=$(dropId),i=$(inputId);
+  i.addEventListener('change',function(){if(i.files.length)handler(Array.prototype.slice.call(i.files));});
+  ['dragenter','dragover'].forEach(function(ev){d.addEventListener(ev,function(e){e.preventDefault();d.classList.add('drag');});});
+  ['dragleave','drop'].forEach(function(ev){d.addEventListener(ev,function(e){e.preventDefault();d.classList.remove('drag');});});
+  d.addEventListener('drop',function(e){if(e.dataTransfer.files.length)handler(Array.prototype.slice.call(e.dataTransfer.files));});
+}
+wireDrop('d-inv','f-inv',function(files){
+  var f=files[0]; $('s-inv').textContent='Reading '+f.name+'…';
+  readFile(f,function(rows,err){
+    if(!rows){$('s-inv').textContent=err;$('s-inv').style.color='#b91c1c';return;}
+    var keys=Object.keys(rows[0]||{}), kL=pick(keys,['locationid','location']), kT=pick(keys,['toteid','tote','containerid']), kA=pick(keys,['asin']), kQ=pick(keys,['quantity','qty']), kN=pick(keys,['producttitle','title','itemname']);
+    if(!kA||(!kL&&!kT)){$('s-inv').textContent='Missing ASIN / LocationId column';$('s-inv').style.color='#b91c1c';return;}
+    var out=[];
+    rows.forEach(function(r){
+      var tote='';
+      if(kT&&r[kT]) tote=String(r[kT]).trim();
+      else if(kL){var loc=String(r[kL]||'');if(/tote/i.test(loc.split(':')[0])||/^ts/i.test(loc)) tote=loc.split(':').pop().trim();}
+      if(!tote||!r[kA]) return;
+      out.push({tote:tote,asin:String(r[kA]).trim(),qty:kQ?num(r[kQ]):0,title:kN?r[kN]:''});
+    });
+    INV={name:f.name,rows:out};
+    var totes={};out.forEach(function(x){totes[U(x.tote)]=1;});
+    $('d-inv').classList.add('ok');$('s-inv').style.color='#166534';
+    $('s-inv').textContent='✓ '+f.name+' · '+Object.keys(totes).length+' totes · '+out.length+' tote rows (of '+rows.length+')';
+  });
+});
+wireDrop('d-ts','f-ts',function(files){
+  TSF=[]; var left=files.length, errs=[];
+  $('s-ts').textContent='Reading '+files.length+' file(s)…';
+  files.forEach(function(f){
+    readFile(f,function(rows,err){
+      if(!rows) errs.push(f.name+': '+err);
+      else{
+        var keys=Object.keys(rows[0]||{}), kT=pick(keys,['toteid','tote','containerid']), kA=pick(keys,['asin']), kQ=pick(keys,['quantity','qty']), kN=pick(keys,['title','producttitle','itemname']), kS=pick(keys,['transshipid','transshipmentid','shipmentid']);
+        if(!kT||!kA) errs.push(f.name+': needs TOTE_ID and ASIN columns');
+        else{
+          var guessId=(f.name.match(/[A-Z0-9]{4}-[A-Z0-9]{4}-\d+-\d+/i)||[''])[0];
+          TSF.push({name:f.name,rows:rows.filter(function(r){return r[kT]&&r[kA];}).map(function(r){return{tote:String(r[kT]).trim(),asin:String(r[kA]).trim(),qty:kQ?num(r[kQ]):0,title:kN?r[kN]:'',tsid:kS&&r[kS]?String(r[kS]).trim():guessId};})});
+        }
+      }
+      if(--left===0){
+        var n=TSF.reduce(function(a,f){return a+f.rows.length;},0), totes={};
+        TSF.forEach(function(f){f.rows.forEach(function(r){totes[U(r.tote)]=1;});});
+        if(TSF.length){$('d-ts').classList.add('ok');$('s-ts').style.color='#166534';$('s-ts').textContent='✓ '+TSF.length+' file(s) · '+Object.keys(totes).length+' totes · '+n+' rows'+(errs.length?' · '+errs.join('; '):'');}
+        else{$('s-ts').style.color='#b91c1c';$('s-ts').textContent=errs.join('; ');}
+      }
+    });
+  });
+});
+
+function parsePaste(){
+  var out=[];
+  $('t-paste').value.split(/\r?\n/).forEach(function(line){
+    var tk=line.split(/[\t,;\s]+/).map(function(s){return s.trim();}).filter(Boolean); if(!tk.length) return;
+    var asin='',tote='',qty=null;
+    tk.forEach(function(t){ if(!asin&&ASIN_RE.test(t)) asin=t.toUpperCase(); else if(/^\d+(\.\d+)?$/.test(t)&&qty===null&&(asin||tote)) qty=num(t); else if(!tote) tote=t; });
+    out.push({tote:tote,asin:asin,qty:qty,title:'',manual:true});
+  });
+  return out;
+}
+
+function run(){
+  $('msg').textContent='';
+  var src = MODE==='file' ? (INV?INV.rows:null) : parsePaste();
+  if(!src||!src.length){$('msg').textContent=MODE==='file'?'Upload the Real Time Inventory file first':'Paste at least one tote ID or ASIN';return;}
+  if(!TSF.length){$('msg').textContent='Upload the transshipment file first';return;}
+  var TS={}, tsTote={}, tsAsin={};
+  TSF.forEach(function(f){f.rows.forEach(function(r){
+    var k=U(r.tote)+'|'+U(r.asin);
+    if(!TS[k]) TS[k]={tote:r.tote,asin:r.asin,qty:0,title:r.title,tsid:{}};
+    TS[k].qty+=r.qty; if(r.tsid) TS[k].tsid[r.tsid]=1; if(!TS[k].title) TS[k].title=r.title;
+    var t=U(r.tote); if(!tsTote[t]) tsTote[t]={tsid:{},asins:0,units:0}; tsTote[t].asins++; tsTote[t].units+=r.qty; if(r.tsid) tsTote[t].tsid[r.tsid]=1;
+    var a=U(r.asin); (tsAsin[a]=tsAsin[a]||{})[r.tote]=1;
+  });});
+  var INVA={};
+  src.forEach(function(r){
+    var k=U(r.tote)+'|'+U(r.asin);
+    if(!INVA[k]) INVA[k]={tote:r.tote,asin:r.asin,qty:r.qty===null?null:0,title:r.title,manual:r.manual};
+    if(r.qty!==null&&INVA[k].qty!==null) INVA[k].qty+=r.qty; if(!INVA[k].title) INVA[k].title=r.title;
+  });
+  var rows=[], seenTS={};
+  Object.keys(INVA).forEach(function(k){
+    var r=INVA[k], t=U(r.tote), a=U(r.asin), row={tote:r.tote,asin:r.asin,title:r.title,invQty:r.qty,tsQty:null,tsid:'',status:'',note:''};
+    if(t&&!a){
+      if(tsTote[t]){row.status='match';row.tsQty=tsTote[t].units;row.tsid=Object.keys(tsTote[t].tsid).join(', ');row.note='Tote in transshipment · '+tsTote[t].asins+' ASIN rows';}
+      else row.status='tote';
+    } else if(!t&&a){
+      var tt=Object.keys(tsAsin[a]||{});
+      if(tt.length){row.status='match';row.note='In tote '+tt.join(', ');var q=0,ids={};tt.forEach(function(x){var e=TS[U(x)+'|'+a];q+=e.qty;Object.keys(e.tsid).forEach(function(i){ids[i]=1;});seenTS[U(x)+'|'+a]=1;});row.tsQty=q;row.tsid=Object.keys(ids).join(', ');if(row.invQty!==null&&row.invQty!==q)row.status='qty';}
+      else row.status='asin';
+    } else if(!tsTote[t]){ row.status='tote'; }
+    else if(!TS[k]){ row.status='asin'; var other=Object.keys(tsAsin[a]||{}); row.note=other.length?'Found in other tote: '+other.join(', '):''; row.tsid=Object.keys(tsTote[t].tsid).join(', '); }
+    else{
+      var e=TS[k]; seenTS[k]=1; row.tsQty=e.qty; row.tsid=Object.keys(e.tsid).join(', '); if(!row.title) row.title=e.title;
+      row.status=(row.invQty===null||row.invQty===e.qty)?'match':'qty';
+      if(row.status==='qty') row.note=row.invQty>e.qty?(row.invQty-e.qty)+' unit(s) not in transshipment':(e.qty-row.invQty)+' unit(s) more in transshipment';
+    }
+    rows.push(row);
+  });
+  var onlyTS=[];
+  if(MODE==='file') Object.keys(TS).forEach(function(k){ if(!INVA[k]){var e=TS[k];onlyTS.push({tote:e.tote,asin:e.asin,title:e.title,invQty:null,tsQty:e.qty,tsid:Object.keys(e.tsid).join(', '),status:'only',note:'Not found in inventory tote'});} });
+  var ord={tote:0,asin:1,qty:2,match:3,only:4};
+  rows.sort(function(a,b){return ord[a.status]-ord[b.status]||String(a.tote).localeCompare(b.tote)||String(a.asin).localeCompare(b.asin);});
+  onlyTS.sort(function(a,b){return String(a.tote).localeCompare(b.tote);});
+  var missTotes={};
+  rows.forEach(function(r){if(r.status==='tote'&&r.tote){var t=r.tote;if(!missTotes[t])missTotes[t]={asins:0,units:0};if(r.asin)missTotes[t].asins++;missTotes[t].units+=r.invQty||0;}});
+  RES={rows:rows,onlyTS:onlyTS,missTotes:missTotes};
+  TAB=rows.some(function(r){return r.status==='tote'||r.status==='asin';})?'miss':'qty';
+  render();
+  $('b-exp').style.display='inline-flex';
+}
+
+function groups(){
+  var R=RES.rows;
+  return {
+    miss:{label:'Not in transshipment',rows:R.filter(function(r){return r.status==='tote'||r.status==='asin';})},
+    qty:{label:'Qty mismatch',rows:R.filter(function(r){return r.status==='qty';})},
+    match:{label:'Matched',rows:R.filter(function(r){return r.status==='match';})},
+    only:{label:'Only in transshipment',rows:RES.onlyTS,hide:MODE!=='file'}
+  };
+}
+function render(){
+  var G=groups(), R=RES.rows, totes={}, mt=Object.keys(RES.missTotes);
+  R.forEach(function(r){if(r.tote)totes[U(r.tote)]=1;});
+  var missUnits=G.miss.rows.reduce(function(a,r){return a+(r.invQty||0);},0);
+  var K=[['Totes checked',Object.keys(totes).length,'#11161c'],['Totes not attached',mt.length,mt.length?'#b91c1c':'#166534'],['ASIN rows not in transship',G.miss.rows.length,G.miss.rows.length?'#b91c1c':'#166534'],['Units not in transship',missUnits,missUnits?'#b91c1c':'#166534'],['Qty mismatch',G.qty.rows.length,G.qty.rows.length?'#92400e':'#166534'],['Matched',G.match.rows.length,'#166534']];
+  $('kpis').innerHTML=K.map(function(k){return '<div class="kpi"><div class="k">'+k[0]+'</div><div class="v" style="color:'+k[2]+'">'+k[1].toLocaleString()+'</div></div>';}).join('');
+  $('miss-wrap').style.display=mt.length?'':'none';
+  $('miss-list').innerHTML=mt.map(function(t){var m=RES.missTotes[t];return '<span class="chip">'+esc(t)+(m.asins?' <span>'+m.asins+' ASIN · '+m.units+' u</span>':'')+'</span>';}).join('');
+  $('tabs').innerHTML=Object.keys(G).filter(function(k){return !G[k].hide;}).map(function(k){return '<button class="tab'+(k===TAB?' on':'')+'" onclick="TAB=\''+k+'\';render()">'+G[k].label+'<span class="n">'+G[k].rows.length+'</span></button>';}).join('');
+  $('out').style.display='';
+  renderTable();
+}
+var PILL={tote:['Tote not in transshipment','p-red'],asin:['ASIN not in tote','p-red'],qty:['Qty mismatch','p-amb'],match:['Matched','p-grn'],only:['Only in transshipment','p-blu']};
+function renderTable(){
+  if(!RES) return;
+  var rows=groups()[TAB].rows, q=$('q').value.trim().toLowerCase();
+  if(q) rows=rows.filter(function(r){return (r.tote+' '+r.asin+' '+r.title).toLowerCase().indexOf(q)>-1;});
+  $('th').innerHTML='<tr><th>#</th><th>Tote ID</th><th>ASIN</th><th>Title</th><th style="text-align:right">Tote qty</th><th style="text-align:right">Transship qty</th><th>Transship ID</th><th>Status</th><th>Note</th></tr>';
+  if(!rows.length){$('tb').innerHTML='<tr><td colspan="9" style="padding:30px;text-align:center;color:#5d6b7a;">Nothing here'+(TAB==='miss'?' — every tote item is attached to a transshipment ✓':'')+'</td></tr>';return;}
+  $('tb').innerHTML=rows.map(function(r,i){var p=PILL[r.status];return '<tr><td style="color:#9aa5b1">'+(i+1)+'</td><td class="mono" style="font-weight:700">'+esc(r.tote||'—')+'</td><td class="mono">'+esc(r.asin||'—')+'</td><td style="max-width:340px">'+esc(r.title||'')+'</td><td style="text-align:right;font-variant-numeric:tabular-nums">'+(r.invQty==null?'—':r.invQty)+'</td><td style="text-align:right;font-variant-numeric:tabular-nums">'+(r.tsQty==null?'—':r.tsQty)+'</td><td class="mono" style="font-size:11px;color:#5d6b7a">'+esc(r.tsid||'—')+'</td><td><span class="pill '+p[1]+'">'+p[0]+'</span></td><td style="font-size:12px;color:#5d6b7a">'+esc(r.note)+'</td></tr>';}).join('');
+}
+function copyTotes(){var t=Object.keys(RES.missTotes).join('\n');(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Copied '+Object.keys(RES.missTotes).length+' tote IDs');},function(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('Copied');});}
+
+function exportXlsx(){
+  if(!RES||!window.XLSX) return;
+  var G=groups(), wb=XLSX.utils.book_new(), styled=!!(XLSX.version&&XLSX.utils&&XLSX.SSF&&window.XLSX.utils.sheet_add_aoa)&&true;
+  var FILL={tote:'FEE2E2',asin:'FEE2E2',qty:'FEF3C7',match:'DCFCE7',only:'E0E7FF'};
+  function sheet(rows,name){
+    var head=['Tote ID','ASIN','Title','Tote Qty','Transship Qty','Transship ID','Status','Note'];
+    var aoa=[head].concat(rows.map(function(r){return [r.tote,r.asin,r.title,r.invQty==null?'':r.invQty,r.tsQty==null?'':r.tsQty,r.tsid,PILL[r.status][0],r.note];}));
+    var ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:16},{wch:13},{wch:50},{wch:9},{wch:12},{wch:34},{wch:24},{wch:36}];
+    if(styled){
+      head.forEach(function(_,c){var a=XLSX.utils.encode_cell({r:0,c:c});if(ws[a])ws[a].s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1A1830'}}};});
+      rows.forEach(function(r,i){for(var c=0;c<head.length;c++){var a=XLSX.utils.encode_cell({r:i+1,c:c});if(ws[a])ws[a].s={fill:{fgColor:{rgb:FILL[r.status]}}};}});
+    }
+    XLSX.utils.book_append_sheet(wb,ws,name);
+  }
+  var mt=Object.keys(RES.missTotes);
+  var sum=[['Tote vs Transshipment Check',''],['Generated',new Date().toLocaleString()],['Source',MODE==='file'?(INV?INV.name:''):'Pasted list'],['Transshipment files',TSF.map(function(f){return f.name;}).join(', ')],[],['Totes not attached',mt.length],['ASIN rows not in transshipment',G.miss.rows.length],['Qty mismatch',G.qty.rows.length],['Matched',G.match.rows.length],[],['Missing tote ID','ASIN rows','Units']].concat(mt.map(function(t){return [t,RES.missTotes[t].asins,RES.missTotes[t].units];}));
+  var ws=XLSX.utils.aoa_to_sheet(sum); ws['!cols']=[{wch:32},{wch:40},{wch:10}];
+  if(styled&&ws.A1) ws.A1.s={font:{bold:true,sz:14}};
+  XLSX.utils.book_append_sheet(wb,ws,'Summary');
+  sheet(G.miss.rows,'Not in Transshipment'); sheet(G.qty.rows,'Qty Mismatch'); sheet(G.match.rows,'Matched'); if(!G.only.hide) sheet(G.only.rows,'Only in Transshipment');
+  XLSX.writeFile(wb,'Tote_vs_Transshipment_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+function resetAll(){INV=null;TSF=[];RES=null;['f-inv','f-ts'].forEach(function(i){$(i).value='';});['d-inv','d-ts'].forEach(function(i){$(i).classList.remove('ok');});$('s-inv').textContent=$('s-ts').textContent='Not uploaded';$('s-inv').style.color=$('s-ts').style.color='#9aa5b1';$('t-paste').value='';$('out').style.display='none';$('b-exp').style.display='none';$('msg').textContent='';}
+</script>
+</body>
+</html>

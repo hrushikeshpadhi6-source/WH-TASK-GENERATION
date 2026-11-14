@@ -2554,6 +2554,12 @@ window.feedbackAdminClear=async function(){
       <p>Upload the tote file → auto-fill everything → export the Delivery Note &amp; Gate Pass together.</p>
       <span class="card-arrow">→</span>
     </div>
+    <div class="task-card" data-tool="totecheck" data-tool-label="Tote vs Transshipment" style="--card-color:#b91c1c" onclick="window.open('Tote Transshipment Checker.html','_blank')">
+      <span class="card-icon" style="display:inline-block;animation:iconZoomSearch 2.5s ease-in-out infinite;">🧺</span>
+      <h3>Tote vs Transshipment</h3>
+      <p>Match reversal totes in Real Time Inventory against the transshipment file → find ASINs &amp; totes not attached.</p>
+      <span class="card-arrow">→</span>
+    </div>
     <div class="task-card" data-tool="feedback" data-tool-label="Report &amp; Suggest" style="--card-color:#db2777" onclick="openTask('feedback')">
       <span class="card-icon" style="animation:reportBounce 1.8s ease-in-out infinite;display:inline-block;">💬</span>
       <h3>Report &amp; Suggest</h3>
@@ -22258,6 +22264,125 @@ var IBF=(function(){
     var fb=grid.querySelector('[onclick*="feedback"]'); if(fb) grid.insertBefore(div,fb); else grid.appendChild(div);
   }
   return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets,manAdd:manAdd,manRemove:manRemove,manPick:manPick,manUI:manUI};
+})();
+</script>
+
+<!-- RISHI HELP ASSISTANT -->
+<style>
+#rishi-btn{position:fixed;top:11px;right:320px;z-index:10001;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px 0 6px;border-radius:20px;border:none;background:#2563EB;color:#fff;font:700 13px 'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.35);transition:background .2s}
+#rishi-btn:hover{background:#1D4ED8}
+#rishi-btn .rb-q{width:24px;height:24px;border-radius:50%;background:#fff;color:#2563EB;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+#rishi-tip{position:fixed;right:16px;top:70px;z-index:99990;max-width:250px;background:#fff;color:#1a1d24;border-radius:14px 4px 14px 14px;padding:12px 30px 12px 14px;font:13px/1.45 'Helvetica Neue',Helvetica,Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35);display:none;cursor:pointer}
+#rishi-tip b{display:block;margin-bottom:2px}
+#rishi-tip .rt-x{position:absolute;top:6px;right:8px;border:none;background:none;font-size:16px;color:#767d8c;cursor:pointer}
+#rishi-panel{position:fixed;right:16px;top:70px;z-index:99991;width:min(370px,calc(100vw - 32px));height:min(540px,calc(100vh - 90px));display:none;flex-direction:column;background:#141821;border:1px solid #2a313d;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#e7e9ee}
+#rishi-panel.open{display:flex}
+.rp-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#1f2530;border-bottom:1px solid #2a313d}
+.rp-head img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #2563EB}
+.rp-head .rp-n{font-family:'Syne',sans-serif;font-weight:800;font-size:15px}
+.rp-head .rp-s{font-size:11px;color:#10B981}
+.rp-head button{margin-left:auto;background:none;border:none;color:#8990a1;font-size:20px;cursor:pointer}
+.rp-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.rp-msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-line;text-wrap:pretty}
+.rp-bot{align-self:flex-start;background:#1f2530;border:1px solid #2a313d;border-bottom-left-radius:4px}
+.rp-user{align-self:flex-end;background:#2563EB;color:#fff;border-bottom-right-radius:4px}
+.rp-msg a{color:#3B82F6}
+.rp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rp-chip{background:transparent;border:1px solid #2a313d;color:#aab0bf;border-radius:20px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+.rp-chip:hover{border-color:#2563EB;color:#fff}
+.rp-foot{display:flex;gap:8px;padding:12px;border-top:1px solid #2a313d;background:#181c25}
+.rp-foot input{flex:1;background:#1f2530;border:1px solid #2a313d;border-radius:10px;padding:10px 12px;color:#e7e9ee;font-size:13px;outline:none;font-family:inherit}
+.rp-foot input:focus{border-color:#2563EB}
+.rp-foot button{background:#2563EB;border:none;color:#fff;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer;font-family:inherit}
+@media print{#rishi-btn,#rishi-tip,#rishi-panel{display:none!important}}
+</style>
+<button id="rishi-btn" onclick="rishiToggle()" aria-label="Open help chat" title="Help"><span class="rb-q">?</span><span>Help</span></button>
+<div id="rishi-tip" onclick="rishiOpen()"><button class="rt-x" onclick="event.stopPropagation();rishiHideTip()">×</button><b>Hi, I'm Rishi 👋</b>Need help with a tool? Ask me anything.</div>
+<div id="rishi-panel" role="dialog" aria-label="Rishi help chat">
+  <div class="rp-head"><img src="data:image/jpeg;base64,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" alt="Rishi"><div><div class="rp-n">Rishi</div><div class="rp-s">● Online · Help Assistant</div></div><button onclick="rishiToggle()" aria-label="Close">×</button></div>
+  <div class="rp-body" id="rp-body"></div>
+  <form class="rp-foot" onsubmit="event.preventDefault();rishiSend()"><input id="rp-in" placeholder="Type your question…" autocomplete="off"><button type="submit">Send</button></form>
+</div>
+<script>
+(function(){
+  var MAIL='hrushikeshpadhi6'+String.fromCharCode(64)+'live.com';
+  var KB=[
+    {id:'excel',label:'Excel export sheets',k:['excel','export','sheet','download','xlsx','colour code','color code','summary','date wise','week wise','store wise'],
+     a:'Excel exports (OB / IB Forecast vs Actual):\n• Summary sheet — overall forecast vs actual\n• Date-wise sheet — one block per date\n• Week-wise sheet — totals per week\n• Store-wise sheet — every store in rows\n\nCells are colour-coded: green = on/above target, amber = close, red = below. Click the Export button after results load. If the button is missing, the files haven\'t been processed yet.'},
+    {id:'locid',label:'Location ID Maker',k:['location','loc id','locid','qr','a4','print','bulk','direction','label'],
+     a:'Location ID Maker:\n1. Open the tool from the dashboard.\n2. Upload a list — Column A = Location ID (e.g. P-1-A116F182), Column B = Direction (↑), Column C = Colour (optional). Or use Bulk Paste.\n3. Click Generate, then Print.\n\n24 labels fit on one A4 sheet.'},
+    {id:'staging',label:'Staging labels',k:['staging','stage','green-01','colour label','color label'],
+     a:'Staging Labels (Location ID Maker → 🏷️ Staging Labels tab):\n1. Enter colour(s), comma separated — e.g. GREEN, BLUE.\n2. Set Start No. and End No.\n3. Pick a direction arrow.\n4. Click ⚡ Generate Staging Labels.\n\nYou get labels like GREEN-01 … GREEN-10. Label colour comes from the text; the QR holds the full ID. You can also type IDs directly in the box below.'},
+    {id:'rca',label:'Lateslam RCA steps',k:['rca','root cause','late slam','lateslam','deep dive','picker','reason','analyse','analyze'],
+     a:'Lateslam RCA:\n1. Open Late Slam Calculator → Deep Dive.\n2. File 1 — Late Slam data (picklist_created_time, assignment, staging, pl_create_to_stage, promise_utr).\n3. File 2 — Outbound Pick data (Timestamp, LocationId, ASIN, User, ReferenceIdValue).\n4. Choose a store (or All Stores), optionally a date, then ☁️ Fetch FC.\n5. Click 🔍 Analyse.\n\nEach order is traced from creation → pick → staging so you can see where time was lost.'},
+    {id:'access',label:'Access / maintenance lock',k:['access','lock','locked','maintenance','blocked','permission','login','password','credential','unavailable','voc'],
+     a:'If a tool shows "Under Maintenance" or is locked:\n• Click Request Access on the popup — the admin gets your request.\n• Users with Full Tool Access skip maintenance locks and can open VOC Analysis without credentials. Only the admin can grant this.\n• After access is granted, hard-refresh with Ctrl + Shift + R.'},
+    {id:'contact',label:'Contact admin',k:['contact','admin','support','email','mail','help desk','human','issue','bug'],
+     a:'Reach the admin by email: <a href="mailto:'+MAIL+'">'+MAIL+'</a>\n\nOr open Support Desk / Report & Suggest on the dashboard to send feedback or report a problem.'},
+    {id:'consol',label:'Consolidation',k:['consolidation','consolidate','multiple location','spread','merge'],
+     a:'Consolidation:\n1. Open Consolidation from the dashboard.\n2. Upload your inventory file (.xlsx / .xls / .csv).\n3. The tool groups ASINs that sit in more than one location.\n4. Export the task list and hand it to the team to move stock into one bin.'},
+    {id:'slow',label:'Slow Moving Items',k:['slow moving','slow','aged','ageing','aging','90 days','age days','clearance'],
+     a:'Slow Moving Items:\n• Upload an inventory file that has an Age Days / AgeInDays column.\n• Items older than 90 days are listed.\n• Colours: amber 90–120 days, orange 120–150, red above 150.\n• Export the list for relocation or clearance.'},
+    {id:'auditloc',label:'Audit by Location',k:['audit by location','audit location','location audit','random location','zones','frozen','chiller','hazmat','ambient','hrv'],
+     a:'Audit by Location:\n• Generates 90 random locations across Frozen, Chiller, Hazmat, Ambient, HRV and Mixed zones.\n• Upload your inventory to use real locations, or click Generate without a file.\n• Print the audit sheet and count each location.'},
+    {id:'auditasin',label:'Audit by ASIN',k:['audit by asin','asin audit','random asin','60 asin','stock count','cycle count'],
+     a:'Audit by ASIN:\n1. Upload your inventory file.\n2. The tool picks 60 random ASINs.\n3. Print the sheet and do a physical count for each ASIN.\n4. Add remarks for any mismatch.'},
+    {id:'invrep',label:'Inventory Report',k:['inventory report','audit report','pdf','report'],
+     a:'Inventory Report:\n• Upload the inventory file and generate a professional audit report.\n• You can download it as Excel or PDF.'},
+    {id:'ysm',label:'YSM Barcode Task',k:['ysm','barcode','unit label','per unit','scannable'],
+     a:'YSM Barcode Task:\n• Upload any file with ASIN and Quantity columns.\n• One scannable barcode label is created per unit (Qty 5 = 5 labels).\n• Print — 24 labels fit on one A4 sheet.'},
+    {id:'catalog',label:'Catalog Issue Items',k:['catalog','special bin','catalogue'],
+     a:'Catalog Issue Items:\n1. Upload the Real Time Inventory file.\n2. Click Fetch & Match — catalog issue ASINs load from the Google Sheet.\n3. You see each ASIN with its locations and quantity.\n4. Move them fast to the Special Bin to avoid VOC and late slams.'},
+    {id:'scan',label:'Scanning Issue Items',k:['scanning','scan issue','not scanning','scan problem'],
+     a:'Scanning Issue Items:\n1. Upload the Real Time Inventory file.\n2. Click Fetch & Match — scanning problem ASINs load from the Google Sheet.\n3. Generate barcode labels and stick them on the units.'},
+    {id:'lscalc',label:'Late Slam Calculator',k:['late slam calculator','calculator','30 min','30-min','slot','variance','pick list created'],
+     a:'Late Slam Calculator:\n1. Upload the orders file — it must have Promise Time and Pick List Created Time columns.\n2. Fetch the forecast.\n3. You get a 30-min slot variance report per store.\n4. Use Deep Dive for order-level RCA.'},
+    {id:'probable',label:'Probable Lateslam Checker',k:['probable','checker','throughput','qdg5','qdh5','risk'],
+     a:'Probable Lateslam Checker:\n• Upload the order file to see which stores are at risk of late slams.\n• Add a store manually with orders and units; use N/A for missing metrics.\n• Uses the 1–10 Nov promise table (includes QDH5).\n• QDG5 and QDG5_SS throughput is combined, but both rows stay separate.'},
+    {id:'ob',label:'OB Forecast vs Actual',k:['ob forecast','outbound','ob ','forecast vs actual','promise time','80%','80 %'],
+     a:'OB Forecast vs Actual:\n1. Upload the forecast file (Wk45, Wk46 or v2 format) and the Order & Unit / Late Slam files.\n2. Promise logic: if 80%+ of a store\'s orders have their own promise time, only those are used. Below 80%, blanks use the fixed promise table.\n3. Add stores manually if needed (N/A for missing metrics).\n4. Export the colour-coded Excel.'},
+    {id:'ib',label:'IB Forecast vs Actual',k:['ib forecast','inbound','ib ','_ss','ss store'],
+     a:'IB Forecast vs Actual:\n• Upload the forecast (Wk45, Wk46 or v2) and the inbound actual file.\n• _SS stores are not counted in the store total, but they show separately in the tables.\n• Manual store entry is supported (N/A for missing metrics).\n• Export the Excel with date, week and store sheets.'},
+    {id:'rts',label:'Reverse Transshipment',k:['reverse','transshipment','transhipment','gate pass','delivery note','tote','rdc','fc'],
+     a:'Reverse Transshipment:\n1. Upload the tote file.\n2. Everything is auto-filled.\n3. Export the Delivery Note and Gate Pass together (Dark Store → FC / RDC).'},
+    {id:'totecheck',label:'Tote vs Transshipment',k:['tote vs','not attached','forgot','attach tote','missing tote','tote check','transferTote','reversal tote'],
+     a:'Tote vs Transshipment Checker:\n1. Open the Tote vs Transshipment card.\n2. Step 1 — upload the Real Time Inventory (TransferTote locations are used), or switch to Paste and enter tote IDs / ASINs.\n3. Step 2 — upload the transshipment export (TOTE_ID, ASIN, QUANTITY).\n4. Click Fetch & Match.\n\nYou see totes not attached to any transshipment, ASINs missing from a tote, and qty mismatches. Export Excel for the full list.'},
+    {id:'upload',label:'File upload problems',k:['upload','file not','not loading','format','csv','column','error','wrong file'],
+     a:'If a file won\'t upload:\n• Use .xlsx, .xls or .csv.\n• Check the column names match what the tool shows on the upload box.\n• Remove extra header rows above the column titles.\n• Close the file in Excel before uploading.\n• Still stuck? Hard-refresh with Ctrl + Shift + R and try again.'},
+    {id:'refresh',label:'Page not updating',k:['refresh','not updating','old version','cache','blank','stuck','slow loading'],
+     a:'If the page looks old or stuck, do a hard refresh: Ctrl + Shift + R (Mac: Cmd + Shift + R). This loads the latest version of DMS Pro.'},
+    {id:'theme',label:'Dark / light mode',k:['dark mode','light mode','theme','moon','sun'],
+     a:'Tap the ☀️ / 🌙 button at the top-right to switch between light and dark mode. Your choice is remembered.'},
+    {id:'feedback',label:'Report & Suggest',k:['feedback','suggest','suggestion','report issue','improvement','idea'],
+     a:'Open Report & Suggest on the dashboard to share feedback, flag an issue, or suggest an improvement. It goes straight to the admin.'}
+  ];
+  var body,inp,started=false;
+  function el(id){return document.getElementById(id);}
+  function add(html,who){var d=document.createElement('div');d.className='rp-msg '+(who==='u'?'rp-user':'rp-bot');if(who==='u')d.textContent=html;else d.innerHTML=html;body.appendChild(d);body.scrollTop=body.scrollHeight;return d;}
+  var MAIN=['totecheck','rca','probable','ob','ib','locid','staging','excel','access','contact'];function chips(all){var w=document.createElement('div');w.className='rp-chips';var list=all?KB.filter(function(t){return MAIN.indexOf(t.id)<0;}):KB.filter(function(t){return MAIN.indexOf(t.id)>-1;});if(!all){var m=document.createElement('button');m.className='rp-chip';m.type='button';m.style.borderColor='#2563EB';m.style.color='#fff';m.textContent='More topics ▾';m.onclick=function(){m.remove();chips(true);};setTimeout(function(){w.appendChild(m);},0);}list.forEach(function(t){var b=document.createElement('button');b.className='rp-chip';b.type='button';b.textContent=t.label;b.onclick=function(){ask(t.label,t);};w.appendChild(b);});body.appendChild(w);body.scrollTop=body.scrollHeight;}
+  function match(q){q=q.toLowerCase();var best=null,score=0;KB.forEach(function(t){var s=0;t.k.forEach(function(k){if(q.indexOf(k)>-1)s+=k.length;});if(s>score){score=s;best=t;}});return best;}
+  function ask(q,topic){add(q,'u');var t=topic||match(q);setTimeout(function(){
+    var ql=q.toLowerCase().trim();
+    if(!topic){
+      if(/(thank|thnx|thnks|thx|\btq\b|\bty\b|dhanyavad|dhanyawad|shukriya|appreciate)/.test(ql)){add('You\'re welcome! 😊 Happy to help anytime.');return;}
+      if(/^(hi|hii+|hello|hey|namaste|good (morning|afternoon|evening))\b/.test(ql)){add('Hello! 👋 How can I help you today? Pick a topic or type your question.');chips();return;}
+      if(/^(ok|okay|okk+|k|done|great|nice|cool|got it|super|perfect|good|awesome|fine)\b/.test(ql)){add('Great! 👍 Let me know if you need anything else.');return;}
+      if(/\b(bye|see you|good night|tata)\b/.test(ql)){add('Bye! 👋 Have a great shift.');return;}
+      if(/\b(who are you|your name|what can you do)\b/.test(ql)){add('I\'m Rishi, your DMS Pro help assistant. I can guide you on these topics:');chips();return;}
+    }
+    if(t){add(t.a);}else{add('I can help you with the topics below — tap one. For anything else, email the admin at <a href="mailto:'+MAIL+'">'+MAIL+'</a> 😊');chips();}
+  },350);}
+  window.rishiSend=function(){var v=inp.value.trim();if(!v)return;inp.value='';ask(v);};
+  window.rishiHideTip=function(){el('rishi-tip').style.display='none';try{sessionStorage.setItem('rishiTipSeen','1');}catch(e){}};
+  window.rishiOpen=function(){rishiHideTip();el('rishi-panel').classList.add('open');if(!started){started=true;add('Hi, I\'m Rishi 👋\nI can help you with these tools. What do you need?');chips();}setTimeout(function(){inp.focus();},50);};
+  window.rishiToggle=function(){if(el('rishi-panel').classList.contains('open'))el('rishi-panel').classList.remove('open');else rishiOpen();};
+  function init(){body=el('rp-body');inp=el('rp-in');var seen=false;try{seen=sessionStorage.getItem('rishiTipSeen');}catch(e){}if(!seen)setTimeout(function(){if(!el('rishi-panel').classList.contains('open'))el('rishi-tip').style.display='block';},1500);}
+  function vis(e){return e&&getComputedStyle(e).display!=='none'&&e.offsetWidth;}
+  function place(){var btn=el('rishi-btn');if(!btn)return;var app=el('app-shell');btn.style.display=(app&&getComputedStyle(app).display==='none')?'none':'inline-flex';
+    var g=el('grt-gift'),b=el('session-badge'),t=el('theme-toggle');var ref=vis(g)?g:vis(b)?b:t;if(!ref)return;var r=ref.getBoundingClientRect();if(!r.width)return;
+    btn.style.top=Math.round(r.top+(r.height-btn.offsetHeight)/2)+'px';btn.style.right=Math.round(window.innerWidth-r.left+10)+'px';}
+  window.addEventListener('resize',place);setInterval(place,1000);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){init();place();});else{init();place();}
 })();
 </script>
 </body>
