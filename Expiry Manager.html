@@ -801,7 +801,7 @@ function runInner(){
     let daysLeft=expiryDate?Math.floor((expiryDate-today)/86400000):null;
     const wrongReason=isWrong?(fileWrong&&shelfWrong?`Master-flagged + shelf life off ${shelfDiff>0?'+':''}${shelfDiff}d (entered ${shelfAct}d, master ${shelfMaster}d)`:fileWrong?'Flagged in master file':`Shelf life off ${shelfDiff>0?'+':''}${shelfDiff}d (entered ${shelfAct}d, master ${shelfMaster}d)`):null;
 
-    results.push({i:idx+1,warehouse,timestamp,loc,asin,title,user,stowedQty,reference,expiryDate,expiryRaw,remQty,remarks,status,daysLeft,isWrong,correctExpiry,wrongReason});
+    results.push({i:idx+1,warehouse,timestamp,loc,asin,title,user,stowedQty,reference,expiryDate,expiryRaw,remQty,remarks,status,daysLeft,isWrong,correctExpiry,wrongReason,shelfWrong,shelfAct,shelfMaster});
   });
 
   console.log(`Results: ${results.length} in-bin | Skipped zero-qty: ${skipped0} | Skipped remarks: ${skippedRmk} | Matched expiry: ${matched} | Expiry dict size: ${Object.keys(ED).length} | Expiry rows skipped (no bin/asin): ${exSkippedNoBinAsin} | Expiry rows skipped (bad date): ${exSkippedNoDate}`);
@@ -844,8 +844,8 @@ function render(){
     nodate:    '<span class="bg bg-nd">NO MATCH</span>',
   };
   tb.innerHTML=rows.map(r=>{
-    const ce=r.correctExpiry?`<span class="mono" style="color:var(--green);font-weight:700">${fd(r.correctExpiry)}</span>`:'—';
-    const wr=r.wrongReason?`<br><span style="font-size:10px;color:var(--red)">${e(r.wrongReason)}</span>`:'';
+    const ce=(r.correctExpiry?`<span class="mono" style="color:var(--green);font-weight:700">${fd(r.correctExpiry)}</span>`:'—')+(r.status==='wrong'?`<div style="display:flex;gap:4px;margin-top:6px;align-items:center;"><input type="date" id="ce_${r.i}" title="Enter the correct expiry" style="font-size:11px;padding:3px 5px;border:1px solid var(--border-s);border-radius:6px;font-family:inherit;"/><button onclick="setExp(${r.i})" style="border:none;background:var(--green);color:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">Set</button></div>`:'');
+    const wr=(r.wrongReason?`<br><span style="font-size:10px;color:var(--red)">${e(r.wrongReason)}</span>`:'')+(r.shelfWrong&&r.shelfAct>0?`<br><button onclick="confirmExp('${e(r.asin)}',${r.shelfAct},${r.shelfMaster})" style="margin-top:6px;border:1px solid var(--green);background:#fff;color:var(--green);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✓ Expiry is correct — update master to ${r.shelfAct}d</button>`:'')+(CSL[r.asin]&&CSL[r.asin].confirmed&&r.status==='ok'?`<br><span style="font-size:10px;color:var(--green)">Master updated ${e(CSL[r.asin].prev)}d → ${e(CSL[r.asin].days)}d</span>`:'');
     return`<tr class="${r.status==='wrong'?'wr':''}">
       <td class="mono" style="color:var(--ink4)">${r.i}</td>
       <td>${e(r.warehouse)||'—'}</td>
@@ -992,6 +992,23 @@ function addA(){
   document.getElementById('cpv').classList.add('hidden');
   rdrDB();
 }
+function setExp(i){
+  const r=results.find(x=>x.i===i); if(!r)return;
+  const v=(document.getElementById('ce_'+i)||{}).value; if(!v){alert('Pick the correct expiry date first.');return;}
+  const ts=pd(r.timestamp); if(!ts){alert('Cannot read the stow timestamp for this row.');return;}
+  const prod=new Date(ts.getFullYear(),ts.getMonth(),ts.getDate()), ex=new Date(v+'T00:00:00');
+  const days=Math.round((ex-prod)/86400000); if(days<=0){alert('Correct expiry must be after the stow date ('+fd(prod)+').');return;}
+  const prev=getSL(r.asin);
+  if(!confirm(r.asin+'\nCorrect expiry: '+fd(ex)+'\nStow date: '+fd(prod)+'\n\nMaster shelf life will be set to '+days+' days'+(prev?' (was '+prev+' days)':'')+'. All rows for this ASIN will be re-checked.'))return;
+  CSL[r.asin]={title:(CSL[r.asin]&&CSL[r.asin].title)||r.title||'',days,confirmed:true,prev:prev||'—',at:new Date().toISOString().slice(0,10)};
+  localStorage.setItem('emCSL',JSON.stringify(CSL));rdrDB();run();
+}
+function confirmExp(asin,days,prev){
+  if(!confirm('Confirm the entered expiry is correct?\n\n'+asin+': master shelf life will change from '+prev+' days to '+days+' days, and all rows for this ASIN will be re-checked.'))return;
+  const r=results.find(x=>x.asin===asin)||{};
+  CSL[asin]={title:(CSL[asin]&&CSL[asin].title)||r.title||'',days,confirmed:true,prev,at:new Date().toISOString().slice(0,10)};
+  localStorage.setItem('emCSL',JSON.stringify(CSL));rdrDB();run();
+}
 function rmA(a){delete CSL[a];localStorage.setItem('emCSL',JSON.stringify(CSL));rdrDB();}
 
 function toggleBulk(){
@@ -1048,7 +1065,7 @@ function rdrDB(){
   document.getElementById('dbCnt').textContent=entries.length;
   const l=document.getElementById('dbList');
   if(!entries.length){l.innerHTML='<div style="padding:14px;text-align:center;color:var(--ink4);font-size:12px;">None yet</div>';return;}
-  l.innerHTML=entries.map(([a,v])=>`<div class="db-item"><div><div class="db-asin">${e(a)}</div><div style="font-size:11px;color:var(--ink3)">${e(v.title||'')}</div></div><div style="display:flex;align-items:center;gap:6px;"><span class="db-days">${v.days}d</span><button class="del-x" onclick="rmA('${e(a)}')">✕</button></div></div>`).join('');
+  l.innerHTML=entries.map(([a,v])=>`<div class="db-item"><div><div class="db-asin">${e(a)}</div><div style="font-size:11px;color:var(--ink3)">${e(v.title||'')}</div>${v.confirmed?`<div style="font-size:10px;color:var(--green);font-weight:600">✓ Confirmed ${e(v.at||'')} · was ${e(v.prev)}d</div>`:''}</div><div style="display:flex;align-items:center;gap:6px;"><span class="db-days">${v.days}d</span><button class="del-x" onclick="rmA('${e(a)}')">✕</button></div></div>`).join('');
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

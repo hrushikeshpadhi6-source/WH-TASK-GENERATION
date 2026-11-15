@@ -34,7 +34,7 @@
 </head>
 <body>
 <div style="max-width:1320px;margin:0 auto;">
-  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #d7dee6;color:#5d6b7a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;text-decoration:none;margin-bottom:18px;white-space:nowrap;">← Back to dashboard</a>
+  <a id="ob-back" href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #d7dee6;color:#5d6b7a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;text-decoration:none;margin-bottom:18px;white-space:nowrap;">← Back to dashboard</a>
 
   <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:2px solid #11161c;padding-bottom:16px;">
     <div>
@@ -407,5 +407,6 @@ $('b-xl').addEventListener('click',function(){
   XLSX.writeFile(wb,'OB_Forecast_vs_Actual_'+DATE+'.xlsx');
 });
 </script>
+<script>try{ if(window.self!==window.top){ document.getElementById('ob-back').style.display='none'; document.body.style.padding='20px'; } }catch(e){}</script>
 </body>
 </html>

@@ -2539,10 +2539,10 @@ window.feedbackAdminClear=async function(){
       <span class="card-arrow">→</span>
     </div>
 
-    <div class="task-card" data-tool="ib-forecast" data-tool-label="Inbound Forecast vs Actual" style="--card-color:#0f766e;" onclick="openTask('ib-forecast')">
+    <div class="task-card" data-tool="ib-forecast" data-tool-label="Forecast vs Actual Analysis" style="--card-color:#0f766e;" onclick="openTask('ib-forecast')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📥</span>
-      <h3 style="background:linear-gradient(135deg,#0f766e,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h3>
-      <p>Forecast vs stowed units store-wise &amp; node-wise with delta % and stow SLA %.</p>
+      <h3 style="background:linear-gradient(135deg,#0f766e,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Forecast vs Actual Analysis</h3>
+      <p>IB, OB &amp; Combined forecast vs actual — variance %, stow SLA, late slams &amp; LS % · Excel export.</p>
       <span class="card-arrow">→</span>
     </div>
 
@@ -3990,10 +3990,7 @@ window.feedbackAdminClear=async function(){
     </button>
     <div style="font-size:12px;color:#7b78a8;margin-top:8px;">Upload LS file without promise time → fixed store × unit promise applied · store-wise late slam count · Excel export</div>
 
-    <button onclick="window.open('OB Forecast vs Actual.html','_blank')" style="display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:12px;border:2px solid #1a1830;background:linear-gradient(135deg,rgba(26,24,48,0.08),rgba(45,43,94,0.12));color:#1a1830;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;font-family:'Syne',sans-serif;transition:all 0.2s;margin-top:18px;" onmouseenter="this.style.background='linear-gradient(135deg,#1a1830,#2d2b5e)';this.style.color='#fff';" onmouseleave="this.style.background='linear-gradient(135deg,rgba(26,24,48,0.08),rgba(45,43,94,0.12))';this.style.color='#1a1830';">
-      📊 OB Forecast vs Actual &nbsp;<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(26,24,48,0.12);font-weight:700;">NEW</span>
-    </button>
-    <div style="font-size:12px;color:#7b78a8;margin-top:8px;">Upload S&amp;OP forecast + Daily Order &amp; Unit + Late Slam UTR → store-wise forecast vs actual, LS %, unit variance, throughput · Excel export</div>
+
   </div>
 </div>
 </div>
@@ -16566,7 +16563,7 @@ var MAINT_TOOLS = [
   ['locid','Location ID Maker'],['lateslam','Late Slam Calculator'],['voc','VOC Analysis'],['voc-rca','VOC RCA Builder'],['wh-loss-rca','WH Loss & Concession RCA'],['freezer-draw','Freezer Lucky Draw'],
   ['throughput','Throughput per Picking Hour'],['store-metrics','Store Metrics'],
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
-  ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['ib-forecast','Inbound Forecast vs Actual'],['deliverynote','Reverse Transshipment'],['totecheck','Tote vs Transshipment'],
+  ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['ib-forecast','Forecast vs Actual Analysis'],['deliverynote','Reverse Transshipment'],['totecheck','Tote vs Transshipment'],
   ['fast-moving','Fast Moving ASIN'],['inv-audit','Inventory Audit'],['top-performer','Top Performer'],
   ['barometer','Barometer'],
   ['feedback','Report & Suggest'],['contact','Support Desk']
@@ -19293,10 +19290,16 @@ We'll be back soon with an improved experience.</textarea>
   <div class="task-header" style="border-bottom-color:#d5d2f0;">
     <span class="task-header-icon">📥</span>
     <div>
-      <h2 style="background:linear-gradient(135deg,#1a1830,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h2>
-      <p style="color:#3d3a6b;">Upload Forecast + Daily Inbound Stow (actual) + Stow SLA file → store-wise and node-wise forecast delta % with stow SLA %.</p>
+      <h2 style="background:linear-gradient(135deg,#1a1830,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Forecast vs Actual Analysis</h2>
+      <p style="color:#3d3a6b;">IB · OB · Combined — store-wise forecast vs actual with variance %, stow SLA, late slams and LS %.</p>
     </div>
   </div>
+  <div style="display:flex;gap:6px;background:#fff;border:1.5px solid #d5d2f0;border-radius:12px;padding:5px;margin-bottom:18px;width:fit-content;max-width:100%;flex-wrap:wrap;">
+    <button id="fva-t-ib" onclick="FVA.tab('ib')" style="border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;background:#1a1830;color:#fff;">📥 IB Forecast vs Actual</button>
+    <button id="fva-t-ob" onclick="FVA.tab('ob')" style="border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;background:transparent;color:#3d3a6b;">📊 OB Forecast vs Actual</button>
+    <button id="fva-t-cb" onclick="FVA.tab('cb')" style="border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:800;cursor:pointer;background:transparent;color:#3d3a6b;">🔗 Combined (IB + OB)</button>
+  </div>
+  <div id="fva-ib">
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:16px;">
     <div>
       <div style="font-weight:700;font-size:12px;color:#7b78a8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📈 Step 1 — Inbound Forecast</div>
@@ -19358,6 +19361,22 @@ We'll be back soon with an improved experience.</textarea>
     <div id="ibf-man-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
   </div>
   <div id="ibf-out"></div>
+</div>
+<div id="fva-ob" style="display:none;">
+  <iframe id="fva-ob-frame" data-src="OB Forecast vs Actual.html" style="width:100%;height:900px;border:1.5px solid #d5d2f0;border-radius:14px;background:#e8ecf3;"></iframe>
+</div>
+<div id="fva-cb" style="display:none;">
+  <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
+    <div style="font-size:12px;color:#7b78a8;margin-bottom:12px;">Upload the IB files in the <b>IB</b> tab and the OB files in the <b>OB</b> tab first. Then pick a date and click Generate.</div>
+    <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
+      <div><div class="ctrl-label">Date</div><select class="select-field" id="fva-cb-date" style="min-width:200px;"><option value="">Upload IB forecast first</option></select></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1a1830;cursor:pointer;height:40px;"><input type="checkbox" id="fva-cb-tph" onchange="FVA.rerender()" style="width:16px;height:16px;"> Show Throughput</label>
+      <button class="btn btn-accent" onclick="FVA.combine()">⚡ Generate Combined</button>
+      <button class="btn btn-green" id="fva-cb-xl" style="display:none;" onclick="FVA.exportCombined()">⬇ Export Excel</button>
+    </div>
+  </div>
+  <div id="fva-cb-out"></div>
+</div>
 </div>
 </div>
 <!-- ── PAGE: Fast Moving ASIN ──────────────────────────────────── -->
@@ -22258,12 +22277,95 @@ var IBF=(function(){
   function injectCard(){
     var grid=document.querySelector('.task-grid'); if(!grid||document.getElementById('dstpro-card-ib-forecast')) return;
     var div=document.createElement('div'); div.id='dstpro-card-ib-forecast'; div.className='task-card';
-    div.setAttribute('data-tool','ib-forecast'); div.setAttribute('data-tool-label','Inbound Forecast vs Actual');
+    div.setAttribute('data-tool','ib-forecast'); div.setAttribute('data-tool-label','Forecast vs Actual Analysis');
     div.style.setProperty('--card-color','#0f766e'); div.setAttribute('onclick',"openTask('ib-forecast')");
-    div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Inbound Forecast vs Actual</h3><p>Forecast vs stowed units store-wise &amp; node-wise with delta % and stow SLA %.</p><span class="card-arrow">→</span>';
+    div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Forecast vs Actual Analysis</h3><p>IB, OB &amp; Combined forecast vs actual — variance %, stow SLA, late slams &amp; LS % · Excel export.</p><span class="card-arrow">→</span>';
     var fb=grid.querySelector('[onclick*="feedback"]'); if(fb) grid.insertBefore(div,fb); else grid.appendChild(div);
   }
-  return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets,manAdd:manAdd,manRemove:manRemove,manPick:manPick,manUI:manUI};
+  return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets,manAdd:manAdd,manRemove:manRemove,manPick:manPick,manUI:manUI,getLast:function(){return last;},withStyleLib:withStyleLib};
+})();
+</script>
+<script>
+window.FVA=(function(){
+  var $=function(i){return document.getElementById(i);}, CUR=null;
+  var NAMES={QAA6:'Khalifa City',QAA7:'Al Raha',QAA1:'MBZ city',QDC6:'Qusais',QDG5:'Business Bay',QDD3:'Yas Mall',QDG8:'DIFC',QHA5:'Sharjah',QDH5:'Arjan'};
+  var ORDER=['QAA1','QAA6','QAA7','QDC6','QDG5','QDD3','QDG8','QHA5','QDH5'];
+  function base(s){ return String(s).replace(/[_\s-]*SS$/i,''); }
+  function label(s){ return NAMES[s]?s+'- '+NAMES[s]:s; }
+  function obWin(){ var f=$('fva-ob-frame'); try{ return f&&f.contentWindow&&f.contentWindow.compute?f.contentWindow:null; }catch(e){ return null; } }
+  function loadFrame(){ var f=$('fva-ob-frame'); if(!f.src) f.src=f.getAttribute('data-src'); }
+  setInterval(function(){ var f=$('fva-ob-frame'); if(!f||!f.src||!f.offsetParent) return; try{ var h=f.contentDocument.body.scrollHeight; if(h) f.style.height=(h+40)+'px'; }catch(e){} },800);
+  function tab(t){
+    ['ib','ob','cb'].forEach(function(k){ $('fva-'+k).style.display=k===t?'':'none'; var b=$('fva-t-'+k); b.style.background=k===t?'#1a1830':'transparent'; b.style.color=k===t?'#fff':'#3d3a6b'; });
+    loadFrame();
+    if(t==='cb'){ var src=$('ibf-date'), dst=$('fva-cb-date'), cur=dst.value||src.value; dst.innerHTML=src.innerHTML; if(cur) dst.value=cur; }
+  }
+  function combine(){
+    var d=$('fva-cb-date').value; if(!d){ toast('⚠️ Upload the IB forecast file in the IB tab'); return; }
+    $('ibf-date').value=d; IBF.generate(); var L=IBF.getLast();
+    if(!L||L.date!==d){ toast('⚠️ IB data not ready — check the IB tab'); return; }
+    var W=obWin(), OB=null, notes=[];
+    if(!W) notes.push('OB files not uploaded (OB tab) — OB columns are empty');
+    else { try{ OB=W.compute(d); }catch(e){ OB=null; } if(OB&&!OB.rows.length) notes.push('OB has no data for this date'); }
+    var M={};
+    function g(s){ var b=base(s); return M[b]=M[b]||{s:b,ibF:0,ibA:0,ibHas:false,obF:null,obA:null,ls:0,el:0,secs:0,units:0,obHas:false,obMan:false}; }
+    L.storeRows.forEach(function(r){ var x=g(r.k); x.ibF+=r.t.f; x.ibA+=r.t.act; x.ibHas=true; });
+    if(OB) OB.rows.forEach(function(r){ var x=g(r.store); x.obHas=true; if(r.fu!=null) x.obF=(x.obF||0)+r.fu; x.obA=(x.obA||0)+r.au; if(r.manual) x.obMan=true; else { x.ls+=r.ls||0; x.el+=r.el||0; x.secs+=r.secs||0; x.units+=r.units||0; } });
+    var rows=Object.keys(M).map(function(k){ return M[k]; }).sort(function(a,b){ var ia=ORDER.indexOf(a.s), ib=ORDER.indexOf(b.s); return (ia<0?99:ia)-(ib<0?99:ib)||a.s.localeCompare(b.s); });
+    var T={s:'TOTAL',ibF:0,ibA:0,obF:0,obA:0,ls:0,el:0,secs:0,units:0,ibHas:true,obHas:!!OB};
+    rows.forEach(function(r){ r.ibV=r.ibHas&&r.ibF?(r.ibA-r.ibF)/r.ibF*100:null; r.obV=r.obHas&&r.obF?(r.obA-r.obF)/r.obF*100:null; r.lsP=!r.obMan&&r.el?r.ls/r.el*100:null;
+      T.ibF+=r.ibF; T.ibA+=r.ibA; T.obF+=r.obF||0; T.obA+=r.obA||0; T.ls+=r.ls; T.el+=r.el; T.secs+=r.secs; T.units+=r.units; r.tph=!r.obMan&&r.secs?r.units/r.secs*3600:null; });
+    T.tph=T.secs?T.units/T.secs*3600:null;
+    T.ibV=T.ibF?(T.ibA-T.ibF)/T.ibF*100:null; T.obV=T.obF?(T.obA-T.obF)/T.obF*100:null; T.lsP=T.el?T.ls/T.el*100:null;
+    CUR={date:d,rows:rows,T:T,tgt:W&&W.target?W.target():170};
+    render(notes);
+  }
+  function vCol(v){ return v==null?null:v>10?['#fee2e2','#b91c1c']:v>0?['#fef9c3','#1a1830']:null; }
+  function lCol(p){ return p==null?null:p>5?['#fee2e2','#b91c1c']:p>=3?['#fef3c7','#b45309']:null; }
+  function f0(v){ return v==null?'NA':Math.round(v).toLocaleString('en-US'); }
+  function f1(v){ return v==null?'NA':v.toFixed(1)+'%'; }
+  function render(notes){
+    var R=CUR.rows, T=CUR.T, B='border:1px solid #1a1830;';
+    var TH='background:#1a1830;color:#fff;font-weight:800;font-size:12px;padding:8px 10px;text-align:center;text-transform:none;letter-spacing:0;line-height:1.25;white-space:normal;width:1%;min-width:62px;'+B;
+    var TD='padding:7px 10px;text-align:center;font-size:13px;color:#1a1830;background:#fff;white-space:nowrap;letter-spacing:0;'+B;
+    function c(v,txt,col,bold){ var s=TD+(bold?'font-weight:800;':''); if(col) s+='background:'+col[0]+';color:'+col[1]+';font-weight:800;'; if(v==null) s+='color:#1a1830;'; return '<td style="'+s+'">'+txt+'</td>'; }
+    var h=notes.length?'<div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:14px;">⚠️ '+notes.join(' · ')+'</div>':'';
+    h+='<div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px;overflow-x:auto;"><div style="font-size:16px;font-weight:800;color:#1a1830;margin-bottom:12px;">🔗 IB + OB Forecast vs Actual · '+new Date(CUR.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>';
+    var SHT=$('fva-cb-tph').checked;
+    h+='<table style="border-collapse:collapse;width:auto;"><thead><tr>'+['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam','LS %'].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]).map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('')+'</tr></thead><tbody>';
+    R.forEach(function(r,i){ var lc=lCol(r.lsP);
+      h+='<tr>'+c(0,i+1)+'<td style="'+TD+'font-weight:800;text-align:left;padding-left:14px;">'+label(r.s)+'</td>'+
+        c(0,r.ibHas?f0(r.ibF):'NA')+c(0,r.ibHas?f0(r.ibA):'NA')+c(r.ibV,f1(r.ibV),vCol(r.ibV),true)+
+        c(0,f0(r.obF))+c(0,f0(r.obA))+c(r.obV,f1(r.obV),vCol(r.obV),true)+
+        c(0,r.obMan||!r.obHas?'NA':r.ls,lc&&lc[0]==='#fef3c7'?lc:null)+c(r.lsP,f1(r.lsP),lc,true)+(SHT?c(0,r.tph?Math.round(r.tph):'NA',r.tph&&r.tph>=CUR.tgt?['#d1fae5','#047857']:null,true):'')+'</tr>'; });
+    var TT='padding:8px 10px;text-align:center;font-size:13px;white-space:nowrap;font-weight:800;color:#1a1830;background:#8c8c8c;'+B;
+    h+='<tr><td style="'+TT+'background:#fff;border:none;"></td><td style="'+TT+'">TOTAL</td><td style="'+TT+'">'+f0(T.ibF)+'</td><td style="'+TT+'">'+f0(T.ibA)+'</td><td style="'+TT+'">'+f1(T.ibV)+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obF):'NA')+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obA):'NA')+'</td><td style="'+TT+'">'+f1(T.obV)+'</td><td style="'+TT+'">'+(T.obHas?T.ls:'NA')+'</td><td style="'+TT+'">'+f1(T.lsP)+'</td>'+(SHT?'<td style="'+TT+'">'+(T.tph?Math.round(T.tph):'NA')+'</td>':'')+'</tr>';
+    h+='</tbody></table><div style="font-size:11px;color:#7b78a8;margin-top:10px;">Variance % = (Actual − Forecast) ÷ Forecast · <b style="color:#b91c1c">above +10%</b> red · <b style="color:#a16207">0 to +10%</b> yellow · LS %: <b style="color:#b45309">3–5%</b> yellow · <b style="color:#b91c1c">above 5%</b> red · _SS stores are added into their main store.</div></div>';
+    $('fva-cb-out').innerHTML=h; $('fva-cb-xl').style.display='';
+  }
+  function exportCombined(){ if(!CUR) return; IBF.withStyleLib(function(X){
+    var R=CUR.rows, T=CUR.T, B={style:'thin',color:{rgb:'1A1830'}}, border={top:B,bottom:B,left:B,right:B};
+    var SHT=$('fva-cb-tph').checked; var head=['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam','LS %'].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]);
+    var p=function(v){ return v==null?'NA':+(v/100).toFixed(4); }, n=function(v){ return v==null?'NA':Math.round(v); };
+    var aoa=[head]; R.forEach(function(r,i){ aoa.push([i+1,label(r.s),r.ibHas?n(r.ibF):'NA',r.ibHas?n(r.ibA):'NA',p(r.ibV),n(r.obF),n(r.obA),p(r.obV),r.obMan||!r.obHas?'NA':r.ls,p(r.lsP)].concat(SHT?[n(r.tph)]:[])); });
+    aoa.push(['','TOTAL',n(T.ibF),n(T.ibA),p(T.ibV),T.obHas?n(T.obF):'NA',T.obHas?n(T.obA):'NA',p(T.obV),T.obHas?T.ls:'NA',p(T.lsP)].concat(SHT?[n(T.tph)]:[]));
+    var ws=X.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:6},{wch:22},{wch:10},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:9},{wch:8}].concat(SHT?[{wch:14}]:[]);
+    ws['!rows']=[{hpt:36}];
+    var hx=function(c){return c.replace('#','').toUpperCase();};
+    for(var r=0;r<aoa.length;r++) for(var c=0;c<head.length;c++){
+      var a=X.utils.encode_cell({r:r,c:c}); if(!ws[a]) ws[a]={t:'s',v:''}; var cell=ws[a], tot=r===aoa.length-1, row=R[r-1];
+      var s={border:border,alignment:{horizontal:c===1&&!tot?'left':'center',vertical:'center',wrapText:r===0},font:{name:'Calibri',sz:11,color:{rgb:'1A1830'},bold:r===0||tot||c===1||c===4||c===7||c===9}};
+      if(r===0){ s.fill={fgColor:{rgb:'1A1830'}}; s.font.color={rgb:'FFFFFF'}; }
+      else if(tot){ if(c===0){ s={}; } else s.fill={fgColor:{rgb:'8C8C8C'}}; }
+      else { var col=c===4?vCol(row.ibV):c===7?vCol(row.obV):c===10?(row.tph&&row.tph>=CUR.tgt?['#d1fae5','#047857']:null):c===9?lCol(row.lsP):c===8?(function(){var l=lCol(row.lsP);return l&&l[0]==='#fef3c7'?l:null;})():null;
+        if(col){ s.fill={fgColor:{rgb:hx(col[0])}}; s.font.color={rgb:hx(col[1])}; s.font.bold=true; } }
+      if(cell.t==='n'&&(c===4||c===7||c===9)) cell.z='0.0%'; else if(cell.t==='n'&&c>=2) cell.z='#,##0';
+      cell.s=s;
+    }
+    var wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,'IB + OB '+CUR.date);
+    X.writeFile(wb,'Forecast_vs_Actual_Combined_'+CUR.date+'.xlsx');
+  }); }
+  return {tab:tab,combine:combine,exportCombined:exportCombined,rerender:function(){ if(CUR) render([]); }};
 })();
 </script>
 
