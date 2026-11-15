@@ -2542,7 +2542,7 @@ window.feedbackAdminClear=async function(){
     <div class="task-card" data-tool="ib-forecast" data-tool-label="Inbound Forecast vs Actual" style="--card-color:#0f766e;" onclick="openTask('ib-forecast')">
       <span class="card-icon" style="animation:storeFloat 3s ease-in-out infinite;display:inline-block;">📥</span>
       <h3 style="background:linear-gradient(135deg,#0f766e,#1D4ED8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h3>
-      <p>Forecast vs stowed units store-wise &amp; node-wise with accuracy % and stow SLA %.</p>
+      <p>Forecast vs stowed units store-wise &amp; node-wise with delta % and stow SLA %.</p>
       <span class="card-arrow">→</span>
     </div>
 
@@ -19294,7 +19294,7 @@ We'll be back soon with an improved experience.</textarea>
     <span class="task-header-icon">📥</span>
     <div>
       <h2 style="background:linear-gradient(135deg,#1a1830,#0f766e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Inbound Forecast vs Actual</h2>
-      <p style="color:#3d3a6b;">Upload Forecast + Daily Inbound Stow (actual) + Stow SLA file → store-wise and node-wise forecast accuracy with stow SLA %.</p>
+      <p style="color:#3d3a6b;">Upload Forecast + Daily Inbound Stow (actual) + Stow SLA file → store-wise and node-wise forecast delta % with stow SLA %.</p>
     </div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:16px;">
@@ -22079,10 +22079,10 @@ var IBF=(function(){
   }
 
   // ── metrics ──
-  function M(f,a,ok,sa){ if(sa==null) sa=a; var v=f>0?(a-f)/f*100:null, acc=f>0?Math.max(0,100-Math.abs(a-f)/f*100):null, sla=sa>0?ok/sa*100:null; return {f:Math.round(f),a:Math.round(a),ok:ok,br:Math.round(sa-ok),v:v,acc:acc,sla:sla}; }
-  function accCol(x){ return x==null?'#9ca3af':x>=90?'#059669':x>=80?'#d97706':'#dc2626'; }
+  function M(f,a,ok,sa){ if(sa==null) sa=a; var v=f>0?(a-f)/f*100:null, acc=v, sla=sa>0?ok/sa*100:null; return {f:Math.round(f),a:Math.round(a),ok:ok,br:Math.round(sa-ok),v:v,acc:acc,sla:sla}; }
+  function accCol(x){ if(x==null) return '#9ca3af'; x=Math.abs(x); return x<=5?'#059669':x<=10?'#d97706':'#dc2626'; }
   function slaCol(x){ return x==null?'#9ca3af':x>=95?'#059669':x>=90?'#d97706':'#dc2626'; }
-  function accBg(x){ return x==null?'':x>=90?'#d1fae5':x>=80?'#fef3c7':'#fee2e2'; }
+  function accBg(x){ if(x==null) return ''; x=Math.abs(x); return x<=5?'#d1fae5':x<=10?'#fef3c7':'#fee2e2'; }
   function pct(x){ return x==null?'—':x.toFixed(1)+'%'; }
   function sp(x){ return x==null?'—':(x>0?'+':'')+x.toFixed(1)+'%'; }
   function n(x){ return Math.round(x).toLocaleString(); }
@@ -22143,16 +22143,16 @@ var IBF=(function(){
 
     var TH='background:#1a1830;color:#e2e8f0;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:10px 12px;text-align:center;white-space:nowrap;';
     var TD='padding:9px 12px;text-align:center;font-size:13px;border-bottom:1px solid #ece9fb;white-space:nowrap;';
-    function head(first,extra){ return '<thead><tr><th style="'+TH+'text-align:left;">'+first+'</th>'+(extra||'')+['Forecast','Actual','Accuracy %','Stow SLA %','SLA Breach Units'].map(function(h){return '<th style="'+TH+'">'+h+'</th>';}).join('')+'</tr></thead>'; }
+    function head(first,extra){ return '<thead><tr><th style="'+TH+'text-align:left;">'+first+'</th>'+(extra||'')+['Forecast','Actual','Delta %','Stow SLA %','SLA Breach Units'].map(function(h){return '<th style="'+TH+'">'+h+'</th>';}).join('')+'</tr></thead>'; }
     function row(label,m,extra,total,manual){
       var bg=total?'background:#ffd600;font-weight:800;':'';
       if(manual) return '<tr><td style="'+TD+'text-align:left;font-weight:800;color:#0f766e;">'+label+'</td>'+(extra||'')+
         '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td>'+
-        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';background:'+accBg(m.acc)+';">'+pct(m.acc)+'</td>'+
+        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';background:'+accBg(m.acc)+';">'+sp(m.acc)+'</td>'+
         '<td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td><td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td></tr>';
       return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(total?'#1a1830':'#0f766e')+';">'+label+'</td>'+(extra||'')+
         '<td style="'+TD+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td>'+
-        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(total?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'+
+        '<td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(total?'':'background:'+accBg(m.acc)+';')+'">'+sp(m.acc)+'</td>'+
         '<td style="'+TD+'font-weight:800;color:'+slaCol(m.sla)+';">'+pct(m.sla)+'</td>'+
         '<td style="'+TD+'color:#b91c1c;">'+(m.sla==null?'—':n(m.br))+'</td></tr>';
     }
@@ -22163,20 +22163,20 @@ var IBF=(function(){
     if(note) h+='<div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:14px;">⚠️ '+note+'</div>';
     h+='<div style="background:linear-gradient(135deg,#1a1830,#2d2b5e);color:#fff;padding:16px 22px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">'+
       '<div style="font-size:18px;font-weight:800;">📥 IB Forecast vs Actual · '+prettyDate(d)+'</div>'+
-      '<div style="font-size:13px;opacity:.75;">'+stores.length+' stores · '+n(GM.f)+' forecast · '+n(GM.a)+' actual · '+pct(GM.acc)+' accuracy · SLA '+pct(GM.sla)+'</div></div>';
+      '<div style="font-size:13px;opacity:.75;">'+stores.length+' stores · '+n(GM.f)+' forecast · '+n(GM.a)+' actual · '+sp(GM.acc)+' delta · SLA '+pct(GM.sla)+'</div></div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px;">'+
       card(n(GM.f),'Forecast Units','#1d4ed8')+card(n(GM.a),I?'Actual Stowed (Inbound)':'Actual Stowed','#1a1830')+
-      card(pct(GM.acc),'Accuracy %',accCol(GM.acc))+
+      card(sp(GM.acc),'Delta %',accCol(GM.acc))+
       card(pct(GM.sla),'Stow SLA %',slaCol(GM.sla))+card(G.lines?(G.mins/G.lines).toFixed(0)+' min':'—','Avg Recv → Stow','#7c3aed')+'</div>';
     var VT=vtRows.reduce(function(a,r){ a.vf+=r.vf;a.va+=r.va;a.tf+=r.tf;a.ta+=r.ta;a.ok+=r.ok;a.sa+=r.sa; return a; },{k:'TOTAL',vf:0,va:0,tf:0,ta:0,ok:0,sa:0});
     last.VT=VT;
     var vtr=function(r,tot){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); var bg=tot?'background:#ffd600;font-weight:800;':'';
-      var c=function(m,bl){ var b=bl?'border-left:2px solid #d5d2f0;':''; return '<td style="'+TD+b+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td><td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(tot?'':'background:'+accBg(m.acc)+';')+'">'+pct(m.acc)+'</td>'; };
+      var c=function(m,bl){ var b=bl?'border-left:2px solid #d5d2f0;':''; return '<td style="'+TD+b+'">'+n(m.f)+'</td><td style="'+TD+'font-weight:700;">'+n(m.a)+'</td><td style="'+TD+'font-weight:800;color:'+accCol(m.acc)+';'+(tot?'':'background:'+accBg(m.acc)+';')+'">'+sp(m.acc)+'</td>'; };
       var NA='<td style="'+TD+'color:#9ca3af;font-weight:700;">N/A</td>', tag='';
       var tc=r.noT?'<td style="'+TD+'border-left:2px solid #d5d2f0;">'+n(mt.f)+'</td>'+NA+NA:c(mt,1);
       return '<tr style="'+bg+'"><td style="'+TD+'text-align:left;font-weight:800;color:'+(tot?'#1a1830':'#0f766e')+';">'+r.k+tag+'</td>'+c(mv,1)+tc+(r.manual?NA:'<td style="'+TD+'font-weight:800;color:'+slaCol(mt.sla)+';">'+pct(mt.sla)+'</td>')+c(ma,1)+'</tr>'; };
     var gh='<th style="'+TH+'border-left:2px solid #475569;" colspan="3">Vendor</th><th style="'+TH+'border-left:2px solid #475569;" colspan="4">Transship</th><th style="'+TH+'border-left:2px solid #475569;background:#2d2b5e;" colspan="3">Total (Vendor + Transship)</th>';
-    var sh=['Forecast','Actual','Accuracy %','Forecast','Actual','Accuracy %','Stow SLA %','Forecast','Actual','Accuracy %'].map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('');
+    var sh=['Forecast','Actual','Delta %','Forecast','Actual','Delta %','Stow SLA %','Forecast','Actual','Delta %'].map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('');
     h+=panel('🔀 Vendor + Transship · Total <span style="font-weight:500;font-size:12px;color:#7b78a8;">· actual from '+(I?'Daily Inbound Stow file':'Stow SLA file')+' · SLA = transship only</span>',
       '<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="'+TH+'text-align:left;" rowspan="2">Store</th>'+gh+'</tr><tr>'+sh+'</tr></thead><tbody>'+vtRows.map(function(r){return vtr(r);}).join('')+vtr(VT,true)+'</tbody></table>');
     h+=panel('🏪 Store-wise',
@@ -22188,17 +22188,17 @@ var IBF=(function(){
     // matrix
     var mx='<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="'+TH+'text-align:left;">Store</th>'+nodes.map(function(nd){return '<th style="'+TH+'">'+nd+'</th>';}).join('')+'<th style="'+TH+'">Total</th></tr></thead><tbody>';
     function mcell(m,bold){ if(!m.f && !m.a) return '<td style="'+TD+'color:#d1d5db;">—</td>';
-      return '<td style="'+TD+'background:'+(accBg(m.acc)||'#f8fafc')+';"><div style="font-weight:800;color:'+accCol(m.acc)+';font-size:14px;">'+pct(m.acc)+'</div><div style="font-size:11px;color:#475569;">'+n(m.a)+' / '+n(m.f)+'</div><div style="font-size:11px;font-weight:700;color:'+slaCol(m.sla)+';">SLA '+pct(m.sla)+'</div></td>'; }
+      return '<td style="'+TD+'background:'+(accBg(m.acc)||'#f8fafc')+';"><div style="font-weight:800;color:'+accCol(m.acc)+';font-size:14px;">'+sp(m.acc)+'</div><div style="font-size:11px;color:#475569;">'+n(m.a)+' / '+n(m.f)+'</div><div style="font-size:11px;font-weight:700;color:'+slaCol(m.sla)+';">SLA '+pct(m.sla)+'</div></td>'; }
     stores.forEach(function(s){ mx+='<tr><td style="'+TD+'text-align:left;font-weight:800;color:#0f766e;">'+s+'</td>'+nodes.map(function(nd){ var x=get(s,nd); return mcell(M(x.f,x.a,x.ok,x.sa)); }).join('')+mcell(storeRows.find(function(r){return r.k===s;}).m)+'</tr>'; });
     mx+='<tr style="background:#fffbe6;"><td style="'+TD+'text-align:left;font-weight:800;">TOTAL</td>'+nodeRows.map(function(r){return mcell(r.m);}).join('')+mcell(GM)+'</tr></tbody></table>';
-    h+=panel('🔢 Store × Node <span style="font-weight:500;font-size:12px;color:#7b78a8;">· accuracy % · actual / forecast · stow SLA %'+(I?' · actual from Stow SLA file':'')+'</span>',mx);
-    h+='<div style="font-size:11px;color:#7b78a8;margin-top:-6px;">Accuracy % = 100 − |Actual − Forecast| ÷ Forecast · Stow SLA % = stowed units within SLA ÷ stowed units (Stow SLA file, Vendor excluded). Store-wise &amp; Vendor/Transship actual = Daily Inbound Stow file when uploaded; node-wise actual = stow_quantity. Accuracy: <b style="color:#059669">≥90</b> · <b style="color:#d97706">80–90</b> · <b style="color:#dc2626">&lt;80</b> · SLA: <b style="color:#059669">≥95</b> · <b style="color:#d97706">90–95</b> · <b style="color:#dc2626">&lt;90</b></div>';
+    h+=panel('🔢 Store × Node <span style="font-weight:500;font-size:12px;color:#7b78a8;">· delta % · actual / forecast · stow SLA %'+(I?' · actual from Stow SLA file':'')+'</span>',mx);
+    h+='<div style="font-size:11px;color:#7b78a8;margin-top:-6px;">Delta % = (Actual − Forecast) ÷ Forecast · + more than forecast · − less than forecast · Stow SLA % = stowed units within SLA ÷ stowed units (Stow SLA file, Vendor excluded). Store-wise &amp; Vendor/Transship actual = Daily Inbound Stow file when uploaded; node-wise actual = stow_quantity. Delta: <b style="color:#059669">within ±5%</b> · <b style="color:#d97706">±5–10%</b> · <b style="color:#dc2626">beyond ±10%</b> · SLA: <b style="color:#059669">≥95</b> · <b style="color:#d97706">90–95</b> · <b style="color:#dc2626">&lt;90</b></div>';
     $('ibf-out').innerHTML=h; $('ibf-actions').style.display='flex';
     toast('✅ Inbound forecast vs actual ready');
   }
 
   function flat(r,first){ var o={}; o[first]=r.k; if(r.cat) o.Cat=r.cat; var m=r.m;
-    o.Forecast=m.f; o.Actual=m.a; o['Accuracy %']=m.acc==null?'':+m.acc.toFixed(1); o['Stow SLA %']=r.manual?'N/A':m.sla==null?'':+m.sla.toFixed(1); o['SLA Breach Units']=r.manual?'N/A':m.sla==null?'':m.br; if(r.manual) o[first]=r.k; return o; }
+    o.Forecast=m.f; o.Actual=m.a; o['Delta %']=m.acc==null?'':+m.acc.toFixed(1); o['Stow SLA %']=r.manual?'N/A':m.sla==null?'':+m.sla.toFixed(1); o['SLA Breach Units']=r.manual?'N/A':m.sla==null?'':m.br; if(r.manual) o[first]=r.k; return o; }
   // styled-export library loaded on demand into its own global so the dashboard's XLSX is untouched
   function withStyleLib(cb){
     if(window.XLSXS) return cb(window.XLSXS);
@@ -22221,7 +22221,7 @@ var IBF=(function(){
         var a=X.utils.encode_cell({r:r,c:c2}); if(!ws[a]) ws[a]={t:'s',v:''};
         var cell=ws[a], hd=heads[c2], v=cell.t==='n'?cell.v:null;
         var s={border:border,alignment:{horizontal:c2===0?'left':'center'},font:{bold:tot||c2===0,color:{rgb:c2===0&&!tot?'0F766E':'1A1830'}}};
-        if(/accuracy %/i.test(hd)&&v!=null){ s.font={bold:true,color:{rgb:hex(accCol(v))}}; if(!tot) s.fill={fgColor:{rgb:hex(accBg(v))}}; }
+        if(/delta %/i.test(hd)&&v!=null){ s.font={bold:true,color:{rgb:hex(accCol(v))}}; if(!tot) s.fill={fgColor:{rgb:hex(accBg(v))}}; }
         else if(/sla %/i.test(hd)&&v!=null){ s.font={bold:true,color:{rgb:hex(slaCol(v))}}; }
         else if(/breach/i.test(hd)&&v){ s.font={bold:tot,color:{rgb:'B91C1C'}}; }
         else if(/actual/i.test(hd)) s.font.bold=true;
@@ -22238,13 +22238,13 @@ var IBF=(function(){
     var _app=XLSX.utils.book_append_sheet; var app=function(w,ws,n){ _app(w,styleSheet(XLSX,ws),n); };
     app(wb,XLSX.utils.json_to_sheet(last.storeRows.concat([tot]).map(function(r){return flat(r,'Store');})),'Store-wise');
     if(last.vtRows){ var f1=function(x){return x==null?'':+x.toFixed(1);};
-      var vt=last.vtRows.concat([last.VT]).map(function(r){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); return {Store:r.k,'Vendor Forecast':mv.f,'Vendor Actual':mv.a,'Vendor Accuracy %':f1(mv.acc),'Transship Forecast':mt.f,'Transship Actual':mt.a,'Transship Accuracy %':f1(mt.acc),'Transship Stow SLA %':r.manual?'N/A':f1(mt.sla),'Transship Actual':r.noT?'N/A':mt.a,'Total Forecast':ma.f,'Total Actual':ma.a,'Total Accuracy %':f1(ma.acc)}; });
+      var vt=last.vtRows.concat([last.VT]).map(function(r){ var mv=M(r.vf,r.va,0), mt=M(r.tf,r.ta,r.ok,r.sa), ma=M(r.vf+r.tf,r.va+r.ta,0); return {Store:r.k,'Vendor Forecast':mv.f,'Vendor Actual':mv.a,'Vendor Delta %':f1(mv.acc),'Transship Forecast':mt.f,'Transship Actual':mt.a,'Transship Delta %':f1(mt.acc),'Transship Stow SLA %':r.manual?'N/A':f1(mt.sla),'Transship Actual':r.noT?'N/A':mt.a,'Total Forecast':ma.f,'Total Actual':ma.a,'Total Delta %':f1(ma.acc)}; });
       app(wb,XLSX.utils.json_to_sheet(vt),'Vendor + Transship'); }
     app(wb,XLSX.utils.json_to_sheet(last.nodeRows.concat([tot]).map(function(r){return flat(r,'Node');})),'Node-wise');
     app(wb,XLSX.utils.json_to_sheet(last.catRows.concat([tot]).map(function(r){return flat(r,'Category');})),'Category');
     var mx=[]; last.stores.forEach(function(s){ last.nodes.forEach(function(nd){ var x=last.get(s,nd); if(!x.f&&!x.a) return; mx.push(flat({k:s,cat:nd,m:M(x.f,x.a,x.ok,x.sa)},'Store')); }); });
     mx=mx.map(function(o){ o.Node=o.Cat; delete o.Cat; return o; });
-    app(wb,XLSX.utils.json_to_sheet(mx,{header:['Store','Node','Forecast','Actual','Accuracy %','Stow SLA %','SLA Breach Units']}),'Store x Node');
+    app(wb,XLSX.utils.json_to_sheet(mx,{header:['Store','Node','Forecast','Actual','Delta %','Stow SLA %','SLA Breach Units']}),'Store x Node');
     XLSX.writeFile(wb,'Inbound_Forecast_vs_Actual_'+last.date+'.xlsx');
   }
   function copySheets(){
@@ -22260,7 +22260,7 @@ var IBF=(function(){
     var div=document.createElement('div'); div.id='dstpro-card-ib-forecast'; div.className='task-card';
     div.setAttribute('data-tool','ib-forecast'); div.setAttribute('data-tool-label','Inbound Forecast vs Actual');
     div.style.setProperty('--card-color','#0f766e'); div.setAttribute('onclick',"openTask('ib-forecast')");
-    div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Inbound Forecast vs Actual</h3><p>Forecast vs stowed units store-wise &amp; node-wise with accuracy % and stow SLA %.</p><span class="card-arrow">→</span>';
+    div.innerHTML='<div class="card-num" style="color:#0f766e;">NEW</div><span class="card-icon">📥</span><h3>Inbound Forecast vs Actual</h3><p>Forecast vs stowed units store-wise &amp; node-wise with delta % and stow SLA %.</p><span class="card-arrow">→</span>';
     var fb=grid.querySelector('[onclick*="feedback"]'); if(fb) grid.insertBefore(div,fb); else grid.appendChild(div);
   }
   return {load:load,generate:generate,exportExcel:exportExcel,copySheets:copySheets,manAdd:manAdd,manRemove:manRemove,manPick:manPick,manUI:manUI};
