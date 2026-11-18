@@ -60,6 +60,13 @@ td[contenteditable="true"]:focus{outline:2px solid #4361ee;outline-offset:-2px;b
       <div style="font-size:12px;color:#5d6b7a;">S&amp;OP .xlsx · Final Units Forecast</div>
       <div id="s-ob" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
     </label>
+    <label id="c-utr" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-utr" accept=".csv,.xlsx,.xls" multiple style="display:none;"/>
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 3</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">Store UTR Metrics file</div>
+      <div style="font-size:12px;color:#5d6b7a;">Order drop → staging · Total UTR time (mins, daily avg)</div>
+      <div id="s-utr" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
   </div>
 
   <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;background:#fff;border:1px solid #d7dee6;border-radius:14px;padding:14px 18px;">
@@ -91,7 +98,7 @@ td[contenteditable="true"]:focus{outline:2px solid #4361ee;outline-offset:-2px;b
 <script>
 var APPS_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
 var $=function(id){return document.getElementById(id);};
-var SM=[], NL=[], IBF={}, OBF={}, VIEW=null;
+var SM=[], NL=[], IBF={}, OBF={}, UTR={}, VIEW=null;
 var MAN={}; try{ MAN=JSON.parse(localStorage.getItem('wmb_manual')||'{}')||{}; }catch(e){ MAN={}; }
 function saveMan(){ try{ localStorage.setItem('wmb_manual',JSON.stringify(MAN)); }catch(e){} }
 
@@ -123,13 +130,13 @@ var METRICS=[
   {sr:16,name:'Skips DPMO',goal:'500',key:'skipd',f:'int'},
   {sr:17,name:'Shorts #',goal:'-',key:'short',f:'int'},
   {sr:18,name:'Shorts DPMO',goal:'500',key:'shortd',f:'int'},
-  {sr:19,cat:'UTR Metrics (mins)(avg)',name:'Order Drop time',goal:'',m:1},
-  {sr:20,name:'Picker Assignment time',goal:'',m:1},
-  {sr:21,name:'Picker Acceptance time',goal:'',m:1},
-  {sr:22,name:'Picking time',goal:'',m:1},
-  {sr:23,name:'Packing time',goal:'',m:1},
-  {sr:24,name:'Staging time',goal:'',m:1},
-  {sr:25,name:'Total UTR time',goal:'',m:1},
+  {sr:19,cat:'UTR Metrics (mins)(avg)',name:'Order Drop time',goal:'',key:'utr_drop',f:'dec2',m:1},
+  {sr:20,name:'Picker Assignment time',goal:'',key:'utr_assign',f:'dec2',m:1},
+  {sr:21,name:'Picker Acceptance time',goal:'',key:'utr_accept',f:'dec2',m:1},
+  {sr:22,name:'Picking time',goal:'',key:'utr_pick',f:'dec2',m:1},
+  {sr:23,name:'Packing time',goal:'',key:'utr_pack',f:'dec2',m:1},
+  {sr:24,name:'Staging time',goal:'',key:'utr_stage',f:'dec2',m:1},
+  {sr:25,name:'Total UTR time',goal:'',key:'utr_total',f:'dec2',m:1},
   {sr:26,cat:'Wastages',name:'Expired qty',goal:'',key:'expq',f:'int'},
   {sr:27,name:'Expired%',goal:'',m:1},
   {sr:28,name:'Shrinked qty',goal:'',key:'shrink',f:'int'},
@@ -262,6 +269,49 @@ function loadFc(input,kind){
   });
   input.value='';
 }
+function parseCSVText(text){
+  var rows=[],row=[],f='',q=false;
+  for(var i=0;i<text.length;i++){ var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=c; }
+    else if(c==='"') q=true; else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f); f=''; if(row.length>1||row[0]!=='') rows.push(row); row=[]; }
+    else f+=c; }
+  if(f!==''||row.length){ row.push(f); rows.push(row); }
+  if(!rows.length) return []; var hd=rows[0].map(function(s){ return s.trim(); });
+  return rows.slice(1).map(function(r){ var o={}; hd.forEach(function(k,i){ o[k]=r[i]; }); return o; });
+}
+function ingestUTR(data,acc){
+  if(!data.length) return 0; var r0=data[0], ks=Object.keys(r0);
+  var fk=function(re){ return ks.find(function(k){ return re.test(k); }); };
+  var cS=fk(/^station$/i)||fk(/store/i), cD=fk(/snapshot_date|^date$/i), cW=fk(/week/i);
+  var C={drop:fk(/order drop/i),assign:fk(/assignment/i),accept:fk(/acceptance/i),pick:fk(/^picking time/i),pack:fk(/packing/i),stage:fk(/staging/i),total:fk(/total utr/i)};
+  if(!cS||!cD||!C.total) return 0; var n0=0;
+  data.forEach(function(r){
+    var s=String(r[cS]||'').trim().toUpperCase(), raw=r[cD], d='';
+    if(raw instanceof Date) d=ymd(raw); else { var m=String(raw||'').match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) d=m[0]; else { var p=String(raw||'').split(' ')[0].split('/'); if(p.length===3) d=(p[2].length===4?p[2]:'20'+p[2])+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0'); } }
+    if(!s||!d) return; if(s==='QDG5_SS') s='QDG5';
+    var w=cW?+String(r[cW]||'').replace(/\D/g,''):0; if(!w) w=weekNo(d);
+    var k=wkKey(+d.slice(0,4),w), o={};
+    UTR_F.forEach(function(f){ var x=C[f]?parseFloat(String(r[C[f]]).replace(/,/g,'')):NaN; o[f]=isFinite(x)?x:null; });
+    ((acc[s]=acc[s]||{})[k]=acc[s][k]||{})[d]=o; n0++;
+  });
+  return n0;
+}
+$('f-utr').onchange=function(){
+  var files=[].slice.call(this.files||[]); if(!files.length) return; this.value='';
+  var acc={}, left=files.length, tot=0, bad=[];
+  files.forEach(function(f){
+    var done=function(data){ var c=ingestUTR(data,acc); if(c) tot+=c; else bad.push(f.name);
+      if(--left) return;
+      if(!tot){ setStatus('utr',false,'Could not read UTR columns'+(bad.length?' · '+bad.join(', '):'')); return; }
+      UTR=acc; var wk={}; Object.keys(acc).forEach(function(s){ Object.keys(acc[s]).forEach(function(k){ wk[wkLabel(k)]=1; }); });
+      setStatus('utr',true,'✓ '+tot.toLocaleString()+' rows · '+Object.keys(acc).length+' stores · '+Object.keys(wk).sort(function(a,b){ return +a.slice(2)-+b.slice(2); }).join(', ')+(bad.length?' · skipped: '+bad.join(', '):''));
+      render(); };
+    var fr=new FileReader();
+    if(/\.xlsx?$/i.test(f.name)){ fr.onload=function(e){ waitX(function(){ var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}); done(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''})); }); }; fr.readAsArrayBuffer(f); }
+    else { fr.onload=function(e){ done(parseCSVText(e.target.result)); }; fr.readAsText(f); }
+  });
+};
 $('f-ib').onchange=function(){ loadFc(this,'ib'); };
 $('f-ob').onchange=function(){ loadFc(this,'ob'); };
 
@@ -295,7 +345,7 @@ function compute(store,key){
   var S=function(names){ return rs.reduce(function(a,r){ return a+n(g(r,names)); },0); };
   var v={};
   v.ibf=fcSum(IBF,store,key); v.obf=fcSum(OBF,store,key);
-  if(!rs.length){ v._empty=true; if(v.ibf!=null||v.obf!=null) return v; return v; }
+  if(!rs.length){ v._empty=true; Object.assign(v,utrWeek(store,key,[])); return v; }
   v.iba=S(['TOTAL INBOUND']); v.oba=S(['OUTBOUND UNITS']); v.ord=S(['ORDERS']);
   v.ibacc=v.ibf?(v.iba-v.ibf)/v.ibf*100:null; v.obacc=v.obf?(v.oba-v.obf)/v.obf*100:null;
   v.upo=v.ord?v.oba/v.ord:null;
@@ -306,12 +356,23 @@ function compute(store,key){
   var nl=nlFor(store,key); v.whl=nl.whl; v.whd=nl.whd;
   v.ibtph=avg(rs.map(function(r){ return n(g(r,['IB TPH'])); })); v.obtph=avg(rs.map(function(r){ return n(g(r,['OB TPH'])); }));
   v.sla=avg(rs.map(function(r){ return pctv(g(r,['AVG SLA'])); }));
+  Object.assign(v,utrWeek(store,key,rs));
   return v;
+}
+var UTR_F=['drop','assign','accept','pick','pack','stage','total'];
+function utrWeek(store,key,rs){
+  var days=(UTR[store]||{})[key]; var out={}; if(!days) return out;
+  var ordBy={}; rs.forEach(function(r){ var d=rDate(r); if(d) ordBy[d]=(ordBy[d]||0)+n(g(r,['ORDERS'])); });
+  UTR_F.forEach(function(f){ var sw=0, sv=0, cnt=0, sm=0;
+    Object.keys(days).forEach(function(d){ var x=days[d][f]; if(x==null||!isFinite(x)) return; var w=ordBy[d]||0; sw+=w; sv+=x*w; cnt++; sm+=x; });
+    if(cnt) out['utr_'+f]=sw>0?sv/sw:sm/cnt; });
+  return out;
 }
 function fmt(v,f){
   if(v==null||!isFinite(v)) return '-';
   if(f==='int') return Math.round(v).toLocaleString('en-US');
   if(f==='dec1') return v.toFixed(1);
+  if(f==='dec2') return v.toFixed(2);
   if(f==='pct0') return Math.round(v)+'%';
   if(f==='pct1') return v.toFixed(1)+'%';
   if(f==='pct2') return v.toFixed(2)+'%';
@@ -328,7 +389,7 @@ function build(){
   var rows=METRICS.map(function(m){
     if(m.blank) return {m:m,cells:cols.map(function(){ return {t:''}; })};
     return {m:m,cells:cols.map(function(c){
-      if(m.m){ var mk=c.s+'|'+c.k+'|'+m.sr, t=MAN[mk]!=null?MAN[mk]:'-', nv=parseFloat(String(t).replace(/,/g,'')); return {t:t,man:mk,col:m.col&&isFinite(nv)?m.col(nv,c.v):null}; }
+      if(m.m&&!(m.key&&c.v[m.key]!=null)){ var mk=c.s+'|'+c.k+'|'+m.sr, t=MAN[mk]!=null?MAN[mk]:'-', nv=parseFloat(String(t).replace(/,/g,'')); return {t:t,man:mk,col:m.col&&isFinite(nv)?m.col(nv,c.v):null}; }
       var val=c.v[m.key]; return {t:fmt(val,m.f),val:val,col:m.col?m.col(val,c.v):null};
     })};
   });
@@ -375,6 +436,7 @@ function renderMsg(){
   if(!Object.keys(IBF).length) notes.push('no IB forecast file (IB Forecast # and accuracy show "-")');
   if(!Object.keys(OBF).length) notes.push('no OB forecast file (OB Forecast # and accuracy show "-")');
   if(SM.length&&!NL.length) notes.push('network loss not loaded (WHL/WHD show "-")');
+  if(!Object.keys(UTR).length) notes.push('no Store UTR file (UTR rows are manual)');
   $('msg').textContent=notes.length?'⚠ '+notes.join(' · '):'Blue dashed cells are manual: click to type. Edits stay in this browser and go into the export.';
 }
 function render(){
