@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Store Metrics Raw Data Maker — DMS PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--blue:#146EB4;--blue-d:#0F5A95;--blue-bg:#EAF3FA;--green:#16A34A;--green-bg:#ECFDF3;--yellow:#D97706;--yellow-bg:#FFFBEB;--red:#DC2626;--red-bg:#FEF2F2;--purple:#7C3AED;--purple-bg:#F5F3FF;--bg:#F8FAFC;--white:#fff;--border:#E5E7EB;--border-s:#EEF1F5;--ink:#1B2430;--ink2:#475467;--ink3:#6B7686;--ink4:#94A0AE;--rl:14px;--sh-sm:0 1px 2px rgba(16,24,40,.06);--font:"IBM Plex Sans",-apple-system,system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+a{color:var(--blue);}a:hover{color:var(--blue-d);}
+.hidden{display:none!important;}
+.bar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:50;box-shadow:var(--sh-sm);}
+.bar-title{font-weight:700;font-size:15px;}
+.bar-sub{font-size:11.5px;color:var(--ink3);}
+.back-btn{white-space:nowrap;display:flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--white);border-radius:7px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink2);cursor:pointer;font-family:var(--font);}.back-btn:hover{border-color:var(--blue);color:var(--blue);}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--font);transition:.15s;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover:not(:disabled){background:var(--blue-d);}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover:not(:disabled){background:#138c3e;}
+.btn-out{background:var(--white);border:1px solid var(--border);color:var(--ink2);}.btn-out:hover:not(:disabled){border-color:var(--blue);color:var(--blue);}
+.page{max-width:1500px;margin:0 auto;padding:24px 20px 80px;display:flex;flex-direction:column;gap:18px;}
+.sec-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);margin-bottom:10px;}
+.top{display:grid;grid-template-columns:minmax(260px,360px) minmax(0,1fr);gap:16px;}
+@media(max-width:900px){.top{grid-template-columns:1fr;}}
+.drop{background:var(--white);border:2px dashed var(--border);border-radius:var(--rl);padding:28px 20px;text-align:center;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.drop.drag{border-color:var(--blue);background:var(--blue-bg);}
+.drop.ok{border-style:solid;border-color:var(--green);background:var(--green-bg);}
+.drop h3{font-size:14px;font-weight:700;}
+.drop p{font-size:12px;color:var(--ink3);}
+.drop .ico{font-size:30px;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh-sm);}
+.src{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}
+.si{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border-s);border-radius:9px;padding:8px 10px;}
+.si .dot{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--border-s);color:var(--ink4);margin-top:1px;}
+.si.ok{border-color:#BBF7D0;background:var(--green-bg);}
+.si.ok .dot{background:var(--green);color:#fff;}
+.si .n{font-size:12.5px;font-weight:700;}
+.si .m{font-size:11px;color:var(--ink3);line-height:1.4;word-break:break-word;}
+.si .opt{font-size:9.5px;font-weight:700;color:var(--purple);background:var(--purple-bg);border-radius:4px;padding:0 5px;margin-left:4px;}
+.opts{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);}
+.fl input,.fl select{border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--ink);background:#fff;outline:none;text-transform:none;letter-spacing:0;font-weight:600;}
+.fl input:focus{border-color:var(--blue);}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink2);padding-bottom:8px;cursor:pointer;}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;}
+.note{font-size:12px;color:var(--ink2);background:var(--yellow-bg);border:1px solid #FDE68A;border-radius:9px;padding:9px 12px;line-height:1.55;}
+.tblw{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--sh-sm);overflow:auto;max-height:70vh;}
+table{border-collapse:collapse;font-size:12px;min-width:100%;}
+thead th{position:sticky;top:0;background:#F1F5F9;border-bottom:1px solid var(--border);padding:8px 10px;font-size:10.5px;font-weight:700;color:var(--ink2);text-align:right;white-space:nowrap;z-index:2;}
+thead th.l{text-align:left;}
+thead th.new{background:var(--purple-bg);color:var(--purple);}
+thead th.nosrc{color:var(--ink4);}
+tbody td{padding:6px 10px;border-bottom:1px solid var(--border-s);text-align:right;white-space:nowrap;font-family:var(--mono);font-size:11.5px;color:var(--ink);}
+tbody td.l{text-align:left;font-family:var(--font);font-weight:600;}
+tbody tr.alt td{background:#FAFBFD;}
+tbody tr.first td{border-top:2px solid var(--border);}
+td.fb{color:var(--yellow);}
+td.bad{color:var(--red);font-weight:600;}
+.empty{text-align:center;padding:50px 20px;color:var(--ink3);}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;transition:.25s;z-index:300;}
+.toast.on{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="bar">
+  <button class="back-btn" onclick="location.href='index.html'">← Home</button>
+  <div>
+    <div class="bar-title">Store Metrics Raw Data Maker</div>
+    <div class="bar-sub">Daily exports → DARK STORE MASTER FILE format</div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="top">
+    <label class="drop" id="drop">
+      <span class="ico">📂</span>
+      <h3>Drop all daily files here</h3>
+      <p>Select all CSV / XLSX files at once. Each file is detected from its columns.</p>
+      <span class="btn btn-blue" style="pointer-events:none;">Choose files</span>
+      <input type="file" id="fi" multiple accept=".csv,.xls,.xlsx" class="hidden"/>
+    </label>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="sec-lbl" style="margin:0;">Source files</div>
+        <span id="srcCount" style="font-size:11.5px;color:var(--ink3);"></span>
+        <button class="btn btn-out" id="clearBtn" style="margin-left:auto;padding:4px 10px;font-size:11.5px;">Clear all</button>
+      </div>
+      <div class="src" id="src"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="opts">
+      <label class="fl">From<input type="date" id="dFrom"/></label>
+      <label class="fl">To<input type="date" id="dTo"/></label>
+      <label class="fl">IB SLA Vendor %<input type="number" id="slaV" value="100" min="0" max="100" step="0.01" style="width:110px;"/></label>
+      <label class="chk"><input type="checkbox" id="mergeSS" checked/> Merge QDG5_SS into QDG5</label>
+      <label class="chk"><input type="checkbox" id="showNew" checked/> Include new metrics</label>
+      <div class="acts">
+        <button class="btn btn-out" id="cpBtn" disabled title="Rows only — paste under the last row of the master sheet">📋 Copy rows</button>
+        <button class="btn btn-out" id="cpHBtn" disabled>📋 Copy with header</button>
+        <button class="btn btn-out" id="csvBtn" disabled>⬇ CSV</button>
+        <button class="btn btn-green" id="xlBtn" disabled>⬇ Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" id="note">
+    <b>Mapping:</b> Vendor &amp; Trans-ship file → <b>trans_return</b> goes to <b>REVERSAL TS</b>, <b>vendor_return</b> goes to <b>EXP-DESTROYED</b>.
+    <b>LATE SLAM</b> = Late Slam# file, <b>LATE SLAM V.2</b> = Late Orders V2 file. <b>Throughput</b> = units picked ÷ assignment-to-stage hours from the Late Slam raw data (QDG5_SS rolled into QDG5). <b>IB / OB TPH</b> from the Daily Productivity file.
+    <b>Points</b> = 1 − (Late Slam + Skip + Short + Damaged Removal) ÷ Orders.
+  </div>
+
+  <div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px;">
+      <div class="sec-lbl" style="margin:0;">Preview</div>
+      <span id="rowInfo" style="font-size:11.5px;color:var(--ink3);"></span>
+    </div>
+    <div class="tblw" id="tblw"><div class="empty">Upload the daily files to build the raw data.</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2200);};
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+
+const SOURCES=[
+  {k:"stow",n:"Daily inbound stow",m:"TOTAL INBOUND · VENDOR · TRANSS"},
+  {k:"exp",n:"Daily expiry awareness",m:"EXP-DATE SYNC · EXP-DONATED"},
+  {k:"vt",n:"Vendor & Trans-ship",m:"vendor_return → EXP-DESTROYED · trans_return → REVERSAL TS"},
+  {k:"ord",n:"Daily order and unit",m:"ORDERS · OUTBOUND UNITS · AVG UPO"},
+  {k:"rem",n:"Daily removals",m:"QUALITY · DAMAGED · EXPIRED REMOVAL"},
+  {k:"lsgo",n:"Daily late slams",m:"Late Slam# → LATE SLAM"},
+  {k:"ls",n:"Daily late slams V2",m:"Late Orders V2 → LATE SLAM V.2"},
+  {k:"raw",n:"Late slam raw data",m:"Throughput (units ÷ assignment-to-stage hours)"},
+  {k:"prod",n:"Daily productivity",m:"IB TPH · OB TPH"},
+  {k:"sla",n:"Weekly SLA compliance",m:"IB SLA TRANS · AVG SLA"},
+  {k:"sk",n:"Daily skips, shorts",m:"Skip · Short"},
+  {k:"ex",n:"Expired quantity",m:"SHIRNK QTY · EXPIRED QTY"},
+  {k:"bcc",n:"BCC defects",m:"BCC DEFECTS"}
+];
+const COLS=[
+  {k:"date",h:"DATE",t:"txt"},{k:"store",h:"STORE",t:"txt"},
+  {k:"tin",h:"TOTAL INBOUND"},{k:"ven",h:"VENDOR"},{k:"trs",h:"TRANSS"},
+  {k:"sync",h:"EXP-DATE SYNC"},{k:"dest",h:"EXP-DESTROYED"},{k:"don",h:"EXP-DONATED"},
+  {k:"ord",h:"ORDERS"},{k:"units",h:"OUTBOUND UNITS"},
+  {k:"qrem",h:"QUALITY REMOVAL"},{k:"drem",h:"DAMAGED REMOVAL"},{k:"erem",h:"EXPIRED REMOVAL"},
+  {k:"ls1",h:"LATE SLAM"},{k:"ibtph",h:"IB TPH"},{k:"obtph",h:"OB TPH"},
+  {k:"slaV",h:"IB SLA VENDOR",t:"pct"},{k:"slaT",h:"IB SLA TRANS",t:"pct"},{k:"slaA",h:"AVG SLA",t:"pct"},
+  {k:"upo",h:"AVG UPO",t:"dec"},{k:"skip",h:"Skip"},{k:"short",h:"Short"},
+  {k:"month",h:"Month",t:"txt"},{k:"pts",h:"Points",t:"pct"},{k:"shrink",h:"SHIRNK QTY"},
+  {k:"ls2",h:"LATE SLAM V.2"},{k:"thr",h:"Throughput"},{k:"week",h:"Week",t:"txt"},
+  {k:"rts",h:"REVERSAL TS",nw:1},{k:"expq",h:"EXPIRED QTY",nw:1},{k:"bcc",h:"BCC DEFECTS",t:"pct",nw:1}
+];
+
+let FILES={}; // k -> [{name,rows}]
+let OUT=[], OUTCOLS=COLS;
+
+function parseCSV(text){
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){row.push(f);f="";}
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f);f=""; if(row.length>1||row[0]!=="") rows.push(row); row=[]; }
+    else f+=c; }
+  if(f!==""||row.length){row.push(f);rows.push(row);}
+  if(!rows.length) return [];
+  const h=rows[0].map(s=>s.trim());
+  return rows.slice(1).map(r=>{const o={};h.forEach((k,i)=>o[k]=r[i]);return o;});
+}
+function readAny(file,cb){
+  const fr=new FileReader();
+  if(/\.xlsx?$/i.test(file.name)){
+    fr.onload=e=>{const wb=XLSX.read(e.target.result,{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
+      cb(XLSX.utils.sheet_to_json(ws,{defval:"",raw:false,dateNF:"yyyy-mm-dd"}));};
+    fr.readAsArrayBuffer(file);
+  } else { fr.onload=e=>cb(parseCSV(e.target.result)); fr.readAsText(file); }
+}
+const H=(r,re)=>Object.keys(r).find(k=>re.test(k.trim()));
+const num=v=>{ if(v==null||v==="") return null; const n=parseFloat(String(v).replace(/,/g,"").replace("%","")); return isNaN(n)?null:n; };
+function normDate(v){
+  if(v instanceof Date) return v.getFullYear()+"-"+String(v.getMonth()+1).padStart(2,"0")+"-"+String(v.getDate()).padStart(2,"0");
+  const s=String(v||"").trim(); let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0");
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");
+  return null;
+}
+function detect(rows){
+  if(!rows.length) return null; const ks=Object.keys(rows[0]).map(k=>k.trim().toLowerCase());
+  const has=s=>ks.some(k=>k===s||k.includes(s));
+  if(has("pl_create_to_stage")||has("promise_utr")) return "raw";
+  if(has("ib tph")||has("ob tph")) return "prod";
+  if(has("late slam#")) return "lsgo";
+  if(has("vendor stow")) return "stow";
+  if(has("outbound orders")) return "ord";
+  if(has("late orders v2")) return "ls";
+  if(has("skips")) return "sk";
+  if(has("expired qty")) return "ex";
+  if(has("sla%")) return "sla";
+  if(has("defects")) return "bcc";
+  if(has("type")&&has("qty")){
+    if(!has("process")) return "vt";
+    return rows.some(r=>/remov/i.test(String(r[H(r,/^type$/i)]||""))||/^remove/i.test(String(r[H(r,/^process$/i)]||"")))?"rem":"exp";
+  }
+  return null;
+}
+function load(list){
+  list=[...list]; if(!list.length) return; let done=0, unk=[];
+  list.forEach(f=>readAny(f,rows=>{
+    const k=detect(rows);
+    if(k){ if(k==="raw"){ FILES.raw=(FILES.raw||[]).filter(x=>x.name!==f.name).concat([{name:f.name,rows}]); } else FILES[k]=[{name:f.name,rows}]; } else unk.push(f.name);
+    if(++done===list.length){ if(unk.length) toast("Not recognised: "+unk.join(", ")); paintSrc(); setRange(); build(); }
+  }));
+}
+function paintSrc(){
+  let ok=0;
+  $("src").innerHTML=SOURCES.map(s=>{const f=FILES[s.k]; if(f) ok++;
+    const n=f?f.reduce((a,x)=>a+x.rows.length,0):0;
+    return '<div class="si'+(f?' ok':'')+'"><span class="dot">'+(f?'✓':'')+'</span><div><div class="n">'+esc(s.n)+(s.opt?'<span class="opt">OPTIONAL</span>':'')+'</div><div class="m">'+(f?esc(f.map(x=>x.name).join(", "))+' · '+n.toLocaleString()+' rows':esc(s.m))+'</div></div></div>';}).join("");
+  $("srcCount").textContent=ok+" of "+SOURCES.length+" loaded";
+  $("drop").classList.toggle("ok",ok>0);
+}
+function allDates(){
+  const s=new Set();
+  Object.entries(FILES).forEach(([k,fs])=>{ if(k==="raw") return; fs.forEach(f=>f.rows.forEach(r=>{const dk=H(r,/snapshot_date|receive_day|count day|^date$/i); const d=dk&&normDate(r[dk]); if(d) s.add(d);}));});
+  return [...s].sort();
+}
+function setRange(){ const d=allDates(); if(!d.length) return;
+  ["dFrom","dTo"].forEach(id=>{$(id).min=d[0];$(id).max=d[d.length-1];});
+  if(!$("dFrom").value||$("dFrom").value<d[0]) $("dFrom").value=d[0];
+  if(!$("dTo").value||$("dTo").value>d[d.length-1]||$("dTo").value<$("dFrom").value) $("dTo").value=d[d.length-1]; }
+
+
+function build(){
+  const merge=$("mergeSS").checked, from=$("dFrom").value, to=$("dTo").value;
+  const st=s=>{ s=String(s||"").trim().toUpperCase(); return merge&&s==="QDG5_SS"?"QDG5":s; };
+  const D={}, WK={};
+  const cell=(d,s)=>{ D[d]=D[d]||{}; return D[d][s]=D[d][s]||{}; };
+  const add=(d,s,k,v)=>{ if(!d||!s||v==null) return; const c=cell(d,s); c[k]=(c[k]||0)+v; };
+  const set=(d,s,k,v)=>{ if(!d||!s||v==null) return; const c=cell(d,s); if(c[k]==null) c[k]=v; };
+  const each=(k,fn)=>(FILES[k]||[]).forEach(f=>f.rows.forEach(r=>{
+    const sk=H(r,/^(station|store|delivery_station_code)$/i), dk=H(r,/snapshot_date|receive_day|count day|^date$/i);
+    const d=dk&&normDate(r[dk]); const wk=H(r,/^week_year$|^\s*$/); if(d&&wk&&/week/i.test(r[wk])) WK[d]=String(r[wk]).match(/Week\s*\d+/i)[0].replace(/\s/g,"");
+    fn(r,d,sk&&st(r[sk]));}));
+  const v=(r,re)=>{const k=H(r,re);return k?num(r[k]):null;};
+  const pctv=x=>x==null?null:(x>1.0001?x/100:x);
+
+  each("stow",(r,d,s)=>{add(d,s,"ven",v(r,/vendor stow/i));add(d,s,"trs",v(r,/transship stow/i));add(d,s,"tin",v(r,/total stowed/i));});
+  each("exp",(r,d,s)=>{const p=String(r[H(r,/^process$/i)]||""), q=v(r,/qty/i);
+    if(/datesync/i.test(p)) add(d,s,"sync",q); else if(/donat/i.test(p)) add(d,s,"don",q); else if(/destroy/i.test(p)) add(d,s,"destA",q);});
+  each("vt",(r,d,s)=>{const t=String(r[H(r,/^type$/i)]||""), q=v(r,/qty/i);
+    if(/trans/i.test(t)) add(d,s,"rts",q); else if(/vendor/i.test(t)) add(d,s,"dest",q);});
+  each("ord",(r,d,s)=>{add(d,s,"ord",v(r,/outbound orders/i));add(d,s,"units",v(r,/outbound units/i));});
+  each("lsgo",(r,d,s)=>add(d,s,"ls1",v(r,/late slam#/i)));
+  each("prod",(r,d,s)=>{set(d,s,"ibtph",v(r,/^ib tph$/i));set(d,s,"obtph",v(r,/^ob tph$/i));});
+  each("rem",(r,d,s)=>{const p=String(r[H(r,/^process$/i)]||"")+" "+String(r[H(r,/^type$/i)]||""), q=v(r,/qty/i);
+    if(/quality/i.test(p)) add(d,s,"qrem",q); else if(/expir/i.test(p)) add(d,s,"erem",q); else add(d,s,"drem",q);});
+  each("ls",(r,d,s)=>add(d,s,"ls2",v(r,/late orders v2/i)));
+  each("sla",(r,d,s)=>set(d,s,"slaT",pctv(v(r,/sla%/i))));
+  each("sk",(r,d,s)=>{add(d,s,"skip",v(r,/^skips$/i));add(d,s,"short",v(r,/^shorts$/i));});
+  each("ex",(r,d,s)=>{add(d,s,"expq",v(r,/expired qty/i));add(d,s,"shrink",v(r,/shrinked qty/i));});
+  each("bcc",(r,d,s)=>set(d,s,"bcc",v(r,/defects/i)));
+  (FILES.raw||[]).forEach(f=>f.rows.forEach(r=>{
+    const s=String(r.delivery_station_code||"").trim().toUpperCase().replace(/[_\s-]*SS$/i,""), d=normDate(r.picklist_created_date||r.picklist_created_time); if(!s||!d) return;
+    const c=cell(d,s); c._tu=(c._tu||0)+(num(r.units_picked)||0); c._ts=(c._ts||0)+(num(r.assignment_to_stage_time_secs)||0);
+  }));
+
+  const slaVen=(num($("slaV").value)??100)/100;
+  const MON=["Jan","Feb","March","April","May","June","July","Aug","Sep","Oct","Nov","Dec"];
+  const wkOf=ds=>{ if(WK[ds]) return WK[ds]; const d=new Date(ds+"T00:00:00"), j=new Date(d.getFullYear(),0,1); return "Week"+Math.ceil(((d-j)/864e5+j.getDay()+1)/7); };
+  OUT=[];
+  Object.keys(D).sort().forEach(ds=>{ if((from&&ds<from)||(to&&ds>to)) return;
+    const [y,m,dd]=ds.split("-").map(Number);
+    Object.keys(D[ds]).sort().forEach(s=>{ const c=D[ds][s], o=Object.assign({},c);
+      o.date=m+"/"+dd+"/"+y; o.store=s; o.month=MON[m-1]+" - "+y; o.week=wkOf(ds);
+      if(o.dest==null&&!FILES.vt&&c.destA!=null) o.dest=c.destA;
+      if(c._ts>0) o.thr=c._tu/(c._ts/3600);
+      ["tin","ven","trs","sync","dest","don","ord","units","qrem","drem","erem","skip","short","shrink","ls2","rts","expq","bcc"].forEach(k=>{ if(o[k]==null&&FILES[srcOf(k)]) o[k]=0; });
+      if(o.ls1==null&&FILES.lsgo) o.ls1=0;
+      if(o.slaT!=null){ o.slaV=slaVen; o.slaA=(o.slaV+o.slaT)/2; }
+      o.upo=o.ord?o.units/o.ord:null;
+      o.pts=o.ord?1-((o.ls1||0)+(o.skip||0)+(o.short||0)+(o.drem||0))/o.ord:null;
+      OUT.push(o); }); });
+  render();
+}
+function srcOf(k){ return {tin:"stow",ven:"stow",trs:"stow",sync:"exp",don:"exp",dest:"vt",ord:"ord",units:"ord",qrem:"rem",drem:"rem",erem:"rem",skip:"sk",short:"sk",shrink:"ex",expq:"ex",ls2:"ls",rts:"vt",bcc:"bcc"}[k]; }
+
+const fmt=(c,v,plain)=>{ if(v==null||v==="") return "";
+  if(c.t==="txt") return v; if(c.t==="pct") return (v*100).toFixed(2)+"%"; if(c.t==="dec") return (+v.toFixed(2)).toString();
+  return plain?String(Math.round(v)):Math.round(v).toLocaleString("en-US"); };
+
+function render(){
+  OUTCOLS=COLS.filter(c=>$("showNew").checked||!c.nw);
+  const has=OUT.length; ["cpBtn","cpHBtn","csvBtn","xlBtn"].forEach(id=>$(id).disabled=!has);
+  if(!has){ $("tblw").innerHTML='<div class="empty">'+(Object.keys(FILES).length?'No rows in this date range.':'Upload the daily files to build the raw data.')+'</div>'; $("rowInfo").textContent=""; return; }
+  const dates=[...new Set(OUT.map(o=>o.date))], stores=[...new Set(OUT.map(o=>o.store))];
+  $("rowInfo").textContent=OUT.length+" rows · "+dates.length+" days · "+stores.length+" stores";
+  let h='<table><thead><tr>'+OUTCOLS.map(c=>'<th class="'+(c.t==="txt"?"l ":"")+(c.nw?"new ":"")+(c.nosrc?"nosrc":"")+'"'+(c.nw?' title="New metric"':'')+(c.nosrc?' title="No source file — left blank"':'')+'>'+esc(c.h)+'</th>').join("")+'</tr></thead><tbody>';
+  let prev=null, alt=false;
+  OUT.forEach(o=>{ const first=o.date!==prev; if(first){alt=!alt;prev=o.date;}
+    h+='<tr class="'+(alt?"alt ":"")+(first?"first":"")+'">'+OUTCOLS.map(c=>{ const v=o[c.k];
+      const cls=(c.t==="txt"?"l ":"")+((c.k==="pts"||c.k==="slaT"||c.k==="slaA")&&v!=null&&v<0.95?"bad":"");
+      return '<td class="'+cls+'"'+'>'+esc(fmt(c,v))+'</td>'; }).join("")+'</tr>'; });
+  $("tblw").innerHTML=h+'</tbody></table>';
+}
+function tsv(withH){ const L=OUT.map(o=>OUTCOLS.map(c=>fmt(c,o[c.k],true)).join("\t")); if(withH) L.unshift(OUTCOLS.map(c=>c.h).join("\t")); return L.join("\n"); }
+function copy(withH){ const t=tsv(withH);
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast("Copied "+OUT.length+" rows")).catch(()=>{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();toast("Copied "+OUT.length+" rows");}); }
+const fname=ext=>"Store_Metrics_Raw_"+$("dFrom").value+"_to_"+$("dTo").value+"."+ext;
+$("cpBtn").onclick=()=>copy(false);
+$("cpHBtn").onclick=()=>copy(true);
+$("csvBtn").onclick=()=>{ const q=s=>/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+  const t=[OUTCOLS.map(c=>c.h).join(",")].concat(OUT.map(o=>OUTCOLS.map(c=>q(fmt(c,o[c.k],true))).join(","))).join("\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"})); a.download=fname("csv"); a.click(); toast("CSV downloaded"); };
+$("xlBtn").onclick=()=>{
+  const aoa=[OUTCOLS.map(c=>c.h)].concat(OUT.map(o=>OUTCOLS.map(c=>{const v=o[c.k]; if(v==null) return ""; if(c.t==="txt") return v; if(c.t==="dec") return +v.toFixed(2); return c.t==="pct"?v:Math.round(v);})));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  OUTCOLS.forEach((c,ci)=>{ if(c.t!=="pct"&&c.t!==undefined) return; for(let r=1;r<aoa.length;r++){ const cell=ws[XLSX.utils.encode_cell({r,c:ci})]; if(cell&&cell.t==="n") cell.z=c.t==="pct"?"0.00%":"#,##0"; } });
+  ws["!cols"]=OUTCOLS.map(c=>({wch:Math.max(9,c.h.length+2)}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Store Metric"); XLSX.writeFile(wb,fname("xlsx")); toast("Excel downloaded"); };
+
+const drop=$("drop");
+$("fi").onchange=e=>{ load(e.target.files); e.target.value=""; };
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag");}));
+drop.addEventListener("drop",e=>load(e.dataTransfer.files));
+$("clearBtn").onclick=()=>{ FILES={}; OUT=[]; $("dFrom").value=""; $("dTo").value=""; paintSrc(); render(); };
+["dFrom","dTo","slaV","mergeSS"].forEach(id=>$(id).addEventListener("change",build));
+$("showNew").addEventListener("change",render);
+paintSrc();
+</script>
+</body>
+</html>

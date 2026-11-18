@@ -207,6 +207,10 @@
       <select id="ptDropWin" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;">
         <option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option><option value="4">4 min</option><option value="5" selected>5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 hour</option>
       </select></label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#1d1d1b;">Promise time
+      <select id="ptPMode" style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;">
+        <option value="std">Standard</option><option value="upd">Updated · QHA5 &amp; QDH5 (13–16 Nov)</option>
+      </select></label>
   </div>
   <div id="ptMode" style="font-size:12px;font-weight:800;color:#5b2a86;margin-top:14px;"></div>
   <div id="ptLastUpd" class="hide" style="display:flex;align-items:center;gap:10px;background:#1d1d1b;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;font-size:14px;"><span style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;">Last updated · latest picklist created</span><b id="ptLastUpdVal" style="font-size:18px;"></b></div>
@@ -246,6 +250,9 @@
 <div class="toast" id="toast"></div>
 <script>
 const PROMISE={"QAA1":{"1":120,"2":180,"3":180,"4":180,"5":180,"6":300,"7":300,"8":300,"9":300,"10":300,"11":360,"12":360,"13":360,"14":420,"15":420,"16":420,"17":480,"18":480,"19":480,"20":540,"21":540,"22":540,"23":540,"24":600,"25":600,"26":600,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":780,"34":780,"35":780,"36":780,"39":840,"40":900,"48":960,"49":960},"QAA6":{"1":152,"2":152,"3":211,"4":211,"5":212,"6":273,"7":270,"8":330,"9":329,"10":330,"11":390,"12":395,"13":390,"14":447,"15":451,"16":454,"17":447,"18":514,"19":507,"20":515,"21":574,"22":573,"23":576,"24":569,"25":633,"26":646,"27":639,"28":692,"29":682,"30":693,"31":677,"32":761,"33":758,"34":762,"36":816,"38":808,"40":853,"41":892,"42":868,"44":924,"46":1025,"47":1014,"48":1017,"54":1028,"64":1220,"82":1481,"84":1550},"QAA7":{"1":60,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":420,"15":420,"16":420,"17":420,"18":480,"19":480,"20":480,"21":540,"22":540,"23":540,"24":600,"25":600,"26":600,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":720,"34":780,"36":780,"48":1020,"50":1020},"QDC6":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":360,"15":420,"16":420,"17":420,"18":420,"19":480,"20":480,"21":480,"22":540,"23":540,"24":540,"25":540,"26":600,"27":600,"28":600,"29":600,"30":660,"31":660,"32":660,"34":720,"35":720,"38":780},"QDD3":{"1":120,"2":120,"3":180,"4":180,"5":240,"6":240,"7":240,"8":300,"9":300,"10":300,"11":360,"12":360,"13":420,"14":420,"15":420,"16":420,"17":480,"18":480,"19":480,"20":540,"21":540,"22":540,"23":600,"24":600,"25":600,"26":660,"27":660,"28":660,"29":660,"30":720,"31":720,"32":720,"33":780,"34":780,"36":780,"44":960},"QDG5":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":240,"7":240,"8":240,"9":300,"10":300,"11":300,"12":360,"13":360,"14":360,"15":420,"16":420,"17":420,"18":420,"19":480,"20":480,"21":480,"22":540,"23":540,"24":540,"25":540,"26":600,"27":600,"28":600,"30":660,"31":660,"33":720,"34":720,"35":720,"40":780},"QDG5_SS":{"1":120,"2":120,"3":180,"4":180,"5":240},"QDG8":{"1":120,"2":180,"3":180,"4":240,"5":300,"6":300,"7":360,"8":420,"9":420,"10":480,"11":540,"12":540,"13":600,"14":660,"15":660,"16":720,"17":720,"18":780,"19":840,"20":840,"21":900,"22":900,"23":960,"24":1020,"25":1020,"26":1080,"27":1080,"28":1140,"29":1140,"30":1200,"31":1260,"32":1260,"37":1440,"40":1560,"43":1620},"QDH5":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":180,"7":300,"8":300,"9":300,"10":360,"11":360,"12":360,"13":420,"14":420,"15":420,"16":540,"17":540,"18":540,"19":600,"20":600,"21":600,"22":720,"23":720,"24":720,"25":840,"26":840,"27":840,"28":900,"29":900,"30":900,"31":960,"32":960,"33":960,"34":1020,"35":1020,"36":1020,"37":1080,"38":1080,"39":1080,"40":1140,"41":1140,"42":1140,"43":1200,"44":1200,"45":1200,"46":1260,"47":1260,"48":1260,"49":1260,"50":1260},"QHA5":{"1":120,"2":120,"3":180,"4":180,"5":240,"6":240,"7":360,"8":360,"9":420,"10":420,"11":480,"12":480,"13":600,"14":600,"15":660,"16":660,"17":840,"18":840,"19":840,"20":840,"21":1200,"22":1200,"23":1200,"24":1200,"25":1200,"26":1200,"27":1200,"34":2040,"37":2040}};
+const PROMISE_UPD={"QHA5":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":180,"7":240,"8":240,"9":240,"10":300,"11":300,"12":300,"13":360,"14":360,"15":360,"16":420,"17":420,"18":420,"19":420,"20":420,"21":420,"22":480,"23":480,"28":600,"31":660,"44":780},"QDH5":{"1":120,"2":120,"3":120,"4":180,"5":180,"6":180,"7":300,"8":300,"9":300,"10":360,"11":360,"12":360,"13":420,"14":420,"15":420,"16":540,"17":540,"18":540,"19":600,"20":600,"21":600,"22":720,"23":720,"24":720,"25":840,"26":840,"27":840,"28":900,"29":900,"30":900,"31":960,"32":960,"33":1020,"34":1020,"35":1020,"36":1020,"37":1080,"38":1080,"39":1080,"40":1140,"41":1140,"42":1140,"43":1200,"44":1200,"45":1200,"46":1260,"47":1260,"48":1440,"49":1260,"50":1260}};
+let PMODE=(()=>{try{return localStorage.getItem("plc_pmode")||"std";}catch(e){return "std";}})();
+const isUpd=s=>PMODE==="upd"&&!!PROMISE_UPD[s];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2300);}
@@ -275,7 +282,7 @@ const storeOf=r=>String(r.delivery_station_code||r.Delivery_Station_Code||r.stat
 const unitsOf=r=>num(r.units_picked!=null&&r.units_picked!==""?r.units_picked:(r.units??r.Units??r.quantity))||0;
 function plStage(r){ let v=num(r.pl_create_to_stage); if(v!=null) return v;
   const a=parseDT(r.picklist_created_time), b=parseDT(r.staging_time); return a&&b?(b-a)/1000:null; }
-function lookup(s,u){ const t=PROMISE[s]; if(!t) return null; if(t[u]) return t[u];
+function lookup(s,u){ const t=(PMODE==="upd"&&PROMISE_UPD[s])||PROMISE[s]; if(!t) return null; if(t[u]) return t[u];
   const ks=Object.keys(t).map(Number).sort((a,b)=>a-b); let best=null; ks.forEach(k=>{ if(k<=u) best=t[k]; });
   return best!=null?best:t[ks[0]]; }
 let out=[], summary=[], dropRows=[], quickRows=[], quickMode=false;
@@ -284,11 +291,12 @@ function applyView(){ const full=["ptKpis","ptStorePanel","ptDropPanel","ptRefPa
   full.forEach(i=>$(i).classList.toggle("hide",quickMode||(i!=="ptRefPanel"&&!summary.length)));
   $("ptQuickPanel").classList.toggle("hide",!quickMode||!summary.length);
   $("ptView").textContent=quickMode?"📋 Full View":"📊 Quick View"; }
-(function renderRef(){ const stores=Object.keys(PROMISE);
-  const us=[...new Set(stores.flatMap(s=>Object.keys(PROMISE[s]).map(Number)))].sort((a,b)=>a-b);
+function renderRef(){ const TB=Object.assign({},PROMISE,PMODE==="upd"?PROMISE_UPD:{}); const stores=Object.keys(TB);
+  const us=[...new Set(stores.flatMap(s=>Object.keys(TB[s]).map(Number)))].sort((a,b)=>a-b);
   let h='<thead><tr><th>Store</th>'+us.map(u=>'<th>'+u+'u</th>').join('')+'</tr></thead><tbody>';
-  stores.forEach(s=>{ h+='<tr><td>'+esc(s)+'</td>'+us.map(u=>'<td>'+(PROMISE[s][u]!=null?PROMISE[s][u]:'<span style="color:#b3bcc6">–</span>')+'</td>').join('')+'</tr>'; });
-  $("ptRefTable").innerHTML=h+'</tbody>'; })();
+  stores.forEach(s=>{ const up=PMODE==="upd"&&PROMISE_UPD[s]; h+='<tr><td>'+esc(s)+(up?' <span style="background:#FFE566;color:#000;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;">UPDATED</span>':'')+'</td>'+us.map(u=>'<td>'+(TB[s][u]!=null?(up&&PROMISE[s]&&PROMISE[s][u]!==TB[s][u]?'<b style="color:#c0392b">'+TB[s][u]+'</b>':TB[s][u]):'<span style="color:#b3bcc6">–</span>')+'</td>').join('')+'</tr>'; });
+  $("ptRefTable").innerHTML=h+'</tbody>'; }
+renderRef();
 const pct=(l,d)=>d?+(l/d*100).toFixed(1):0;
 function accSecs(r){ const a=parseDT(r.picklist_created_time), b=parseDT(r.pick_assignment_time); return a&&b?(b-a)/1000:null; }
 function topUnits(m){ return Object.keys(m).map(Number).sort((x,y)=>m[y]-m[x]||x-y).slice(0,3).map(u=>u+'u ('+m[u]+')').join(', '); }
@@ -302,10 +310,10 @@ function run(rows){
   const fmtFull=d=>d.toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
   $("ptTill").textContent=last?"· till "+fmt(last):""; $("ptQuickTill").textContent=last?"· till "+fmt(last):"";
   $("ptLastUpdVal").textContent=last?fmtFull(last):"—"; $("ptLastUpd").classList.toggle("hide",!last);
-  rows.forEach(r=>{ const s=storeOf(r), u=unitsOf(r), t=plStage(r), p=r.__hasP?num(r.promise_utr):lookup(s,u), ls=p!=null&&t!=null&&t>p, acc=accSecs(r);
+  rows.forEach(r=>{ const s=storeOf(r), u=unitsOf(r), t=plStage(r), useF=r.__hasP&&!isUpd(s), p=useF?num(r.promise_utr):lookup(s,u), ls=p!=null&&t!=null&&t>p, acc=accSecs(r);
     const reason=!ls?"":acc!=null&&acc>30?"Late acceptance (PL create → accept > 30s)":"Pick / pack delay";
     const rr=Object.assign({},r); delete rr.__hasP; delete rr.__file;
-    out.push(Object.assign(rr,{source_file:r.__file,promise_utr_used:p==null?"":p,promise_source:r.__hasP?"File":"Fixed table",probable_lateslam:p==null?"No reference":ls?"Yes":"No",
+    out.push(Object.assign(rr,{source_file:r.__file,promise_utr_used:p==null?"":p,promise_source:useF?"File":isUpd(s)?"Updated table (13–16 Nov)":"Fixed table",probable_lateslam:p==null?"No reference":ls?"Yes":"No",
       pl_create_to_accept_secs:acc==null?"":Math.round(acc),lateslam_reason:reason}));
     const o=by[s]=by[s]||{o:0,l:0,n:0,u:0,acc:0,um:{}}; o.o++; o.u+=u; if(p==null) o.n++;
     if(ls){ o.l++; o.um[u]=(o.um[u]||0)+1; allU[u]=(allU[u]||0)+1; if(acc!=null&&acc>30) o.acc++; } });
@@ -370,7 +378,7 @@ $("ptExport").addEventListener("click",()=>{ const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Store Summary");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(out),"Order Detail");
   if(dropRows.length) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dropRows),winLbl()+" Drops");
-  const ref=[]; Object.keys(PROMISE).forEach(s=>Object.keys(PROMISE[s]).forEach(u=>ref.push({Store:s,Units:+u,"promise_utr (sec)":PROMISE[s][u]})));
+  const TBx=Object.assign({},PROMISE,PMODE==="upd"?PROMISE_UPD:{}); const ref=[]; Object.keys(TBx).forEach(s=>Object.keys(TBx[s]).forEach(u=>ref.push({Store:s,Units:+u,"promise_utr (sec)":TBx[s][u],Mode:PMODE==="upd"&&PROMISE_UPD[s]?"Updated":"Standard"})));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ref),"Promise Table");
   XLSX.writeFile(wb,"Probable_Lateslam_"+new Date().toISOString().slice(0,10)+".xlsx"); toast("Excel downloaded"); });
 function manList(){ try{ return JSON.parse(localStorage.getItem("plc_manual")||"[]")||[]; }catch(e){ return []; } }
@@ -381,6 +389,8 @@ $("ptManAdd").addEventListener("click",()=>{ const s=$("ptManS").value.trim().to
   const l=manList().filter(m=>m.s!==s); l.push({s,o:isFinite(o)?o:0,u:isFinite(u)?u:0}); $("ptManS").value=$("ptManO").value=$("ptManU").value=""; manSave(l); });
 $("ptManList").addEventListener("click",e=>{ const s=e.target.getAttribute("data-rm"); if(s) manSave(manList().filter(m=>m.s!==s)); });
 manPaint();
+$("ptPMode").value=PMODE;
+$("ptPMode").addEventListener("change",e=>{ PMODE=e.target.value; try{localStorage.setItem("plc_pmode",PMODE);}catch(_){} renderRef(); if(lastRows){ run(lastRows); applyView&&applyView(); } toast(PMODE==="upd"?"Using updated promise for QHA5 & QDH5":"Using standard promise"); });
 $("ptDropWin").addEventListener("change",e=>{ DROP_MIN=+e.target.value; if(lastRows){ run(lastRows); applyView&&applyView(); } });
 </script>
 </body>

@@ -1347,6 +1347,20 @@ function gDate(r){
   return raw;
 }
 function gStore(r){ return String(r['STORE']||r['Store']||r['store']||''); }
+var K_RTS=['REVERSAL TS','Reversal TS','REVERSAL_TS','AC'], K_EXPQ=['EXPIRED QTY','Expired Qty','EXPIRED QUANTITY','AD'], K_BCC=['BCC DEFECTS','BCC Defects','BCC DEFECT','BCC','AE'];
+// Percent cell → percent number. "0.50%" → 0.5 ; 0.005 → 0.5 ; blank → null.
+function gPct(r,keys){
+  var norm=function(s){return String(s).toUpperCase().replace(/[^A-Z0-9]/g,'');}, want=keys.map(norm), raw;
+  for(var i=0;i<keys.length&&raw===undefined;i++){ var v=r[keys[i]]; if(v!==undefined&&v!=='') raw=v; }
+  if(raw===undefined){ for(var k in r){ if(!Object.prototype.hasOwnProperty.call(r,k))continue; if(want.indexOf(norm(k))>-1&&r[k]!==undefined&&r[k]!==''){ raw=r[k]; break; } } }
+  if(raw===undefined||raw===null) return null;
+  var s=String(raw).trim(); if(!s||s==='#DIV/0!'||s==='#N/A') return null;
+  var x=parseFloat(s.replace(/,/g,'').replace('%','')); if(isNaN(x)) return null;
+  return s.indexOf('%')>-1?x:(Math.abs(x)<=1?x*100:x);
+}
+function avgPct(rows,keys){ var v=rows.map(function(r){return gPct(r,keys);}).filter(function(x){return x!=null;}); return v.length?v.reduce(function(a,b){return a+b;},0)/v.length:null; }
+function bccCol(v){ return v==null?'var(--muted)':v===0?'#10B981':v<1?'#F59E0B':'#EF4444'; }
+function fmtBcc(v){ return v==null?'—':v.toFixed(2)+'%'; }
 function gWeek(r){ return String(r['Week']||r['WEEK']||r['week']||r['AB']||''); }
 function gMonth(r){ return String(r['Month']||r['MONTH']||r['month']||r['W']||''); }
 function gNum(r,keys){
@@ -1905,7 +1919,7 @@ function smBuildSummary(rows,mode){
     if(!groups[gk]) groups[gk]={period:key,store:store,rows:[]};
     groups[gk].rows.push(r);
   });
-  var hdr=['Period','Store','Records','Total Inbound','Vendor','Transs','Orders','Outbound Units','Late Slam','LS Rate %','Late Slam V2','LS V2 Rate %','Avg UPO','Avg SLA %','IB TPH','OB TPH'];
+  var hdr=['Period','Store','Records','Total Inbound','Vendor','Transs','Orders','Outbound Units','Late Slam','LS Rate %','Late Slam V2','LS V2 Rate %','Avg UPO','Avg SLA %','IB TPH','OB TPH','Reversal TS','Expired Qty','BCC Defects %'];
   var out=[hdr];
   Object.keys(groups).sort().forEach(function(gk){
     var rs=groups[gk].rows;
@@ -1926,7 +1940,10 @@ function smBuildSummary(rows,mode){
       +avg(rs.map(function(r){return gNum(r,['AVG UPO','Avg UPO','T']);})).toFixed(2),
       +toP(avg(rs.map(function(r){return gNum(r,['AVG SLA','Avg SLA','S']);}))).toFixed(2),
       +avg(rs.map(function(r){return gNum(r,['IB TPH','O']);})).toFixed(1),
-      +avg(rs.map(function(r){return gNum(r,['OB TPH','P']);})).toFixed(1)
+      +avg(rs.map(function(r){return gNum(r,['OB TPH','P']);})).toFixed(1),
+      Math.round(sum(rs.map(function(r){return gNum(r,K_RTS);}))),
+      Math.round(sum(rs.map(function(r){return gNum(r,K_EXPQ);}))),
+      (function(v){return v==null?'':+v.toFixed(2);})(avgPct(rs,K_BCC))
     ]);
   });
   return out;
@@ -2070,6 +2087,7 @@ function smKPI(rows){
     var v=avg(rows.filter(function(r){return gStore(r)===s;}).map(function(r){return gNum(r,['THROUGHPUT','Throughput','AA']);}));
     return {s:s,v:v};
   }).filter(function(x){return x.v>=170;});
+  var rtsTot=sum(rows.map(function(r){return gNum(r,K_RTS);})), expQTot=sum(rows.map(function(r){return gNum(r,K_EXPQ);})), bccAvg=avgPct(rows,K_BCC);
   var tphHit=tphStores.length?'<div style="font-size:10px;margin-top:3px;color:#10B981;">🎯 '+tphStores.map(function(x){return x.s;}).join(', ')+'</div>':'';
   var cards=[
     {icon:'📥',lbl:'Total Inbound',  val:fmt(inbound),        sub:'total IB units',     col:'#10B981'},
@@ -2086,6 +2104,9 @@ function smKPI(rows){
     {icon:'✅',lbl:'Avg SLA %',      val:avgSla.toFixed(2)+'%',sub:avgSla>=99?'✅ On Target':'⚠️ Below Target',col:slaCol},
     {icon:'⏭️',lbl:'Skip',          val:fmt(skip),           sub:'skip units',         col:skipCol},
     {icon:'📭',lbl:'Short',          val:fmt(short),          sub:'short units',        col:shortCol},
+    {icon:'↩️',lbl:'Reversal TS',    val:fmt(rtsTot),         sub:'transship returns',  col:'#0EA5E9'},
+    {icon:'⌛',lbl:'Expired Qty',    val:fmt(expQTot),        sub:'expired units',      col:expQTot>0?'#F59E0B':'#10B981'},
+    {icon:'🧮',lbl:'BCC Defects',    val:fmtBcc(bccAvg),      sub:'avg daily defect rate', col:bccCol(bccAvg)},
   ];
   document.getElementById('sm-kpis').innerHTML=cards.map(function(c){
     return '<div class="kpi" style="--kc:'+c.col+';"><div class="kpi-icon">'+c.icon+'</div><div class="kpi-lbl">'+c.lbl+'</div><div class="kpi-val">'+c.val+'</div><div class="kpi-sub">'+c.sub+'</div></div>';
@@ -2938,6 +2959,9 @@ function smLeaderboard(rows){
     d.qualRem  = sum(sr.map(function(r){return gNum(r,['QUALITY REMOVAL','Quality Removal','K']);}));
     d.damRem   = sum(sr.map(function(r){return gNum(r,['DAMAGED REMOVAL','Damaged Removal','L']);}));
     d.expRem   = sum(sr.map(function(r){return gNum(r,['EXPIRED REMOVAL','Expired Removal','M']);}));
+    d.rts = sum(sr.map(function(r){return gNum(r,K_RTS);}));
+    d.expQty = sum(sr.map(function(r){return gNum(r,K_EXPQ);}));
+    d.bcc = avgPct(sr,K_BCC);
     d.shrinkQty = sum(sr.map(function(r){return gNum(r,['SHIRNK QTY','SHRINK QTY','Shirnk Qty','Shrink Qty','SHIRNK','SHRINK','shirnk qty','shrink qty','Y']);}));
     d.parts = smScoreParts(d);
     d.score = smScore(d);
@@ -3014,6 +3038,9 @@ function smLeaderboard(rows){
         ch('Skip',d.skip,d.skip>0?'#EF4444':'#10B981')+
         ch('Short',d.short,d.short>0?'#EF4444':'#10B981')+
         ch('VOC',d.voc,vocC)+
+        ch('Rev TS',fmt(d.rts),'#0EA5E9','Reversal TS — transship returns')+
+        ch('Exp Qty',fmt(d.expQty),d.expQty>0?'#F59E0B':'#10B981','Expired quantity')+
+        ch('BCC',fmtBcc(d.bcc),bccCol(d.bcc),'BCC defect rate')+
         ch('UTR',d.utr+' ('+d.utrRate.toFixed(3)+'%)',utrC,'UTR ops-controllable mistakes · target 0.010%')+
 
         ch('Score',d.score.toFixed(2)+'%',scoreC)+
@@ -3538,6 +3565,10 @@ function smTable(rows){
         c = finalPct>=3?'color:#EF4444':finalPct>0?'color:#F59E0B':'color:#10B981';
         disp = ordVal>0 ? finalPct.toFixed(2)+'%' : (sheetPct>0?sheetPct.toFixed(2)+'%':'—');
       }
+      // BCC defect rate → %
+      else if(kl==='bcc defects'||kl==='bcc'){
+        var bv=gPct(r,[k]); disp=fmtBcc(bv); c='color:'+bccCol(bv);
+      }
       // Points → %
       else if(kl==='points'||kl==='x'){
         if(nv>0){disp=toP(nv).toFixed(2)+'%';c='color:#F59E0B';}
@@ -3988,6 +4019,9 @@ function copySummaryRun(){
     var slaVpct = toP(slaVR).toFixed(1)+'%';
     var vocCnt  = copyVoc(s);
     var vocLine = vocCnt===null ? 'Fetch VOC' : String(vocCnt);
+    var rts = sum(sr.map(function(r){return gNum(r,K_RTS);}));
+    var expQty = sum(sr.map(function(r){return gNum(r,K_EXPQ);}));
+    var bcc = avgPct(sr,K_BCC);
 
     lines.push('🏪 '+s);
     lines.push('📥 Inbound: '+fmt(inbound));
@@ -4001,6 +4035,9 @@ function copySummaryRun(){
     lines.push('🔴 Removals under Damage: '+damaged);
     lines.push('🔵 Removals under Quality: '+quality);
     lines.push('🤝 Expiry Awareness Donation: '+donate);
+    lines.push('↩️ Reversal TS: '+fmt(rts));
+    lines.push('⌛ Expired Qty: '+fmt(expQty));
+    lines.push('🧮 BCC Defects: '+(bcc==null?'Not Updated':bcc.toFixed(2)+'%'));
     lines.push('✅ SLA Trans/Vend: '+slaTpct+'/'+slaVpct+'  · tgt ≥'+SLA_TARGET+'%');
     lines.push('🎙️ VOC ('+dateLabel+'): '+vocLine);
     if(nlChoice==='not_updated'){
@@ -4031,7 +4068,7 @@ function copySummaryRun(){
     T.ls+=ls; T.lsv2+=lsV2cnt; T.skip+=skip; T.short+=short;
     if(vocCnt!==null) T.voc+=vocCnt;
     try{ T.utr += (typeof smUtrCount==='function'? smUtrCount(s,rows):0); }catch(e){}
-    T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); if(tphAvg>0) T.tphArr.push(tphAvg); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality;
+    T.lsV1+=ls; if(ibTph>0) T.ibTphArr.push(ibTph); if(tphAvg>0) T.tphArr.push(tphAvg); T.donate+=donate; T.damRem+=damaged; T.qualRem+=quality; T.rts=(T.rts||0)+rts; T.expQty=(T.expQty||0)+expQty; if(bcc!=null){ (T.bccArr=T.bccArr||[]).push(bcc); }
     T.lsV2PctArr.push(lsV2Pct);
   });
 
@@ -4052,6 +4089,9 @@ function copySummaryRun(){
   lines.push('🤝 Total Donated Marked: '+fmt(T.donate));
   lines.push('🔴 Total Damages: '+fmt(T.damRem));
   lines.push('🔵 Total Culling Removals: '+fmt(T.qualRem));
+  lines.push('↩️ Total Reversal TS: '+fmt(T.rts||0));
+  lines.push('⌛ Total Expired Qty: '+fmt(T.expQty||0));
+  lines.push('🧮 BCC Defects Avg (Network): '+(T.bccArr&&T.bccArr.length?(T.bccArr.reduce(function(a,b){return a+b;},0)/T.bccArr.length).toFixed(2)+'%':'Not Updated'));
   if(nlChoice==='updated' && nlPeriod && T.nlGms>0){
     lines.push('🏭 Avg WHL (Warehouse Loss): '+(T.nlWhlW/T.nlGms).toFixed(2)+'%');
     lines.push('📦 Avg WHD (Warehouse Damage): '+(T.nlWhdW/T.nlGms).toFixed(2)+'%');
@@ -4708,6 +4748,10 @@ function smOpenQS(){
         chip('Destroyed',d.expDest||0,destC)+
         chip('Donated',d.donate||0,donC)+
         chip('Shrink',d.shrinkQty||0,shrinkC)+
+        div()+
+        chip('Rev TS',fmt(d.rts||0),'#0EA5E9')+
+        chip('Exp Qty',fmt(d.expQty||0),(d.expQty||0)>0?'#F59E0B':'#10B981')+
+        chip('BCC',fmtBcc(d.bcc),bccCol(d.bcc))+
       '</div>'+
     '</div>';
   }).join('');
