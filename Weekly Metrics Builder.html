@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  var framed=false; try{framed=window.self!==window.top;}catch(e){framed=true;}
+  if(framed) return;
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+  window.addEventListener('storage', function(e){ if(e.key===K && !e.newValue){ kick(); } });
+})();
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Weekly Metrics Builder — DMS PRO</title>
+<script>
+(function(){
+  function load(urls,test){ var i=0; (function next(){ if(test()||i>=urls.length) return; var s=document.createElement('script'); s.src=urls[i++]; s.async=true; s.onerror=next; s.onload=function(){ if(!test()) next(); }; document.head.appendChild(s); })(); }
+  load(["https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://unpkg.com/xlsx-js-style@1.2.0/dist/xlsx.bundle.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"],function(){return !!window.XLSX;});
+})();
+</script>
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;}
+a{color:#4361ee;} a:hover{color:#1a1830;}
+body{background:#e8ecf3;color:#11161c;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:30px 28px 90px;}
+td[contenteditable="true"]:focus{outline:2px solid #4361ee;outline-offset:-2px;background:#fff !important;}
+</style>
+</head>
+<body>
+<div style="max-width:1500px;margin:0 auto;">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid #d7dee6;color:#5d6b7a;font-size:13px;font-weight:700;padding:8px 16px;border-radius:9px;text-decoration:none;margin-bottom:18px;white-space:nowrap;">← Back to dashboard</a>
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;border-bottom:2px solid #11161c;padding-bottom:16px;">
+    <div>
+      <p style="font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#5d6b7a;font-weight:700;margin:0 0 6px;">Weekly · Store-wise</p>
+      <h1 style="font-size:26px;line-height:1.1;margin:0;font-weight:800;">Weekly Metrics Builder</h1>
+      <p style="font-size:13px;color:#5d6b7a;margin:7px 0 0;max-width:720px;line-height:1.5;">Upload the IB and OB forecast files. Every other metric is fetched from the Store Metric sheet. The output follows the Weekly Metric (Amazon Dark Store) format with colour coding, ready to paste into SharePoint or Google Sheets.</p>
+    </div>
+    <div id="smStatus" style="display:flex;align-items:center;gap:10px;background:#1a1830;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;">⏳ Loading Store Metric sheet…</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:22px 0 14px;">
+    <label id="c-ib" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-ib" accept=".xlsx,.xls" multiple style="display:none;"/>
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 1</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">IB Forecast file(s)</div>
+      <div style="font-size:12px;color:#5d6b7a;">Store_IB_daily sheet · "TOTAL IB" row per store</div>
+      <div id="s-ib" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
+    <label id="c-ob" style="display:block;background:#fff;border:2px dashed #d7dee6;border-radius:14px;padding:20px 22px;cursor:pointer;text-align:center;">
+      <input type="file" id="f-ob" accept=".xlsx,.xls" multiple style="display:none;"/>
+      <div style="font-size:11px;letter-spacing:.18em;font-weight:800;color:#5d6b7a;">STEP 2</div>
+      <div style="font-size:16px;font-weight:800;margin:6px 0 4px;">OB Forecast file(s)</div>
+      <div style="font-size:12px;color:#5d6b7a;">S&amp;OP .xlsx · Final Units Forecast</div>
+      <div id="s-ob" style="font-size:12px;font-weight:700;margin-top:10px;color:#9aa5b1;">Not uploaded</div>
+    </label>
+  </div>
+
+  <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;background:#fff;border:1px solid #d7dee6;border-radius:14px;padding:14px 18px;">
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;letter-spacing:.06em;">FROM WEEK
+      <select id="wFrom" disabled style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;min-width:120px;"></select></label>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:#5d6b7a;letter-spacing:.06em;">TO WEEK
+      <select id="wTo" disabled style="padding:8px 10px;border:1px solid #cfd6de;border-radius:8px;font-size:13px;font-weight:700;background:#fff;min-width:120px;"></select></label>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#11161c;padding-bottom:9px;cursor:pointer;"><input type="checkbox" id="optHead" checked style="width:16px;height:16px;accent-color:#1a1830;"/> Store &amp; week header rows</label>
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#11161c;padding-bottom:9px;cursor:pointer;"><input type="checkbox" id="optLabels" checked style="width:16px;height:16px;accent-color:#1a1830;"/> Sr No · Category · Metric · Goal columns</label>
+    <button id="b-reload" type="button" style="padding:9px 14px;border-radius:9px;border:1px solid #cfd6de;background:#fff;color:#11161c;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap;">⟳ Refresh sheet</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;">
+      <button id="b-copy" disabled type="button" style="padding:9px 16px;border-radius:9px;border:none;background:#1a1830;color:#fff;font-size:13px;font-weight:800;cursor:pointer;opacity:.5;white-space:nowrap;">📋 Copy with colours</button>
+      <button id="b-csv" disabled type="button" style="padding:9px 16px;border-radius:9px;border:1px solid #cfd6de;background:#fff;color:#11161c;font-size:13px;font-weight:800;cursor:pointer;opacity:.5;white-space:nowrap;">⬇ CSV</button>
+      <button id="b-xl" disabled type="button" style="padding:9px 16px;border-radius:9px;border:none;background:#059669;color:#fff;font-size:13px;font-weight:800;cursor:pointer;opacity:.5;white-space:nowrap;">⬇ Excel (colours)</button>
+    </div>
+  </div>
+  <div id="msg" style="font-size:12px;color:#5d6b7a;margin:0 0 12px;min-height:16px;"></div>
+
+  <div id="out"></div>
+
+  <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#5d6b7a;margin-top:14px;line-height:1.6;">
+    <span><span style="display:inline-block;width:12px;height:12px;background:#C6EFCE;vertical-align:-2px;margin-right:5px;"></span>Green: LS % V2 ≤ 3% · IB TPH ≥ 140 · OB TPH ≥ 65</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#FFEB9C;vertical-align:-2px;margin-right:5px;"></span>Yellow: Stow SLA 90–95%</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#FFC7CE;vertical-align:-2px;margin-right:5px;"></span>Red: Forecast accuracy beyond ±5% · LS % V2 &gt; 3% · TPH below goal · Stow SLA &lt; 90% · IRDR ≥ 4500</span>
+    <span><span style="display:inline-block;width:12px;height:12px;background:#eef2ff;border:1px dashed #a5b4fc;vertical-align:-2px;margin-right:5px;"></span>Manual cell, click to type (saved in this browser)</span>
+  </div>
+</div>
+
+<script>
+var APPS_URL='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec';
+var $=function(id){return document.getElementById(id);};
+var SM=[], NL=[], IBF={}, OBF={}, VIEW=null;
+var MAN={}; try{ MAN=JSON.parse(localStorage.getItem('wmb_manual')||'{}')||{}; }catch(e){ MAN={}; }
+function saveMan(){ try{ localStorage.setItem('wmb_manual',JSON.stringify(MAN)); }catch(e){} }
+
+var STORE_LABEL={QAA1:'QAA1 MBZ City',QAA6:'QAA6 Khalifa City',QAA7:'QAA7 - Al Raha',QDC6:'QDC6 - Al Qusais',QDG5:'QDG5 - Business Bay',QDD3:'QDD3- Yas Mall',QDG8:'QDG8- DIFC',QHA5:'QHA5-Sharjha',QDH5:'QDH5'};
+var STORE_ORDER=['QAA1','QAA6','QAA7','QDC6','QDG5','QDD3','QDG8','QHA5','QDH5'];
+// Excel-style conditional colours (matches the Weekly Metric sheet)
+var G={bg:'#C6EFCE',c:'#006100'}, Y={bg:'#FFEB9C',c:'#9C5700'}, R={bg:'#FFC7CE',c:'#9C0006'};
+var accCol=function(v){ return v==null?null:Math.abs(v)>5?R:null; };
+var lsCol=function(v,all){ var p=all?all.lsp:v; return p==null?null:p>3?R:G; };
+function band(v,okFn,nearFn){ if(v==null) return null; return okFn(v)?G:(nearFn&&nearFn(v))?Y:R; }
+
+// key: computed field; m:true → manual (editable, default "-"); f: format; col: colour rule
+var METRICS=[
+  {sr:1,cat:'Volume',name:'IB Forecast #',goal:'',key:'ibf',f:'int'},
+  {sr:2,name:'IB Actuals',goal:'',key:'iba',f:'int'},
+  {sr:3,name:'Forecast Accuracy %',goal:'',key:'ibacc',f:'pct0',col:accCol},
+  {sr:4,name:'Total Stowed',goal:'',key:'iba',f:'int'},
+  {sr:5,blank:1},
+  {sr:6,name:'OB Forecast #',goal:'',key:'obf',f:'int'},
+  {sr:7,name:'OB Actuals- units',goal:'',key:'oba',f:'int'},
+  {sr:8,name:'Forecast Accuracy %',goal:'',key:'obacc',f:'pct0',col:accCol},
+  {sr:9,name:'Total Orders #',goal:'',key:'ord',f:'int'},
+  {sr:10,name:'UPO (Units Per Order)',goal:'',key:'upo',f:'dec1'},
+  {sr:11,blank:1},
+  {sr:12,name:'Cx Returned (Orders)',goal:'',m:1},
+  {sr:13,cat:'Quality',name:'Late Slams',goal:'',key:'ls',f:'int',col:lsCol},
+  {sr:14,name:'Late Slams % V2',goal:'3%',key:'lsp',f:'pct2',col:lsCol},
+  {sr:15,name:'Skips #',goal:'-',key:'skip',f:'int'},
+  {sr:16,name:'Skips DPMO',goal:'500',key:'skipd',f:'int'},
+  {sr:17,name:'Shorts #',goal:'-',key:'short',f:'int'},
+  {sr:18,name:'Shorts DPMO',goal:'500',key:'shortd',f:'int'},
+  {sr:19,cat:'UTR Metrics (mins)(avg)',name:'Order Drop time',goal:'',m:1},
+  {sr:20,name:'Picker Assignment time',goal:'',m:1},
+  {sr:21,name:'Picker Acceptance time',goal:'',m:1},
+  {sr:22,name:'Picking time',goal:'',m:1},
+  {sr:23,name:'Packing time',goal:'',m:1},
+  {sr:24,name:'Staging time',goal:'',m:1},
+  {sr:25,name:'Total UTR time',goal:'',m:1},
+  {sr:26,cat:'Wastages',name:'Expired qty',goal:'',key:'expq',f:'int'},
+  {sr:27,name:'Expired%',goal:'',m:1},
+  {sr:28,name:'Shrinked qty',goal:'',key:'shrink',f:'int'},
+  {sr:29,name:'Shrinked%',goal:'',m:1},
+  {sr:30,blank:1},
+  {sr:31,name:'WHL- Warehouse losses*',goal:'>-0.1%',key:'whl',f:'pct2'},
+  {sr:32,name:'WHD-Warehouse Damage*',goal:'<0.15%',key:'whd',f:'pct2'},
+  {sr:33,blank:1},
+  {sr:34,cat:'TPH',name:'Inbound',goal:'140',key:'ibtph',f:'int',col:function(v){return v==null?null:v>=140?G:R;}},
+  {sr:35,name:'Outbound',goal:'65',key:'obtph',f:'int',col:function(v){return v==null?null:v>=65?G:R;}},
+  {sr:'',blank:1},
+  {sr:36,cat:'Additional contract Metrics',name:'Late Handovers (Pack time to Stage time >30sec)',goal:'<0.3%',m:1},
+  {sr:37,name:'Damaged Item shipped by FC-FC controllable',goal:'0',m:1},
+  {sr:38,name:'Expiry Date Problem- FC controllable',goal:'0',m:1},
+  {sr:39,name:'Wrong Item Switcheroo- FC controllable',goal:'0',m:1},
+  {sr:40,name:'Item Rotten/Bad Quality- FC controllable',goal:'0',m:1},
+  {sr:41,name:'Committed capacity During Peak Daily shipout -Peak',goal:'100% - 120%',m:1},
+  {sr:42,name:'Processing capacity as per plan shared by Company (BAU - 2 weeks rolling plan',goal:'+/-10%',m:1},
+  {sr:43,name:'Number of Reusable shipping suppliesd lost (Shipping Supplies used to be evaluated)',goal:'-',m:1},
+  {sr:44,name:'Food safety & SOP adherence/Temp Compliance Adherence',goal:'Audit score: 100%',m:1},
+  {sr:45,name:'Inventory Record Defect Rate (IRDR) Weekly',goal:'Avg. IRDR threshold (Month)< 4500 DPMO',m:1,col:function(v){return v!=null&&v>=4500?R:null;}},
+  {sr:46,name:'Stow SLA Ambient, Chilled and Frozen Units',goal:'Ambient: within 6hrs I Chilled & Frozen: within 1hr from vehicle check-in/PO receipt',key:'sla',f:'pct0',col:function(v){return v==null?null:v<90?R:v<95?Y:null;}},
+  {sr:47,name:'Transhipment CPT Misses/Transhipment In & out SLA missed',goal:'Threshold 2 hrs from trans arrival. Trans Out-Units after ExSD (CPT)/Defined SLA-Reversals High GV/ASP- 2 hrs',m:1},
+  {sr:48,name:'TAT for Inbound vehicles',goal:'On Time- 1hr / Late Arrivals - 2hrs',m:1},
+  {sr:49,name:'MFI (Missing from inbound)',goal:'0',m:1},
+  {sr:50,name:'IB /OB YMS compliance',goal:'>98%',m:1},
+  {sr:51,name:'Transhipment Reconciliation -FC controllable',goal:'100%',m:1},
+  {sr:52,name:'RTO-Return To Origin and Unreconciled loss/Reject Reconciliation',goal:'100% Reject reconciliations',m:1},
+  {sr:53,name:'RTO Processing',goal:'Ambient-2 hrs / Frozen/Chilled 0.5hrs',m:1}
+];
+
+// ── helpers ─────────────────────────────────────────
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function serialYmd(n){ var d=new Date(Math.round((n-25569)*864e5)); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0'); }
+function weekNo(d){ var x=new Date(d+'T12:00:00'), j=new Date(x.getFullYear(),0,1); var doy=Math.round((new Date(x.getFullYear(),x.getMonth(),x.getDate())-j)/864e5); return Math.floor((doy+j.getDay())/7)+1; }
+function n(v){ if(v==null) return 0; var s=String(v).trim(); if(!s||s==='-'||/^#/.test(s)) return 0; var x=parseFloat(s.replace(/,/g,'').replace('%','')); return isNaN(x)?0:x; }
+function pctv(v){ if(v==null) return null; var s=String(v).trim(); if(!s||s==='-'||/^#/.test(s)) return null; var x=parseFloat(s.replace(/,/g,'').replace('%','')); if(isNaN(x)) return null; return s.indexOf('%')>-1?x:(Math.abs(x)<=1?x*100:x); }
+function normK(s){ return String(s).toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function g(r,names){ for(var i=0;i<names.length;i++){ if(r[names[i]]!==undefined&&r[names[i]]!=='') return r[names[i]]; } var w=names.map(normK); for(var k in r){ if(w.indexOf(normK(k))>-1&&r[k]!=='') return r[k]; } return undefined; }
+function rStore(r){ return String(g(r,['STORE','Store'])||'').trim().toUpperCase(); }
+function rDate(r){ var raw=String(g(r,['DATE','Date'])||'').split(' ')[0].trim(); if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw; var p=raw.split('/'); if(p.length===3){ var y=p[2].length===4?p[2]:'20'+p[2]; return y+'-'+p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0'); } return ''; }
+function rWeek(r){ var w=String(g(r,['Week','WEEK'])||'').replace(/\D/g,''); if(w) return +w; var d=rDate(r); return d?weekNo(d):null; }
+function rYear(r){ var d=rDate(r); return d?+d.slice(0,4):null; }
+function wkKey(y,w){ return y+'-'+String(w).padStart(2,'0'); }
+function wkLabel(k){ return 'Wk'+(+k.split('-')[1]); }
+function setStatus(k,ok,text){ $('s-'+k).textContent=text; $('s-'+k).style.color=ok?'#059669':'#e11d48'; $('c-'+k).style.borderColor=ok?'#059669':'#d7dee6'; $('c-'+k).style.borderStyle=ok?'solid':'dashed'; }
+function waitX(cb){ (function t(){ if(window.XLSX) cb(); else setTimeout(t,120); })(); }
+function toast(m){ $('msg').textContent=m; clearTimeout(toast._t); toast._t=setTimeout(function(){ renderMsg(); },3000); }
+
+// ── Store Metric sheet (JSONP) ──────────────────────
+function jsonp(action,cb){
+  var name='wmb_'+action+'_'+Date.now(), s=document.createElement('script'), done=false;
+  var t=setTimeout(function(){ if(!done){ done=true; cleanup(); cb(null); } },60000);
+  function cleanup(){ clearTimeout(t); try{ delete window[name]; }catch(e){ window[name]=undefined; } if(s.parentNode) s.parentNode.removeChild(s); }
+  window[name]=function(d){ if(done) return; done=true; cleanup(); cb(d); };
+  s.src=APPS_URL+'?action='+action+'&callback='+name; s.onerror=function(){ if(!done){ done=true; cleanup(); cb(null); } };
+  document.head.appendChild(s);
+}
+function loadSheet(){
+  $('smStatus').textContent='⏳ Loading Store Metric sheet…';
+  jsonp('storeMetric',function(d){
+    if(!d||!Array.isArray(d.rows)||!d.rows.length){ $('smStatus').textContent='❌ Could not load Store Metric sheet'; $('smStatus').style.background='#991b1b'; return; }
+    SM=d.rows.map(function(r){ var o={r:r,s:rStore(r),w:rWeek(r),y:rYear(r)}; if(o.s==='QDG5_SS') o.s='QDG5'; return o; }).filter(function(o){ return o.s&&o.w&&o.y; });
+    $('smStatus').style.background='#1a1830';
+    $('smStatus').textContent='✅ Store Metric · '+SM.length.toLocaleString()+' rows';
+    fillWeeks(); render();
+  });
+  jsonp('networkLoss',function(d){ NL=(d&&Array.isArray(d.rows))?d.rows:[]; render(); });
+}
+$('b-reload').onclick=loadSheet;
+
+// ── Forecast parsers ────────────────────────────────
+// IB: sheet with "Store | Source | Cat" header + serial-date row above; sums the "TOTAL IB" row (or all source rows if no total)
+function parseIB(wb,acc){
+  var got=false;
+  wb.SheetNames.forEach(function(nm){
+    var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:'',raw:true}), hi=-1;
+    for(var i=0;i<Math.min(rows.length,10);i++){ if(/^store$/i.test(String(rows[i][0]).trim())&&/^source$/i.test(String(rows[i][1]).trim())){ hi=i; break; } }
+    if(hi<1) return;
+    var dr=rows[hi-1], dc=[];
+    for(var c=3;c<dr.length;c++){ var v=dr[c]; var d=(v instanceof Date)?ymd(v):(typeof v==='number'&&v>40000&&v<80000?serialYmd(v):''); if(d) dc.push({c:c,d:d}); }
+    if(!dc.length) return;
+    var hasTotal={};
+    for(var j=hi+1;j<rows.length;j++){ if(/total ib/i.test(String(rows[j][1]))) hasTotal[String(rows[j][0]).trim().toUpperCase()]=1; }
+    for(var k=hi+1;k<rows.length;k++){
+      var st=String(rows[k][0]).trim().toUpperCase(), src=String(rows[k][1]).trim(); if(!st||!/^Q[A-Z]{2}\d/.test(st)) continue;
+      var isTot=/total ib/i.test(src); if(hasTotal[st]?!isTot:isTot) continue;
+      dc.forEach(function(x){ var v=parseFloat(rows[k][x.c]); if(!isFinite(v)) return; var o=acc[x.d]=acc[x.d]||{}; if(isTot) o[st]=v; else o[st]=(o[st]||0)+v; });
+      got=true;
+    }
+  });
+  return got;
+}
+// OB: S&OP — units sheet, "Date" header row with serial dates; row label "Final Units Forecast"
+function parseOB(wb,acc){
+  var got=false;
+  wb.SheetNames.forEach(function(nm){
+    if(!/unit/i.test(nm)||/cap/i.test(nm)||got) return;
+    var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:'',raw:true}), hi=-1, dc=[], sc=0;
+    for(var i=0;i<Math.min(rows.length,20)&&hi<0;i++){
+      var r=rows[i]; if(!r.some(function(c){return /^date$/i.test(String(c).trim());})) continue;
+      var cols=[]; for(var c=0;c<r.length;c++){ var d=(r[c] instanceof Date)?ymd(r[c]):(typeof r[c]==='number'&&r[c]>40000&&r[c]<80000?serialYmd(r[c]):''); if(d) cols.push({c:c,d:d}); }
+      if(cols.length){ hi=i; dc=cols; sc=Math.max(0,r.findIndex(function(c){return /^store$/i.test(String(c).trim());})); }
+    }
+    if(hi<0) return;
+    var pri=[/^final units forecast$/i,/^units forecast$/i], found={};
+    for(var j=hi+1;j<rows.length;j++){
+      var st=String(rows[j][sc]||'').trim().toUpperCase(), lb=String(rows[j][sc+1]||'').trim(); if(!st) continue;
+      var p=-1; pri.forEach(function(re,ix){ if(p<0&&re.test(lb)) p=ix; }); if(p<0) continue;
+      if(found[st]!=null&&found[st]<=p) continue; found[st]=p;
+      dc.forEach(function(x){ var v=parseFloat(rows[j][x.c]); if(!isFinite(v)) return; (acc[x.d]=acc[x.d]||{})[st]=v; });
+      got=true;
+    }
+  });
+  return got;
+}
+function loadFc(input,kind){
+  var files=[].slice.call(input.files||[]); if(!files.length) return;
+  files.sort(function(a,b){ return a.name.localeCompare(b.name,undefined,{numeric:true}); });
+  waitX(function(){
+    var acc={}, ok=0, bad=[], left=files.length, bufs=[];
+    files.forEach(function(f,i){ var fr=new FileReader(); fr.onload=function(e){ bufs[i]=e.target.result; if(--left) return;
+      files.forEach(function(ff,ix){ try{ var wb=XLSX.read(new Uint8Array(bufs[ix]),{type:'array'}); if((kind==='ib'?parseIB:parseOB)(wb,acc)) ok++; else bad.push(ff.name); }catch(err){ bad.push(ff.name); } });
+      if(!ok){ setStatus(kind,false,'Could not find forecast rows'+(bad.length?' · '+bad.join(', '):'')); return; }
+      if(kind==='ib') IBF=acc; else OBF=acc;
+      var ds=Object.keys(acc).sort(), wks={}; ds.forEach(function(d){ wks['Wk'+weekNo(d)]=1; });
+      setStatus(kind,true,'✓ '+ok+' file'+(ok>1?'s':'')+' · '+Object.keys(wks).join(', ')+(bad.length?' · skipped: '+bad.join(', '):''));
+      render();
+    }; fr.readAsArrayBuffer(f); });
+  });
+  input.value='';
+}
+$('f-ib').onchange=function(){ loadFc(this,'ib'); };
+$('f-ob').onchange=function(){ loadFc(this,'ob'); };
+
+// ── weeks ───────────────────────────────────────────
+function allWeeks(){ var m={}; SM.forEach(function(o){ m[wkKey(o.y,o.w)]=1; }); return Object.keys(m).sort(); }
+function fillWeeks(){
+  var ws=allWeeks(); if(!ws.length) return;
+  var opts=ws.slice().reverse().map(function(k){ return '<option value="'+k+'">'+wkLabel(k)+' '+k.split('-')[0]+'</option>'; }).join('');
+  var f=$('wFrom').value, t=$('wTo').value;
+  $('wFrom').innerHTML=opts; $('wTo').innerHTML=opts; $('wFrom').disabled=false; $('wTo').disabled=false;
+  var last=ws[ws.length-1];
+  $('wTo').value=t&&ws.indexOf(t)>-1?t:last; $('wFrom').value=f&&ws.indexOf(f)>-1?f:$('wTo').value;
+}
+$('wFrom').onchange=function(){ if($('wFrom').value>$('wTo').value) $('wTo').value=$('wFrom').value; render(); };
+$('wTo').onchange=function(){ if($('wTo').value<$('wFrom').value) $('wFrom').value=$('wTo').value; render(); };
+
+// ── compute one store × week ───────────────────────
+function fcSum(F,store,key){ var y=+key.split('-')[0], w=+key.split('-')[1], tot=0, has=false;
+  Object.keys(F).forEach(function(d){ if(+d.slice(0,4)!==y||weekNo(d)!==w) return; var v=F[d][store]; if(v!=null){ tot+=v; has=true; } });
+  return has?tot:null; }
+function avg(a){ a=a.filter(function(v){return v!=null&&isFinite(v)&&v>0;}); return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:null; }
+function nlFor(store,key){
+  var w=+key.split('-')[1], rs=NL.filter(function(r){ return String(r.store||r.Store||'').toUpperCase()===store && +String(r.week||r.Week||'').replace(/\D/g,'')===w; });
+  if(!rs.length) return {whl:null,whd:null};
+  var gms=0,wl=0,wd=0; rs.forEach(function(r){ var x=Number(r.gms)||1; gms+=x; wl+=(Number(r.whl)||0)*x; wd+=(Number(r.whd)||0)*x; });
+  return {whl:gms?wl/gms:null, whd:gms?wd/gms:null};
+}
+function compute(store,key){
+  var y=+key.split('-')[0], w=+key.split('-')[1];
+  var rs=SM.filter(function(o){ return o.s===store&&o.y===y&&o.w===w; }).map(function(o){ return o.r; });
+  var S=function(names){ return rs.reduce(function(a,r){ return a+n(g(r,names)); },0); };
+  var v={};
+  v.ibf=fcSum(IBF,store,key); v.obf=fcSum(OBF,store,key);
+  if(!rs.length){ v._empty=true; if(v.ibf!=null||v.obf!=null) return v; return v; }
+  v.iba=S(['TOTAL INBOUND']); v.oba=S(['OUTBOUND UNITS']); v.ord=S(['ORDERS']);
+  v.ibacc=v.ibf?(v.iba-v.ibf)/v.ibf*100:null; v.obacc=v.obf?(v.oba-v.obf)/v.obf*100:null;
+  v.upo=v.ord?v.oba/v.ord:null;
+  v.ls=S(['LATE SLAM V.2','LATE SLAM V2']); v.lsp=v.ord?v.ls/v.ord*100:null;
+  v.skip=S(['Skip','SKIP']); v.short=S(['Short','SHORT']);
+  v.skipd=v.oba?v.skip/v.oba*1e6:null; v.shortd=v.oba?v.short/v.oba*1e6:null;
+  v.expq=S(['EXPIRED QTY']); v.shrink=S(['SHIRNK QTY','SHRINK QTY']);
+  var nl=nlFor(store,key); v.whl=nl.whl; v.whd=nl.whd;
+  v.ibtph=avg(rs.map(function(r){ return n(g(r,['IB TPH'])); })); v.obtph=avg(rs.map(function(r){ return n(g(r,['OB TPH'])); }));
+  v.sla=avg(rs.map(function(r){ return pctv(g(r,['AVG SLA'])); }));
+  return v;
+}
+function fmt(v,f){
+  if(v==null||!isFinite(v)) return '-';
+  if(f==='int') return Math.round(v).toLocaleString('en-US');
+  if(f==='dec1') return v.toFixed(1);
+  if(f==='pct0') return Math.round(v)+'%';
+  if(f==='pct1') return v.toFixed(1)+'%';
+  if(f==='pct2') return v.toFixed(2)+'%';
+  return String(v);
+}
+
+// ── build view model ────────────────────────────────
+function build(){
+  var ws=allWeeks().filter(function(k){ return k>=$('wFrom').value&&k<=$('wTo').value; });
+  var present={}; SM.forEach(function(o){ if(ws.indexOf(wkKey(o.y,o.w))>-1) present[o.s]=1; });
+  [IBF,OBF].forEach(function(F){ Object.keys(F).forEach(function(d){ var k=wkKey(+d.slice(0,4),weekNo(d)); if(ws.indexOf(k)>-1) Object.keys(F[d]).forEach(function(s){ if(STORE_LABEL[s]) present[s]=1; }); }); });
+  var stores=STORE_ORDER.filter(function(s){ return present[s]; }).concat(Object.keys(present).filter(function(s){ return STORE_ORDER.indexOf(s)<0; }).sort());
+  var cols=[]; stores.forEach(function(s){ ws.forEach(function(k){ cols.push({s:s,k:k,v:compute(s,k)}); }); });
+  var rows=METRICS.map(function(m){
+    if(m.blank) return {m:m,cells:cols.map(function(){ return {t:''}; })};
+    return {m:m,cells:cols.map(function(c){
+      if(m.m){ var mk=c.s+'|'+c.k+'|'+m.sr, t=MAN[mk]!=null?MAN[mk]:'-', nv=parseFloat(String(t).replace(/,/g,'')); return {t:t,man:mk,col:m.col&&isFinite(nv)?m.col(nv,c.v):null}; }
+      var val=c.v[m.key]; return {t:fmt(val,m.f),val:val,col:m.col?m.col(val,c.v):null};
+    })};
+  });
+  return {stores:stores,weeks:ws,cols:cols,rows:rows};
+}
+
+// ── render ─────────────────────────────────────────
+var TH='padding:8px 10px;font-size:12px;font-weight:800;border:1px solid #cbd5e1;white-space:nowrap;';
+var TD='padding:6px 10px;font-size:12.5px;border:1px solid #d7dee6;text-align:center;white-space:nowrap;';
+function opts(forCopy){ return forCopy?{head:$('optHead').checked,labels:$('optLabels').checked}:{head:true,labels:true}; }
+function htmlTable(V,forCopy){
+  var nw=V.weeks.length, O=opts(forCopy);
+  var h='<table style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;'+(forCopy?'':'min-width:100%;')+'">';
+  if(O.head){
+    h+='<tr>'+(O.labels?['Sr No','Metric Category','Metric (Units)','Goal'].map(function(x){ return '<th rowspan="2" style="'+TH+'background:#1a1830;color:#ffffff;text-align:left;">'+x+'</th>'; }).join(''):'')+
+      V.stores.map(function(s){ return '<th colspan="'+nw+'" style="'+TH+'background:#1a1830;color:#ffd600;text-align:center;">'+(STORE_LABEL[s]||s)+'</th>'; }).join('')+'</tr>';
+    h+='<tr>'+V.cols.map(function(c){ return '<th style="'+TH+'background:#2d2b5e;color:#ffffff;text-align:center;">'+wkLabel(c.k)+'</th>'; }).join('')+'</tr>';
+  }
+  var cat='';
+  V.rows.forEach(function(r){
+    var m=r.m, isBlank=!!m.blank;
+    if(m.cat) cat=m.cat;
+    h+='<tr>';
+    if(O.labels){
+    h+='<td style="'+TD+'background:#f1f5f9;font-weight:700;">'+(isBlank?'':m.sr)+'</td>';
+    h+='<td style="'+TD+'background:#f1f5f9;font-weight:800;text-align:left;">'+(m.cat||'')+'</td>';
+    h+='<td style="'+TD+'background:#f8fafc;font-weight:700;text-align:left;white-space:normal;min-width:220px;max-width:340px;">'+(m.name||'')+'</td>';
+    h+='<td style="'+TD+'background:#f8fafc;color:#475467;white-space:normal;max-width:220px;font-size:11.5px;">'+(m.goal||'')+'</td>';
+    }
+    r.cells.forEach(function(c,ci){
+      if(isBlank){ h+='<td style="'+TD+'background:#ffffff;"></td>'; return; }
+      var st=TD+(c.col?'background:'+c.col.bg+';color:#11161c;':'background:#ffffff;');
+      if(c.man&&!forCopy){ st+=(c.col?'':'background:#eef2ff;')+'border:1px dashed #a5b4fc;cursor:text;'; h+='<td contenteditable="true" data-man="'+c.man+'" style="'+st+'">'+esc(c.t)+'</td>'; return; }
+      h+='<td style="'+st+'">'+esc(c.t)+'</td>';
+    });
+    h+='</tr>';
+  });
+  return h+'</table>';
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function renderMsg(){
+  var notes=[];
+  if(!SM.length) notes.push('Store Metric sheet not loaded yet');
+  if(!Object.keys(IBF).length) notes.push('no IB forecast file (IB Forecast # and accuracy show "-")');
+  if(!Object.keys(OBF).length) notes.push('no OB forecast file (OB Forecast # and accuracy show "-")');
+  if(SM.length&&!NL.length) notes.push('network loss not loaded (WHL/WHD show "-")');
+  $('msg').textContent=notes.length?'⚠ '+notes.join(' · '):'Blue dashed cells are manual: click to type. Edits stay in this browser and go into the export.';
+}
+function render(){
+  renderMsg();
+  if(!SM.length){ $('out').innerHTML=''; return; }
+  VIEW=build();
+  ['b-copy','b-csv','b-xl'].forEach(function(id){ $(id).disabled=!VIEW.cols.length; $(id).style.opacity=VIEW.cols.length?1:.5; });
+  if(!VIEW.cols.length){ $('out').innerHTML='<div style="background:#fff;border:1px solid #d7dee6;border-radius:14px;padding:40px;text-align:center;color:#5d6b7a;">No data for this week range.</div>'; return; }
+  $('out').innerHTML='<div style="background:#fff;border:1px solid #d7dee6;border-radius:14px;overflow:auto;max-height:78vh;">'+htmlTable(VIEW,false)+'</div>';
+}
+$('out').addEventListener('blur',function(e){
+  var k=e.target.getAttribute&&e.target.getAttribute('data-man'); if(!k) return;
+  var t=e.target.textContent.trim(); if(!t||t==='-') delete MAN[k]; else MAN[k]=t; saveMan(); var sc=document.querySelector('#out > div'), x=sc?sc.scrollLeft:0, y=sc?sc.scrollTop:0; render(); sc=document.querySelector('#out > div'); if(sc){ sc.scrollLeft=x; sc.scrollTop=y; }
+},true);
+$('out').addEventListener('keydown',function(e){ if(e.key==='Enter'&&e.target.getAttribute&&e.target.getAttribute('data-man')){ e.preventDefault(); e.target.blur(); } });
+
+// ── exports ────────────────────────────────────────
+function aoa(V){
+  var O=opts(true), L=O.labels?4:0;
+  var r1=O.labels?['Sr No','Metric Category','Metric (Units)','Goal']:[], r2=O.labels?['','','','']:[];
+  V.stores.forEach(function(s){ V.weeks.forEach(function(k,i){ r1.push(i?'':(STORE_LABEL[s]||s)); r2.push(wkLabel(k)); }); });
+  var out=O.head?[r1,r2]:[];
+  V.rows.forEach(function(r){ var m=r.m; out.push((O.labels?[m.blank?'':m.sr, m.cat||'', m.name||'', m.goal||'']:[]).concat(r.cells.map(function(c){ return m.blank?'':c.t; }))); });
+  out._L=L; out._H=O.head?2:0;
+  return out;
+}
+function fname(ext){ var V=VIEW, a=wkLabel(V.weeks[0]), b=wkLabel(V.weeks[V.weeks.length-1]); return 'Weekly_Metrics_'+(a===b?a:a+'-'+b)+'_'+V.weeks[0].split('-')[0]+'.'+ext; }
+$('b-csv').onclick=function(){
+  if(!VIEW) return; var q=function(s){ s=String(s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  var t=aoa(VIEW).map(function(r){ return r.map(q).join(','); }).join('\n');
+  var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+t],{type:'text/csv'})); a.download=fname('csv'); a.click(); toast('CSV downloaded (CSV has no colours; use Excel or Copy for colours)');
+};
+$('b-copy').onclick=function(){
+  if(!VIEW) return;
+  var html='<html><body>'+htmlTable(VIEW,true)+'</body></html>', text=aoa(VIEW).map(function(r){ return r.join('\t'); }).join('\n');
+  function fallback(){ var d=document.createElement('div'); d.contentEditable='true'; d.style.position='fixed'; d.style.left='-9999px'; d.innerHTML=htmlTable(VIEW,true); document.body.appendChild(d);
+    var rg=document.createRange(); rg.selectNodeContents(d); var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); try{ document.execCommand('copy'); }catch(e){} sel.removeAllRanges(); d.remove(); toast('Copied with colours. Paste into Google Sheets / SharePoint / Excel'); }
+  if(navigator.clipboard&&window.ClipboardItem){
+    navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})])
+      .then(function(){ toast('Copied with colours. Paste into Google Sheets / SharePoint / Excel'); }).catch(fallback);
+  } else fallback();
+};
+$('b-xl').onclick=function(){
+  if(!VIEW) return;
+  waitX(function(){
+    var V=VIEW, data=aoa(V), L=data._L, HR=data._H, ws=XLSX.utils.aoa_to_sheet(data), nw=V.weeks.length;
+    var hx=function(c){ return c.replace('#','').toUpperCase(); };
+    var bd={top:{style:'thin',color:{rgb:'CBD5E1'}},bottom:{style:'thin',color:{rgb:'CBD5E1'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}};
+    function st(r,c,s){ var a=XLSX.utils.encode_cell({r:r,c:c}); if(!ws[a]) ws[a]={t:'s',v:''}; ws[a].s=s; }
+    var merges=[];
+    if(HR){
+      for(var c0=0;c0<L;c0++) merges.push({s:{r:0,c:c0},e:{r:1,c:c0}});
+      V.stores.forEach(function(s,i){ if(nw>1) merges.push({s:{r:0,c:L+i*nw},e:{r:0,c:L+i*nw+nw-1}}); });
+      for(var c=0;c<data[0].length;c++){
+        st(0,c,{font:{bold:true,color:{rgb:c<L?'FFFFFF':'FFD600'}},fill:{fgColor:{rgb:'1A1830'}},alignment:{horizontal:c<L?'left':'center',vertical:'center'},border:bd});
+        st(1,c,{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:c<L?'1A1830':'2D2B5E'}},alignment:{horizontal:'center'},border:bd});
+      }
+    }
+    ws['!merges']=merges;
+    V.rows.forEach(function(r,ri){
+      var R0=ri+HR;
+      for(var c=0;c<L;c++) st(R0,c,{font:{bold:c<3},fill:{fgColor:{rgb:c<2?'F1F5F9':'F8FAFC'}},alignment:{horizontal:c===0?'center':'left',vertical:'center',wrapText:c>=2},border:bd});
+      r.cells.forEach(function(cl,ci){ var s={alignment:{horizontal:'center',vertical:'center'},border:bd}; if(cl.col){ s.fill={fgColor:{rgb:hx(cl.col.bg)}}; } st(R0,L+ci,s); });
+    });
+    ws['!cols']=(L?[{wch:7},{wch:22},{wch:46},{wch:26}]:[]).concat(V.cols.map(function(){ return {wch:11}; }));
+    if(HR||L) ws['!freeze']={xSplit:L,ySplit:HR};
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Weekly Metrics Data'); XLSX.writeFile(wb,fname('xlsx'));
+    toast('Excel downloaded with colours');
+  });
+};
+
+['optHead','optLabels'].forEach(function(id){ try{ var v=localStorage.getItem('wmb_'+id); if(v!=null) $(id).checked=v==='1'; }catch(e){} $(id).addEventListener('change',function(){ try{ localStorage.setItem('wmb_'+id,this.checked?'1':'0'); }catch(e){} }); });
+loadSheet(); renderMsg();
+</script>
+</body>
+</html>
