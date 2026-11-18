@@ -16700,6 +16700,64 @@ function maintApply(){
   }
 }
 
+// ── TOOL VISIBILITY (hide tools under maintenance) ───────────────
+// Stored in Firestore app_settings/tool_visibility { hidden:[toolIds] } so it
+// applies live to everyone. Admin (and Full Tool Access users) still see hidden
+// cards, dimmed with a "Hidden" chip.
+var TOOLVIS_KEY='dms_hidden_tools', _hiddenTools=[], _toolVisDraft=null, _toolVisUnsub=null;
+try{ _hiddenTools=JSON.parse(localStorage.getItem(TOOLVIS_KEY)||'[]')||[]; }catch(e){ _hiddenTools=[]; }
+function toolVisCanSee(){ return maintCurrentIsAdmin() || !!window._dmsFullAccess; }
+function toolVisApply(){
+  var see=toolVisCanSee();
+  document.querySelectorAll('.task-card[data-tool]').forEach(function(c){
+    var hid=_hiddenTools.indexOf(c.getAttribute('data-tool'))>-1, chip=c.querySelector('.toolvis-chip');
+    if(hid && !see){ c.style.display='none'; return; }
+    if(c.style.display==='none' && !hid) c.style.display='';
+    if(hid && see){
+      c.style.display=''; c.style.opacity='.55'; c.style.outline='2px dashed #F59E0B'; c.style.outlineOffset='-2px';
+      if(!chip){ chip=document.createElement('span'); chip.className='toolvis-chip'; chip.textContent='🔧 Hidden'; chip.title='Hidden from users (under maintenance)';
+        chip.style.cssText='position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;letter-spacing:.3px;color:#000;background:#FFE566;border-radius:6px;padding:2px 7px;z-index:2;'; c.appendChild(chip); }
+    } else {
+      c.style.opacity=''; c.style.outline=''; c.style.outlineOffset=''; if(chip) chip.remove();
+    }
+  });
+}
+(function(){ var _orig=maintApply; maintApply=function(){ _orig.apply(this,arguments); toolVisApply(); }; })();
+(function(){ var _origB=maintIsBlocked; maintIsBlocked=function(id){ if(_hiddenTools.indexOf(id)>-1 && !toolVisCanSee()) return true; return _origB.apply(this,arguments); }; })();
+function toolVisInit(){
+  toolVisApply();
+  if(window.FIREBASE_READY && window.fbDB){
+    if(_toolVisUnsub) try{_toolVisUnsub();}catch(e){}
+    _toolVisUnsub=fbDB.collection('app_settings').doc('tool_visibility').onSnapshot(function(doc){
+      _hiddenTools=(doc.exists && Array.isArray(doc.data().hidden))?doc.data().hidden:[];
+      try{ localStorage.setItem(TOOLVIS_KEY, JSON.stringify(_hiddenTools)); }catch(e){}
+      _toolVisDraft=null; toolVisApply(); toolVisBuildAdmin();
+    }, function(){});
+  }
+}
+function toolVisBuildAdmin(){
+  var wrap=document.getElementById('toolvis-list'); if(!wrap) return;
+  var d=_toolVisDraft||_hiddenTools;
+  wrap.innerHTML=MAINT_TOOLS.map(function(t){
+    var hid=d.indexOf(t[0])>-1;
+    return '<button type="button" onclick="toolVisToggle(\''+t[0]+'\')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:#e8e6ff;background:'+(hid?'rgba(245,158,11,0.12)':'rgba(15,14,23,0.5)')+';border:1px solid '+(hid?'#F59E0B':'#2e2c45')+';border-radius:8px;padding:8px 10px;cursor:pointer;font-family:inherit;text-align:left;">'+
+      '<span>'+t[1]+'</span><span style="font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;'+(hid?'background:#F59E0B;color:#000;':'background:rgba(16,185,129,0.15);color:#10B981;')+'">'+(hid?'🔧 Hidden':'👁 Visible')+'</span></button>';
+  }).join('');
+}
+function toolVisToggle(id){ var d=(_toolVisDraft||_hiddenTools).slice(), i=d.indexOf(id); if(i>-1) d.splice(i,1); else d.push(id); _toolVisDraft=d; toolVisBuildAdmin(); var s=document.getElementById('toolvis-status'); if(s) s.textContent='Unsaved changes'; }
+function toolVisSetAll(hide){ _toolVisDraft=hide?MAINT_TOOLS.map(function(t){return t[0];}):[]; toolVisBuildAdmin(); var s=document.getElementById('toolvis-status'); if(s) s.textContent='Unsaved changes'; }
+function toolVisSave(){
+  var d=(_toolVisDraft||_hiddenTools).slice(), st=document.getElementById('toolvis-status');
+  _hiddenTools=d; _toolVisDraft=null;
+  try{ localStorage.setItem(TOOLVIS_KEY, JSON.stringify(d)); }catch(e){}
+  toolVisApply(); toolVisBuildAdmin();
+  if(window.FIREBASE_READY && window.fbDB){
+    fbDB.collection('app_settings').doc('tool_visibility').set({ hidden:d, updatedAt:Date.now() }).then(function(){
+      if(st){ st.style.color='#10B981'; st.textContent='✅ Saved — live for all users'; setTimeout(function(){st.textContent='';},3000); }
+    }).catch(function(err){ if(st){ st.style.color='#f72585'; st.textContent='❌ '+(err&&err.message||err); } });
+  } else if(st){ st.style.color='#F59E0B'; st.textContent='Saved on this browser only (Firebase not connected)'; }
+}
+
 function maintRenderReqBlock(targeted){
   var sel=document.getElementById('maint-req-tool');
   if(sel && !sel.options.length){
@@ -16841,6 +16899,7 @@ function maintInit(){
   maintApply();
   maintBuildInit();
   maintMyRequestsListen();
+  toolVisInit();
   if(window.FIREBASE_READY && window.fbDB){
     if(_maintUnsub) try{_maintUnsub();}catch(e){}
     _maintUnsub=fbDB.collection('app_settings').doc('maintenance').onSnapshot(function(doc){
@@ -16875,6 +16934,7 @@ function maintAdminRefreshUI(){
   maintAdminUpdateCountdown();
   maintAdminBuildList();
   maintRenderUserChips();
+  toolVisBuildAdmin();
 }
 function maintDurationChanged(v){ _maintSettings.durationMin=parseInt(v,10)||0; }
 var _maintCountdownTick=null;
@@ -19087,6 +19147,23 @@ We'll be back soon with an improved experience.</textarea>
         <div id="maint-user-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;"></div>
         <button onclick="maintAdminSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 Save Maintenance Settings</button>
         <span id="maint-save-status" style="margin-left:12px;font-size:12px;color:#10B981;"></span>
+      </div>
+    </div>
+    <!-- ── TOOL VISIBILITY ───────────────────────────────────── -->
+    <div style="background:rgba(26,25,40,0.8);border:1px solid #2e2c45;border-radius:16px;overflow:hidden;margin-bottom:28px;">
+      <div style="padding:18px 24px;border-bottom:1px solid #2e2c45;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;">👁 Tool Visibility</div>
+          <div style="font-size:11px;color:#8b8aad;">Hide tools that are under maintenance. Hidden tools disappear from everyone's home page; you still see them, marked “Hidden”.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="toolVisSetAll(false)" style="padding:8px 14px;border-radius:8px;border:1px solid #2e2c45;background:transparent;color:#e8e6ff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">Show all</button>
+        </div>
+      </div>
+      <div style="padding:18px 24px;">
+        <div id="toolvis-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:18px;"></div>
+        <button onclick="toolVisSave()" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#10B981,#059d77);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">💾 Save Visibility</button>
+        <span id="toolvis-status" style="margin-left:12px;font-size:12px;color:#10B981;"></span>
       </div>
     </div>
     <!-- ── ACCESS REQUESTS ───────────────────────────────────── -->
