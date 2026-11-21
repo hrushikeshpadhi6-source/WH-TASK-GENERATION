@@ -1615,7 +1615,9 @@ function smFetchBarometer(){
     window[cb]=function(data){
       cleanup();
       if(data&&data.status==='ok'&&Array.isArray(data.rows)){
-        if(kind==='month') bmDataMonth=data.rows; else bmDataWeek=data.rows;
+        var ver=parseInt(String(data.codeVersion||'').replace(/\D/g,''),10)||0;
+        var rows=data.rows.map(function(r){ r=Object.assign({},r); r._pctFix=ver<5; return r; });
+        if(kind==='month') bmDataMonth=rows; else bmDataWeek=rows;
         try{ smRankChart(); }catch(e){}
       }
     };
@@ -1656,11 +1658,28 @@ function bmActiveRows(){
   }
   return {label:label,rows:rs};
 }
-function bmFixPct(r){ // sheet percent cells may arrive as fractions (0.0293 = 2.93%)
+function colPath(ctx,x,y,w,h,r){ r=Math.max(0,Math.min(r,w/2,h)); ctx.beginPath(); ctx.moveTo(x,y+h); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h); ctx.closePath(); }
+function bmFixPct(r){ // script before V5 sent percent cells as fractions (0.0293 = 2.93%); V5+ sends 2.93
+  if(!r._pctFix) return r;
   ['lsv2','pqa','safety'].forEach(function(k){ var v=r[k]; if(v!=null&&isFinite(v)&&v>0&&v<=1) r[k]=v*100; });
   return r;
 }
 var smBmWasActive=false, smBmMax=0;
+var BM_META=[
+  {k:'safety',l:'Safety Init.',max:10,t:'95-100%',u:'%'},{k:'lsv2',l:'Late Slam v2',max:10,t:'<3%',u:'%'},
+  {k:'ibTph',l:'IB TPH',max:7.5,t:'>140',u:''},{k:'tput',l:'Throughput/PH',max:7.5,t:'>170',u:''},
+  {k:'skip',l:'Skips (DPMO)',max:5,t:'<300',u:''},{k:'short',l:'Shorts (DPMO)',max:5,t:'<300',u:''},
+  {k:'irdr',l:'IRDR (DPMO)',max:10,t:'<4500',u:''},{k:'pqa',l:'Produce QA',max:5,t:'>95%',u:'%'},
+  {k:'conc',l:'Concessions',max:10,t:'<0.5%',u:'%'},{k:'whd',l:'WHD',max:5,t:'<0.15%',u:'%'},{k:'whl',l:'WHL (GMS)',max:10,t:'>-0.1%',u:'%'}
+];
+// Barometer advantages / disadvantages: any metric that lost points is a disadvantage
+function bmStorePC(b){
+  var pros=[], cons=[], f=function(n){ return (+(+n).toFixed(1)).toString(); };
+  BM_META.forEach(function(m){ var v=b?b[m.k]:null; if(v==null||!isFinite(v)) return;
+    var p=BM_SCORE_FNS[m.k](v), lbl=m.l+' '+f(v)+m.u+' (tgt '+m.t+')  ['+f(p)+'/'+m.max+' pts]';
+    if(p>=m.max) pros.push(lbl); else cons.push(lbl+'  \u2212'+f(m.max-p)); });
+  return {pros:pros, cons:cons};
+}
 var BM_SCORE_FNS={
   safety:function(v){ return v>=95?10:(v>=85?5:0); },
   lsv2:  function(v){ return v<3?10:0; },
@@ -2692,8 +2711,8 @@ function smRankChart(){
     if(metric==='bmrank') Object.keys(bmMap).forEach(function(k){ if(!have[k]) raw.push({store:bmMap[k].store}); });
     var maxRank=0; BM.rows.forEach(function(r){ if(r.rank>maxRank) maxRank=r.rank; }); smBmMax=maxRank;
     // Rank only (Barometer logic) — chart height = rank position, labels show "#n"
-    raw.forEach(function(d){ var b=bmMap[bmNorm(d.store)]; d.bmRankNo=b.rank; d.bmScore=null;
-      d.bmrank=b.rank!=null?maxRank+1-b.rank:0; });
+    raw.forEach(function(d){ var b=bmMap[bmNorm(d.store)]; d.bmRankNo=b.rank; d.bmScore=b.score; d.bmRow=b;
+      d.bmrank=b.score!=null?b.score:(b.rank!=null?maxRank+1-b.rank:0); });
     if(metric==='bmrank') raw=raw.filter(function(d){ return d.bmRankNo!=null; });
   }
   if(smRankRAF){cancelAnimationFrame(smRankRAF);smRankRAF=null;}
@@ -2719,8 +2738,8 @@ function smRankChart(){
   raw.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
   if(metric==='bmrank') raw.sort(function(a,b){ var ra=a.bmRankNo==null?999:a.bmRankNo, rb=b.bmRankNo==null?999:b.bmRankNo; return ra-rb||(Number(b.bmrank)||0)-(Number(a.bmrank)||0); });
   var isPct=(metric==='sla');
-  var bmHasScore=false, bmMaxR=0; raw.forEach(function(d){ if(d.bmRankNo>bmMaxR) bmMaxR=d.bmRankNo; });
-  function fmtV(v){ if(metric==='bmrank'){ if(bmHasScore){ var dd=raw.find(function(x){ return Number(x.bmrank)===v; }); return (dd&&dd.bmRankNo!=null?'#'+dd.bmRankNo+' · ':'')+(+v.toFixed(1))+'/85'; } return '#'+Math.round(smBmMax+1-v); } return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : metric==='score'? v.toFixed(1)+'%' : fmt(v)); }
+  var bmHasScore=metric==='bmrank'&&raw.some(function(d){ return d.bmScore!=null; }), bmMaxR=0; raw.forEach(function(d){ if(d.bmRankNo>bmMaxR) bmMaxR=d.bmRankNo; });
+  function fmtV(v){ if(metric==='bmrank'){ if(bmHasScore){ var dd=raw.find(function(x){ return Number(x.bmrank)===v; }); return (dd&&dd.bmRankNo!=null?'#'+dd.bmRankNo+' · ':'')+(+v.toFixed(1)); } return '#'+Math.round(smBmMax+1-v); } return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : metric==='score'? v.toFixed(1)+'%' : fmt(v)); }
 
   var vals=raw.map(function(d){return Number(d[metric])||0;});
   var nC=vals.length;
@@ -2732,12 +2751,13 @@ function smRankChart(){
   var range=(vmax-vmin)||Math.max(vmax,1);
   function hsh(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0)/4294967295;}
 
-  var candles=raw.map(function(d){
-    var close=Number(d[metric])||0, open=bench;
+  var base0=Math.min(0,vmin);
+  var candles=raw.map(function(d,ix){
+    var close=Number(d[metric])||0, open=base0;
     var rnd=hsh(d.store+metric);
     var wj=range*(0.045+rnd*0.05);
-    return {store:d.store, val:close, open:open, close:close, bull:close>=open,
-      hi:Math.max(open,close)+wj, lo:Math.min(open,close)-wj*0.75,
+    return {store:d.store, val:close, open:open, close:close, bull:close>=bench,
+      hi:close, lo:open,
       vol:Number(d.orders)||Number(d.inbound)||(close+1), data:d};
   });
   var volMax=Math.max.apply(null,candles.map(function(c){return c.vol;}))||1;
@@ -2766,17 +2786,17 @@ function smRankChart(){
     ctx.clearRect(0,0,W,H);
     var padR=54, padL=10, padTop=30;
     var xAxisY=H-22, volBase=xAxisY-8, volH=34, volTop=volBase-volH;
-    var plotBot=volTop-12, plotTop=padTop;
+    var plotBot=xAxisY-6, plotTop=padTop+6;
     var plotL=padL, plotR=W-padR, plotW=plotR-plotL;
 
     // value domain with padding
-    var dHi=Math.max(vmax,bench), dLo=Math.min(vmin,bench);
-    var span=(dHi-dLo)||1; dHi+=span*0.16; dLo-=span*0.16;
+    var dHi=Math.max(vmax,0), dLo=Math.min(vmin,0);
+    var span=(dHi-dLo)||1; dHi+=span*0.14;
     function Y(v){ return plotBot-(v-dLo)/(dHi-dLo)*(plotBot-plotTop); }
 
     var slot=plotW/nC;
     function X(i){ return plotL+slot*(i+0.5); }
-    var bw=Math.min(slot*0.46,34);
+    var bw=Math.min(slot*0.58,46);
 
     // ── grid + right price axis ──
     ctx.lineWidth=1; ctx.font='600 9.5px "Inter",monospace'; ctx.textBaseline='middle';
@@ -2788,26 +2808,17 @@ function smRankChart(){
       ctx.fillText(isPct?vv.toFixed(0):(vv>=1000?(vv/1000).toFixed(1)+'k':vv.toFixed(0)), plotR+7, yy);
     }
     // faint vertical separators
-    ctx.strokeStyle=C.gridX;
-    for(var i=0;i<nC;i++){ var vx=X(i); ctx.beginPath(); ctx.moveTo(vx,plotTop); ctx.lineTo(vx,volBase); ctx.stroke(); }
 
     // ── benchmark (median) dashed line ──
-    var by=Y(bench);
-    ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle=C.bench; ctx.globalAlpha=0.7; ctx.lineWidth=1.2;
-    ctx.beginPath(); ctx.moveTo(plotL,by); ctx.lineTo(plotR,by); ctx.stroke(); ctx.restore();
-    ctx.fillStyle=C.bench; ctx.font='700 9px "Inter",monospace'; ctx.textAlign='left'; ctx.textBaseline='bottom';
-    ctx.fillText('MEDIAN '+fmtV(bench), plotL+4, by-3);
+    // baseline
+    ctx.strokeStyle=C.tick; ctx.globalAlpha=0.5; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(plotL,Y(0)); ctx.lineTo(plotR,Y(0)); ctx.stroke(); ctx.globalAlpha=1;
 
     var ease=function(x){return 1-Math.pow(1-x,3);};
     var stagger=0.5;
 
     // ── volume bars ──
-    candles.forEach(function(c,i){
-      var cp=ease(Math.max(0,Math.min(1,(p*(1+stagger)-(i/nC)*stagger))));
-      var x=X(i), vh=(c.vol/volMax)*volH*cp;
-      ctx.fillStyle=c.bull?'rgba(16,185,129,0.22)':'rgba(239,68,68,0.18)';
-      ctx.fillRect(x-bw/2, volBase-vh, bw, vh);
-    });
+
 
     // ── candles ──
     candles.forEach(function(c,i){
@@ -2817,30 +2828,41 @@ function smRankChart(){
       var animClose=c.open+(c.close-c.open)*cp;
       var yAC=Y(animClose);
       var yHi=Y(c.open+(c.hi-c.open)*cp), yLo=Y(c.open+(c.lo-c.open)*cp);
-      // wick
-      ctx.strokeStyle=col; ctx.lineWidth=1.6; ctx.globalAlpha=0.9;
-      ctx.beginPath(); ctx.moveTo(x,yHi); ctx.lineTo(x,yLo); ctx.stroke();
-      ctx.globalAlpha=1;
-      // body
-      var byTop=Math.min(yOpen,yAC), bh=Math.max(Math.abs(yAC-yOpen),2);
-      ctx.save();
-      ctx.shadowColor=glow; ctx.shadowBlur=14;
-      ctx.fillStyle=col;
-      roundRect(ctx,x-bw/2,byTop,bw,bh,3); ctx.fill();
-      ctx.restore();
-      // inner sheen
-      ctx.fillStyle='rgba(255,255,255,0.16)';
-      roundRect(ctx,x-bw/2,byTop,bw,Math.min(bh,3.2),2); ctx.fill();
+
+      // column: rounded top, vertical gradient, soft glow, faint track behind
+      var byTop=Math.min(yOpen,yAC), bh=Math.max(Math.abs(yAC-yOpen),2), rad=Math.min(bw/2,10);
+      var hov=mouse&&p>=1&&Math.max(0,Math.min(nC-1,Math.round((mouse.x-plotL)/slot-0.5)))===i;
+      ctx.fillStyle=c.bull?'rgba(16,185,129,0.07)':'rgba(239,68,68,0.06)';
+      colPath(ctx,x-bw/2,plotTop,bw,yOpen-plotTop,rad); ctx.fill();
+      var gr=ctx.createLinearGradient(0,byTop,0,yOpen);
+      gr.addColorStop(0,col); gr.addColorStop(1,c.bull?'rgba(16,185,129,0.35)':'rgba(239,68,68,0.32)');
+      ctx.save(); ctx.shadowColor=glow; ctx.shadowBlur=hov?22:12; ctx.shadowOffsetY=4;
+      ctx.fillStyle=gr; colPath(ctx,x-bw/2,byTop,bw,bh,rad); ctx.fill(); ctx.restore();
+      ctx.save(); colPath(ctx,x-bw/2,byTop,bw,bh,rad); ctx.clip();
+      var sh=ctx.createLinearGradient(x-bw/2,0,x+bw/2,0);
+      sh.addColorStop(0,'rgba(255,255,255,0.28)'); sh.addColorStop(0.45,'rgba(255,255,255,0.06)'); sh.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=sh; ctx.fillRect(x-bw/2,byTop,bw*0.5,bh); ctx.restore();
+      ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.globalAlpha=0.9; ctx.fillRect(x-bw/2+rad*0.6,byTop+1.5,bw-rad*1.2,2); ctx.globalAlpha=1;
+      // rank badge inside column foot
+      if(bh>26&&cp>0.6){ ctx.font='800 10px "Inter",monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.fillText('#'+(c.data&&c.data.bmRankNo!=null&&metric==='bmrank'?c.data.bmRankNo:(i+1)), x, yOpen-12); ctx.textBaseline='alpha'; }
     });
 
     // ── moving-average overlay (through closes) ──
     var reveal=plotL+plotW*Math.max(0,Math.min(1,p*1.15));
     ctx.save();
     ctx.beginPath(); ctx.rect(plotL,plotTop-6,reveal-plotL,plotBot-plotTop+12); ctx.clip();
-    ctx.beginPath();
-    candles.forEach(function(c,i){ var x=X(i),y=Y(c.close); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
-    ctx.strokeStyle=C.ma; ctx.lineWidth=2; ctx.shadowColor=C.ma; ctx.shadowBlur=10;
-    ctx.lineJoin='round'; ctx.stroke();
+    // smooth trend line through column tops + soft area fill
+    var pts=candles.map(function(c,i){ return {x:X(i), y:Y(c.close)}; });
+    function curve(){ ctx.moveTo(pts[0].x,pts[0].y);
+      for(var k=1;k<pts.length;k++){ var a=pts[k-1], b=pts[k], mx=(a.x+b.x)/2; ctx.bezierCurveTo(mx,a.y,mx,b.y,b.x,b.y); } }
+    if(pts.length>1){
+      var tl=isLight?'#4361ee':'#8ea2ff';
+      var ag=ctx.createLinearGradient(0,plotTop,0,plotBot);
+      ag.addColorStop(0,isLight?'rgba(67,97,238,0.16)':'rgba(142,162,255,0.18)'); ag.addColorStop(1,'rgba(67,97,238,0)');
+      ctx.beginPath(); curve(); ctx.lineTo(pts[pts.length-1].x,plotBot); ctx.lineTo(pts[0].x,plotBot); ctx.closePath(); ctx.fillStyle=ag; ctx.fill();
+      ctx.beginPath(); curve(); ctx.strokeStyle=tl; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.shadowColor=tl; ctx.shadowBlur=10; ctx.stroke(); ctx.shadowBlur=0;
+      pts.forEach(function(q,k){ ctx.beginPath(); ctx.arc(q.x,q.y,4.5,0,Math.PI*2); ctx.fillStyle=isLight?'#fff':'#0f0e17'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle=tl; ctx.stroke(); });
+    }
     ctx.restore();
 
     // ── value tags + ticker labels ──
@@ -2850,10 +2872,12 @@ function smRankChart(){
       if(cp<0.55) return;
       var x=X(i), col=c.bull?C.bull:C.bear;
       // value pill above candle top
-      var topY=Y(Math.max(c.open,c.close))-12;
+      var topY=Y(Math.max(c.open,c.close))-16;
       ctx.font='800 11px "Inter",monospace'; ctx.textAlign='center';
       ctx.globalAlpha=Math.min(1,(cp-0.55)/0.45);
-      ctx.fillStyle=col; ctx.fillText(fmtV(c.val), x, topY);
+      var tv=fmtV(c.val), tw=ctx.measureText(tv).width+14;
+      ctx.fillStyle=col; roundRect(ctx,x-tw/2,topY-13,tw,18,9); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillText(tv, x, topY);
       ctx.globalAlpha=1;
       // ticker
       ctx.font='800 12px "Inter",monospace'; ctx.fillStyle=C.tickerHi; ctx.textBaseline='middle';
@@ -2863,7 +2887,7 @@ function smRankChart(){
 
     // ── last price line + tag (the bottom/last ranked = "current") ──
     var lc=candles[nC-1], ly=Y(lc.close);
-    if(p>0.7){
+    if(false){
       ctx.save(); ctx.globalAlpha=(p-0.7)/0.3;
       ctx.setLineDash([3,4]); ctx.strokeStyle=lc.bull?C.bull:C.bear; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(plotL,ly); ctx.lineTo(plotR,ly); ctx.stroke(); ctx.setLineDash([]);
@@ -2885,8 +2909,9 @@ function smRankChart(){
       ctx.beginPath(); ctx.moveTo(plotL,mouse.y); ctx.lineTo(plotR,mouse.y); ctx.stroke();
       ctx.restore();
       // tooltip — advantages / disadvantages for this store
-      var pc=smStorePC(c.data||{});
-      var lines=[{t:c.store+'   '+fmtV(c.val), c:c.bull?C.bull:C.bear, b:1}];
+      var isBm=metric==='bmrank'&&c.data&&c.data.bmRow;
+      var pc=isBm?bmStorePC(c.data.bmRow):smStorePC(c.data||{});
+      var lines=[{t:c.store+'   '+(isBm?'Rank #'+c.data.bmRankNo+' · '+(+(+c.data.bmScore||0).toFixed(1))+' / 85 pts':fmtV(c.val)), c:c.bull?C.bull:C.bear, b:1}];
       if(pc.cons.length){
         lines.push({t:'DISADVANTAGES', c:C.bear, b:1});
         pc.cons.forEach(function(x){ lines.push({t:'\u2717 '+x, c:C.bear}); });
