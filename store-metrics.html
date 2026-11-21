@@ -1616,6 +1616,7 @@ function smFetchBarometer(){
       cleanup();
       if(data&&data.status==='ok'&&Array.isArray(data.rows)){
         if(kind==='month') bmDataMonth=data.rows; else bmDataWeek=data.rows;
+        try{ smRankChart(); }catch(e){}
       }
     };
     var s=document.createElement('script'); s.id='j-'+cb;
@@ -1624,6 +1625,55 @@ function smFetchBarometer(){
     document.head.appendChild(s);
   });
 }
+// Barometer rows for the active Week / Month filter (null when not week/month or no rows)
+function bmNorm(s){ return String(s||'').replace(/\s+/g,'').toUpperCase().replace(/_SS$/,''); }
+function bmActiveRows(){
+  if(smPeriod!=='month'&&smPeriod!=='week') return null;
+  var pv=(document.getElementById('sm-pval')||{}).value||''; if(!pv||pv==='all') return null;
+  var label=null, data;
+  if(smPeriod==='month'){
+    var ML=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var m=String(pv).match(/^(\d{4})-(\d{1,2})/), k=m?m[1]+'-'+String(m[2]).padStart(2,'0'):vocMonthKey(pv);
+    if(k) label=ML[parseInt(k.slice(5),10)-1]+' '+k.slice(0,4); data=bmDataMonth;
+  } else { var w=String(pv).replace(/\D/g,''); if(w) label='Week '+parseInt(w,10); data=bmDataWeek; }
+  if(!label) return null;
+  var rs=(data||[]).filter(function(r){ return r.period===label; }).map(function(r){ return bmFixPct(Object.assign({},r)); });
+  if(!rs.length) return {label:label,rows:[],empty:true};
+  // Barometer rank — same rubric as the GWC Score Card page (11 metrics, 85 pts max),
+  // dense ranking on the overall score. A Rank / Score column in the tab, if present, wins.
+  var hasRank=rs.some(function(r){ return r.rank!=null; }), hasScore=rs.some(function(r){ return r.score!=null; });
+  if(!hasRank&&hasScore){
+    var s2=rs.filter(function(r){ return r.score!=null; }).sort(function(a,b){ return b.score-a.score; }), k2=0, p2=null;
+    s2.forEach(function(r){ if(p2===null||r.score!==p2){ k2++; p2=r.score; } r.rank=k2; });
+  }
+  if(!hasRank&&!hasScore){
+    var F=BM_SCORE_FNS, any=false;
+    rs.forEach(function(r){ var tot=0, n=0; Object.keys(F).forEach(function(k){ var v=r[k]; if(v!=null&&isFinite(v)){ tot+=F[k](v); n++; } }); r.score=n?tot:null; if(n) any=true; });
+    if(!any) return {label:label,rows:rs,noRank:true};
+    var srt=rs.filter(function(r){ return r.score!=null; }).sort(function(a,b){ return b.score-a.score; }), rk=0, prev=null;
+    srt.forEach(function(r){ if(prev===null||r.score!==prev){ rk++; prev=r.score; } r.rank=rk; });
+    return {label:label,rows:rs,derived:true};
+  }
+  return {label:label,rows:rs};
+}
+function bmFixPct(r){ // sheet percent cells may arrive as fractions (0.0293 = 2.93%)
+  ['lsv2','pqa','safety'].forEach(function(k){ var v=r[k]; if(v!=null&&isFinite(v)&&v>0&&v<=1) r[k]=v*100; });
+  return r;
+}
+var smBmWasActive=false, smBmMax=0;
+var BM_SCORE_FNS={
+  safety:function(v){ return v>=95?10:(v>=85?5:0); },
+  lsv2:  function(v){ return v<3?10:0; },
+  ibTph: function(v){ return v>140?7.5:(v>=126?5:0); },
+  tput:  function(v){ return v>170?7.5:(v>=144?2.5:0); },
+  skip:  function(v){ return v<300?5:(v<=500?2.5:0); },
+  short: function(v){ return v<300?5:(v<=500?2.5:0); },
+  irdr:  function(v){ return v<4500?10:(v<=15000?8:0); },
+  pqa:   function(v){ return v>=95?5:(v>=85?2.5:0); },
+  conc:  function(v){ return v<0.5?10:(v<0.65?8:0); },
+  whd:   function(v){ return v<0.15?5:(v<0.5?2.5:0); },
+  whl:   function(v){ return v>-0.1?10:(v>=-0.5?2.5:0); }
+};
 function bmLookup(store, periodLabel, kind){
   var data = kind==='week' ? bmDataWeek : bmDataMonth;
   if(!data||!data.length||!periodLabel) return null;
@@ -2618,8 +2668,34 @@ function smStorePC(d){
 function smRankChart(){
   var cv=document.getElementById('sm-rank'); if(!cv) return;
   var ctx=cv.getContext('2d');
-  var metric=(document.getElementById('rank-metric')||{}).value||'sla';
+  var msel=document.getElementById('rank-metric');
+  var BM=bmActiveRows(), bmOpt=msel?msel.querySelector('option[value="bmrank"]'):null;
+  if(msel){
+    var hint=msel.querySelector('option[value="bmhint"]');
+    var hintTxt=!BM?'By Barometer Rank — pick a Week or Month filter':BM.empty?'By Barometer Rank — no Barometer rows for '+BM.label:BM.noRank?'By Barometer Rank — no metrics for '+BM.label:'';
+    if(hintTxt){ if(!hint){ hint=document.createElement('option'); hint.value='bmhint'; hint.disabled=true; msel.appendChild(hint); } hint.textContent=hintTxt; } else if(hint) hint.remove();
+    if(BM&&BM.empty) BM=null;
+    if(BM&&BM.noRank){ if(bmOpt){ if(msel.value==='bmrank') msel.value='sla'; bmOpt.remove(); bmOpt=null; } }
+    else if(BM&&!bmOpt){ bmOpt=document.createElement('option'); bmOpt.value='bmrank'; msel.insertBefore(bmOpt,msel.firstChild); }
+    if(bmOpt) bmOpt.textContent=BM?'By Barometer Rank · '+BM.label:'By Barometer Rank';
+    if(BM&&!BM.noRank&&!smBmWasActive) msel.value='bmrank';
+    if(!BM&&bmOpt){ if(msel.value==='bmrank') msel.value='sla'; bmOpt.remove(); }
+    smBmWasActive=!!BM;
+  }
+  var metric=(msel||{}).value||'sla';
   var raw=(smLbData||[]).slice();
+  // Week / Month filter + Barometer tab has rows → show ONLY stores listed in the Barometer
+  if(BM){
+    var bmMap={}; BM.rows.forEach(function(r){ bmMap[bmNorm(r.store)]=r; });
+    raw=raw.filter(function(d){ return bmMap[bmNorm(d.store)]; }).map(function(d){ return Object.assign({},d); });
+    var have={}; raw.forEach(function(d){ have[bmNorm(d.store)]=1; });
+    if(metric==='bmrank') Object.keys(bmMap).forEach(function(k){ if(!have[k]) raw.push({store:bmMap[k].store}); });
+    var maxRank=0; BM.rows.forEach(function(r){ if(r.rank>maxRank) maxRank=r.rank; }); smBmMax=maxRank;
+    // Rank only (Barometer logic) — chart height = rank position, labels show "#n"
+    raw.forEach(function(d){ var b=bmMap[bmNorm(d.store)]; d.bmRankNo=b.rank; d.bmScore=null;
+      d.bmrank=b.rank!=null?maxRank+1-b.rank:0; });
+    if(metric==='bmrank') raw=raw.filter(function(d){ return d.bmRankNo!=null; });
+  }
   if(smRankRAF){cancelAnimationFrame(smRankRAF);smRankRAF=null;}
   // legacy Chart.js instance cleanup (in case)
   if(smCh.rank&&smCh.rank.destroy){try{smCh.rank.destroy();}catch(e){} smCh.rank=null;}
@@ -2641,8 +2717,10 @@ function smRankChart(){
 
   if(!raw.length){ ctx.clearRect(0,0,cv.width,cv.height); var q=document.getElementById('rt-quote'); if(q)q.innerHTML=''; return; }
   raw.sort(function(a,b){ return (Number(b[metric])||0)-(Number(a[metric])||0); });
+  if(metric==='bmrank') raw.sort(function(a,b){ var ra=a.bmRankNo==null?999:a.bmRankNo, rb=b.bmRankNo==null?999:b.bmRankNo; return ra-rb||(Number(b.bmrank)||0)-(Number(a.bmrank)||0); });
   var isPct=(metric==='sla');
-  function fmtV(v){ return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : metric==='score'? v.toFixed(1)+'%' : fmt(v)); }
+  var bmHasScore=false, bmMaxR=0; raw.forEach(function(d){ if(d.bmRankNo>bmMaxR) bmMaxR=d.bmRankNo; });
+  function fmtV(v){ if(metric==='bmrank'){ if(bmHasScore){ var dd=raw.find(function(x){ return Number(x.bmrank)===v; }); return (dd&&dd.bmRankNo!=null?'#'+dd.bmRankNo+' · ':'')+(+v.toFixed(1))+'/85'; } return '#'+Math.round(smBmMax+1-v); } return isPct? v.toFixed(2)+'%' : (metric==='ibTph'? v.toFixed(0) : metric==='score'? v.toFixed(1)+'%' : fmt(v)); }
 
   var vals=raw.map(function(d){return Number(d[metric])||0;});
   var nC=vals.length;

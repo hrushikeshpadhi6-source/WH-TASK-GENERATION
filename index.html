@@ -19456,9 +19456,20 @@ We'll be back soon with an improved experience.</textarea>
 </div>
 <div id="fva-cb" style="display:none;">
   <div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px 20px;margin-bottom:16px;">
-    <div style="font-size:12px;color:#7b78a8;margin-bottom:12px;">Upload the IB files in the <b>IB</b> tab and the OB files in the <b>OB</b> tab first. Then pick a date and click Generate.</div>
+    <div style="font-size:12px;color:#7b78a8;margin-bottom:12px;">Upload the IB files in the <b>IB</b> tab and the OB files in the <b>OB</b> tab first. Late slams are reported a day or two behind, so upload the <b>Late Slam raw data</b> below and pick its date separately. Then click Generate.</div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="upload-zone" style="background:#fff;border-color:#d5d2f0;padding:12px 18px;display:flex;align-items:center;gap:10px;margin:0;" onclick="document.getElementById('fva-cb-lsf').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');FVA.loadLS(event.dataTransfer.files)">
+        <input type="file" id="fva-cb-lsf" accept=".csv,.xlsx,.xls" multiple style="display:none" onchange="FVA.loadLS(this.files);this.value=''">
+        <span style="font-size:22px;">⏱️</span>
+        <div><div style="font-size:13px;font-weight:800;color:#1a1830;">Late Slam raw data (UTR)</div><div style="font-size:11px;color:#7b78a8;">order_id · delivery_station_code · pl_create_to_stage · promise_utr · units_picked</div></div>
+      </div>
+      <div id="fva-cb-lsok" style="display:none;padding:9px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#166534;font-size:12px;font-weight:600;"></div>
+    </div>
     <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
-      <div><div class="ctrl-label">Date</div><select class="select-field" id="fva-cb-date" style="min-width:200px;"><option value="">Upload IB forecast first</option></select></div>
+      <div><div class="ctrl-label">IB / OB Date</div><select class="select-field" id="fva-cb-date" style="min-width:200px;" onchange="FVA.autoLS()"><option value="">Upload IB forecast first</option></select></div>
+      <div><div class="ctrl-label">Late Slam Date</div><select class="select-field" id="fva-cb-lsd" style="min-width:200px;"><option value="">From OB tab (same date)</option></select></div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1a1830;cursor:pointer;height:40px;"><input type="checkbox" id="fva-cb-tph" onchange="FVA.rerender()" style="width:16px;height:16px;"> Show Throughput</label>
       <button class="btn btn-accent" onclick="FVA.combine()">⚡ Generate Combined</button>
       <button class="btn btn-green" id="fva-cb-xl" style="display:none;" onclick="FVA.exportCombined()">⬇ Export Excel</button>
@@ -22377,6 +22388,36 @@ var IBF=(function(){
 <script>
 window.FVA=(function(){
   var $=function(i){return document.getElementById(i);}, CUR=null;
+  var LSR={}, LSDATES=[];
+  function lsYmd(v){ if(v instanceof Date) return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0'); var s=String(v||'').trim(), m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'); m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0'); return ''; }
+  function lsCSV(text){ var rows=[],row=[],f='',q=false; for(var i=0;i<text.length;i++){ var c=text[i]; if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; } else if(c==='"') q=true; else if(c===','){row.push(f);f='';} else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f); f=''; if(row.length>1||row[0]!=='') rows.push(row); row=[]; } else f+=c; } if(f!==''||row.length){row.push(f);rows.push(row);} return rows; }
+  function dLabel(d){ var x=new Date(d+'T12:00:00'), n=x.getDate(), m=n%100, sfx=(m>=11&&m<=13)?'th':(n%10===1?'st':n%10===2?'nd':n%10===3?'rd':'th'); return n+sfx+' '+x.toLocaleDateString('en-GB',{month:'short'}); }
+  function loadLS(files){
+    files=[].slice.call(files||[]); if(!files.length) return; var left=files.length, acc={}, bad=[];
+    var W=obWin(), lk=function(s,u){ try{ return W&&W.lookupPromise?W.lookupPromise(s,u):null; }catch(e){ return null; } };
+    function ingest(rows,name){
+      if(!rows.length){ bad.push(name); return; } var hd=rows[0].map(function(x){ return String(x).trim().toLowerCase(); }), ix=function(n){ return hd.indexOf(n); };
+      var iS=ix('delivery_station_code'), iO=ix('order_id'), iD=ix('picklist_created_date'), iT=ix('picklist_created_time'), iPS=ix('pl_create_to_stage'), iP=ix('promise_utr'), iU=ix('units_picked'), iA=ix('assignment_to_stage_time_secs');
+      if(iS<0||iPS<0){ bad.push(name); return; }
+      for(var r=1;r<rows.length;r++){ var R=rows[r], s=base(String(R[iS]||'').trim().toUpperCase()), d=lsYmd(iD>-1?R[iD]:R[iT]); if(!s||!d) continue;
+        var t=parseFloat(R[iPS]), u=iU>-1?(parseFloat(R[iU])||1):1, p=iP>-1?parseFloat(R[iP]):NaN; if(!(p>0)) p=lk(s,u);
+        var o=(acc[d]=acc[d]||{})[s]=acc[d][s]||{orders:{},n:0,ls:0,secs:0,units:0}, id=iO>-1?R[iO]:('r'+r);
+        if(o.orders[id]) continue; o.orders[id]=1; o.n++; if(p!=null&&isFinite(t)&&t>p) o.ls++;
+        if(iA>-1){ var a=parseFloat(R[iA]); if(isFinite(a)&&a>0){ o.secs+=a; o.units+=u; } } }
+    }
+    function done(){ if(--left) return;
+      Object.keys(acc).forEach(function(d){ LSR[d]=acc[d]; }); LSDATES=Object.keys(LSR).sort();
+      var ok=$('fva-cb-lsok'); ok.style.display='';
+      if(!LSDATES.length){ ok.style.background='#fef2f2'; ok.style.borderColor='#fca5a5'; ok.style.color='#991b1b'; ok.textContent='❌ Late slam columns not found'+(bad.length?' · '+bad.join(', '):''); return; }
+      ok.style.background='#f0fdf4'; ok.style.borderColor='#86efac'; ok.style.color='#166534';
+      ok.textContent='✓ Late slam data · '+LSDATES.map(dLabel).join(', ')+(bad.length?' · skipped: '+bad.join(', '):'')+(W?'':' · open the OB tab once so blank promise times use the promise table');
+      var sel=$('fva-cb-lsd'), cur=sel.value; sel.innerHTML='<option value="">From OB tab (same date)</option>'+LSDATES.slice().reverse().map(function(d){ return '<option value="'+d+'">'+dLabel(d)+' '+d.slice(0,4)+'</option>'; }).join('');
+      if(cur&&LSDATES.indexOf(cur)>-1) sel.value=cur; else autoLS(); }
+    files.forEach(function(f){ var fr=new FileReader();
+      if(/\.xlsx?$/i.test(f.name)){ fr.onload=function(e){ try{ var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true}); ingest(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:true}),f.name); }catch(err){ bad.push(f.name); } done(); }; fr.readAsArrayBuffer(f); }
+      else { fr.onload=function(e){ ingest(lsCSV(e.target.result),f.name); done(); }; fr.readAsText(f); } });
+  }
+  function autoLS(){ var d=$('fva-cb-date').value, sel=$('fva-cb-lsd'); if(!LSDATES.length) return; var best=''; LSDATES.forEach(function(x){ if(!d||x<d) best=x; }); sel.value=best||LSDATES[LSDATES.length-1]; }
   var NAMES={QAA6:'Khalifa City',QAA7:'Al Raha',QAA1:'MBZ city',QDC6:'Qusais',QDG5:'Business Bay',QDD3:'Yas Mall',QDG8:'DIFC',QHA5:'Sharjah',QDH5:'Arjan'};
   var ORDER=['QAA1','QAA6','QAA7','QDC6','QDG5','QDD3','QDG8','QHA5','QDH5'];
   function base(s){ return String(s).replace(/[_\s-]*SS$/i,''); }
@@ -22400,13 +22441,18 @@ window.FVA=(function(){
     function g(s){ var b=base(s); return M[b]=M[b]||{s:b,ibF:0,ibA:0,ibHas:false,obF:null,obA:null,ls:0,el:0,secs:0,units:0,obHas:false,obMan:false}; }
     L.storeRows.forEach(function(r){ var x=g(r.k); x.ibF+=r.t.f; x.ibA+=r.t.act; x.ibHas=true; });
     if(OB) OB.rows.forEach(function(r){ var x=g(r.store); x.obHas=true; if(r.fu!=null) x.obF=(x.obF||0)+r.fu; x.obA=(x.obA||0)+r.au; if(r.manual) x.obMan=true; else { x.ls+=r.ls||0; x.el+=r.el||0; x.secs+=r.secs||0; x.units+=r.units||0; } });
+    var lsd=$('fva-cb-lsd').value, LD=lsd?LSR[lsd]:null;
+    if(LD){ Object.keys(M).forEach(function(k){ var x=M[k]; x.ls=0; x.el=0; x.secs=0; x.units=0; x.lsRaw=true; });
+      Object.keys(LD).forEach(function(s){ var x=g(s), o=LD[s]; x.ls+=o.ls; x.el+=o.n; x.secs+=o.secs; x.units+=o.units; x.lsRaw=true; }); }
+    else if(LSDATES.length) notes.push('Late Slam Date not picked — using OB tab late slams for the same date');
     var rows=Object.keys(M).map(function(k){ return M[k]; }).sort(function(a,b){ var ia=ORDER.indexOf(a.s), ib=ORDER.indexOf(b.s); return (ia<0?99:ia)-(ib<0?99:ib)||a.s.localeCompare(b.s); });
-    var T={s:'TOTAL',ibF:0,ibA:0,obF:0,obA:0,ls:0,el:0,secs:0,units:0,ibHas:true,obHas:!!OB};
-    rows.forEach(function(r){ r.ibV=r.ibHas&&r.ibF?(r.ibA-r.ibF)/r.ibF*100:null; r.obV=r.obHas&&r.obF?(r.obA-r.obF)/r.obF*100:null; r.lsP=!r.obMan&&r.el?r.ls/r.el*100:null;
-      T.ibF+=r.ibF; T.ibA+=r.ibA; T.obF+=r.obF||0; T.obA+=r.obA||0; T.ls+=r.ls; T.el+=r.el; T.secs+=r.secs; T.units+=r.units; r.tph=!r.obMan&&r.secs?r.units/r.secs*3600:null; });
+    var T={s:'TOTAL',ibF:0,ibA:0,obF:0,obA:0,ls:0,el:0,secs:0,units:0,ibHas:true,obHas:!!OB,lsHas:!!OB||!!LD};
+    rows.forEach(function(r){ r.ibV=r.ibHas&&r.ibF?(r.ibA-r.ibF)/r.ibF*100:null; r.obV=r.obHas&&r.obF?(r.obA-r.obF)/r.obF*100:null; r.lsP=(r.lsRaw||!r.obMan)&&r.el?r.ls/r.el*100:null;
+      T.ibF+=r.ibF; T.ibA+=r.ibA; T.obF+=r.obF||0; T.obA+=r.obA||0; T.ls+=r.ls; T.el+=r.el; T.secs+=r.secs; T.units+=r.units; r.tph=(r.lsRaw||!r.obMan)&&r.secs?r.units/r.secs*3600:null; });
     T.tph=T.secs?T.units/T.secs*3600:null;
     T.ibV=T.ibF?(T.ibA-T.ibF)/T.ibF*100:null; T.obV=T.obF?(T.obA-T.obF)/T.obF*100:null; T.lsP=T.el?T.ls/T.el*100:null;
-    CUR={date:d,rows:rows,T:T,tgt:W&&W.target?W.target():170};
+    var dn=Math.round((new Date(d+'T12:00:00')-new Date((lsd||d)+'T12:00:00'))/864e5);
+    CUR={date:d,lsDate:lsd||d,lsTag:dn>0?' (D-'+dn+')':'',rows:rows,T:T,tgt:W&&W.target?W.target():170};
     render(notes);
   }
   function vCol(v){ return v==null||v<0?null:v>10?['#fecaca','#b91c1c']:['#fef08a','#1a1830']; }
@@ -22421,32 +22467,35 @@ window.FVA=(function(){
     var h=notes.length?'<div style="background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:14px;">⚠️ '+notes.join(' · ')+'</div>':'';
     h+='<div style="background:#fff;border:1.5px solid #d5d2f0;border-radius:14px;padding:16px;overflow-x:auto;"><div style="font-size:16px;font-weight:800;color:#1a1830;margin-bottom:12px;">🔗 IB + OB Forecast vs Actual · '+new Date(CUR.date+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>';
     var SHT=$('fva-cb-tph').checked;
-    h+='<table style="border-collapse:collapse;width:auto;"><thead><tr>'+['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam','LS %'].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]).map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('')+'</tr></thead><tbody>';
+    var GH='background:#fff;color:#1a1830;font-weight:800;font-size:14px;padding:6px 10px;text-align:center;border:2px solid #1a1830;';
+    h+='<table style="border-collapse:collapse;width:auto;"><thead><tr><th colspan="2" style="background:#fff;border:none;"></th><th colspan="6" style="'+GH+'">'+dLabel(CUR.date)+'</th><th colspan="'+(SHT?3:2)+'" style="'+GH+'">'+dLabel(CUR.lsDate)+'</th></tr><tr>'+['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam'+CUR.lsTag,'LS %'+CUR.lsTag].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]).map(function(x){return '<th style="'+TH+'">'+x+'</th>';}).join('')+'</tr></thead><tbody>';
     R.forEach(function(r,i){ var lc=lCol(r.lsP);
       h+='<tr>'+c(0,i+1)+'<td style="'+TD+'font-weight:800;text-align:left;padding-left:14px;">'+label(r.s)+'</td>'+
         c(0,r.ibHas?f0(r.ibF):'NA')+c(0,r.ibHas?f0(r.ibA):'NA')+c(r.ibV,f1(r.ibV),vCol(r.ibV),true)+
         c(0,f0(r.obF))+c(0,f0(r.obA))+c(r.obV,f1(r.obV),vCol(r.obV),true)+
-        c(0,r.obMan||!r.obHas?'NA':r.ls,lc&&lc[0]==='#fef08a'?lc:null)+c(r.lsP,f1(r.lsP),lc,true)+(SHT?c(0,r.tph?Math.round(r.tph):'NA',r.tph&&r.tph>=CUR.tgt?['#d1fae5','#047857']:null,true):'')+'</tr>'; });
+        c(0,r.lsRaw?r.ls:(r.obMan||!r.obHas?'NA':r.ls))+c(r.lsP,f1(r.lsP),lc,true)+(SHT?c(0,r.tph?Math.round(r.tph):'NA',r.tph&&r.tph>=CUR.tgt?['#d1fae5','#047857']:null,true):'')+'</tr>'; });
     var TT='padding:8px 10px;text-align:center;font-size:13px;white-space:nowrap;font-weight:800;color:#1a1830;background:#8c8c8c;'+B;
-    h+='<tr><td style="'+TT+'background:#fff;border:none;"></td><td style="'+TT+'">TOTAL</td><td style="'+TT+'">'+f0(T.ibF)+'</td><td style="'+TT+'">'+f0(T.ibA)+'</td><td style="'+TT+'">'+f1(T.ibV)+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obF):'NA')+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obA):'NA')+'</td><td style="'+TT+'">'+f1(T.obV)+'</td><td style="'+TT+'">'+(T.obHas?T.ls:'NA')+'</td><td style="'+TT+'">'+f1(T.lsP)+'</td>'+(SHT?'<td style="'+TT+'">'+(T.tph?Math.round(T.tph):'NA')+'</td>':'')+'</tr>';
+    h+='<tr><td style="'+TT+'background:#fff;border:none;"></td><td style="'+TT+'">TOTAL</td><td style="'+TT+'">'+f0(T.ibF)+'</td><td style="'+TT+'">'+f0(T.ibA)+'</td><td style="'+TT+'">'+f1(T.ibV)+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obF):'NA')+'</td><td style="'+TT+'">'+(T.obHas?f0(T.obA):'NA')+'</td><td style="'+TT+'">'+f1(T.obV)+'</td><td style="'+TT+'">'+(T.lsHas?T.ls:'NA')+'</td><td style="'+TT+'">'+f1(T.lsP)+'</td>'+(SHT?'<td style="'+TT+'">'+(T.tph?Math.round(T.tph):'NA')+'</td>':'')+'</tr>';
     h+='</tbody></table><div style="font-size:11px;color:#7b78a8;margin-top:10px;">Variance % = (Actual − Forecast) ÷ Forecast · Variance: below 0 white · <b style="color:#a16207">0–10%</b> yellow · <b style="color:#b91c1c">above 10%</b> red · LS %: below 3 white · <b style="color:#a16207">3–5%</b> yellow · <b style="color:#b91c1c">above 5%</b> red · _SS stores are added into their main store.</div></div>';
     $('fva-cb-out').innerHTML=h; $('fva-cb-xl').style.display='';
   }
   function exportCombined(){ if(!CUR) return; IBF.withStyleLib(function(X){
     var R=CUR.rows, T=CUR.T, B={style:'thin',color:{rgb:'1A1830'}}, border={top:B,bottom:B,left:B,right:B};
-    var SHT=$('fva-cb-tph').checked; var head=['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam','LS %'].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]);
+    var SHT=$('fva-cb-tph').checked; var head=['S.No.','Store','IB Forecast','IB Actual','Variance%','OB Forecast Units','OB Actual Units','Units Variance%','Late Slam'+CUR.lsTag,'LS %'+CUR.lsTag].concat(SHT?['Thru Put / Hr (Target '+CUR.tgt+')']:[]);
     var p=function(v){ return v==null?'NA':+(v/100).toFixed(4); }, n=function(v){ return v==null?'NA':Math.round(v); };
-    var aoa=[head]; R.forEach(function(r,i){ aoa.push([i+1,label(r.s),r.ibHas?n(r.ibF):'NA',r.ibHas?n(r.ibA):'NA',p(r.ibV),n(r.obF),n(r.obA),p(r.obV),r.obMan||!r.obHas?'NA':r.ls,p(r.lsP)].concat(SHT?[n(r.tph)]:[])); });
-    aoa.push(['','TOTAL',n(T.ibF),n(T.ibA),p(T.ibV),T.obHas?n(T.obF):'NA',T.obHas?n(T.obA):'NA',p(T.obV),T.obHas?T.ls:'NA',p(T.lsP)].concat(SHT?[n(T.tph)]:[]));
+    var top=['','',dLabel(CUR.date),'','','','','',dLabel(CUR.lsDate),''].concat(SHT?['']:[]);
+    var aoa=[top,head]; R.forEach(function(r,i){ aoa.push([i+1,label(r.s),r.ibHas?n(r.ibF):'NA',r.ibHas?n(r.ibA):'NA',p(r.ibV),n(r.obF),n(r.obA),p(r.obV),r.lsRaw?r.ls:(r.obMan||!r.obHas?'NA':r.ls),p(r.lsP)].concat(SHT?[n(r.tph)]:[])); });
+    aoa.push(['','TOTAL',n(T.ibF),n(T.ibA),p(T.ibV),T.obHas?n(T.obF):'NA',T.obHas?n(T.obA):'NA',p(T.obV),T.lsHas?T.ls:'NA',p(T.lsP)].concat(SHT?[n(T.tph)]:[]));
     var ws=X.utils.aoa_to_sheet(aoa); ws['!cols']=[{wch:6},{wch:22},{wch:10},{wch:10},{wch:11},{wch:11},{wch:11},{wch:11},{wch:9},{wch:8}].concat(SHT?[{wch:14}]:[]);
-    ws['!rows']=[{hpt:36}];
+    ws['!rows']=[{hpt:22},{hpt:36}]; ws['!merges']=[{s:{r:0,c:2},e:{r:0,c:7}},{s:{r:0,c:8},e:{r:0,c:SHT?10:9}}];
     var hx=function(c){return c.replace('#','').toUpperCase();};
     for(var r=0;r<aoa.length;r++) for(var c=0;c<head.length;c++){
-      var a=X.utils.encode_cell({r:r,c:c}); if(!ws[a]) ws[a]={t:'s',v:''}; var cell=ws[a], tot=r===aoa.length-1, row=R[r-1];
-      var s={border:border,alignment:{horizontal:c===1&&!tot?'left':'center',vertical:'center',wrapText:r===0},font:{name:'Calibri',sz:11,color:{rgb:'1A1830'},bold:r===0||tot||c===1||c===4||c===7||c===9}};
-      if(r===0){ s.fill={fgColor:{rgb:'1A1830'}}; s.font.color={rgb:'FFFFFF'}; }
+      var a=X.utils.encode_cell({r:r,c:c}); if(!ws[a]) ws[a]={t:'s',v:''}; var cell=ws[a], tot=r===aoa.length-1, row=R[r-2];
+      if(r===0){ cell.s=c<2?{}:{border:{top:{style:'medium',color:{rgb:'1A1830'}},bottom:{style:'medium',color:{rgb:'1A1830'}},left:{style:'medium',color:{rgb:'1A1830'}},right:{style:'medium',color:{rgb:'1A1830'}}},alignment:{horizontal:'center',vertical:'center'},font:{name:'Calibri',sz:12,bold:true,color:{rgb:'1A1830'}}}; continue; }
+      var s={border:border,alignment:{horizontal:c===1&&!tot?'left':'center',vertical:'center',wrapText:r===1},font:{name:'Calibri',sz:11,color:{rgb:'1A1830'},bold:r===1||tot||c===1||c===4||c===7||c===9}};
+      if(r===1){ s.fill={fgColor:{rgb:'1A1830'}}; s.font.color={rgb:'FFFFFF'}; }
       else if(tot){ if(c===0){ s={}; } else s.fill={fgColor:{rgb:'8C8C8C'}}; }
-      else { var col=c===4?vCol(row.ibV):c===7?vCol(row.obV):c===10?(row.tph&&row.tph>=CUR.tgt?['#d1fae5','#047857']:null):c===9?lCol(row.lsP):c===8?(function(){var l=lCol(row.lsP);return l&&l[0]==='#fef08a'?l:null;})():null;
+      else { var col=c===4?vCol(row.ibV):c===7?vCol(row.obV):c===10?(row.tph&&row.tph>=CUR.tgt?['#d1fae5','#047857']:null):c===9?lCol(row.lsP):null;
         if(col){ s.fill={fgColor:{rgb:hx(col[0])}}; s.font.color={rgb:hx(col[1])}; s.font.bold=true; } }
       if(cell.t==='n'&&(c===4||c===7||c===9)) cell.z='0.0%'; else if(cell.t==='n'&&c>=2) cell.z='#,##0';
       cell.s=s;
@@ -22454,7 +22503,7 @@ window.FVA=(function(){
     var wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,'IB + OB '+CUR.date);
     X.writeFile(wb,'Forecast_vs_Actual_Combined_'+CUR.date+'.xlsx');
   }); }
-  return {tab:tab,combine:combine,exportCombined:exportCombined,rerender:function(){ if(CUR) render([]); }};
+  return {tab:tab,combine:combine,exportCombined:exportCombined,loadLS:loadLS,autoLS:autoLS,rerender:function(){ if(CUR) render([]); }};
 })();
 </script>
 

@@ -191,7 +191,7 @@ function bmFetch(_attempt){
 }
 
 function bmApply(data){
-  bmRows = data.rows||[];
+  bmRows = (data.rows||[]).map(function(r){ r=Object.assign({},r); ['lsv2','pqa','safety'].forEach(function(k){ var v=r[k]; if(v!=null&&isFinite(v)&&v>0&&v<=1) r[k]=v*100; }); return r; });
   var sel=document.getElementById('bm-month');
   var periods=(data.periods||[]).slice().sort();
   if(!periods.length){
