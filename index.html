@@ -22400,7 +22400,7 @@ window.FVA=(function(){
       var iS=ix('delivery_station_code'), iO=ix('order_id'), iD=ix('picklist_created_date'), iT=ix('picklist_created_time'), iPS=ix('pl_create_to_stage'), iP=ix('promise_utr'), iU=ix('units_picked'), iA=ix('assignment_to_stage_time_secs');
       if(iS<0||iPS<0){ bad.push(name); return; }
       for(var r=1;r<rows.length;r++){ var R=rows[r], s=base(String(R[iS]||'').trim().toUpperCase()), d=lsYmd(iD>-1?R[iD]:R[iT]); if(!s||!d) continue;
-        var t=parseFloat(R[iPS]), u=iU>-1?(parseFloat(R[iU])||1):1, p=iP>-1?parseFloat(R[iP]):NaN; if(!(p>0)) p=lk(s,u);
+        var t=parseFloat(R[iPS]), u=iU>-1?(parseFloat(R[iU])||1):1, p=iP>-1?parseFloat(R[iP]):NaN; if(!(p>0)) p=null; // official logic: only orders with their own promise_utr count
         var o=(acc[d]=acc[d]||{})[s]=acc[d][s]||{orders:{},n:0,ls:0,secs:0,units:0}, id=iO>-1?R[iO]:('r'+r);
         if(o.orders[id]) continue; o.orders[id]=1; o.n++; if(p!=null&&isFinite(t)&&t>p) o.ls++;
         if(iA>-1){ var a=parseFloat(R[iA]); if(isFinite(a)&&a>0){ o.secs+=a; o.units+=u; } } }
@@ -22410,7 +22410,7 @@ window.FVA=(function(){
       var ok=$('fva-cb-lsok'); ok.style.display='';
       if(!LSDATES.length){ ok.style.background='#fef2f2'; ok.style.borderColor='#fca5a5'; ok.style.color='#991b1b'; ok.textContent='❌ Late slam columns not found'+(bad.length?' · '+bad.join(', '):''); return; }
       ok.style.background='#f0fdf4'; ok.style.borderColor='#86efac'; ok.style.color='#166534';
-      ok.textContent='✓ Late slam data · '+LSDATES.map(dLabel).join(', ')+(bad.length?' · skipped: '+bad.join(', '):'')+(W?'':' · open the OB tab once so blank promise times use the promise table');
+      ok.textContent='✓ Late slam data · '+LSDATES.map(dLabel).join(', ')+(bad.length?' · skipped: '+bad.join(', '):'');
       var sel=$('fva-cb-lsd'), cur=sel.value; sel.innerHTML='<option value="">From OB tab (same date)</option>'+LSDATES.slice().reverse().map(function(d){ return '<option value="'+d+'">'+dLabel(d)+' '+d.slice(0,4)+'</option>'; }).join('');
       if(cur&&LSDATES.indexOf(cur)>-1) sel.value=cur; else autoLS(); }
     files.forEach(function(f){ var fr=new FileReader();

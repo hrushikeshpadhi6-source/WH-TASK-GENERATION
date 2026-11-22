@@ -245,7 +245,7 @@ function compute(D){
     var cov={};
     LS.rows.forEach(function(r){ if(useDate && toYmd(r[c.d])!==D) return; var s=String(r[c.s]||'').trim(); if(!s) return;
       var q=cov[s]=cov[s]||{n:0,p:0}; q.n++; var pv=parseFloat(r[c.p]); if(isFinite(pv)&&pv>0) q.p++; });
-    var useFb=function(s){ var q=cov[s]; return !q||!q.n||q.p/q.n<0.8; };
+    var useFb=function(s){ var q=cov[s]; return !q||!q.n||q.p===0; }; // fixed table only when the file has NO promise_utr for that store
     LS.rows.forEach(function(r){
       if(useDate && toYmd(r[c.d])!==D) return;
       var s=String(r[c.s]||'').trim(); if(!s) return;
