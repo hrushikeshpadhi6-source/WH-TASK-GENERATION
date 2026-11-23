@@ -366,7 +366,7 @@ class Component extends DCLogic {
         const g = (r, n) => { const k = c(n); return k >= 0 ? r[k] : ''; };
         const body = aoa.slice(1).filter(r => r.some(v => v !== ''));
         if (c('conc_reason_new') >= 0) {
-          next.conc = body.map(r => ({ reason: String(g(r, 'conc_reason_new')), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'ship_week'), order: String(g(r, 'conceded_order_id')).trim(), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), usd: +g(r, 'usd_val') || 0, units: +g(r, 'total_units_conceded') || 1, perish: g(r, 'perishable_flag'), picker: String(g(r, 'picker_id') || ''), creason: g(r, 'concession_reason'), gl: g(r, 'wbr_gl_description') }));
+          next.conc = body.map((r, ri) => ({ row: ri, reason: String(g(r, 'conc_reason_new')).trim(), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'ship_week'), order: String(g(r, 'conceded_order_id')).trim(), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), usd: +g(r, 'usd_val') || 0, units: +g(r, 'total_units_conceded') || 1, perish: g(r, 'perishable_flag'), picker: String(g(r, 'picker_id') || ''), creason: g(r, 'concession_reason'), gl: g(r, 'wbr_gl_description') }));
         } else if (c('bucket') >= 0) {
           const hasUSD = (aoa[0] || []).findIndex(x => String(x).trim() === 'USD');
           const base = r => ({ store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
@@ -393,9 +393,14 @@ class Component extends DCLogic {
     const scoped = src.filter(inS);
     let rows = scoped, items = [];
     if (M.kind === 'conc') {
-      rows = scoped.filter(r => r.reason.toLowerCase().includes(M.match) && (!pf || (pf === 'Non-perishable') === isNP(r.perish)));
+      // exact conc_reason_new match (e.g. only "Item Missing"); keyword fallback only if the file uses other labels
+      const pOk = r => !pf || (pf === 'Non-perishable') === isNP(r.perish);
+      const want = METRICS[metric].label.toLowerCase();
+      rows = scoped.filter(r => r.reason.toLowerCase() === want && pOk(r));
+      if (!rows.length) rows = scoped.filter(r => r.reason.toLowerCase().includes(M.match) && pOk(r));
       const map = new Map();
-      rows.forEach(r => { const k = r.order + '|' + r.asin; const o = map.get(k) || { key: k, id: r.order, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, pickers: new Set(), creason: r.creason }; o.usd += r.usd; o.units += r.units; if (r.picker && r.picker !== '-1') o.pickers.add(r.picker); map.set(k, o); });
+      // one line per concession row, same as the raw file (repeated rows are not summed together)
+      rows.forEach(r => { const k = r.order + '|' + r.asin + '|' + r.row; const o = map.get(k) || { key: k, id: r.order, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, pickers: new Set(), creason: r.creason }; o.usd += r.usd; o.units += r.units; if (r.picker && r.picker !== '-1') o.pickers.add(r.picker); map.set(k, o); });
       items = [...map.values()];
     } else {
       if (M.kind === 'whl') rows = scoped.filter(r => r.usd < 0);
