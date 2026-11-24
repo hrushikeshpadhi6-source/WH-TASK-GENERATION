@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+  var K='dms_session_date';
+  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+  function valid(){try{var v=localStorage.getItem(K);return !!v && v===today();}catch(e){return true;}}
+  function kick(){try{localStorage.removeItem(K);}catch(e){}location.href='index.html';}
+  var framed=false; try{framed=window.self!==window.top;}catch(e){framed=true;}
+  if(framed) return;
+  if(!valid()){ kick(); return; }
+  var now=new Date(), b=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,0);
+  setTimeout(kick, Math.max(0,b.getTime()-now.getTime())+500);
+})();
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Barometer Raw Data Maker — DMS PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#F4F6F9;color:#1a1830;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14px;line-height:1.5;}
+a{color:#1F3864;}a:hover{color:#35538f;}
+.hidden{display:none!important;}
+.bar{height:58px;background:#fff;border-bottom:1px solid #E3E8F0;display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:50;}
+.back{white-space:nowrap;border:1px solid #D7DEEA;background:#fff;color:#1F3864;font-weight:700;font-size:12.5px;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:inherit;}
+.ttl{font-weight:800;font-size:15px;color:#1F3864;}.sub{font-size:11.5px;color:#6B7686;}
+.seg{display:flex;border:1px solid #D7DEEA;border-radius:8px;overflow:hidden;margin-left:auto;}
+.seg button{border:0;background:#fff;color:#1F3864;font-weight:700;font-size:12.5px;padding:8px 16px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.seg button.on{background:#1F3864;color:#fff;}
+.page{max-width:1400px;margin:0 auto;padding:22px 20px 80px;display:flex;flex-direction:column;gap:16px;}
+.top{display:grid;grid-template-columns:minmax(250px,340px) minmax(0,1fr);gap:16px;}
+@media(max-width:900px){.top{grid-template-columns:1fr;}}
+.drop{background:#fff;border:2px dashed #D7DEEA;border-radius:14px;padding:26px 18px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.drop.drag{border-color:#1F3864;background:#EEF2FA;}.drop.ok{border-style:solid;border-color:#16A34A;background:#ECFDF3;}
+.drop h3{font-size:14px;font-weight:800;}.drop p{font-size:12px;color:#6B7686;}
+.card{background:#fff;border:1px solid #E3E8F0;border-radius:14px;padding:16px 18px;}
+.lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#6B7686;}
+.src{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:10px;}
+.si{display:flex;gap:9px;border:1px solid #EEF1F5;border-radius:9px;padding:8px 10px;}
+.si .d{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#EEF1F5;color:#94A0AE;}
+.si.ok{border-color:#BBF7D0;background:#ECFDF3;}.si.ok .d{background:#16A34A;color:#fff;}
+.si .n{font-size:12.5px;font-weight:700;}.si .m{font-size:11px;color:#6B7686;line-height:1.4;word-break:break-word;}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.b1{background:#1F3864;color:#fff;}.b2{background:#fff;border:1px solid #D7DEEA;color:#1F3864;}.b3{background:#16A34A;color:#fff;}
+.opts{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#6B7686;}
+.fl select{border:1px solid #D7DEEA;border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;font-weight:700;color:#1a1830;background:#fff;min-width:160px;text-transform:none;letter-spacing:0;}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#475467;padding-bottom:8px;cursor:pointer;white-space:nowrap;}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto;}
+.safety{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.sf{display:flex;align-items:center;gap:6px;border:1px solid #E3E8F0;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:800;}
+.sf input{width:62px;border:1px solid #D7DEEA;border-radius:6px;padding:4px 6px;font-family:"IBM Plex Mono",monospace;font-size:12px;text-align:right;}
+.note{font-size:12px;color:#475467;background:#FFFBEB;border:1px solid #FDE68A;border-radius:9px;padding:9px 12px;line-height:1.55;}
+.tw{background:#fff;border:1px solid #E3E8F0;border-radius:14px;overflow:auto;max-height:66vh;}
+table{border-collapse:collapse;font-size:12px;min-width:100%;}
+th{position:sticky;top:0;background:#1F3864;color:#fff;padding:8px 10px;font-size:10.5px;font-weight:700;text-align:right;white-space:nowrap;}
+th.l,td.l{text-align:left;}
+td{padding:6px 10px;border-bottom:1px solid #EEF1F5;text-align:right;white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:11.5px;}
+td.l{font-family:inherit;font-weight:700;}
+td.na{color:#94A0AE;}
+tr.g td{border-top:2px solid #D7DEEA;}
+.empty{text-align:center;padding:46px 20px;color:#6B7686;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1830;color:#fff;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:700;transition:.25s;z-index:300;}
+.toast.on{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="bar">
+  <button class="back" onclick="location.href='index.html'">← Home</button>
+  <div><div class="ttl">Barometer Raw Data Maker</div><div class="sub">Weekly / monthly CSVs → Barometer sheet rows</div></div>
+  <div class="seg"><button id="mW" class="on">Week</button><button id="mM">Month</button></div>
+</div>
+<div class="page">
+  <div class="top">
+    <label class="drop" id="drop">
+      <h3>Drop all Barometer CSVs here</h3>
+      <p>Late Slams, Skips, Shorts, Productivity, IRDR, Produce Audit, and Late Slam raw data for throughput. Select them all at once.</p>
+      <span class="btn b1" style="pointer-events:none;">Choose files</span>
+      <input type="file" id="fi" multiple accept=".csv,.xls,.xlsx" class="hidden"/>
+    </label>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="lbl">Source files</span><span id="cnt" style="font-size:11.5px;color:#6B7686;"></span>
+        <button class="btn b2" id="clr" style="margin-left:auto;padding:4px 10px;font-size:11.5px;">Clear all</button>
+      </div>
+      <div class="src" id="src"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="opts">
+      <label class="fl"><span id="pLbl">Week</span><select id="per"></select></label>
+      <label class="chk"><input type="checkbox" id="hdr"/> Include header row</label>
+      <label class="chk"><input type="checkbox" id="merge" checked/> Merge QDG5_SS into QDG5</label>
+      <div class="acts">
+        <button class="btn b2" id="cp" disabled>📋 Copy rows</button>
+        <button class="btn b2" id="csv" disabled>⬇ CSV</button>
+        <button class="btn b3" id="xl" disabled>⬇ Excel</button>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;">
+      <span class="lbl">Safety Init. % per store</span>
+      <button class="btn b2" id="sfReset" style="padding:3px 9px;font-size:11px;">Reset all to 100</button>
+    </div>
+    <div class="safety" id="safety"></div>
+  </div>
+
+  <div class="note">
+    <b>Late Slam v2</b> = Late Orders V2 ÷ orders. When QDG5_SS is merged, it's recalculated from the combined counts.
+    <b>Throughput</b> = units picked ÷ (assignment-to-stage seconds ÷ 3600) from the Late Slam raw data, with QDG5_SS rolled into QDG5.
+    <b>IRDR</b> shows 0 for stores missing from the file. <b>Produce QA</b> is left blank when missing.
+    Concessions, WHD and WHL are filled as N/A.
+  </div>
+
+  <div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;"><span class="lbl">Preview</span><span id="info" style="font-size:11.5px;color:#6B7686;"></span></div>
+    <div class="tw" id="tw"><div class="empty">Upload the CSVs to build the Barometer rows.</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const toast=m=>{const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2200);};
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const STORES=["QAA1","QAA6","QAA7","QDC6","QDD3","QDG5","QDG8","QDH5","QHA5"];
+const SRC=[
+  {k:"ls",n:"Late Slams",m:"Late Orders V2 · Late Slam% V2"},
+  {k:"sk",n:"Skips DPMO",m:"Skips DPMO"},
+  {k:"sh",n:"Shorts DPMO",m:"Shorts DPMO"},
+  {k:"pr",n:"Productivity",m:"IB TPH"},
+  {k:"ir",n:"IRDR DPMO",m:"DPMO"},
+  {k:"pq",n:"Produce Audit Score",m:"Score% DS"},
+  {k:"raw",n:"Late Slam raw data",m:"Throughput (units ÷ assign-to-stage hrs)"}
+];
+const COLS=["Store","PERIOD","Safety Init.","Late Slam v2","IB TPH","Throughput/PH","Skips (DPMO)","Shorts (DPMO)","IRDR (DPMO)","Produce QA","Concessions","WHD","WHL (GMS)"];
+let FILES={}, MODE="week", OUT=[];
+let SAFE={}; try{SAFE=JSON.parse(localStorage.getItem("bmr_safety")||"{}")||{};}catch(e){SAFE={};}
+try{ MODE=localStorage.getItem("bmr_mode")||"week"; $("hdr").checked=localStorage.getItem("bmr_hdr")==="1"; }catch(e){}
+
+function parseCSV(t){const R=[];let r=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+  else if(c==='"')q=true;else if(c===','){r.push(f);f="";}
+  else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;r.push(f);f="";if(r.length>1||r[0]!=="")R.push(r);r=[];}else f+=c;}
+  if(f!==""||r.length){r.push(f);R.push(r);} if(!R.length)return[];
+  const h=R[0].map(s=>s.trim());return R.slice(1).map(x=>{const o={};h.forEach((k,i)=>o[k]=x[i]);return o;});}
+function readAny(file,cb){const fr=new FileReader();
+  if(/\.xlsx?$/i.test(file.name)){fr.onload=e=>{const wb=XLSX.read(e.target.result,{type:"array",cellDates:true});cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false,dateNF:"yyyy-mm-dd"}));};fr.readAsArrayBuffer(file);}
+  else{fr.onload=e=>cb(parseCSV(e.target.result));fr.readAsText(file);}}
+const K=(r,re)=>Object.keys(r).find(k=>re.test(k.trim()));
+const num=v=>{if(v==null||v==="")return null;const n=parseFloat(String(v).replace(/,/g,"").replace("%",""));return isNaN(n)?null:n;};
+function detect(rows){if(!rows.length)return null;const ks=Object.keys(rows[0]).map(k=>k.trim().toLowerCase());const has=s=>ks.some(k=>k.includes(s));
+  if(has("assignment_to_stage")||has("pl_create_to_stage"))return "raw";
+  if(has("late orders v2")||has("late slam% v2"))return "ls";
+  if(has("skips dpmo"))return "sk"; if(has("shorts dpmo"))return "sh";
+  if(has("ib tph"))return "pr"; if(has("score%"))return "pq";
+  if(ks.includes("dpmo"))return "ir"; return null;}
+function load(list){list=[...list];if(!list.length)return;let done=0,unk=[];
+  list.forEach(f=>readAny(f,rows=>{const k=detect(rows);
+    if(k){ if(k==="raw") FILES.raw=(FILES.raw||[]).filter(x=>x.name!==f.name).concat([{name:f.name,rows}]); else FILES[k]=[{name:f.name,rows}]; } else unk.push(f.name);
+    if(++done===list.length){ if(unk.length) toast("Not recognised: "+unk.join(", ")); paintSrc(); fillPer(); build(); }}));}
+function paintSrc(){let ok=0;
+  $("src").innerHTML=SRC.map(s=>{const f=FILES[s.k];if(f)ok++;const n=f?f.reduce((a,x)=>a+x.rows.length,0):0;
+    return '<div class="si'+(f?' ok':'')+'"><span class="d">'+(f?'✓':'')+'</span><div><div class="n">'+esc(s.n)+'</div><div class="m">'+(f?esc(f.map(x=>x.name).join(", "))+' · '+n.toLocaleString()+' rows':esc(s.m))+'</div></div></div>';}).join("");
+  $("cnt").textContent=ok+" of "+SRC.length+" loaded"; $("drop").classList.toggle("ok",ok>0);}
+
+// period label from a row
+function ymdOf(v){const s=String(v||"").trim();let m;if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))return [+m[1],+m[2],+m[3]];if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)))return [+m[3],+m[1],+m[2]];return null;}
+function monthLabel(v,fallbackYear){const s=String(v||"").trim();if(!s)return null;let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})/)))return MON[+m[2]-1]+" "+m[1];
+  if((m=s.match(/^([A-Za-z]+)[\s\-–]*(\d{4})?$/))){const i=MON.findIndex(x=>x.slice(0,3).toLowerCase()===m[1].slice(0,3).toLowerCase());if(i>-1)return MON[i]+" "+(m[2]||fallbackYear||new Date().getFullYear());}
+  return null;}
+function periodOf(r){
+  if(MODE==="week"){const k=K(r,/^week(_name)?$/i)||K(r,/week/i);const w=k?String(r[k]).match(/\d+/):null;if(w)return "Week "+(+w[0]);
+    const d=ymdOf(r[K(r,/picklist_created_date|snapshot_date|^date$/i)]);if(d){const x=new Date(d[0],d[1]-1,d[2]),j=new Date(d[0],0,1);return "Week "+(Math.floor((Math.round((x-j)/864e5)+j.getDay())/7)+1);}return null;}
+  const mk=K(r,/^month(_name)?$/i)||K(r,/month/i);if(mk){const l=monthLabel(r[mk]);if(l)return l;}
+  const d=ymdOf(r[K(r,/picklist_created_date|snapshot_date|^date$/i)]);return d?MON[d[1]-1]+" "+d[0]:null;}
+const storeOf=r=>String(r[K(r,/^(station|store|delivery_station_code)$/i)]||"").trim().toUpperCase();
+
+function allPeriods(){const s=new Set();Object.values(FILES).forEach(fs=>fs.forEach(f=>f.rows.forEach(r=>{const p=periodOf(r);if(p)s.add(p);})));
+  const val=p=>MODE==="week"?+p.replace(/\D/g,""):(+p.slice(-4))*12+MON.indexOf(p.split(" ")[0]);return [...s].sort((a,b)=>val(b)-val(a));}
+function fillPer(){const ps=allPeriods(),cur=$("per").value;$("pLbl").textContent=MODE==="week"?"Week":"Month";
+  $("per").innerHTML=ps.map(p=>'<option>'+esc(p)+'</option>').join("")||'<option value="">—</option>';
+  if(ps.indexOf(cur)>-1)$("per").value=cur;}
+
+function build(){
+  const P=$("per").value, merge=$("merge").checked, D={};
+  const c=s=>D[s]=D[s]||{};
+  const each=(k,fn)=>(FILES[k]||[]).forEach(f=>f.rows.forEach(r=>{if(periodOf(r)!==P)return;const s=storeOf(r);if(s)fn(r,s);}));
+  each("ls",(r,s)=>{const n=num(r[K(r,/late orders v2/i)]),p=num(r[K(r,/late slam% v2/i)]);const t=merge&&s==="QDG5_SS"?"QDG5":s;const o=c(t);
+    if(n!=null&&p>0){o.lsN=(o.lsN||0)+n;o.lsO=(o.lsO||0)+n/p;} else if(p!=null&&t===s) o.lsP=p;});
+  each("sk",(r,s)=>{const v=num(r[K(r,/skips dpmo/i)]);if(v!=null&&!(merge&&s==="QDG5_SS"))c(s).skip=v;});
+  each("sh",(r,s)=>{const v=num(r[K(r,/shorts dpmo/i)]);if(v!=null&&!(merge&&s==="QDG5_SS"))c(s).short=v;});
+  each("pr",(r,s)=>{const v=num(r[K(r,/^ib tph$/i)]);if(v!=null&&!(merge&&s==="QDG5_SS"))c(s).ib=v;});
+  each("ir",(r,s)=>{const v=num(r[K(r,/^dpmo$/i)]);if(v!=null&&!(merge&&s==="QDG5_SS"))c(s).irdr=v;});
+  each("pq",(r,s)=>{const v=num(r[K(r,/score%/i)]);if(v!=null&&!(merge&&s==="QDG5_SS"))c(s).pqa=v>1?v/100:v;});
+  (FILES.raw||[]).forEach(f=>f.rows.forEach(r=>{if(periodOf(r)!==P)return;
+    const s=String(r.delivery_station_code||"").trim().toUpperCase().replace(/[_\s-]*SS$/i,"");if(!s)return;
+    const o=c(s);o.tu=(o.tu||0)+(num(r.units_picked)||0);o.ts=(o.ts||0)+(num(r.assignment_to_stage_time_secs)||0);}));
+  const stores=STORES.filter(s=>D[s]).concat(Object.keys(D).filter(s=>STORES.indexOf(s)<0&&!(merge&&s==="QDG5_SS")).sort());
+  OUT=P?stores.map(s=>{const o=D[s];return {store:s,period:P,safety:SAFE[s]!=null?SAFE[s]:100,
+    ls:o.lsN!=null&&o.lsO>0?o.lsN/o.lsO:(o.lsP!=null?o.lsP:null),ib:o.ib,tput:o.ts>0?Math.round(o.tu/(o.ts/3600)):null,
+    skip:o.skip,short:o.short,irdr:o.irdr!=null?o.irdr:0,pqa:o.pqa};}):[];
+  paintSafety(stores); render();
+}
+const p2=v=>v==null?"":(v*100).toFixed(2)+"%";
+const nr=v=>v==null?"":String(+(+v).toFixed(6));
+function cells(o){return [o.store,o.period,o.safety,p2(o.ls),nr(o.ib),o.tput==null?"":o.tput,nr(o.skip),nr(o.short),nr(o.irdr),p2(o.pqa),"N/A","N/A","N/A"];}
+function hdrRow(){return COLS.map(h=>h==="PERIOD"?(MODE==="week"?"Week":"Month"):h);}
+function render(){
+  const has=OUT.length;["cp","csv","xl"].forEach(id=>$(id).disabled=!has);
+  if(!has){$("tw").innerHTML='<div class="empty">'+(Object.keys(FILES).length?'No rows for this '+MODE+'.':'Upload the CSVs to build the Barometer rows.')+'</div>';$("info").textContent="";return;}
+  $("info").textContent=OUT.length+" stores · "+OUT[0].period;
+  $("tw").innerHTML='<table><thead><tr>'+hdrRow().map((h,i)=>'<th'+(i<2?' class="l"':'')+'>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+
+    OUT.map(o=>'<tr>'+cells(o).map((v,i)=>'<td class="'+(i<2?'l':'')+(v==="N/A"||v===""?' na':'')+'">'+esc(v)+'</td>').join("")+'</tr>').join("")+'</tbody></table>';
+}
+function paintSafety(stores){
+  const list=stores.length?stores:STORES;
+  $("safety").innerHTML=list.map(s=>'<label class="sf">'+s+'<input type="number" min="0" max="100" step="0.01" data-s="'+s+'" value="'+(SAFE[s]!=null?SAFE[s]:100)+'"/></label>').join("");
+}
+$("safety").addEventListener("change",e=>{const s=e.target.getAttribute("data-s");if(!s)return;const v=num(e.target.value);
+  if(v==null||v===100)delete SAFE[s];else SAFE[s]=v;try{localStorage.setItem("bmr_safety",JSON.stringify(SAFE));}catch(_){} OUT.forEach(o=>{if(o.store===s)o.safety=v==null?100:v;});render();});
+$("sfReset").onclick=()=>{SAFE={};try{localStorage.removeItem("bmr_safety");}catch(_){} build();};
+
+function tsv(){const L=OUT.map(o=>cells(o).join("\t"));if($("hdr").checked)L.unshift(hdrRow().join("\t"));return L.join("\n");}
+$("cp").onclick=()=>{const t=tsv();(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast("Copied "+OUT.length+" rows")).catch(()=>{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();toast("Copied "+OUT.length+" rows");});};
+const fname=ext=>"Barometer_Raw_"+String(OUT[0].period).replace(/\s+/g,"_")+"."+ext;
+$("csv").onclick=()=>{const q=s=>/[",\n]/.test(s)?'"'+String(s).replace(/"/g,'""')+'"':s;
+  const L=OUT.map(o=>cells(o).map(q).join(","));if($("hdr").checked)L.unshift(hdrRow().join(","));
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\n")],{type:"text/csv"}));a.download=fname("csv");a.click();toast("CSV downloaded");};
+$("xl").onclick=()=>{
+  const aoa=OUT.map(o=>[o.store,o.period,o.safety,o.ls==null?"":o.ls,o.ib==null?"":o.ib,o.tput==null?"":o.tput,o.skip==null?"":o.skip,o.short==null?"":o.short,o.irdr,o.pqa==null?"":o.pqa,"N/A","N/A","N/A"]);
+  const H=$("hdr").checked?1:0;if(H)aoa.unshift(hdrRow());
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  for(let r=H;r<aoa.length;r++)[3,9].forEach(ci=>{const c=ws[XLSX.utils.encode_cell({r,c:ci})];if(c&&c.t==="n")c.z="0.00%";});
+  ws["!cols"]=hdrRow().map(h=>({wch:Math.max(10,h.length+2)}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,MODE==="week"?"Barometer Weekly":"Barometer MTD");XLSX.writeFile(wb,fname("xlsx"));toast("Excel downloaded");};
+
+function setMode(m){MODE=m;try{localStorage.setItem("bmr_mode",m);}catch(e){}$("mW").classList.toggle("on",m==="week");$("mM").classList.toggle("on",m==="month");fillPer();build();}
+$("mW").onclick=()=>setMode("week");$("mM").onclick=()=>setMode("month");
+$("per").onchange=build;$("merge").onchange=build;
+$("hdr").onchange=()=>{try{localStorage.setItem("bmr_hdr",$("hdr").checked?"1":"0");}catch(e){}};
+const drop=$("drop");$("fi").onchange=e=>{load(e.target.files);e.target.value="";};
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("drag");}));
+drop.addEventListener("drop",e=>load(e.dataTransfer.files));
+$("clr").onclick=()=>{FILES={};OUT=[];paintSrc();fillPer();build();};
+paintSrc();setMode(MODE);
+</script>
+</body>
+</html>
