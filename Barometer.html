@@ -157,6 +157,26 @@ var scoreFns = {
 };
 
 function meta_target_line(m){ return 'max '+m.max+' · '+m.targetLabel; }
+// Scoring slabs (same as scoreFns) shown under each header
+var SLABS = {
+  safety:[['≥95%',10],['85–95%',5],['<85%',0]],
+  lsv2:  [['<3%',10],['3–5%',5],['>5%',0]],
+  ibTph: [['>140',7.5],['126–140',5],['<126',0]],
+  tput:  [['>170',7.5],['144–170',2.5],['<144',0]],
+  skip:  [['<300',5],['300–500',2.5],['>500',0]],
+  short: [['<300',5],['300–500',2.5],['>500',0]],
+  irdr:  [['<4500',10],['4500–15000',8],['>15000',0]],
+  pqa:   [['≥95%',5],['85–95%',2.5],['<85%',0]],
+  conc:  [['<0.5%',10],['0.5–0.65%',8],['≥0.65%',0]],
+  whd:   [['<0.15%',5],['0.15–0.5%',2.5],['≥0.5%',0]],
+  whl:   [['>-0.1%',10],['-0.5 to -0.1%',2.5],['<-0.5%',0]]
+};
+function slabHtml(m){
+  var s=SLABS[m.key]; if(!s) return '';
+  var col=function(p){ return p>=m.max?'#7ee2a8':(p>0?'#ffd166':'#ff8a8a'); };
+  return '<div style="display:flex;flex-direction:column;gap:1px;margin-top:5px;font-weight:500;font-size:11px;letter-spacing:0;line-height:1.35;white-space:nowrap;">'+
+    s.map(function(x){ return '<div style="display:flex;justify-content:space-between;gap:8px;"><span style="opacity:.85;">'+x[0]+'</span><span style="color:'+col(x[1])+';font-weight:700;">'+x[1]+'</span></div>'; }).join('')+'</div>';
+}
 function fmt(n,d){ d=d===undefined?1:d; return Number.isFinite(n) ? (+n.toFixed(d)).toString() : n; }
 
 function bmSetKind(kind){
@@ -252,7 +272,7 @@ function bmRender(){
   html += '<th style="'+thStickyStyle+'left:0;z-index:3;min-width:40px;">Rank</th>';
   html += '<th style="'+thStickyStyle+'left:40px;z-index:3;min-width:64px;text-align:left;">Store</th>';
   metricMeta.forEach(function(m){
-    html += '<th style="'+thStyle+'min-width:98px;">'+m.label+'<div style="font-weight:400;opacity:0.65;font-size:12px;margin-top:2px;letter-spacing:0;">'+meta_target_line(m)+'</div></th>';
+    html += '<th style="'+thStyle+'min-width:98px;">'+m.label+'<div style="font-weight:400;opacity:0.65;font-size:12px;margin-top:2px;letter-spacing:0;">'+meta_target_line(m)+'</div>'+slabHtml(m)+'</th>';
   });
   html += '<th style="'+thStyle+'background:#16294a;min-width:72px;border-right:none;">Overall<div style="font-weight:400;opacity:0.7;font-size:12px;margin-top:2px;">/ 85</div></th>';
   html += '</tr></thead><tbody>';

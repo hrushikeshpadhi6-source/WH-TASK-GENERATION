@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == 'hrushikeshpadhi6@gmail.com';
+    }
+
+    // App accounts: each user reads / updates their own doc; admin manages all
+    match /users/{uid} {
+      allow read, write: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Sign-up requests (before an account exists)
+    match /signup_requests/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // OTP / notification e-mails (Trigger Email extension)
+    match /mail/{id} {
+      allow create: if true;
+    }
+
+    // Maintenance mode, tool visibility, announcements
+    match /app_settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Tool access requests during maintenance
+    match /access_requests/{id} {
+      allow create, read: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // NEW: Who's online. Everyone signed in can see the list; each user only writes their own entry
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Feedback form: anyone signed in can send; only admin reads / clears
+    match /dms_feedback/{id} {
+      allow create: if signedIn();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // VOC dashboard usernames: users request access and check their own status; admin approves
+    match /voc_users/{uname} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+  }
+}
