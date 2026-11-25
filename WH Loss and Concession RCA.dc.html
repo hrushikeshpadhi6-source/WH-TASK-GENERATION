@@ -114,7 +114,12 @@ textarea,input,select,button{font-family:inherit}
     <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
       <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #e2e0da">
         <div style="font-weight:600;font-size:15px">2. {{ topTitle }}</div>
-        <div style="font-size:12px;color:#6b6a64">{{ topNote }}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <sc-if value="{{ showRestore }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ onRestore }}" style="background:#fff;color:#1d1d1b;border:1px solid #cfccc3;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap" style-hover="border-color:#1d1d1b">{{ restoreTxt }}</button>
+          </sc-if>
+          <div style="font-size:12px;color:#6b6a64">{{ topNote }}</div>
+        </div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:820px">
         <thead>
@@ -124,6 +129,7 @@ textarea,input,select,button{font-family:inherit}
             <th style="padding:9px 12px;font-weight:500;width:90px;text-align:right">USD</th>
             <th style="padding:9px 12px;font-weight:500;width:170px">Reason</th>
             <th style="padding:9px 12px;font-weight:500;width:200px">Sub-reason</th>
+            <th style="padding:9px 8px;font-weight:500;width:34px"></th>
           </tr>
         </thead>
         <tbody>
@@ -149,6 +155,9 @@ textarea,input,select,button{font-family:inherit}
               </td>
               <td style="padding:10px 12px">
                 <input list="subs" value="{{ r.sub }}" onChange="{{ r.onSub }}" placeholder="Optional" style="width:100%;box-sizing:border-box;border:1px solid #dcdad3;border-radius:6px;padding:6px 8px;font-size:12px">
+              </td>
+              <td style="padding:10px 8px">
+                <button onClick="{{ r.onRemove }}" title="Remove from top list. The next case moves up." style="width:26px;height:26px;border:1px solid #dcdad3;border-radius:6px;background:#fff;color:#8a8880;font-size:14px;line-height:1;cursor:pointer" style-hover="border-color:#b42318;color:#b42318">✕</button>
               </td>
             </tr>
           </sc-for>
@@ -178,6 +187,46 @@ textarea,input,select,button{font-family:inherit}
       </div>
     </div>
   </div>
+
+  <sc-if value="{{ showLanes }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px solid #e2e0da;flex-wrap:wrap">
+        <div style="font-weight:600;font-size:15px">Transship contribution by source</div>
+        <div style="font-size:12px;color:#6b6a64">{{ laneNote }}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+        <thead>
+          <tr style="background:#f8f7f4;text-align:left;color:#4a4944">
+            <th style="padding:9px 12px;font-weight:500;width:28px">#</th>
+            <th style="padding:9px 12px;font-weight:500;width:110px">Source</th>
+            <th style="padding:9px 12px;font-weight:500">Destination</th>
+            <th style="padding:9px 12px;font-weight:500;width:90px;text-align:right">Transships</th>
+            <th style="padding:9px 12px;font-weight:500;width:70px;text-align:right">Units</th>
+            <th style="padding:9px 12px;font-weight:500;width:100px;text-align:right">USD</th>
+            <th style="padding:9px 12px;font-weight:500;width:170px">Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ laneRows }}" as="r" hint-placeholder-count="3">
+            <tr style="border-top:1px solid #eeece6">
+              <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8a8880">{{ r.n }}</td>
+              <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600">{{ r.src }}</td>
+              <td style="padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#4a4944">{{ r.dests }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.ts }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.units }}</td>
+              <td style="padding:9px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ r.usd }}</td>
+              <td style="padding:9px 12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:6px;background:#eeece6;border-radius:3px;overflow:hidden"><div style="height:100%;background:#1f5e4a;width:{{ r.bar }}"></div></div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;width:44px;text-align:right">{{ r.share }}</span>
+                </div>
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </sc-if>
 
   <sc-if value="{{ showNP }}" hint-placeholder-val="{{ false }}">
     <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:auto">
@@ -380,7 +429,13 @@ class Component extends DCLogic {
         } else if (c('bucket') >= 0) {
           const hasUSD = (aoa[0] || []).findIndex(x => String(x).trim() === 'USD');
           const tsCol = hdr.find(h => /^(transship|trans_?ship|transshipment|transfer|ts)[_\s]*(id|ref|reference|no|number)$/i.test(h)) || hdr.find(h => /trans.*(_id|\bid\b|ref)|transfer.*id|shipment_?id|reference_?id/i.test(h)) || '';
-          const base = r => ({ tsid: tsCol ? String(g(r, tsCol) || '').replace(/^'/, '').trim() : '', store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
+          const pad = n => String(n).padStart(2, '0');
+          const fDay = v => { if (v instanceof Date) return v.getFullYear() + '-' + pad(v.getMonth() + 1) + '-' + pad(v.getDate()); if (typeof v === 'number' && v > 20000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); } return String(v || '').split(' ')[0]; };
+          const fTime = v => { if (v instanceof Date) return pad(v.getHours()) + ':' + pad(v.getMinutes()) + ':' + pad(v.getSeconds()); if (typeof v === 'number') { const s = Math.round((v % 1) * 86400); return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60); } return String(v || '').trim(); };
+          // TS ID = "AUH7_QDG5_<uuid>" inside event_id; tote = location_id after "TransferTote:"
+          const tsFromEvent = v => { const m = String(v || '').match(/[A-Z0-9]{3,6}_[A-Z0-9_]{3,10}_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); return m ? m[0] : ''; };
+          const toteOf = v => { const s = String(v || ''); const m = s.match(/TransferTote:\s*([A-Za-z0-9]+)/i) || s.match(/\b(ts[A-Z0-9]{6,})\b/); return m ? m[1] : ''; };
+          const base = r => ({ tsid: tsFromEvent(g(r, 'event_id')) || (tsCol ? String(g(r, tsCol) || '').replace(/^'/, '').trim() : ''), tote: toteOf(g(r, 'location_id')), evAt: [fDay(g(r, 'event_day')), fTime(g(r, 'event_time'))].filter(Boolean).join(' '), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
           const whd = body.filter(r => /whd/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: +g(r, 'usd_val') || 0 }));
           const whl = body.filter(r => /whl/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: hasUSD >= 0 ? (+r[hasUSD] || 0) : -(+g(r, 'usd_val') || 0) }));
           if (whd.length) next.whd = whd;
@@ -427,7 +482,8 @@ class Component extends DCLogic {
       const map = new Map();
       rows.forEach(r => {
         const k = byTs ? (r.tsid || '(no transship ID)') + '|' + r.asin : r.asin;
-        const o = map.get(k) || { key: k, id: byTs ? (r.tsid || '(no transship ID)') : r.asin, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, procs: new Set(), adjs: new Set(), tsids: new Set() };
+        const o = map.get(k) || { key: k, id: byTs ? (r.tsid || '(no transship ID)') : r.asin, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, procs: new Set(), adjs: new Set(), tsids: new Set(), totes: new Set(), evts: new Set() };
+        if (r.tote) o.totes.add(r.tote); if (r.evAt) o.evts.add(r.evAt);
         o.usd += M.kind === 'whl' ? (wt === 'Found' ? r.usd : byTs ? Math.abs(r.usd) : -r.usd) : r.usd;
         o.units += Math.abs(r.qty); if (r.process) o.procs.add(r.process); if (r.adj) o.adjs.add(r.adj); if (r.tsid) o.tsids.add(r.tsid); map.set(k, o); });
       items = [...map.values()];
@@ -438,11 +494,23 @@ class Component extends DCLogic {
     return { M, scoped, rows, items, total, gms, weeks: new Set(rows.map(r => r.week)) };
   }
 
+  // Top list with user-removed cases skipped, so the next case moves up
+  topOf(sc) { const ex = this.state.removed || {}, m = this.state.metric; return sc.items.filter(it => !ex[m + '|' + it.key]).slice(0, this.state.topN); }
+  // Transship contribution by source site: TS ID "AUH7_QDG5_<uuid>" → source AUH7, lane AUH7 → QDG5
+  lanes(sc) {
+    const map = new Map();
+    sc.rows.filter(r => r.tsid).forEach(r => {
+      const p = r.tsid.split('_'), src = (p[0] || '?').toUpperCase(), dst = (p[1] || '').toUpperCase();
+      const o = map.get(src) || { src, dests: new Set(), ts: new Set(), units: 0, usd: 0 };
+      if (dst) o.dests.add(dst); o.ts.add(r.tsid); o.units += Math.abs(r.qty); o.usd += Math.abs(r.usd); map.set(src, o);
+    });
+    return [...map.values()].sort((a, b) => b.usd - a.usd);
+  }
   tagOf(it) { const t = this.state.tags[this.state.metric + '|' + it.key] || {}; return { reason: t.reason || PENDING, sub: t.sub || '' }; }
   setTag(key, patch) { const k = this.state.metric + '|' + key; this.setState(s => ({ tags: { ...s.tags, [k]: { ...(s.tags[k] || {}), ...patch } }, report: null })); }
 
   applyPaste() {
-    const { metric, pasteText } = this.state, sc = this.scope(), top = sc.items.slice(0, this.state.topN);
+    const { metric, pasteText } = this.state, sc = this.scope(), top = this.topOf(sc);
     const tags = { ...this.state.tags }; let hit = 0, miss = 0;
     pasteText.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(l => {
       const cols = l.split(/\t|\s{2,}|,(?=\s*[A-Za-z])/).map(x => x.trim());
@@ -465,7 +533,11 @@ class Component extends DCLogic {
     const topV = top.reduce((s, x) => s + x.usd, 0);
     const byReason = {}; tagged.forEach(t => { (byReason[t.reason] = byReason[t.reason] || []).push(t); });
     const sumOf = arr => (arr || []).reduce((s, t) => s + t.it.usd, 0);
-    const tsTxt = it => m === 'whl' && it.tsids && it.tsids.size ? ` – Transship ID: ${[...it.tsids].join(', ')}` : '';
+    const tsTxt = it => { if (m !== 'whl' || !it.tsids) return ''; const p = [];
+      if (it.tsids.size) p.push('TS ID: ' + [...it.tsids].join(', '));
+      if (it.totes && it.totes.size) p.push('Tote ID: ' + [...it.totes].join(', '));
+      if (it.evts && it.evts.size) p.push('Event: ' + [...it.evts].sort().join(', '));
+      return p.length ? '\n  ' + p.join(' | ') : ''; };
     const bullet = t => `• ${t.it.asin} – ${shortName(t.it.item)} – ${usd(t.it.usd)}${M.kind === 'conc' ? '' : ` (${t.it.units} units)`}${tsTxt(t.it)}\n${lineFor(m, t.it, t.reason, t.sub)}`;
     const subsTop = r => { const c = {}; (byReason[r] || []).forEach(t => { if (t.sub) c[t.sub] = (c[t.sub] || 0) + 1; }); return Object.keys(c).sort((a, b) => c[b] - c[a]).slice(0, 3); };
     const gmsTxt = gms > 0 ? `, equal to ${pct2(total / gms)} of GMS (${usd(gms)})` : '';
@@ -521,6 +593,8 @@ class Component extends DCLogic {
       L.push(`In ${wk}, ${store} recorded missing adjustments of ${usd(miss)} and transship losses of ${usd(ts)}, against found adjustments of ${usd(found)}. The net inventory result is ${net < 0 ? '-' : ''}${usd(Math.abs(net))}${gms > 0 ? ` (${pct2(net / gms)} of GMS)` : ''}, ${net >= 0 ? 'with no net loss' : 'a net loss'}.`);
       L.push(`The top ${top.length} loss ASINs account for ${usd(topV)} (${pct(total ? topV / total : 0)} of gross losses of ${usd(total)}).`);
       L.push('', 'TOP LOSS DRIVERS'); tagged.forEach(t => L.push(bullet(t)));
+      const ln = this.lanes(sc), lnV = ln.reduce((s, l) => s + l.usd, 0);
+      if (ln.length) { L.push('', 'TRANSSHIP CONTRIBUTION BY SOURCE'); ln.forEach(l => L.push(`• ${l.src}${l.dests.size ? ' → ' + [...l.dests].join(', ') : ''}: ${usd(l.usd)} (${pct(lnV ? l.usd / lnV : 0)}) · ${l.ts.size} transship${l.ts.size > 1 ? 's' : ''} · ${l.units} units`)); }
       L.push('', 'LOSS CONTRIBUTION SUMMARY', `• Found (+): ${usd(found)}`, `• Missing (-): ${usd(miss)}`, `• Transship losses (-): ${usd(ts)}`, `• Net: ${net < 0 ? '-' : ''}${usd(Math.abs(net))}`);
       Object.keys(byReason).forEach(r => L.push(`• ${r}: ${byReason[r].length} ASIN${byReason[r].length > 1 ? 's' : ''}, ${usd(sumOf(byReason[r]))}`));
       L.push('', 'CONCLUSION AND ACTION PLAN', `Gross losses reached ${usd(total)} in ${wk}, with a net result of ${net < 0 ? '-' : ''}${usd(Math.abs(net))}. The top ${top.length} ASINs drive ${pct(total ? topV / total : 0)} of the gross loss value.`);
@@ -540,7 +614,9 @@ class Component extends DCLogic {
   flash(t) { this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: '' }), 2200); }
 
   renderVals() {
-    const st = this.state, m = st.metric, sc = this.scope(), top = sc.items.slice(0, st.topN), M = sc.M;
+    const st = this.state, m = st.metric, sc = this.scope(), top = this.topOf(sc), M = sc.M;
+    const lanes = m === 'whl' ? this.lanes(sc) : [], laneV = lanes.reduce((s, l) => s + l.usd, 0);
+    const removedN = Object.keys(st.removed || {}).filter(k => k.startsWith(m + '|')).length;
     const stores = [...new Set([...st.conc, ...st.whd, ...st.whl].map(r => r.store).filter(Boolean))].sort();
     const weeks = [...new Set((M.kind === 'conc' ? st.conc : st[M.kind]).map(r => r.week).filter(w => w !== ''))].map(String).sort((a, b) => a - b);
     const tab = (on) => ({ bg: on ? '#1d1d1b' : 'transparent', color: on ? '#fff' : '#4a4944' });
@@ -574,6 +650,11 @@ class Component extends DCLogic {
       metricTabs: Object.keys(METRICS).map(k => ({ label: METRICS[k].label, ...tab(k === m), onClick: () => this.setState({ metric: k, report: null, week: 'All weeks', pasteMsg: '' }) })),
       showPerish: m === 'quality',
       showWhlType: m === 'whl',
+      showLanes: lanes.length > 0,
+      laneNote: lanes.length ? usd(laneV) + ' across ' + lanes.reduce((s, l) => s + l.ts.size, 0) + ' transships' : '',
+      laneRows: lanes.map((l, i) => ({ n: i + 1, src: l.src, dests: [...l.dests].join(', ') || '—', ts: l.ts.size, units: l.units, usd: n2(l.usd), share: pct(laneV ? l.usd / laneV : 0), bar: Math.round((laneV ? l.usd / laneV : 0) * 100) + '%' })),
+      showRestore: removedN > 0, restoreTxt: 'Restore ' + removedN + ' removed',
+      onRestore: () => { const r = {}; Object.keys(st.removed || {}).forEach(k => { if (!k.startsWith(m + '|')) r[k] = st.removed[k]; }); this.setState({ removed: r, report: null }); },
       whlTabs: ['All losses', 'Missing', 'Found', 'Transship In'].map(p => ({ label: p, ...tab(p === (st.whlType || 'All losses')), onClick: () => this.setState({ whlType: p, report: null, pasteMsg: '' }) })),
       perishTabs: ['All', 'Perishable', 'Non-perishable'].map(p => ({ label: p, ...tab(p === st.perish), onClick: () => this.setState({ perish: p, report: null }) })),
       topTabs: [5, 10, 15, 20].map(n => ({ label: 'Top ' + n, ...tab(n === st.topN), onClick: () => this.setState({ topN: n, report: null }) })),
@@ -582,18 +663,19 @@ class Component extends DCLogic {
       stats,
       topTitle: `Top ${st.topN} ${M.label} ${M.kind === 'conc' ? 'cases' : 'ASINs'} by USD value`,
       topNote: sc.items.length ? `${sc.items.length} total · ${usd(sc.total)}` : '',
-      idHead: M.kind === 'conc' ? 'Order ID' : (m === 'whl' && st.whlType === 'Transship In' ? 'Transship ID' : 'ASIN'),
+      idHead: M.kind === 'conc' ? 'Order ID' : (m === 'whl' && st.whlType === 'Transship In' ? 'TS ID' : 'ASIN'),
       reasonOptions: [PENDING, ...REASONS[m]],
       subOptions: st.subText.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
       rows: top.map((it, i) => { const t = this.tagOf(it); return {
         n: i + 1, id: it.id,
-        meta: m === 'whl' && st.whlType === 'Transship In' ? [it.asin, it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable'].join(' · ') : M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
+        meta: m === 'whl' && st.whlType === 'Transship In' ? [it.asin, it.totes && it.totes.size ? 'Tote ' + [...it.totes].join(', ') : '', it.evts && it.evts.size ? [...it.evts].sort().join(', ') : '', it.units + ' units'].filter(Boolean).join(' · ') : M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
         name: shortName(it.item) + (it.creason ? ' — ' + it.creason : ''),
         line: lineFor(m, it, t.reason, t.sub),
         usd: n2(it.usd), share: pct(sc.total ? it.usd / sc.total : 0),
         reason: t.reason, bg: bgFor(t.reason), sub: t.sub,
         onReason: e => this.setTag(it.key, { reason: e.target.value }),
-        onSub: e => this.setTag(it.key, { sub: e.target.value })
+        onSub: e => this.setTag(it.key, { sub: e.target.value }),
+        onRemove: () => this.setState(s => ({ removed: { ...(s.removed || {}), [m + '|' + it.key]: true }, report: null }))
       }; }),
       noRows: !top.length,
       pasteText: st.pasteText, onPaste: e => this.setState({ pasteText: e.target.value }), onApply: () => this.applyPaste(), pasteMsg: st.pasteMsg,
@@ -607,10 +689,11 @@ class Component extends DCLogic {
       onCopy: () => { navigator.clipboard.writeText(report).then(() => this.flash('RCA copied'), () => this.flash('Copy blocked — select the text and copy')); },
       onExcel: () => {
         if (!top.length) return this.flash('Nothing to export');
-        const rows = top.map((it, i) => { const t = this.tagOf(it); return { Rank: i + 1, ...(m === 'whl' ? { 'Transship ID': it.tsids ? [...it.tsids].join(', ') : '' } : {}), [M.kind === 'conc' ? 'Order ID' : 'ASIN']: it.id, ASIN: it.asin, Item: String(it.item || ''), 'USD': +it.usd.toFixed(2), 'Share %': +((sc.total ? it.usd / sc.total : 0) * 100).toFixed(1), Units: it.units, Perishable: isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', 'Picker ID': it.pickers ? [...it.pickers].join(', ') : '', Reason: t.reason, 'Sub-reason': t.sub, RCA: lineFor(m, it, t.reason, t.sub) }; });
+        const rows = top.map((it, i) => { const t = this.tagOf(it); return { Rank: i + 1, ...(m === 'whl' ? { 'TS ID': it.tsids ? [...it.tsids].join(', ') : '', 'Tote ID': it.totes ? [...it.totes].join(', ') : '', 'Event date & time': it.evts ? [...it.evts].sort().join(', ') : '' } : {}), [M.kind === 'conc' ? 'Order ID' : 'ASIN']: it.id, ASIN: it.asin, Item: String(it.item || ''), 'USD': +it.usd.toFixed(2), 'Share %': +((sc.total ? it.usd / sc.total : 0) * 100).toFixed(1), Units: it.units, Perishable: isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', 'Picker ID': it.pickers ? [...it.pickers].join(', ') : '', Reason: t.reason, 'Sub-reason': t.sub, RCA: lineFor(m, it, t.reason, t.sub) }; });
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Top ' + st.topN);
         if (np.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(np.map((a, i) => ({ Rank: i + 1, ASIN: a.asin, Item: String(a.item || ''), Cases: a.cases, USD: +a.usd.toFixed(2), '% of quality': +((sc.total ? a.usd / sc.total : 0) * 100).toFixed(1) }))), 'Non-perishable');
+        if (lanes.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(lanes.map((l, i) => ({ Rank: i + 1, Source: l.src, 'Destination(s)': [...l.dests].join(', '), Transships: l.ts.size, Units: l.units, USD: +l.usd.toFixed(2), 'Share %': +((laneV ? l.usd / laneV : 0) * 100).toFixed(1) }))), 'By Transship');
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(report.split('\n').map(l => [l])), 'RCA');
         XLSX.writeFile(wb, `${M.label.replace(/\s/g, '_')}_RCA_${st.store || 'store'}.xlsx`);
       },
