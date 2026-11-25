@@ -80,6 +80,16 @@ textarea,input,select,button{font-family:inherit}
         </div>
       </div>
     </sc-if>
+    <sc-if value="{{ showWhlType }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:12px;color:#4a4944">WHL type</span>
+        <div style="display:flex;gap:4px;background:#fff;border:1px solid #dcdad3;border-radius:9px;padding:3px">
+          <sc-for list="{{ whlTabs }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.onClick }}" style="border:0;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
     <div style="display:flex;flex-direction:column;gap:6px">
       <span style="font-size:12px;color:#4a4944">Top by USD value</span>
       <div style="display:flex;gap:4px;background:#fff;border:1px solid #dcdad3;border-radius:9px;padding:3px">
@@ -369,7 +379,8 @@ class Component extends DCLogic {
           next.conc = body.map((r, ri) => ({ row: ri, reason: String(g(r, 'conc_reason_new')).trim(), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'ship_week'), order: String(g(r, 'conceded_order_id')).trim(), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), usd: +g(r, 'usd_val') || 0, units: +g(r, 'total_units_conceded') || 1, perish: g(r, 'perishable_flag'), picker: String(g(r, 'picker_id') || ''), creason: g(r, 'concession_reason'), gl: g(r, 'wbr_gl_description') }));
         } else if (c('bucket') >= 0) {
           const hasUSD = (aoa[0] || []).findIndex(x => String(x).trim() === 'USD');
-          const base = r => ({ store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
+          const tsCol = hdr.find(h => /^(transship|trans_?ship|transshipment|transfer|ts)[_\s]*(id|ref|reference|no|number)$/i.test(h)) || hdr.find(h => /trans.*(_id|\bid\b|ref)|transfer.*id|shipment_?id|reference_?id/i.test(h)) || '';
+          const base = r => ({ tsid: tsCol ? String(g(r, tsCol) || '').replace(/^'/, '').trim() : '', store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
           const whd = body.filter(r => /whd/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: +g(r, 'usd_val') || 0 }));
           const whl = body.filter(r => /whl/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: hasUSD >= 0 ? (+r[hasUSD] || 0) : -(+g(r, 'usd_val') || 0) }));
           if (whd.length) next.whd = whd;
@@ -403,9 +414,22 @@ class Component extends DCLogic {
       rows.forEach(r => { const k = r.order + '|' + r.asin + '|' + r.row; const o = map.get(k) || { key: k, id: r.order, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, pickers: new Set(), creason: r.creason }; o.usd += r.usd; o.units += r.units; if (r.picker && r.picker !== '-1') o.pickers.add(r.picker); map.set(k, o); });
       items = [...map.values()];
     } else {
-      if (M.kind === 'whl') rows = scoped.filter(r => r.usd < 0);
+      const wt = this.state.whlType || 'All losses';
+      const isTS = r => /trans\s*-?ship|transfer/i.test((r.adj || '') + ' ' + (r.process || ''));
+      let byTs = false;
+      if (M.kind === 'whl') {
+        if (wt === 'Missing') rows = scoped.filter(r => r.usd < 0 && !isTS(r));
+        else if (wt === 'Found') rows = scoped.filter(r => r.usd > 0 && !isTS(r));
+        else if (wt === 'Transship In') { rows = scoped.filter(isTS); byTs = true; }
+        else rows = scoped.filter(r => r.usd < 0);
+        if (wt !== 'All losses') M = { ...M, label: 'WHL ' + wt, title: 'Warehouse Loss (WHL) – ' + wt, noun: wt.toLowerCase() };
+      }
       const map = new Map();
-      rows.forEach(r => { const o = map.get(r.asin) || { key: r.asin, id: r.asin, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, procs: new Set(), adjs: new Set() }; o.usd += M.kind === 'whl' ? -r.usd : r.usd; o.units += Math.abs(r.qty); if (r.process) o.procs.add(r.process); if (r.adj) o.adjs.add(r.adj); map.set(r.asin, o); });
+      rows.forEach(r => {
+        const k = byTs ? (r.tsid || '(no transship ID)') + '|' + r.asin : r.asin;
+        const o = map.get(k) || { key: k, id: byTs ? (r.tsid || '(no transship ID)') : r.asin, asin: r.asin, item: r.item, perish: r.perish, gl: r.gl, usd: 0, units: 0, procs: new Set(), adjs: new Set(), tsids: new Set() };
+        o.usd += M.kind === 'whl' ? (wt === 'Found' ? r.usd : byTs ? Math.abs(r.usd) : -r.usd) : r.usd;
+        o.units += Math.abs(r.qty); if (r.process) o.procs.add(r.process); if (r.adj) o.adjs.add(r.adj); if (r.tsid) o.tsids.add(r.tsid); map.set(k, o); });
       items = [...map.values()];
     }
     items.sort((a, b) => b.usd - a.usd);
@@ -441,7 +465,8 @@ class Component extends DCLogic {
     const topV = top.reduce((s, x) => s + x.usd, 0);
     const byReason = {}; tagged.forEach(t => { (byReason[t.reason] = byReason[t.reason] || []).push(t); });
     const sumOf = arr => (arr || []).reduce((s, t) => s + t.it.usd, 0);
-    const bullet = t => `• ${t.it.asin} – ${shortName(t.it.item)} – ${usd(t.it.usd)}${M.kind === 'conc' ? '' : ` (${t.it.units} units)`}\n${lineFor(m, t.it, t.reason, t.sub)}`;
+    const tsTxt = it => m === 'whl' && it.tsids && it.tsids.size ? ` – Transship ID: ${[...it.tsids].join(', ')}` : '';
+    const bullet = t => `• ${t.it.asin} – ${shortName(t.it.item)} – ${usd(t.it.usd)}${M.kind === 'conc' ? '' : ` (${t.it.units} units)`}${tsTxt(t.it)}\n${lineFor(m, t.it, t.reason, t.sub)}`;
     const subsTop = r => { const c = {}; (byReason[r] || []).forEach(t => { if (t.sub) c[t.sub] = (c[t.sub] || 0) + 1; }); return Object.keys(c).sort((a, b) => c[b] - c[a]).slice(0, 3); };
     const gmsTxt = gms > 0 ? `, equal to ${pct2(total / gms)} of GMS (${usd(gms)})` : '';
     L.push(M.title, '', 'SUMMARY');
@@ -548,6 +573,8 @@ class Component extends DCLogic {
       onFiles: e => { const f = [...e.target.files]; e.target.value = ''; if (f.length) this.loadFiles(f).catch(err => this.flash('Could not read file: ' + err.message)); },
       metricTabs: Object.keys(METRICS).map(k => ({ label: METRICS[k].label, ...tab(k === m), onClick: () => this.setState({ metric: k, report: null, week: 'All weeks', pasteMsg: '' }) })),
       showPerish: m === 'quality',
+      showWhlType: m === 'whl',
+      whlTabs: ['All losses', 'Missing', 'Found', 'Transship In'].map(p => ({ label: p, ...tab(p === (st.whlType || 'All losses')), onClick: () => this.setState({ whlType: p, report: null, pasteMsg: '' }) })),
       perishTabs: ['All', 'Perishable', 'Non-perishable'].map(p => ({ label: p, ...tab(p === st.perish), onClick: () => this.setState({ perish: p, report: null }) })),
       topTabs: [5, 10, 15, 20].map(n => ({ label: 'Top ' + n, ...tab(n === st.topN), onClick: () => this.setState({ topN: n, report: null }) })),
       store: st.store, storeOptions: stores.length ? [...stores, 'All stores'] : [''], onStore: e => this.setState({ store: e.target.value, report: null }),
@@ -555,12 +582,12 @@ class Component extends DCLogic {
       stats,
       topTitle: `Top ${st.topN} ${M.label} ${M.kind === 'conc' ? 'cases' : 'ASINs'} by USD value`,
       topNote: sc.items.length ? `${sc.items.length} total · ${usd(sc.total)}` : '',
-      idHead: M.kind === 'conc' ? 'Order ID' : 'ASIN',
+      idHead: M.kind === 'conc' ? 'Order ID' : (m === 'whl' && st.whlType === 'Transship In' ? 'Transship ID' : 'ASIN'),
       reasonOptions: [PENDING, ...REASONS[m]],
       subOptions: st.subText.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
       rows: top.map((it, i) => { const t = this.tagOf(it); return {
         n: i + 1, id: it.id,
-        meta: M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
+        meta: m === 'whl' && st.whlType === 'Transship In' ? [it.asin, it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable'].join(' · ') : M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
         name: shortName(it.item) + (it.creason ? ' — ' + it.creason : ''),
         line: lineFor(m, it, t.reason, t.sub),
         usd: n2(it.usd), share: pct(sc.total ? it.usd / sc.total : 0),
@@ -580,7 +607,7 @@ class Component extends DCLogic {
       onCopy: () => { navigator.clipboard.writeText(report).then(() => this.flash('RCA copied'), () => this.flash('Copy blocked — select the text and copy')); },
       onExcel: () => {
         if (!top.length) return this.flash('Nothing to export');
-        const rows = top.map((it, i) => { const t = this.tagOf(it); return { Rank: i + 1, [M.kind === 'conc' ? 'Order ID' : 'ASIN']: it.id, ASIN: it.asin, Item: String(it.item || ''), 'USD': +it.usd.toFixed(2), 'Share %': +((sc.total ? it.usd / sc.total : 0) * 100).toFixed(1), Units: it.units, Perishable: isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', 'Picker ID': it.pickers ? [...it.pickers].join(', ') : '', Reason: t.reason, 'Sub-reason': t.sub, RCA: lineFor(m, it, t.reason, t.sub) }; });
+        const rows = top.map((it, i) => { const t = this.tagOf(it); return { Rank: i + 1, ...(m === 'whl' ? { 'Transship ID': it.tsids ? [...it.tsids].join(', ') : '' } : {}), [M.kind === 'conc' ? 'Order ID' : 'ASIN']: it.id, ASIN: it.asin, Item: String(it.item || ''), 'USD': +it.usd.toFixed(2), 'Share %': +((sc.total ? it.usd / sc.total : 0) * 100).toFixed(1), Units: it.units, Perishable: isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', 'Picker ID': it.pickers ? [...it.pickers].join(', ') : '', Reason: t.reason, 'Sub-reason': t.sub, RCA: lineFor(m, it, t.reason, t.sub) }; });
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Top ' + st.topN);
         if (np.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(np.map((a, i) => ({ Rank: i + 1, ASIN: a.asin, Item: String(a.item || ''), Cases: a.cases, USD: +a.usd.toFixed(2), '% of quality': +((sc.total ? a.usd / sc.total : 0) * 100).toFixed(1) }))), 'Non-perishable');
