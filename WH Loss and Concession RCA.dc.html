@@ -290,6 +290,8 @@ const REASONS = {
   whl: ['Stow Error', 'Pick Error', 'Inventory Adjustment', 'Transship Loss', 'Not Identified']
 };
 const PENDING = 'Pending review';
+// Sub-reasons for WHL → Transship In (item missing from transshipment)
+const TS_SUBS = ['Tote missing', 'Pallet missing', 'Partial tote – units short', 'Tote received empty', 'Wrong tote / pallet received', 'Tote not scanned at inbound', 'Damaged in transit', 'Not dispatched by source'];
 const OTHER = ['Duplicate Order', 'Not Identified', PENDING];
 const DEFAULT_SUBS = 'Left on packing table\nNew associate forgot to pack\nShort pick (qty)\nPlaced in another order bag\nSimilar item from wrong bin\nDamaged unit packed\nShort expiry picked';
 
@@ -363,7 +365,7 @@ function lineFor(m, it, reason, sub) {
     case 'Stow Error': return 'The units were stowed in an incorrect bin and could not be located during the cycle count.' + note;
     case 'Pick Error': return 'The units were picked against the wrong bin, creating a system inventory mismatch.' + note;
     case 'Inventory Adjustment': return 'The adjustment was raised during the cycle count; the root cause is to be validated against stow and pick history.' + note;
-    case 'Transship Loss': return 'The units were lost during transshipment between sites. Transfer records are to be reconciled.' + note;
+    case 'Transship Loss': return 'Item missing from transshipment: the units were not received against the transfer from the source site. Transfer records and tote/pallet receipt are to be reconciled with the source.' + note;
     default: return 'Pending CCTV review.' + note;
   }
 }
@@ -385,7 +387,7 @@ const ACTIONS = {
   'Stow Error': 'Stow errors: Associates to scan the bin before every stow; run spot audits on high-value bins.',
   'Pick Error': 'Pick errors: Enforce bin scan confirmation at pick and investigate repeat locations.',
   'Inventory Adjustment': 'Adjustments: Validate cycle-count adjustments against stow and pick history before approval.',
-  'Transship Loss': 'Transship losses: Reconcile transfer manifests with the receiving site and follow up on open shipments.',
+  'Transship Loss': 'Transship (item missing from transshipment): Reconcile each TS ID with the source site, confirm tote / pallet receipt scans at inbound, raise missing totes or pallets with the source within SLA, and verify unit counts before closing the transfer.',
   [PENDING]: 'Pending: Complete the CCTV review for the remaining top cases.'
 };
 
@@ -511,7 +513,7 @@ class Component extends DCLogic {
     });
     return [...map.values()].sort((a, b) => b.usd - a.usd);
   }
-  tagOf(it) { const t = this.state.tags[this.state.metric + '|' + it.key] || {}; return { reason: t.reason || PENDING, sub: t.sub || '' }; }
+  tagOf(it) { const t = this.state.tags[this.state.metric + '|' + it.key] || {}; const tsMode = this.state.metric === 'whl' && this.state.whlType === 'Transship In'; return { reason: t.reason || (tsMode ? 'Transship Loss' : PENDING), sub: t.sub || '' }; }
   setTag(key, patch) { const k = this.state.metric + '|' + key; this.setState(s => ({ tags: { ...s.tags, [k]: { ...(s.tags[k] || {}), ...patch } }, report: null })); }
 
   applyPaste() {
@@ -670,7 +672,7 @@ class Component extends DCLogic {
       topNote: sc.items.length ? `${sc.items.length} total · ${usd(sc.total)}` : '',
       idHead: M.kind === 'conc' ? 'Order ID' : (m === 'whl' && st.whlType === 'Transship In' ? 'TS ID' : 'ASIN'),
       reasonOptions: [PENDING, ...REASONS[m]],
-      subOptions: st.subText.split(/\r?\n/).map(s => s.trim()).filter(Boolean),
+      subOptions: (m === 'whl' && st.whlType === 'Transship In' ? TS_SUBS : []).concat(st.subText.split(/\r?\n/).map(s => s.trim()).filter(Boolean)),
       rows: top.map((it, i) => { const t = this.tagOf(it); return {
         n: i + 1, id: it.id,
         meta: m === 'whl' && st.whlType === 'Transship In' ? [it.asin, it.totes && it.totes.size ? 'Tote ' + [...it.totes].join(', ') : '', it.evts && it.evts.size ? [...it.evts].sort().join(', ') : '', it.units + ' units'].filter(Boolean).join(' · ') : M.kind === 'conc' ? [it.asin, isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...it.pickers].join(', ')].filter(Boolean).join(' · ') : [it.units + ' units', isNP(it.perish, it.gl) ? 'Non-perishable' : 'Perishable', [...(it.procs || it.adjs || [])].slice(0, 2).join(', ')].filter(Boolean).join(' · '),
