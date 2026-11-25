@@ -433,9 +433,14 @@ class Component extends DCLogic {
           const fDay = v => { if (v instanceof Date) return v.getFullYear() + '-' + pad(v.getMonth() + 1) + '-' + pad(v.getDate()); if (typeof v === 'number' && v > 20000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); } return String(v || '').split(' ')[0]; };
           const fTime = v => { if (v instanceof Date) return pad(v.getHours()) + ':' + pad(v.getMinutes()) + ':' + pad(v.getSeconds()); if (typeof v === 'number') { const s = Math.round((v % 1) * 86400); return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60); } return String(v || '').trim(); };
           // TS ID = "AUH7_QDG5_<uuid>" inside event_id; tote = location_id after "TransferTote:"
-          const tsFromEvent = v => { const m = String(v || '').match(/[A-Z0-9]{3,6}_[A-Z0-9_]{3,10}_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); return m ? m[0] : ''; };
-          const toteOf = v => { const s = String(v || ''); const m = s.match(/TransferTote:\s*([A-Za-z0-9]+)/i) || s.match(/\b(ts[A-Z0-9]{6,})\b/); return m ? m[1] : ''; };
-          const base = r => ({ tsid: tsFromEvent(g(r, 'event_id')) || (tsCol ? String(g(r, tsCol) || '').replace(/^'/, '').trim() : ''), tote: toteOf(g(r, 'location_id')), evAt: [fDay(g(r, 'event_day')), fTime(g(r, 'event_time'))].filter(Boolean).join(' '), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
+          // event_id formats seen: "DELETE|DU-AA-611|AUH7_QDG5_<uuid>|…" and "DELETE|AE-AZ-1|UAEW-QAA1-1792247615-2857…|tsuaew46840|…"
+          const tsFromEvent = v => { const parts = String(v || '').split('|').map(s => s.trim());
+            const hit = parts.find(p => /^[A-Z0-9]{3,6}[_-][A-Z0-9]{3,6}(_SS)?[_-][A-Za-z0-9-]{6,}$/i.test(p) && !/^ts/i.test(p));
+            if (hit) return hit;
+            const m = String(v || '').match(/[A-Z0-9]{3,6}_[A-Z0-9_]{3,10}_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); return m ? m[0] : ''; };
+          const toteFromEvent = v => { const p = String(v || '').split('|').map(s => s.trim()).find(s => /^ts[A-Za-z0-9]{4,}$/i.test(s)); return p || ''; };
+          const toteOf = v => { const s = String(v || ''); const m = s.match(/TransferTote:\s*([A-Za-z0-9]+)/i) || s.match(/\b(ts[A-Za-z0-9]{6,})\b/); return m ? m[1] : ''; };
+          const base = r => ({ tsid: tsFromEvent(g(r, 'event_id')) || (tsCol ? String(g(r, tsCol) || '').replace(/^'/, '').trim() : ''), tote: toteOf(g(r, 'location_id')) || toteFromEvent(g(r, 'event_id')), evAt: [fDay(g(r, 'event_day')), fTime(g(r, 'event_time'))].filter(Boolean).join(' '), store: String(g(r, 'warehouse_id')).trim(), week: g(r, 'week'), asin: String(g(r, 'asin')).trim(), item: g(r, 'item_name'), qty: +g(r, 'quantity') || 0, perish: g(r, 'perishable_flag'), process: g(r, 'process'), gl: g(r, 'wbr_gl_description'), adj: String(g(r, 'adjustment_code') || '') });
           const whd = body.filter(r => /whd/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: +g(r, 'usd_val') || 0 }));
           const whl = body.filter(r => /whl/i.test(g(r, 'bucket'))).map(r => ({ ...base(r), usd: hasUSD >= 0 ? (+r[hasUSD] || 0) : -(+g(r, 'usd_val') || 0) }));
           if (whd.length) next.whd = whd;
@@ -500,7 +505,7 @@ class Component extends DCLogic {
   lanes(sc) {
     const map = new Map();
     sc.rows.filter(r => r.tsid).forEach(r => {
-      const p = r.tsid.split('_'), src = (p[0] || '?').toUpperCase(), dst = (p[1] || '').toUpperCase();
+      const p = r.tsid.split(/[_-]/), src = (p[0] || '?').toUpperCase(), dst = (p[1] || '').toUpperCase();
       const o = map.get(src) || { src, dests: new Set(), ts: new Set(), units: 0, usd: 0 };
       if (dst) o.dests.add(dst); o.ts.add(r.tsid); o.units += Math.abs(r.qty); o.usd += Math.abs(r.usd); map.set(src, o);
     });
