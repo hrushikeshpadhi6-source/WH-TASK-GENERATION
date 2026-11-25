@@ -26,8 +26,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Prepare site folder
         run: |
@@ -37,7 +35,6 @@ jobs:
                    --exclude 'updated-only' --exclude 'updated-files' --exclude 'github-upload' \
                    --exclude '*.gs' --exclude '*.gs.txt' ./ _site/
           touch _site/.nojekyll
-          du -sh _site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
