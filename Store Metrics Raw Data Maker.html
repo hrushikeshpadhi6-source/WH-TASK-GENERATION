@@ -26,7 +26,7 @@
   auth.onAuthStateChanged(function(u){
     if(!u){ location.href='index.html'; return; }
     var email=(u.email||'').toLowerCase(), isAdmin=email===ADMIN, full=false, hidden=[], myName='';
-    function check(){ if(isAdmin||full){ unlock(); return; } if(hidden.indexOf(TOOL_ID)>-1) lock('This tool is hidden by the admin for now. Please check back later.'); else unlock(); }
+    function check(){ if(isAdmin||full){ unlock(); return; } if(hidden.indexOf(TOOL_ID)>-1) lock('Maintenance ongoing. Please check back later.'); else unlock(); }
     function ping(){ try{ db.collection('presence').doc(u.uid).set({name:u.displayName||myName||email.split('@')[0],email:email,tool:TOOL_LABEL,lastSeen:firebase.firestore.FieldValue.serverTimestamp(),at:Date.now(),online:document.visibilityState!=='hidden'},{merge:true}).catch(function(){}); }catch(e){} }
     var logged=false;
     function logOpen(){ if(logged) return; logged=true; try{
