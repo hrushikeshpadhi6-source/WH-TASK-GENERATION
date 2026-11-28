@@ -4015,7 +4015,7 @@ window.feedbackAdminClear=async function(){
     </button>
     <div style="font-size:12px;color:#7b78a8;margin-top:8px;">Upload LS + Outbound Pick → colour-coded RCA export · fetch forecast vs actual (orders & units) · copy straight into Google Sheets or Excel</div>
 
-    <button onclick="window.open('Probable Lateslam Checker.html','_blank')" style="display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:12px;border:2px solid #b45309;background:linear-gradient(135deg,rgba(180,83,9,0.1),rgba(217,119,6,0.1));color:#b45309;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;font-family:'Syne',sans-serif;transition:all 0.2s;margin-top:18px;" onmouseenter="this.style.background='linear-gradient(135deg,#b45309,#d97706)';this.style.color='#fff';" onmouseleave="this.style.background='linear-gradient(135deg,rgba(180,83,9,0.1),rgba(217,119,6,0.1))';this.style.color='#b45309';">
+    <button data-subtool="probable-lateslam" onclick="if(window.maintIsBlocked&&maintIsBlocked('probable-lateslam')){maintShowBlockedPopup('probable-lateslam');return;}window.open('Probable Lateslam Checker.html','_blank')" style="display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:12px;border:2px solid #b45309;background:linear-gradient(135deg,rgba(180,83,9,0.1),rgba(217,119,6,0.1));color:#b45309;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;font-family:'Syne',sans-serif;transition:all 0.2s;margin-top:18px;" onmouseenter="this.style.background='linear-gradient(135deg,#b45309,#d97706)';this.style.color='#fff';" onmouseleave="this.style.background='linear-gradient(135deg,rgba(180,83,9,0.1),rgba(217,119,6,0.1))';this.style.color='#b45309';">
       ⏱ Probable Lateslam Checker &nbsp;<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(180,83,9,0.15);font-weight:700;">NEW</span>
     </button>
     <div style="font-size:12px;color:#7b78a8;margin-top:8px;">Upload LS file without promise time → fixed store × unit promise applied · store-wise late slam count · Excel export</div>
@@ -16600,7 +16600,7 @@ var MAINT_TOOLS = [
   ['inventory-category','Inventory Category Analysis'],['manpower','Manpower Allocation Engine'],
   ['expiry-manager','Expiry Manager'],['smart-stow','Smart Stowing'],['ib-forecast','Forecast vs Actual Analysis'],['deliverynote','Reverse Transshipment'],['totecheck','Tote vs Transshipment'],
   ['fast-moving','Fast Moving ASIN'],['inv-audit','Inventory Audit'],['top-performer','Top Performer'],
-  ['barometer','Barometer'],
+  ['barometer','Barometer'],['probable-lateslam','Probable Lateslam Checker'],
   ['feedback','Report & Suggest'],['contact','Support Desk']
 ];
 var MAINT_KEY = 'dms_maintenance_settings';
@@ -16751,6 +16751,10 @@ function toolVisApply(){
     }
   });
 }
+(function(){ var _tva=toolVisApply; toolVisApply=function(){ _tva.apply(this,arguments); var see=toolVisCanSee();
+  document.querySelectorAll('[data-subtool]').forEach(function(b){ var hid=_hiddenTools.indexOf(b.getAttribute('data-subtool'))>-1, nx=b.nextElementSibling;
+    b.style.display=(hid&&!see)?'none':''; if(nx&&nx.tagName==='DIV'&&!nx.querySelector('button')) nx.style.display=(hid&&!see)?'none':'';
+    b.style.outline=(hid&&see)?'2px dashed #F59E0B':''; b.title=(hid&&see)?'Hidden from users (under maintenance)':''; }); }; })();
 (function(){ var _orig=maintApply; maintApply=function(){ _orig.apply(this,arguments); toolVisApply(); }; })();
 (function(){ var _origB=maintIsBlocked; maintIsBlocked=function(id){ if(_hiddenTools.indexOf(id)>-1 && !toolVisCanSee()) return true; return _origB.apply(this,arguments); }; })();
 function toolVisInit(){
@@ -22697,7 +22701,7 @@ window.FVA=(function(){
       var nm=u.displayName||myName||bn||(u.email||'').split('@')[0];
       if(!myName&&!u.displayName&&!nameAsked){ nameAsked=true; fbDB.collection('users').doc(u.uid).get().then(function(d){ if(d.exists&&d.data().name){ myName=d.data().name; ping(); } }).catch(function(){}); }
       uidNow=u.uid;
-      fbDB.collection('presence').doc(u.uid).set({name:nm,email:(u.email||'').toLowerCase(),lastSeen:firebase.firestore.FieldValue.serverTimestamp(),at:Date.now(),online:document.visibilityState!=='hidden'},{merge:true}).catch(function(e){ if(/permission/i.test(e.message||'')) denied=true; });
+      fbDB.collection('presence').doc(u.uid).set({name:nm,email:(u.email||'').toLowerCase(),tool:'Home',lastSeen:firebase.firestore.FieldValue.serverTimestamp(),at:Date.now(),online:document.visibilityState!=='hidden'},{merge:true}).catch(function(e){ if(/permission/i.test(e.message||'')) denied=true; });
     }catch(e){}
   }
   function listen(){
@@ -22710,7 +22714,7 @@ window.FVA=(function(){
     rows.forEach(function(r){ var t=tsMs(r.lastSeen)||r.at||0, age=now-t; if(r.online!==false&&age<ONLINE_MS) on.push([r,age]); else if(age<RECENT_MS) rec.push([r,age]); });
     on.sort(function(a,b){return String(a[0].name).localeCompare(String(b[0].name));}); rec.sort(function(a,b){return a[1]-b[1];});
     el('online-count').textContent=on.length;
-    var row=function(x,c){var r=x[0];var nmS=(r.name&&!/^dms\s*pro$/i.test(r.name))?r.name:String(r.email||'User').split('@')[0]; r={name:nmS,id:r.id,email:r.email};return '<div class="op-r"><span class="op-av">'+esc(ini(r.name))+'<i style="background:'+c+'"></i></span><div><div class="op-n">'+esc(r.name||r.email)+(r.id===uidNow?' <span style="color:#8b8aad;font-weight:600;">(you)</span>':'')+'</div><div class="op-m">'+(c==='#10B981'?'Active now':'Last seen '+ago(x[1]))+'</div></div></div>';};
+    var row=function(x,c){var r=x[0];var nmS=(r.name&&!/^dms\s*pro$/i.test(r.name))?r.name:String(r.email||'User').split('@')[0]; r={name:nmS,id:r.id,email:r.email,tool:r.tool};return '<div class="op-r"><span class="op-av">'+esc(ini(r.name))+'<i style="background:'+c+'"></i></span><div><div class="op-n">'+esc(r.name||r.email)+(r.id===uidNow?' <span style="color:#8b8aad;font-weight:600;">(you)</span>':'')+'</div><div class="op-m">'+(c==='#10B981'?(r.tool&&r.tool!=='Home'?'Using '+esc(r.tool):'On Home page'):'Last seen '+ago(x[1])+(r.tool&&r.tool!=='Home'?' · '+esc(r.tool):''))+'</div></div></div>';};
     var h='';
     if(denied) h='<div class="op-e">Ask the admin to allow <b>presence</b> in Firestore rules.</div>';
     else{

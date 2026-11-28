@@ -1,6 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
+<!-- DMS GUARD: login check + maintenance lock + online status -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  var TOOL_ID='barometer', TOOL_LABEL='Barometer', ADMIN='hrushikeshpadhi6@gmail.com';
+  var cfg={apiKey:"AIzaSyBAKX9NbuCVI8V5-I_l0VrlgAtgV3fw2n0",authDomain:"hp-world-darkstore.firebaseapp.com",projectId:"hp-world-darkstore"};
+  var hid=false; try{ hid=(JSON.parse(localStorage.getItem('dms_hidden_tools')||'[]')||[]).indexOf(TOOL_ID)>-1; }catch(e){}
+  if(hid){ document.documentElement.style.visibility='hidden'; setTimeout(function(){ document.documentElement.style.visibility=''; },5000); }
+  function lock(msg){
+    document.documentElement.style.visibility='';
+    var go=function(){ if(document.getElementById('dms-lock')) return; var d=document.createElement('div'); d.id='dms-lock';
+      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0f0e17;color:#e8e6ff;display:flex;align-items:center;justify-content:center;font-family:Syne,system-ui,sans-serif;padding:24px;';
+      d.innerHTML='<div style="max-width:420px;text-align:center;background:#1a1928;border:1px solid #2e2c45;border-radius:16px;padding:32px 28px;"><div style="font-size:40px;margin-bottom:10px;">🔧</div><div style="font-size:20px;font-weight:800;margin-bottom:8px;">'+TOOL_LABEL+' is under maintenance</div><div style="font-size:14px;color:#a8a6c8;line-height:1.5;margin-bottom:22px;">'+msg+'</div><a href="index.html" style="display:inline-block;padding:11px 22px;border-radius:10px;background:#10B981;color:#04130d;font-weight:800;text-decoration:none;">← Back to Home</a></div>';
+      document.body.appendChild(d); document.body.style.overflow='hidden'; };
+    if(document.body) go(); else document.addEventListener('DOMContentLoaded',go);
+  }
+  function unlock(){ document.documentElement.style.visibility=''; var d=document.getElementById('dms-lock'); if(d){ d.remove(); document.body.style.overflow=''; } }
+  if(!window.firebase){ unlock(); return; }
+  try{ if(!firebase.apps.length) firebase.initializeApp(cfg); }catch(e){ unlock(); return; }
+  var auth=firebase.auth(), db=firebase.firestore(), beat=null;
+  auth.onAuthStateChanged(function(u){
+    if(!u){ location.href='index.html'; return; }
+    var email=(u.email||'').toLowerCase(), isAdmin=email===ADMIN, full=false, hidden=[], myName='';
+    function check(){ if(isAdmin||full){ unlock(); return; } if(hidden.indexOf(TOOL_ID)>-1) lock('This tool is hidden by the admin for now. Please check back later.'); else unlock(); }
+    function ping(){ try{ db.collection('presence').doc(u.uid).set({name:u.displayName||myName||email.split('@')[0],email:email,tool:TOOL_LABEL,lastSeen:firebase.firestore.FieldValue.serverTimestamp(),at:Date.now(),online:document.visibilityState!=='hidden'},{merge:true}).catch(function(){}); }catch(e){} }
+    var logged=false;
+    function logOpen(){ if(logged) return; logged=true; try{
+      var ua=navigator.userAgent, dev=/Edg\//.test(ua)?'Edge':/OPR\//.test(ua)?'Opera':/Firefox\//.test(ua)?'Firefox':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'Browser';
+      var nm=u.displayName||myName||email.split('@')[0];
+      try{ var lu=JSON.parse(localStorage.getItem('dstpro_user_info')||'{}'); if(lu&&lu.name&&!/^dms\s*pro$/i.test(lu.name)) nm=lu.name; }catch(e){}
+      new Image().src='https://script.google.com/macros/s/AKfycbwon0Yz0Lq7gkXs3KMAUGt0FUQxVPbPR-6_RoDdYQAeAObnL9VDYvloCzfkkcg9H5bsSw/exec?action=trackActivity&name='+encodeURIComponent(nm)+'&tool='+encodeURIComponent(TOOL_LABEL)+'&action='+encodeURIComponent('Opened')+'&ts='+encodeURIComponent(new Date().toISOString())+'&device='+encodeURIComponent(dev);
+    }catch(e){} }
+    db.collection('users').doc(u.uid).get().then(function(d){ var x=d.exists?d.data():{}; full=!!x.fullAccess; if(x.name) myName=x.name; ping(); check(); logOpen(); }).catch(function(){ ping(); logOpen(); });
+    db.collection('app_settings').doc('tool_visibility').onSnapshot(function(d){ hidden=(d.exists&&Array.isArray(d.data().hidden))?d.data().hidden:[]; try{ localStorage.setItem('dms_hidden_tools',JSON.stringify(hidden)); }catch(e){} check(); },function(){ unlock(); });
+    if(beat) clearInterval(beat); beat=setInterval(ping,60000);
+    document.addEventListener('visibilitychange',ping);
+    window.addEventListener('pagehide',function(){ try{ db.collection('presence').doc(u.uid).set({online:false,at:Date.now()},{merge:true}); }catch(e){} });
+  });
+})();
+</script>
+
 <script>
 (function(){
   var K='dms_session_date';
